@@ -1,0 +1,111 @@
+import { IsOptional, IsString, IsNumber, IsBoolean } from "class-validator";
+
+export class ContractSaasQueryDto {
+  @IsString()
+  contractId: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+}
+
+export class ContractSaasResponseDto {
+  _id: string;
+  id: string;
+  contractId: string;
+  brand: string;
+  licanceId: string;
+  description: string;
+  price: number;
+  old_price: number;
+  qty: number;
+  currency: string;
+  yearly: boolean;
+  enabled: boolean;
+  expired: boolean;
+  blocked: boolean;
+  productId: string;
+  total: number;
+  editDate: Date;
+  editUser: string;
+}
+
+export class ContractSaasListResponseDto {
+  data: ContractSaasResponseDto[];
+  total: number;
+}
+
+export class CreateContractSaasDto {
+  @IsString()
+  contractId: string;
+
+  @IsOptional()
+  @IsString()
+  brand?: string;
+
+  @IsOptional()
+  @IsString()
+  licanceId?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  qty?: number;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  yearly?: boolean;
+
+  @IsOptional()
+  @IsString()
+  productId?: string;
+}
+
+export class UpdateContractSaasDto {
+  @IsOptional()
+  @IsString()
+  brand?: string;
+
+  @IsOptional()
+  @IsString()
+  licanceId?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  qty?: number;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  yearly?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  productId?: string;
+}

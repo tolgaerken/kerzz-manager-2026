@@ -5,6 +5,8 @@ import {
   ContractsGrid,
   ContractsFilters,
   ContractsPagination,
+  GridToolbar,
+  ContractDetailModal,
   CONTRACTS_CONSTANTS,
   type ContractFlow,
   type ContractQueryParams,
@@ -37,6 +39,10 @@ export function ContractsPage() {
   const [pageSize, setPageSize] = useState(CONTRACTS_CONSTANTS.DEFAULT_PAGE_SIZE);
   const [sortField, setSortField] = useState("no");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Detail modal states
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Debounce search
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -89,7 +95,22 @@ export function ContractsPage() {
   }, []);
 
   const handleRowDoubleClick = useCallback((contract: Contract) => {
-    console.log("Contract double clicked:", contract);
+    setSelectedContract(contract);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleRowSelect = useCallback((contract: Contract | null) => {
+    setSelectedContract(contract);
+  }, []);
+
+  const handleInspect = useCallback(() => {
+    if (selectedContract) {
+      setIsModalOpen(true);
+    }
+  }, [selectedContract]);
+
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false);
   }, []);
 
   return (
@@ -157,6 +178,13 @@ export function ContractsPage() {
 
       {/* Grid Container - Flex grow to fill remaining space */}
       <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+        {/* Toolbar */}
+        <GridToolbar
+          selectedContract={selectedContract}
+          onInspect={handleInspect}
+          disabled={isLoading}
+        />
+
         <ContractsGrid
           data={data?.data ?? []}
           loading={isLoading}
@@ -167,6 +195,7 @@ export function ContractsPage() {
           onPageSizeChange={handlePageSizeChange}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
+          onRowSelect={handleRowSelect}
         />
 
         {/* Pagination */}
@@ -181,6 +210,15 @@ export function ContractsPage() {
           </div>
         )}
       </div>
+
+      {/* Contract Detail Modal */}
+      {selectedContract && (
+        <ContractDetailModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          contract={selectedContract}
+        />
+      )}
     </div>
   );
 }

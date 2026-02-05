@@ -5,6 +5,7 @@ import {
   ModuleRegistry,
   type GridReadyEvent,
   type SortChangedEvent,
+  type SelectionChangedEvent,
   themeQuartz
 } from "ag-grid-community";
 import { contractColumnDefs } from "./columnDefs";
@@ -23,13 +24,15 @@ interface ContractsGridProps {
   onPageSizeChange: (pageSize: number) => void;
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
   onRowDoubleClick?: (contract: Contract) => void;
+  onRowSelect?: (contract: Contract | null) => void;
 }
 
 export function ContractsGrid({
   data,
   loading,
   onSortChange,
-  onRowDoubleClick
+  onRowDoubleClick,
+  onRowSelect
 }: ContractsGridProps) {
   const gridRef = useRef<AgGridReact<Contract>>(null);
 
@@ -64,6 +67,16 @@ export function ContractsGrid({
     [onRowDoubleClick]
   );
 
+  const handleSelectionChanged = useCallback(
+    (event: SelectionChangedEvent<Contract>) => {
+      if (onRowSelect) {
+        const selectedRows = event.api.getSelectedRows();
+        onRowSelect(selectedRows.length > 0 ? selectedRows[0] : null);
+      }
+    },
+    [onRowSelect]
+  );
+
   // Custom theme based on quartz
   const customTheme = themeQuartz.withParams({
     backgroundColor: "var(--color-surface)",
@@ -91,6 +104,7 @@ export function ContractsGrid({
         onGridReady={onGridReady}
         onSortChanged={handleSortChanged}
         onRowDoubleClicked={handleRowDoubleClicked}
+        onSelectionChanged={handleSelectionChanged}
         loading={loading}
         rowSelection={{ mode: "singleRow" }}
         suppressCellFocus={true}
