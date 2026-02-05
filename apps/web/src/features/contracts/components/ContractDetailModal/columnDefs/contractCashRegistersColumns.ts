@@ -1,38 +1,93 @@
-import type { ColDef } from "ag-grid-community";
+import type { ColDef, ICellEditorParams } from "ag-grid-community";
 import type { ContractCashRegister } from "../../../types";
+import { CASH_REGISTER_TYPES, CURRENCY_OPTIONS } from "../../../constants";
+import { LicenseAutocompleteEditor } from "../shared/cellEditors/LicenseAutocompleteEditor";
+import { SelectCellEditor } from "../shared/cellEditors/SelectCellEditor";
 
-const currencyOptions = ["tl", "usd", "eur"];
+// Context'ten gelen veri tipleri
+interface GridContext {
+  licenses: Array<{ id: string; brandName: string; SearchItem: string }>;
+  eftPosModels: Array<{ id: string; name: string }>;
+  onLicenseSelect?: (rowId: string, license: { id: string; brandName: string } | null) => void;
+}
 
 export const contractCashRegistersColumns: ColDef<ContractCashRegister>[] = [
   {
-    field: "brand",
-    headerName: "Marka",
-    flex: 1,
-    minWidth: 120
+    field: "enabled",
+    headerName: "Aktif",
+    width: 70,
+    cellRenderer: (params: { value: boolean }) =>
+      params.value ? "✓" : "✗",
+    cellEditor: "agSelectCellEditor",
+    cellEditorParams: {
+      values: [true, false]
+    }
+  },
+  {
+    field: "type",
+    headerName: "Tür",
+    width: 90,
+    cellEditor: SelectCellEditor,
+    cellEditorParams: {
+      options: CASH_REGISTER_TYPES
+    },
+    valueFormatter: (params) => {
+      const found = CASH_REGISTER_TYPES.find((t) => t.id === params.value);
+      return found?.name || params.value || "";
+    }
   },
   {
     field: "model",
     headerName: "Model",
-    flex: 1,
-    minWidth: 120
-  },
-  {
-    field: "type",
-    headerName: "Tip",
-    flex: 1,
-    minWidth: 100
+    width: 150,
+    cellEditor: SelectCellEditor,
+    cellEditorParams: (params: ICellEditorParams<ContractCashRegister>) => {
+      const context = params.context as GridContext;
+      return {
+        options: context?.eftPosModels || []
+      };
+    },
+    valueFormatter: (params) => {
+      const context = params.context as GridContext;
+      const found = context?.eftPosModels?.find((m) => m.id === params.value);
+      return found?.name || params.value || "";
+    }
   },
   {
     field: "legalId",
-    headerName: "Legal ID",
-    flex: 1,
-    minWidth: 120
+    headerName: "Sicil No",
+    width: 120,
+    flex: 1
+  },
+  {
+    field: "licanceId",
+    headerName: "Lisans",
+    width: 280,
+    flex: 2,
+    cellEditor: LicenseAutocompleteEditor,
+    cellEditorParams: (params: ICellEditorParams<ContractCashRegister>) => {
+      const context = params.context as GridContext;
+      return {
+        licenses: context?.licenses || [],
+        onLicenseSelect: (license: { id: string; brandName: string } | null) => {
+          if (context?.onLicenseSelect && params.data?.id) {
+            context.onLicenseSelect(params.data.id, license);
+          }
+        }
+      };
+    },
+    cellRenderer: (params: { value: string; context: GridContext }) => {
+      if (!params.value) return "";
+      const valueStr = String(params.value);
+      const licenses = params.context?.licenses || [];
+      const found = licenses.find((l) => l.id === valueStr);
+      return found?.SearchItem || found?.brandName || params.value;
+    }
   },
   {
     field: "price",
     headerName: "Fiyat",
-    flex: 1,
-    minWidth: 100,
+    width: 100,
     type: "numericColumn",
     valueFormatter: (params) => {
       if (params.value == null) return "";
@@ -45,33 +100,52 @@ export const contractCashRegistersColumns: ColDef<ContractCashRegister>[] = [
   {
     field: "currency",
     headerName: "Döviz",
-    flex: 0.5,
-    minWidth: 80,
-    cellEditor: "agSelectCellEditor",
+    width: 80,
+    cellEditor: SelectCellEditor,
     cellEditorParams: {
-      values: currencyOptions
+      options: CURRENCY_OPTIONS
     },
-    valueFormatter: (params) => params.value?.toUpperCase() || ""
+    valueFormatter: (params) => {
+      const found = CURRENCY_OPTIONS.find((c) => c.id === params.value);
+      return found?.name || params.value?.toUpperCase() || "";
+    }
+  },
+  {
+    field: "yearly",
+    headerName: "Yıllık",
+    width: 70,
+    editable: false,
+    cellRenderer: (params: { value: boolean }) =>
+      params.value ? "Evet" : "Hayır"
   },
   {
     field: "eftPosActive",
-    headerName: "EFT POS",
-    flex: 0.5,
-    minWidth: 80,
+    headerName: "EPA",
+    width: 70,
     cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
+      params.value ? "✓" : "✗",
     cellEditor: "agSelectCellEditor",
     cellEditorParams: {
       values: [true, false]
     }
   },
   {
-    field: "enabled",
-    headerName: "Aktif",
-    flex: 0.5,
-    minWidth: 80,
+    field: "expired",
+    headerName: "Expired",
+    width: 80,
     cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
+      params.value ? "✓" : "✗",
+    cellEditor: "agSelectCellEditor",
+    cellEditorParams: {
+      values: [true, false]
+    }
+  },
+  {
+    field: "folioClose",
+    headerName: "FC",
+    width: 60,
+    cellRenderer: (params: { value: boolean }) =>
+      params.value ? "✓" : "✗",
     cellEditor: "agSelectCellEditor",
     cellEditorParams: {
       values: [true, false]
@@ -80,8 +154,7 @@ export const contractCashRegistersColumns: ColDef<ContractCashRegister>[] = [
   {
     field: "editDate",
     headerName: "Düzenleme",
-    flex: 1,
-    minWidth: 100,
+    width: 100,
     editable: false,
     valueFormatter: (params) => {
       if (!params.value) return "";

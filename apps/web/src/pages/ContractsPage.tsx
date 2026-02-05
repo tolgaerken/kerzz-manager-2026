@@ -2,15 +2,18 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { FileText, Plus, RefreshCw, AlertCircle } from "lucide-react";
 import {
   useContracts,
+  useCreateContract,
   ContractsGrid,
   ContractsFilters,
   ContractsPagination,
   GridToolbar,
   ContractDetailModal,
+  ContractFormModal,
   CONTRACTS_CONSTANTS,
   type ContractFlow,
   type ContractQueryParams,
-  type Contract
+  type Contract,
+  type CreateContractInput
 } from "../features/contracts";
 
 // Debounce hook for search
@@ -33,16 +36,19 @@ function useDebounce<T>(value: T, delay: number): T {
 export function ContractsPage() {
   // Filter states
   const [flow, setFlow] = useState<ContractFlow>("active");
-  const [yearly, setYearly] = useState<boolean | undefined>(undefined);
+  const [yearly, setYearly] = useState<boolean | undefined>(false);
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(CONTRACTS_CONSTANTS.DEFAULT_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState<number>(CONTRACTS_CONSTANTS.DEFAULT_PAGE_SIZE);
   const [sortField, setSortField] = useState("no");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Detail modal states
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Form modal state
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   // Debounce search
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -63,6 +69,9 @@ export function ContractsPage() {
 
   // Fetch contracts
   const { data, isLoading, isError, error, refetch, isFetching } = useContracts(queryParams);
+
+  // Create contract mutation
+  const createMutation = useCreateContract();
 
   // Handlers
   const handleFlowChange = useCallback((newFlow: ContractFlow) => {
@@ -113,6 +122,25 @@ export function ContractsPage() {
     setIsModalOpen(false);
   }, []);
 
+  const handleCreateClick = useCallback(() => {
+    setIsFormModalOpen(true);
+  }, []);
+
+  const handleFormModalClose = useCallback(() => {
+    setIsFormModalOpen(false);
+  }, []);
+
+  const handleFormSubmit = useCallback(
+    (formData: CreateContractInput) => {
+      createMutation.mutate(formData, {
+        onSuccess: () => {
+          setIsFormModalOpen(false);
+        }
+      });
+    },
+    [createMutation]
+  );
+
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Page Header */}
@@ -137,7 +165,10 @@ export function ContractsPage() {
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             Yenile
           </button>
-          <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover">
+          <button
+            onClick={handleCreateClick}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+          >
             <Plus className="h-4 w-4" />
             Yeni Kontrat
           </button>
@@ -219,6 +250,14 @@ export function ContractsPage() {
           contract={selectedContract}
         />
       )}
+
+      {/* Contract Form Modal */}
+      <ContractFormModal
+        isOpen={isFormModalOpen}
+        onClose={handleFormModalClose}
+        onSubmit={handleFormSubmit}
+        isLoading={createMutation.isPending}
+      />
     </div>
   );
 }

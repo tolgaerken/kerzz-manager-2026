@@ -9,9 +9,9 @@ export const LICENSES_CONSTANTS = {
 
 // Lisans tipleri
 export const LICENSE_TYPES = [
-  { id: "kerzz-pos", name: "Kerzz POS" },
-  { id: "orwi-pos", name: "Orwi POS" },
-  { id: "kerzz-cloud", name: "Kerzz Cloud" }
+  { id: "kerzz-pos", name: "KP" },
+  { id: "orwi-pos", name: "OP" },
+  { id: "kerzz-cloud", name: "KC" }
 ] as const;
 
 // Şirket tipleri

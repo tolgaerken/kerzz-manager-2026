@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model, SortOrder } from "mongoose";
+import { Model, SortOrder } from "mongoose";
 import { Customer, CustomerDocument } from "./schemas/customer.schema";
 import { CustomerQueryDto } from "./dto/customer-query.dto";
 import {
@@ -30,11 +30,11 @@ export class CustomersService {
     const skip = (page - 1) * limit;
 
     // Base filter: taxNo must exist and not be null or empty
-    const baseFilter: FilterQuery<CustomerDocument> = {
+    const baseFilter: Record<string, any> = {
       taxNo: { $exists: true, $ne: null, $nin: ["", " "] }
     };
 
-    let filter: FilterQuery<CustomerDocument> = { ...baseFilter };
+    let filter: Record<string, any> = { ...baseFilter };
 
     // Search filter
     if (search) {

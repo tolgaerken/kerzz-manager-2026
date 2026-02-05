@@ -2,6 +2,7 @@ import { LogOut, User } from "lucide-react";
 import { useAuth } from "../../../features/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeToggle } from "../../ui";
+import { NotificationBell } from "../../../features/logs";
 
 export function Header() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export function Header() {
       <div />
       
       <div className="flex items-center gap-4">
+        <NotificationBell />
         <ThemeToggle />
         
         <div className="flex items-center gap-2 text-muted-foreground">

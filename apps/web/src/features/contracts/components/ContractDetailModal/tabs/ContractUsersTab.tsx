@@ -93,7 +93,7 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <DetailGridToolbar
         onAdd={handleAdd}
         onDelete={handleDelete}
@@ -101,15 +101,16 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
         loading={isProcessing}
         addLabel="Kullanıcı Ekle"
       />
-      <EditableGrid<ContractUser>
-        data={users}
-        columnDefs={contractUsersColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        height="400px"
-      />
+      <div className="flex-1 min-h-0">
+        <EditableGrid<ContractUser>
+          data={users}
+          columnDefs={contractUsersColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChanged={handleCellValueChanged}
+          onSelectionChanged={handleSelectionChanged}
+        />
+      </div>
     </div>
   );
 }

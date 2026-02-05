@@ -5,7 +5,9 @@ import {
   Plug,
   Users,
   Key,
-  Package
+  Package,
+  Wallet,
+  ScrollText
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -33,6 +35,13 @@ export const sidebarMenuItems: MenuItemProps[] = [
     path: "/licenses",
   },
   {
+    icon: Wallet,
+    label: "Finans",
+    subItems: [
+      { label: "Faturalar", path: "/finance/invoices" },
+    ],
+  },
+  {
     icon: Package,
     label: "Ürünler",
     subItems: [
@@ -49,5 +58,12 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: Plug,
     label: "Entegratör",
     path: "/integrator",
+  },
+  {
+    icon: ScrollText,
+    label: "Sistem",
+    subItems: [
+      { label: "Sistem Logları", path: "/system/logs" },
+    ],
   },
 ];

@@ -1,6 +1,8 @@
 import { ChevronDown, ChevronRight, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
+import { Tooltip } from "../../ui";
+import { useSidebarStore } from "../../../store/sidebarStore";
 
 export interface SubMenuItem {
   label: string;
@@ -17,6 +19,7 @@ export interface MenuItemProps {
 export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const isCollapsed = useSidebarStore((state) => state.isCollapsed);
   
   const hasSubItems = subItems && subItems.length > 0;
   const isActive = path ? location.pathname === path : false;
@@ -28,18 +31,49 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
     }
   };
 
-  const baseClasses = "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors";
+  const baseClasses = "flex w-full items-center rounded-lg text-sm font-medium transition-colors";
+  const paddingClasses = isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5";
   const activeClasses = "bg-surface-hover text-foreground";
   const inactiveClasses = "text-muted-foreground hover:bg-surface-elevated hover:text-foreground";
 
+  // Collapsed state with sub-items - show tooltip with sub-item info
+  if (isCollapsed && hasSubItems) {
+    const tooltipContent = `${label}: ${subItems.map(s => s.label).join(", ")}`;
+    return (
+      <Tooltip content={tooltipContent} position="right">
+        <button
+          onClick={handleToggle}
+          className={`${baseClasses} ${paddingClasses} ${isSubItemActive ? activeClasses : inactiveClasses}`}
+        >
+          <Icon className="h-5 w-5 shrink-0" />
+        </button>
+      </Tooltip>
+    );
+  }
+
+  // Collapsed state without sub-items
+  if (isCollapsed) {
+    return (
+      <Tooltip content={label} position="right">
+        <Link
+          to={path ?? "/"}
+          className={`${baseClasses} ${paddingClasses} ${isActive ? activeClasses : inactiveClasses}`}
+        >
+          <Icon className="h-5 w-5 shrink-0" />
+        </Link>
+      </Tooltip>
+    );
+  }
+
+  // Expanded state with sub-items
   if (hasSubItems) {
     return (
       <div>
         <button
           onClick={handleToggle}
-          className={`${baseClasses} ${isSubItemActive ? activeClasses : inactiveClasses}`}
+          className={`${baseClasses} ${paddingClasses} ${isSubItemActive ? activeClasses : inactiveClasses}`}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-5 w-5 shrink-0" />
           <span className="flex-1 text-left">{label}</span>
           {isOpen ? (
             <ChevronDown className="h-4 w-4" />
@@ -54,7 +88,7 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
               <Link
                 key={item.path}
                 to={item.path}
-                className={`${baseClasses} text-sm ${
+                className={`${baseClasses} gap-3 px-3 py-2.5 text-sm ${
                   location.pathname === item.path ? activeClasses : inactiveClasses
                 }`}
               >
@@ -67,12 +101,13 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
     );
   }
 
+  // Expanded state without sub-items
   return (
     <Link
       to={path ?? "/"}
-      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+      className={`${baseClasses} ${paddingClasses} ${isActive ? activeClasses : inactiveClasses}`}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className="h-5 w-5 shrink-0" />
       <span>{label}</span>
     </Link>
   );

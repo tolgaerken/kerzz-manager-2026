@@ -1,0 +1,45 @@
+---
+description: License ID eşleştirmesi - string id alanı kullanılmalı
+alwaysApply: true
+---
+
+# License ID Eşleştirmesi
+
+License tablosunda iki farklı ID alanı var, karıştırılmamalı:
+
+| Alan | Tip | Açıklama |
+|------|-----|----------|
+| `id` | string | Eşleştirmede kullanılacak alan (ör: "3421") |
+| `licenseId` | number | Sayısal sıra numarası (ör: 7279) |
+
+## Önemli
+
+- `licanceId` alanı (ContractCashRegister, ContractSAAS vb.) License'ın **`id`** alanıyla eşleşir
+- `licenseId` (sayısal) ile karıştırma! Bu farklı bir değer
+
+## Doğru Kullanım
+
+```typescript
+// ✅ DOĞRU - License'ın id alanını kullan
+const licenses = licensesData?.data?.map((lic) => ({
+  id: lic.id, // string id alanı
+  brandName: lic.brandName
+}));
+
+// Eşleştirme
+const found = licenses.find((l) => l.id === licanceIdValue);
+
+// ❌ YANLIŞ - licenseId (sayısal) kullanma
+const licenses = licensesData?.data?.map((lic) => ({
+  id: String(lic.licenseId), // YANLIŞ! Bu farklı bir değer
+}));
+```
+
+## Referans
+
+Angular kodunda da aynı mantık kullanılıyor:
+```typescript
+// io-cloud-2025 - t-licenses.service.ts
+license.id = maxId.toString();  // id = licenseId'nin string hali
+license.licenseId = maxId;
+```

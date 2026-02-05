@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { CreditCard } from "lucide-react";
 import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractCashRegisters } from "../../../hooks/useContractDetail";
@@ -7,6 +7,8 @@ import {
   useUpdateContractCashRegister,
   useDeleteContractCashRegister
 } from "../../../hooks/useContractDetailMutations";
+import { useActiveEftPosModels } from "../../../hooks/useEftPosModels";
+import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractCashRegister } from "../../../types";
 import { EditableGrid, DetailGridToolbar } from "../shared";
 import { contractCashRegistersColumns } from "../columnDefs";
@@ -18,7 +20,12 @@ interface ContractCashRegistersTabProps {
 export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTabProps) {
   const [selectedRow, setSelectedRow] = useState<ContractCashRegister | null>(null);
 
+  // Data hooks
   const { data, isLoading } = useContractCashRegisters(contractId);
+  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc" });
+  const { data: eftPosModelsData } = useActiveEftPosModels();
+
+  // Mutation hooks
   const createMutation = useCreateContractCashRegister(contractId);
   const updateMutation = useUpdateContractCashRegister(contractId);
   const deleteMutation = useDeleteContractCashRegister(contractId);
@@ -28,6 +35,55 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     updateMutation.isPending ||
     deleteMutation.isPending;
 
+  // Lisansları grid için hazırla
+  const licenses = useMemo(() => {
+    const result = licensesData?.data
+      ?.filter((lic) => lic.id != null)
+      .map((lic) => ({
+        _id: lic._id,
+        id: lic.id,
+        brandName: lic.brandName,
+        SearchItem: lic.SearchItem || lic.brandName
+      })) || [];
+    return result;
+  }, [licensesData]);
+
+  // EftPos modellerini grid için hazırla
+  const eftPosModels = useMemo(() => {
+    return (
+      eftPosModelsData?.data?.map((model) => ({
+        id: model.id,
+        name: model.name
+      })) || []
+    );
+  }, [eftPosModelsData]);
+
+  // Lisans seçildiğinde brand'ı güncelle
+  const handleLicenseSelect = useCallback(
+    (rowId: string, license: { id: string; brandName: string } | null) => {
+      if (rowId) {
+        updateMutation.mutate({
+          id: rowId,
+          data: {
+            brand: license?.brandName || "",
+            editDate: new Date().toISOString()
+          }
+        });
+      }
+    },
+    [updateMutation]
+  );
+
+  // Grid context
+  const gridContext = useMemo(
+    () => ({
+      licenses,
+      eftPosModels,
+      onLicenseSelect: handleLicenseSelect
+    }),
+    [licenses, eftPosModels, handleLicenseSelect]
+  );
+
   const handleAdd = useCallback(() => {
     const newCashRegister: Omit<ContractCashRegister, "_id" | "id"> = {
       contractId,
@@ -35,7 +91,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
       licanceId: "",
       legalId: "",
       model: "",
-      type: "",
+      type: "tsm",
       price: 0,
       old_price: 0,
       currency: "tl",
@@ -61,6 +117,17 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     (event: CellValueChangedEvent<ContractCashRegister>) => {
       if (event.data?.id) {
         const { _id, id, contractId: cId, ...updateData } = event.data;
+
+        // Eğer licanceId değiştiyse ve brand zaten güncellenmemişse
+        // (LicenseAutocompleteEditor'dan onLicenseSelect çağrılır, bu durumda brand zaten güncellenir)
+        // Ancak direkt licanceId değişikliği için de brand'ı güncelle
+        if (event.column.getColId() === "licanceId" && event.newValue) {
+          const selectedLicense = licenses.find((l) => l.id === event.newValue);
+          if (selectedLicense) {
+            updateData.brand = selectedLicense.brandName;
+          }
+        }
+
         updateMutation.mutate({
           id: event.data.id,
           data: {
@@ -70,7 +137,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
         });
       }
     },
-    [updateMutation]
+    [updateMutation, licenses]
   );
 
   const handleSelectionChanged = useCallback(
@@ -102,7 +169,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <DetailGridToolbar
         onAdd={handleAdd}
         onDelete={handleDelete}
@@ -110,15 +177,17 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
         loading={isProcessing}
         addLabel="Yazarkasa Ekle"
       />
-      <EditableGrid<ContractCashRegister>
-        data={cashRegisters}
-        columnDefs={contractCashRegistersColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        height="400px"
-      />
+      <div className="flex-1 min-h-0">
+        <EditableGrid<ContractCashRegister>
+          data={cashRegisters}
+          columnDefs={contractCashRegistersColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChanged={handleCellValueChanged}
+          onSelectionChanged={handleSelectionChanged}
+          context={gridContext}
+        />
+      </div>
     </div>
   );
 }

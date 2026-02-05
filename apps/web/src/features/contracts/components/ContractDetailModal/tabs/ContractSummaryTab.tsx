@@ -19,7 +19,7 @@ export function ContractSummaryTab({ contract }: ContractSummaryTabProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-auto">
       {/* Genel Bilgiler */}
       <div className="rounded-lg border border-border bg-surface-elevated p-4">
         <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">

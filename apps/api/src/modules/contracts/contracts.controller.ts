@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, Query } from "@nestjs/common";
 import { ContractsService } from "./contracts.service";
 import { ContractQueryDto } from "./dto/contract-query.dto";
+import { CreateContractDto } from "./dto/create-contract.dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("contracts")
 export class ContractsController {
@@ -14,5 +16,11 @@ export class ContractsController {
   @Get(":id")
   async findOne(@Param("id") id: string) {
     return this.contractsService.findOne(id);
+  }
+
+  @AuditLog({ module: "contracts", entityType: "Contract" })
+  @Post()
+  async create(@Body() dto: CreateContractDto) {
+    return this.contractsService.create(dto);
   }
 }

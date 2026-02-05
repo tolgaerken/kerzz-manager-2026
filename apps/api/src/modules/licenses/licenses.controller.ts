@@ -14,6 +14,7 @@ import { LicensesService } from "./licenses.service";
 import { LicenseQueryDto } from "./dto/license-query.dto";
 import { CreateLicenseDto } from "./dto/create-license.dto";
 import { UpdateLicenseDto } from "./dto/update-license.dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("licenses")
 export class LicensesController {
@@ -29,17 +30,20 @@ export class LicensesController {
     return this.licensesService.findOne(id);
   }
 
+  @AuditLog({ module: "licenses", entityType: "License" })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createLicenseDto: CreateLicenseDto) {
     return this.licensesService.create(createLicenseDto);
   }
 
+  @AuditLog({ module: "licenses", entityType: "License" })
   @Patch(":id")
   update(@Param("id") id: string, @Body() updateLicenseDto: UpdateLicenseDto) {
     return this.licensesService.update(id, updateLicenseDto);
   }
 
+  @AuditLog({ module: "licenses", entityType: "License" })
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param("id") id: string) {

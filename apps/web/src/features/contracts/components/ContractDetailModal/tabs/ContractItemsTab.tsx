@@ -100,7 +100,7 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <DetailGridToolbar
         onAdd={handleAdd}
         onDelete={handleDelete}
@@ -108,15 +108,16 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
         loading={isProcessing}
         addLabel="Kalem Ekle"
       />
-      <EditableGrid<ContractItem>
-        data={items}
-        columnDefs={contractItemsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        height="400px"
-      />
+      <div className="flex-1 min-h-0">
+        <EditableGrid<ContractItem>
+          data={items}
+          columnDefs={contractItemsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChanged={handleCellValueChanged}
+          onSelectionChanged={handleSelectionChanged}
+        />
+      </div>
     </div>
   );
 }

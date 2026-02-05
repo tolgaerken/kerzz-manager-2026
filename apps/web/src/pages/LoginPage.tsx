@@ -8,13 +8,13 @@ export function LoginPage() {
 
   useEffect(() => {
     if (authStatus) {
-      void navigate({ to: "/landing" });
+      void navigate({ to: "/dashboard" });
       return;
     }
 
     void autoLogin().then((success) => {
       if (success) {
-        void navigate({ to: "/landing" });
+        void navigate({ to: "/dashboard" });
       }
     });
   }, [authStatus, autoLogin, navigate]);
@@ -27,7 +27,7 @@ export function LoginPage() {
   async function handleVerifyOtp(gsm: string, otp: string) {
     setError(null);
     await verifyOtp(gsm, otp);
-    void navigate({ to: "/landing" });
+    void navigate({ to: "/dashboard" });
   }
 
   return (

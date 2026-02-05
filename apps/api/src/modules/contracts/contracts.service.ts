@@ -1,13 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model, SortOrder } from "mongoose";
+import { Model, SortOrder } from "mongoose";
 import { Contract, ContractDocument } from "./schemas/contract.schema";
 import { ContractQueryDto } from "./dto/contract-query.dto";
+import { CreateContractDto } from "./dto/create-contract.dto";
 import {
   PaginatedContractsResponseDto,
   ContractResponseDto
 } from "./dto/contract-response.dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class ContractsService {
@@ -19,7 +21,7 @@ export class ContractsService {
   // Tarih bazlı filtreleme için yardımcı metod
   private getDateBasedFilter(
     flow: string
-  ): FilterQuery<ContractDocument> | null {
+  ): Record<string, any> | null {
     const now = new Date();
 
     switch (flow) {
@@ -60,7 +62,7 @@ export class ContractsService {
     const skip = (page - 1) * limit;
 
     // Build filter query
-    let filter: FilterQuery<ContractDocument> = {};
+    let filter: Record<string, any> = {};
 
     // Tarih bazlı flow filtresi
     if (flow && flow !== "all") {
@@ -205,6 +207,101 @@ export class ContractsService {
       .exec();
 
     return count > 0;
+  }
+
+  /**
+   * Yeni kontrat oluşturur
+   */
+  async create(dto: CreateContractDto): Promise<ContractResponseDto> {
+    // Get next contract number
+    const maxNo = await this.getMaxContractNo();
+    const newNo = maxNo + 1;
+
+    // Generate unique IDs
+    const id = this.generateId();
+    const contractId = this.generateShortId();
+
+    const now = new Date();
+
+    const contractData: Partial<Contract> = {
+      id,
+      contractId,
+      no: newNo,
+      customerId: dto.customerId,
+      description: dto.description || "",
+      startDate: new Date(dto.startDate),
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+      noEndDate: dto.noEndDate ?? true,
+      internalFirm: dto.internalFirm || "",
+      yearly: dto.yearly ?? false,
+      maturity: dto.maturity ?? 0,
+      lateFeeType: dto.lateFeeType || "yi-ufe",
+      incraseRateType: dto.incraseRateType || "yi-ufe",
+      incrasePeriod: dto.incrasePeriod || "3-month",
+      incrasePeriood: dto.incrasePeriod || "3-month",
+      noVat: dto.noVat ?? false,
+      noNotification: dto.noNotification ?? false,
+      // Default values
+      brand: "",
+      company: "",
+      contractFlow: "future",
+      total: 0,
+      yearlyTotal: 0,
+      supportTotal: 0,
+      cashRegisterTotal: 0,
+      saasTotal: 0,
+      versionTotal: 0,
+      itemsTotal: 0,
+      erpBalance: 0,
+      enabled: false,
+      blockedLicance: false,
+      isFree: false,
+      hasLog: false,
+      onlineCheck: false,
+      isExtendable: false,
+      lateFee: 0,
+      incraseRate: 0,
+      latePayment: 0,
+      parentTotal: 0,
+      paymentLength: 0,
+      licanceStatus: 0,
+      notify: 0,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const contract = new this.contractModel(contractData);
+    const saved = await contract.save();
+
+    return this.mapToResponseDto(saved.toObject());
+  }
+
+  /**
+   * En yüksek kontrat numarasını getirir
+   */
+  private async getMaxContractNo(): Promise<number> {
+    const result = await this.contractModel
+      .findOne()
+      .sort({ no: -1 })
+      .select("no")
+      .lean()
+      .exec();
+
+    return result?.no || 0;
+  }
+
+  /**
+   * Benzersiz ID üretir (24 karakter hex)
+   */
+  private generateId(): string {
+    return randomBytes(12).toString("hex");
+  }
+
+  /**
+   * Kısa benzersiz ID üretir (8 karakter)
+   */
+  private generateShortId(): string {
+    return randomBytes(4).toString("hex");
   }
 
   private mapToResponseDto(contract: Contract): ContractResponseDto {

@@ -12,6 +12,7 @@ import { CustomersService } from "./customers.service";
 import { CustomerQueryDto } from "./dto/customer-query.dto";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
 import { UpdateCustomerDto } from "./dto/update-customer.dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("customers")
 export class CustomersController {
@@ -27,16 +28,19 @@ export class CustomersController {
     return this.customersService.findOne(id);
   }
 
+  @AuditLog({ module: "customers", entityType: "Customer" })
   @Post()
   async create(@Body() createDto: CreateCustomerDto) {
     return this.customersService.create(createDto);
   }
 
+  @AuditLog({ module: "customers", entityType: "Customer" })
   @Put(":id")
   async update(@Param("id") id: string, @Body() updateDto: UpdateCustomerDto) {
     return this.customersService.update(id, updateDto);
   }
 
+  @AuditLog({ module: "customers", entityType: "Customer" })
   @Delete(":id")
   async remove(@Param("id") id: string) {
     return this.customersService.remove(id);

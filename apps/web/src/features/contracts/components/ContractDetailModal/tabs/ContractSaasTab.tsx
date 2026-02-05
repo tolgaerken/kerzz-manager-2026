@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Cloud } from "lucide-react";
 import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractSaas } from "../../../hooks/useContractDetail";
@@ -7,6 +7,7 @@ import {
   useUpdateContractSaas,
   useDeleteContractSaas
 } from "../../../hooks/useContractDetailMutations";
+import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractSaas } from "../../../types";
 import { EditableGrid, DetailGridToolbar } from "../shared";
 import { contractSaasColumns } from "../columnDefs";
@@ -18,7 +19,11 @@ interface ContractSaasTabProps {
 export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
   const [selectedRow, setSelectedRow] = useState<ContractSaas | null>(null);
 
+  // Data hooks
   const { data, isLoading } = useContractSaas(contractId);
+  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc" });
+
+  // Mutation hooks
   const createMutation = useCreateContractSaas(contractId);
   const updateMutation = useUpdateContractSaas(contractId);
   const deleteMutation = useDeleteContractSaas(contractId);
@@ -27,6 +32,43 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
+
+  // Lisansları grid için hazırla
+  const licenses = useMemo(() => {
+    return licensesData?.data
+      ?.filter((lic) => lic.id != null)
+      .map((lic) => ({
+        _id: lic._id,
+        id: lic.id,
+        brandName: lic.brandName,
+        SearchItem: lic.SearchItem || lic.brandName
+      })) || [];
+  }, [licensesData]);
+
+  // Lisans seçildiğinde brand'ı güncelle
+  const handleLicenseSelect = useCallback(
+    (rowId: string, license: { id: string; brandName: string } | null) => {
+      if (rowId) {
+        updateMutation.mutate({
+          id: rowId,
+          data: {
+            brand: license?.brandName || "",
+            editDate: new Date().toISOString()
+          }
+        });
+      }
+    },
+    [updateMutation]
+  );
+
+  // Grid context
+  const gridContext = useMemo(
+    () => ({
+      licenses,
+      onLicenseSelect: handleLicenseSelect
+    }),
+    [licenses, handleLicenseSelect]
+  );
 
   const handleAdd = useCallback(() => {
     const newSaas: Omit<ContractSaas, "_id" | "id"> = {
@@ -61,6 +103,15 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     (event: CellValueChangedEvent<ContractSaas>) => {
       if (event.data?.id) {
         const { _id, id, contractId: cId, ...updateData } = event.data;
+
+        // licanceId değiştiğinde brand'ı da güncelle
+        if (event.column.getColId() === "licanceId" && event.newValue) {
+          const selectedLicense = licenses.find((l) => l.id === event.newValue);
+          if (selectedLicense) {
+            updateData.brand = selectedLicense.brandName;
+          }
+        }
+
         updateMutation.mutate({
           id: event.data.id,
           data: {
@@ -71,7 +122,7 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
         });
       }
     },
-    [updateMutation]
+    [updateMutation, licenses]
   );
 
   const handleSelectionChanged = useCallback(
@@ -103,7 +154,7 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <DetailGridToolbar
         onAdd={handleAdd}
         onDelete={handleDelete}
@@ -111,15 +162,17 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
         loading={isProcessing}
         addLabel="SaaS Ekle"
       />
-      <EditableGrid<ContractSaas>
-        data={saasList}
-        columnDefs={contractSaasColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        height="400px"
-      />
+      <div className="flex-1 min-h-0">
+        <EditableGrid<ContractSaas>
+          data={saasList}
+          columnDefs={contractSaasColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChanged={handleCellValueChanged}
+          onSelectionChanged={handleSelectionChanged}
+          context={gridContext}
+        />
+      </div>
     </div>
   );
 }

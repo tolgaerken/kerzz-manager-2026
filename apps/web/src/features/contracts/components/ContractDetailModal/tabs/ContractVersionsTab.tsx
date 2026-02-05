@@ -97,7 +97,7 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <DetailGridToolbar
         onAdd={handleAdd}
         onDelete={handleDelete}
@@ -105,15 +105,16 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
         loading={isProcessing}
         addLabel="Versiyon Ekle"
       />
-      <EditableGrid<ContractVersion>
-        data={versions}
-        columnDefs={contractVersionsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        height="400px"
-      />
+      <div className="flex-1 min-h-0">
+        <EditableGrid<ContractVersion>
+          data={versions}
+          columnDefs={contractVersionsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChanged={handleCellValueChanged}
+          onSelectionChanged={handleSelectionChanged}
+        />
+      </div>
     </div>
   );
 }

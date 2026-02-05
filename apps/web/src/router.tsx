@@ -8,6 +8,8 @@ import { HardwareProductsPage } from "./pages/HardwareProductsPage";
 import { SoftwareProductsPage } from "./pages/SoftwareProductsPage";
 import { SalesPage } from "./pages/SalesPage";
 import { IntegratorPage } from "./pages/IntegratorPage";
+import { InvoicesPage } from "./pages/InvoicesPage";
+import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -97,6 +99,20 @@ const softwareProductsRoute = createRoute({
   component: SoftwareProductsPage,
 });
 
+// Invoices page
+const invoicesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/finance/invoices",
+  component: InvoicesPage,
+});
+
+// System Logs page
+const systemLogsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/system/logs",
+  component: SystemLogsPage,
+});
+
 // Index redirect
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -118,6 +134,8 @@ const routeTree = rootRoute.addChildren([
     softwareProductsRoute,
     salesRoute,
     integratorRoute,
+    invoicesRoute,
+    systemLogsRoute,
   ]),
 ]);
 

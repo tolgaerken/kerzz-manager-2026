@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
   AllCommunityModule,
@@ -21,6 +21,7 @@ interface EditableGridProps<T> {
   getRowId: (data: T) => string;
   onCellValueChanged?: (params: CellValueChangedEvent<T>) => void;
   onSelectionChanged?: (selectedRow: T | null) => void;
+  context?: Record<string, unknown>;
   height?: string;
 }
 
@@ -31,6 +32,7 @@ export function EditableGrid<T>({
   getRowId,
   onCellValueChanged,
   onSelectionChanged,
+  context,
   height = "100%"
 }: EditableGridProps<T>) {
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -69,6 +71,13 @@ export function EditableGrid<T>({
     [onSelectionChanged]
   );
 
+  // Context değiştiğinde hücreleri refresh et
+  useEffect(() => {
+    if (gridRef.current?.api && context) {
+      gridRef.current.api.refreshCells({ force: true });
+    }
+  }, [context]);
+
   // Custom theme
   const customTheme = themeQuartz.withParams({
     backgroundColor: "var(--color-surface)",
@@ -88,8 +97,8 @@ export function EditableGrid<T>({
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center bg-surface"
-        style={{ height }}
+        className="flex items-center justify-center bg-surface h-full w-full"
+        style={height !== "100%" ? { height } : undefined}
       >
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
@@ -97,13 +106,14 @@ export function EditableGrid<T>({
   }
 
   return (
-    <div className="w-full" style={{ height }}>
+    <div className="w-full h-full" style={height !== "100%" ? { height } : undefined}>
       <AgGridReact<T>
         ref={gridRef}
         theme={customTheme}
         rowData={data}
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
+        context={context}
         onGridReady={onGridReady}
         onCellValueChanged={handleCellValueChanged}
         onSelectionChanged={handleSelectionChanged}

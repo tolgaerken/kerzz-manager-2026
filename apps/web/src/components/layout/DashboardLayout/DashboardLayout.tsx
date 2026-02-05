@@ -1,6 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { Sidebar } from "../Sidebar";
 import { Header } from "../Header";
+import { LogPanel } from "../../../features/logs";
 
 export function DashboardLayout() {
   return (
@@ -14,6 +15,9 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Log Panel */}
+      <LogPanel />
     </div>
   );
 }

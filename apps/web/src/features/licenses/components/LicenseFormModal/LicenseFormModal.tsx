@@ -182,12 +182,12 @@ export function LicenseFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-4xl mx-4 bg-[var(--color-surface)] rounded-lg shadow-xl max-h-[90vh] flex flex-col">
+      {/* Modal - Fullscreen */}
+      <div className="relative z-10 w-full h-full bg-[var(--color-surface)] shadow-xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] shrink-0">
           <div className="flex items-center gap-3">

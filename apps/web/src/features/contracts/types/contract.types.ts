@@ -56,6 +56,22 @@ export interface ContractsResponse {
   counts: ContractCounts;
 }
 
+export interface CreateContractInput {
+  customerId: string;
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  noEndDate?: boolean;
+  internalFirm?: string;
+  yearly?: boolean;
+  maturity?: number;
+  lateFeeType?: string;
+  incraseRateType?: string;
+  incrasePeriod?: string;
+  noVat?: boolean;
+  noNotification?: boolean;
+}
+
 // Contract Detail Types
 export type Currency = "tl" | "usd" | "eur";
 

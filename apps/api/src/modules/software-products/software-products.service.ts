@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model, SortOrder } from "mongoose";
+import { Model, SortOrder } from "mongoose";
 import { SoftwareProduct, SoftwareProductDocument } from "./schemas/software-product.schema";
 import { SoftwareProductQueryDto } from "./dto/software-product-query.dto";
 import {
@@ -34,7 +34,7 @@ export class SoftwareProductsService {
     const skip = (page - 1) * limit;
 
     // Build filter query
-    let filter: FilterQuery<SoftwareProductDocument> = {};
+    let filter: Record<string, any> = {};
 
     // Sale active filter
     if (saleActive !== undefined) {

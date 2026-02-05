@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { HeartHandshake } from "lucide-react";
 import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractSupports } from "../../../hooks/useContractDetail";
@@ -7,6 +7,7 @@ import {
   useUpdateContractSupport,
   useDeleteContractSupport
 } from "../../../hooks/useContractDetailMutations";
+import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractSupport } from "../../../types";
 import { EditableGrid, DetailGridToolbar } from "../shared";
 import { contractSupportsColumns } from "../columnDefs";
@@ -18,7 +19,11 @@ interface ContractSupportsTabProps {
 export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
   const [selectedRow, setSelectedRow] = useState<ContractSupport | null>(null);
 
+  // Data hooks
   const { data, isLoading } = useContractSupports(contractId);
+  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc" });
+
+  // Mutation hooks
   const createMutation = useCreateContractSupport(contractId);
   const updateMutation = useUpdateContractSupport(contractId);
   const deleteMutation = useDeleteContractSupport(contractId);
@@ -27,6 +32,43 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
+
+  // Lisansları grid için hazırla
+  const licenses = useMemo(() => {
+    return licensesData?.data
+      ?.filter((lic) => lic.id != null)
+      .map((lic) => ({
+        _id: lic._id,
+        id: lic.id,
+        brandName: lic.brandName,
+        SearchItem: lic.SearchItem || lic.brandName
+      })) || [];
+  }, [licensesData]);
+
+  // Lisans seçildiğinde brand'ı güncelle
+  const handleLicenseSelect = useCallback(
+    (rowId: string, license: { id: string; brandName: string } | null) => {
+      if (rowId) {
+        updateMutation.mutate({
+          id: rowId,
+          data: {
+            brand: license?.brandName || "",
+            editDate: new Date().toISOString()
+          }
+        });
+      }
+    },
+    [updateMutation]
+  );
+
+  // Grid context
+  const gridContext = useMemo(
+    () => ({
+      licenses,
+      onLicenseSelect: handleLicenseSelect
+    }),
+    [licenses, handleLicenseSelect]
+  );
 
   const handleAdd = useCallback(() => {
     const newSupport: Omit<ContractSupport, "_id" | "id"> = {
@@ -60,6 +102,15 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     (event: CellValueChangedEvent<ContractSupport>) => {
       if (event.data?.id) {
         const { _id, id, contractId: cId, ...updateData } = event.data;
+
+        // licanceId değiştiğinde brand'ı da güncelle
+        if (event.column.getColId() === "licanceId" && event.newValue) {
+          const selectedLicense = licenses.find((l) => l.id === event.newValue);
+          if (selectedLicense) {
+            updateData.brand = selectedLicense.brandName;
+          }
+        }
+
         updateMutation.mutate({
           id: event.data.id,
           data: {
@@ -69,7 +120,7 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
         });
       }
     },
-    [updateMutation]
+    [updateMutation, licenses]
   );
 
   const handleSelectionChanged = useCallback(
@@ -101,7 +152,7 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       <DetailGridToolbar
         onAdd={handleAdd}
         onDelete={handleDelete}
@@ -109,15 +160,17 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
         loading={isProcessing}
         addLabel="Destek Ekle"
       />
-      <EditableGrid<ContractSupport>
-        data={supports}
-        columnDefs={contractSupportsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        height="400px"
-      />
+      <div className="flex-1 min-h-0">
+        <EditableGrid<ContractSupport>
+          data={supports}
+          columnDefs={contractSupportsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChanged={handleCellValueChanged}
+          onSelectionChanged={handleSelectionChanged}
+          context={gridContext}
+        />
+      </div>
     </div>
   );
 }

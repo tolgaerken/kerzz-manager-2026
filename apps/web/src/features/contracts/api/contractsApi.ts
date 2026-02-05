@@ -1,5 +1,5 @@
 import { CONTRACTS_CONSTANTS } from "../constants/contracts.constants";
-import type { ContractQueryParams, ContractsResponse, Contract } from "../types";
+import type { ContractQueryParams, ContractsResponse, Contract, CreateContractInput } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACTS_CONSTANTS;
 
@@ -49,6 +49,21 @@ export async function fetchContractById(id: string): Promise<Contract> {
       "Content-Type": "application/json",
       Accept: "application/json"
     }
+  });
+
+  return handleResponse<Contract>(response);
+}
+
+export async function createContract(data: CreateContractInput): Promise<Contract> {
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify(data)
   });
 
   return handleResponse<Contract>(response);

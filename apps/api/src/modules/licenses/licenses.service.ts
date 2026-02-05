@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model, SortOrder } from "mongoose";
+import { Model, SortOrder } from "mongoose";
 import { License, LicenseDocument } from "./schemas/license.schema";
 import { LicenseQueryDto } from "./dto/license-query.dto";
 import {
@@ -40,7 +40,7 @@ export class LicensesService {
     const skip = (page - 1) * limit;
 
     // Build filter query
-    let filter: FilterQuery<LicenseDocument> = {};
+    let filter: Record<string, unknown> = {};
 
     // Type filter
     if (type) {
@@ -235,9 +235,9 @@ export class LicensesService {
 
   private getTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      "kerzz-pos": "Kerzz POS",
-      "orwi-pos": "Orwi POS",
-      "kerzz-cloud": "Kerzz Cloud"
+      "kerzz-pos": "KP",
+      "orwi-pos": "OP",
+      "kerzz-cloud": "KC"
     };
     return labels[type] || "*";
   }
@@ -288,6 +288,14 @@ export class LicensesService {
     };
   }
 
+  private transformSearchItem(searchItem: string): string {
+    if (!searchItem) return searchItem;
+    return searchItem
+      .replace("[Kerzz POS]", "[KP]")
+      .replace("[Orwi POS]", "[OP]")
+      .replace("[Kerzz Cloud]", "[KC]");
+  }
+
   private mapToResponseDto(license: License, haveContract: boolean): LicenseResponseDto {
     return {
       _id: license._id.toString(),
@@ -331,7 +339,7 @@ export class LicensesService {
       type: license.type,
       currentVersion: license.currentVersion,
       orwiStore: license.orwiStore || { id: "", name: "", cloudId: "" },
-      SearchItem: license.SearchItem,
+      SearchItem: this.transformSearchItem(license.SearchItem),
       companyType: license.companyType,
       kitchenType: license.kitchenType,
       category: license.category

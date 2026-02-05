@@ -9,7 +9,8 @@ import {
   Cloud,
   Package,
   FileText,
-  Receipt
+  Receipt,
+  MessageSquare
 } from "lucide-react";
 import type { Contract } from "../../types";
 import {
@@ -23,6 +24,7 @@ import {
   ContractDocumentsTab,
   ContractPaymentsTab
 } from "./tabs";
+import { useLogPanelStore } from "../../../logs/store/logPanelStore";
 
 interface ContractDetailModalProps {
   isOpen: boolean;
@@ -66,6 +68,7 @@ export function ContractDetailModal({
 }: ContractDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [loadedTabs, setLoadedTabs] = useState<Record<TabId, boolean>>({ summary: true } as Record<TabId, boolean>);
+  const { openPanel } = useLogPanelStore();
 
   const handleTabChange = useCallback((tabId: TabId) => {
     setActiveTab(tabId);
@@ -77,6 +80,15 @@ export function ContractDetailModal({
     // Reset to summary tab on close
     setActiveTab("summary");
   }, [onClose]);
+
+  const handleOpenLogs = useCallback(() => {
+    openPanel({
+      customerId: contract.customerId,
+      contextType: "contract",
+      contextId: contract.id,
+      title: `${contract.brand} - Loglar`
+    });
+  }, [openPanel, contract]);
 
   if (!isOpen) return null;
 
@@ -113,8 +125,8 @@ export function ContractDetailModal({
         onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-6xl mx-4 bg-surface rounded-lg shadow-xl max-h-[90vh] flex flex-col">
+      {/* Modal - Full Screen */}
+      <div className="relative z-10 w-full h-full bg-surface shadow-xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <div className="flex-1 min-w-0">
@@ -126,8 +138,15 @@ export function ContractDetailModal({
             </p>
           </div>
           <button
-            onClick={handleClose}
+            onClick={handleOpenLogs}
             className="ml-4 p-2 rounded-lg hover:bg-surface-elevated transition-colors"
+            title="Logları Görüntüle"
+          >
+            <MessageSquare className="w-5 h-5 text-primary" />
+          </button>
+          <button
+            onClick={handleClose}
+            className="p-2 rounded-lg hover:bg-surface-elevated transition-colors"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -152,7 +171,7 @@ export function ContractDetailModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col px-6 py-4">
           {renderTabContent()}
         </div>
 

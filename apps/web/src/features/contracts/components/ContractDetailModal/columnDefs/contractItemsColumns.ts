@@ -1,26 +1,42 @@
 import type { ColDef } from "ag-grid-community";
 import type { ContractItem } from "../../../types";
-
-const currencyOptions = ["tl", "usd", "eur"];
+import { CURRENCY_OPTIONS } from "../../../constants";
+import { SelectCellEditor } from "../shared/cellEditors/SelectCellEditor";
 
 export const contractItemsColumns: ColDef<ContractItem>[] = [
   {
+    field: "enabled",
+    headerName: "Aktif",
+    width: 70,
+    cellRenderer: (params: { value: boolean }) =>
+      params.value ? "✓" : "✗",
+    cellEditor: "agSelectCellEditor",
+    cellEditorParams: {
+      values: [true, false]
+    }
+  },
+  {
     field: "itemId",
-    headerName: "Ürün Kodu",
-    flex: 1,
-    minWidth: 100
+    headerName: "Ürün",
+    width: 120,
+    flex: 1
   },
   {
     field: "description",
     headerName: "Açıklama",
     flex: 2,
-    minWidth: 180
+    minWidth: 150
+  },
+  {
+    field: "qty",
+    headerName: "Adet",
+    width: 70,
+    type: "numericColumn"
   },
   {
     field: "price",
     headerName: "Fiyat",
-    flex: 1,
-    minWidth: 100,
+    width: 100,
     type: "numericColumn",
     valueFormatter: (params) => {
       if (params.value == null) return "";
@@ -31,52 +47,33 @@ export const contractItemsColumns: ColDef<ContractItem>[] = [
     }
   },
   {
-    field: "qty",
-    headerName: "Adet",
-    flex: 0.5,
-    minWidth: 70,
-    type: "numericColumn"
+    field: "yearly",
+    headerName: "Yıllık",
+    width: 70,
+    cellRenderer: (params: { value: boolean }) =>
+      params.value ? "Evet" : "Hayır",
+    cellEditor: "agSelectCellEditor",
+    cellEditorParams: {
+      values: [true, false]
+    }
   },
   {
     field: "currency",
     headerName: "Döviz",
-    flex: 0.5,
-    minWidth: 80,
-    cellEditor: "agSelectCellEditor",
+    width: 80,
+    cellEditor: SelectCellEditor,
     cellEditorParams: {
-      values: currencyOptions
+      options: CURRENCY_OPTIONS
     },
-    valueFormatter: (params) => params.value?.toUpperCase() || ""
-  },
-  {
-    field: "yearly",
-    headerName: "Yıllık",
-    flex: 0.5,
-    minWidth: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
+    valueFormatter: (params) => {
+      const found = CURRENCY_OPTIONS.find((c) => c.id === params.value);
+      return found?.name || params.value?.toUpperCase() || "";
     }
   },
   {
     field: "qtyDynamic",
-    headerName: "Dinamik Adet",
-    flex: 0.5,
-    minWidth: 100,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
-  },
-  {
-    field: "enabled",
-    headerName: "Aktif",
-    flex: 0.5,
-    minWidth: 80,
+    headerName: "D.Adet",
+    width: 80,
     cellRenderer: (params: { value: boolean }) =>
       params.value ? "Evet" : "Hayır",
     cellEditor: "agSelectCellEditor",
@@ -87,8 +84,7 @@ export const contractItemsColumns: ColDef<ContractItem>[] = [
   {
     field: "editDate",
     headerName: "Düzenleme",
-    flex: 1,
-    minWidth: 100,
+    width: 100,
     editable: false,
     valueFormatter: (params) => {
       if (!params.value) return "";

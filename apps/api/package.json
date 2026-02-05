@@ -23,10 +23,12 @@
     "passport": "latest",
     "passport-jwt": "latest",
     "reflect-metadata": "latest",
-    "rxjs": "latest"
+    "rxjs": "latest",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "latest",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
     "eslint": "latest",
