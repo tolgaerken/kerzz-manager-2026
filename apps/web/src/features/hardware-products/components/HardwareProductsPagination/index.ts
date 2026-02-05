@@ -1,0 +1,1 @@
+export { HardwareProductsPagination } from "./HardwareProductsPagination";

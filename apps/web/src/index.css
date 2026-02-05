@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+/* ============================================
+   TEMA SİSTEMİ - CSS DEĞİŞKENLERİ
+   ============================================ */
+
+@theme {
+  --font-family-sans: "Inter", system-ui, sans-serif;
+  
+  /* Custom animation for blob */
+  --animate-blob: blob 7s infinite;
+
+  /* Semantic renk token'ları - Tailwind'e expose ediliyor */
+  --color-background: var(--theme-background);
+  --color-surface: var(--theme-surface);
+  --color-surface-elevated: var(--theme-surface-elevated);
+  --color-surface-hover: var(--theme-surface-hover);
+
+  --color-foreground: var(--theme-foreground);
+  --color-muted: var(--theme-muted);
+  --color-muted-foreground: var(--theme-muted-foreground);
+  --color-subtle: var(--theme-subtle);
+
+  --color-border: var(--theme-border);
+  --color-border-subtle: var(--theme-border-subtle);
+
+  --color-primary: var(--theme-primary);
+  --color-primary-hover: var(--theme-primary-hover);
+  --color-primary-foreground: var(--theme-primary-foreground);
+
+  --color-accent: var(--theme-accent);
+  --color-accent-foreground: var(--theme-accent-foreground);
+
+  --color-success: var(--theme-success);
+  --color-success-foreground: var(--theme-success-foreground);
+  --color-warning: var(--theme-warning);
+  --color-warning-foreground: var(--theme-warning-foreground);
+  --color-error: var(--theme-error);
+  --color-error-foreground: var(--theme-error-foreground);
+  --color-info: var(--theme-info);
+  --color-info-foreground: var(--theme-info-foreground);
+}
+
+/* ============================================
+   DARK TEMA (VARSAYILAN)
+   ============================================ */
+:root {
+  color-scheme: dark;
+
+  /* Arka planlar */
+  --theme-background: oklch(0.13 0.02 260);
+  --theme-surface: oklch(0.16 0.02 260);
+  --theme-surface-elevated: oklch(0.21 0.02 260);
+  --theme-surface-hover: oklch(0.27 0.02 260);
+
+  /* Metinler */
+  --theme-foreground: oklch(1 0 0);
+  --theme-muted: oklch(0.70 0.02 260);
+  --theme-muted-foreground: oklch(0.77 0.02 260);
+  --theme-subtle: oklch(0.55 0.02 260);
+
+  /* Border'lar */
+  --theme-border: oklch(0.21 0.02 260);
+  --theme-border-subtle: oklch(0.27 0.02 260);
+
+  /* Primary (palete göre değişir) */
+  --theme-primary: oklch(0.65 0.25 290);
+  --theme-primary-hover: oklch(0.60 0.27 290);
+  --theme-primary-foreground: oklch(1 0 0);
+
+  /* Accent (palete göre değişir) */
+  --theme-accent: oklch(0.70 0.20 290);
+  --theme-accent-foreground: oklch(0.20 0.05 290);
+
+  /* Semantic renkler */
+  --theme-success: oklch(0.70 0.18 145);
+  --theme-success-foreground: oklch(0.85 0.12 145);
+  --theme-warning: oklch(0.80 0.18 85);
+  --theme-warning-foreground: oklch(0.90 0.12 85);
+  --theme-error: oklch(0.65 0.22 25);
+  --theme-error-foreground: oklch(0.85 0.15 25);
+  --theme-info: oklch(0.70 0.15 250);
+  --theme-info-foreground: oklch(0.85 0.10 250);
+}
+
+/* ============================================
+   LIGHT TEMA
+   ============================================ */
+:root.light {
+  color-scheme: light;
+
+  /* Arka planlar */
+  --theme-background: oklch(0.98 0.005 260);
+  --theme-surface: oklch(1 0 0);
+  --theme-surface-elevated: oklch(0.97 0.005 260);
+  --theme-surface-hover: oklch(0.94 0.008 260);
+
+  /* Metinler */
+  --theme-foreground: oklch(0.15 0.02 260);
+  --theme-muted: oklch(0.45 0.02 260);
+  --theme-muted-foreground: oklch(0.35 0.02 260);
+  --theme-subtle: oklch(0.55 0.02 260);
+
+  /* Border'lar */
+  --theme-border: oklch(0.88 0.01 260);
+  --theme-border-subtle: oklch(0.92 0.008 260);
+
+  /* Primary (palete göre değişir) */
+  --theme-primary: oklch(0.55 0.25 290);
+  --theme-primary-hover: oklch(0.50 0.27 290);
+  --theme-primary-foreground: oklch(1 0 0);
+
+  /* Accent (palete göre değişir) */
+  --theme-accent: oklch(0.60 0.20 290);
+  --theme-accent-foreground: oklch(0.95 0.02 290);
+
+  /* Semantic renkler */
+  --theme-success: oklch(0.55 0.18 145);
+  --theme-success-foreground: oklch(0.30 0.10 145);
+  --theme-warning: oklch(0.70 0.18 85);
+  --theme-warning-foreground: oklch(0.30 0.10 85);
+  --theme-error: oklch(0.55 0.22 25);
+  --theme-error-foreground: oklch(0.30 0.10 25);
+  --theme-info: oklch(0.55 0.15 250);
+  --theme-info-foreground: oklch(0.30 0.08 250);
+}
+
+/* ============================================
+   RENK PALETLERİ
+   ============================================ */
+
+/* Mor Palet (Varsayılan) */
+:root.palette-purple {
+  --theme-primary: oklch(0.65 0.25 290);
+  --theme-primary-hover: oklch(0.60 0.27 290);
+  --theme-accent: oklch(0.70 0.20 290);
+}
+:root.light.palette-purple {
+  --theme-primary: oklch(0.55 0.25 290);
+  --theme-primary-hover: oklch(0.50 0.27 290);
+  --theme-accent: oklch(0.60 0.20 290);
+}
+
+/* Mavi Palet */
+:root.palette-blue {
+  --theme-primary: oklch(0.60 0.20 250);
+  --theme-primary-hover: oklch(0.55 0.22 250);
+  --theme-accent: oklch(0.70 0.15 250);
+}
+:root.light.palette-blue {
+  --theme-primary: oklch(0.50 0.20 250);
+  --theme-primary-hover: oklch(0.45 0.22 250);
+  --theme-accent: oklch(0.55 0.15 250);
+}
+
+/* Turkuaz Palet */
+:root.palette-teal {
+  --theme-primary: oklch(0.70 0.15 180);
+  --theme-primary-hover: oklch(0.65 0.17 180);
+  --theme-primary-foreground: oklch(0.15 0.02 180);
+  --theme-accent: oklch(0.75 0.12 180);
+}
+:root.light.palette-teal {
+  --theme-primary: oklch(0.55 0.15 180);
+  --theme-primary-hover: oklch(0.50 0.17 180);
+  --theme-primary-foreground: oklch(0.98 0.01 180);
+  --theme-accent: oklch(0.60 0.12 180);
+}
+
+/* Gül Palet */
+:root.palette-rose {
+  --theme-primary: oklch(0.65 0.22 10);
+  --theme-primary-hover: oklch(0.60 0.24 10);
+  --theme-accent: oklch(0.70 0.18 10);
+}
+:root.light.palette-rose {
+  --theme-primary: oklch(0.55 0.22 10);
+  --theme-primary-hover: oklch(0.50 0.24 10);
+  --theme-accent: oklch(0.60 0.18 10);
+}
+
+/* ============================================
+   ANİMASYONLAR
+   ============================================ */
+
+/* Blob animation keyframes */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+/* Custom utility classes */
+@utility animate-blob {
+  animation: blob 7s infinite;
+}
+
+@utility animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+@utility animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* ============================================
+   GENEL STİLLER
+   ============================================ */
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Tema geçiş animasyonu */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Animasyon tercihlerine saygı */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}

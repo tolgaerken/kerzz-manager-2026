@@ -1,0 +1,106 @@
+# Cursor Rules – STRICT MODE (AI Coding)
+
+## 0. Hard Rule: Plan Mode ZORUNLU
+- 3+ adım, mimari karar veya refactor içeren HER işte:
+  ❌ Koda başlama
+  ✅ Önce plan yaz
+- Plan yazılmadan tek satır kod üretme
+- Plansız yazılan kod GEÇERSİZ kabul edilir
+
+---
+
+## 1. Plan Mode Enforcement
+- Plan mutlaka `tasks/plan.md` içine yazılacak
+- Plan:
+  - Numara verilmiş
+  - Check edilebilir
+  - Sıralı adımlar içermeli
+- Plan onaylanmadan implementasyona geçme
+- Plan değişirse:
+  - DUR
+  - Planı güncelle
+  - Sonra devam et
+
+---
+
+## 2. Task Source of Truth
+- Tüm işler `tasks/todo.md` üzerinden yürür
+- Todo’ya girmeyen iş YAPILMAZ
+- Scope dışı iş fark edilirse:
+  - Kodu durdur
+  - Todo’ya ekle
+  - Planı güncelle
+
+---
+
+## 3. Subagent Zorunluluğu
+- Araştırma, karşılaştırma, alternatif çözüm:
+  → Subagent kullan
+- Ana agent sadece:
+  - Planlama
+  - Karar
+  - Final implementasyon yapar
+- **Bir subagent = tek problem**
+
+---
+
+## 4. Zero Mercy Verification
+- Çalıştığını kanıtlamadan “done” yok
+- Şunlardan EN AZ biri zorunlu:
+  - Test çıktısı
+  - Log
+  - Diff
+  - Somut çalışma örneği
+- “Bence çalışıyor” kabul edilmez
+
+---
+
+## 5. Staff Engineer Bar
+- Her değişiklikte sor:
+  **“Bu kodu bir Staff Engineer görse utanır mıyım?”**
+- Hack, shortcut, geçici çözüm:
+  ❌ Yasak
+- Root cause çözülmeden iş bitmiş sayılmaz
+
+---
+
+## 6. Autonomous Bug Fixing (NO QUESTIONS)
+- Bug verildiyse:
+  - Soru sorma
+  - Yönlendirme isteme
+  - Direkt çöz
+- Log → failing test → fix → verify sırası zorunlu
+- CI kırık kalamaz
+
+---
+
+## 7. Lessons Are Law
+- Yapılan HER hata `tasks/lessons.md` içine yazılır
+- Aynı hata ikinci kez yapılırsa:
+  ❌ Büyük başarısızlık
+- Lessons kurala dönüşür ve uygulanır
+
+---
+
+## 8. Decision Logging
+- Mimari / teknik karar alındıysa:
+  → `tasks/decisions.md`
+- “Neden böyle” yazılmadan karar geçersizdir
+
+---
+
+## 9. Completion Protocol
+Bir iş ancak şu şartlarla DONE olur:
+- [ ] Todo tamamlandı
+- [ ] Plan adımları işaretlendi
+- [ ] Doğrulama yapıldı
+- [ ] Review yazıldı
+- [ ] Gerekliyse lesson eklendi
+
+---
+
+## 10. Core Principles (NON-NEGOTIABLE)
+- Simplicity > Cleverness
+- Correctness > Speed
+- Maintainability > Ego
+- Minimal change > Big rewrite

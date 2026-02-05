@@ -1,0 +1,1 @@
+export { HardwareProductsGrid } from "./HardwareProductsGrid";

@@ -1,0 +1,9 @@
+export { LoginPage } from "./LoginPage";
+export { LandingPage } from "./LandingPage";
+export { DashboardPage } from "./DashboardPage";
+export { ContractsPage } from "./ContractsPage";
+export { CustomersPage } from "./CustomersPage";
+export { HardwareProductsPage } from "./HardwareProductsPage";
+export { SoftwareProductsPage } from "./SoftwareProductsPage";
+export { SalesPage } from "./SalesPage";
+export { IntegratorPage } from "./IntegratorPage";

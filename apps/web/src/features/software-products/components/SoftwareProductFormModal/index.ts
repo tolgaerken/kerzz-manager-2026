@@ -1,0 +1,1 @@
+export { SoftwareProductFormModal } from "./SoftwareProductFormModal";

@@ -1,0 +1,9 @@
+{
+  "name": "@kerzz/config",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "eslint.base.cjs",
+    "tsconfig.base.json"
+  ]
+}

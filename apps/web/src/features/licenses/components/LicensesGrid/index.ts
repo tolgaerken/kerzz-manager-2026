@@ -1,0 +1,1 @@
+export { LicensesGrid } from "./LicensesGrid";
