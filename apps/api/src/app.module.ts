@@ -30,6 +30,8 @@ import { NotificationDispatchModule } from "./modules/notification-dispatch";
 import { NotificationSettingsModule } from "./modules/notification-settings";
 import { NotificationQueueModule } from "./modules/notification-queue";
 import { CronJobsModule } from "./modules/cron-jobs";
+import { PaytrModule } from "./modules/paytr";
+import { AutomatedPaymentsModule } from "./modules/automated-payments";
 
 @Module({
   imports: [
@@ -55,6 +57,8 @@ import { CronJobsModule } from "./modules/cron-jobs";
     // Finance Modules
     InvoicesModule,
     PaymentsModule,
+    PaytrModule,
+    AutomatedPaymentsModule,
     // Log & Notification Modules
     LogsModule,
     NotificationsModule,

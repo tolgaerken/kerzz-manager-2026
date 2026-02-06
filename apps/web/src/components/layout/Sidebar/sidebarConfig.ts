@@ -41,6 +41,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     subItems: [
       { label: "Faturalar", path: "/finance/invoices" },
       { label: "Online Ödemeler", path: "/finance/payments" },
+      { label: "Otomatik Ödemeler", path: "/finance/automated-payments" },
     ],
   },
   {

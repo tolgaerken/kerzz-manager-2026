@@ -10,6 +10,7 @@ import { SalesPage } from "./pages/SalesPage";
 import { IntegratorPage } from "./pages/IntegratorPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
+import { AutomatedPaymentsPage } from "./pages/AutomatedPaymentsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
@@ -118,6 +119,13 @@ const paymentsRoute = createRoute({
   component: PaymentsPage,
 });
 
+// Automated Payments page
+const automatedPaymentsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/finance/automated-payments",
+  component: AutomatedPaymentsPage,
+});
+
 // Public payment form (no auth)
 const publicPaymentFormRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -179,6 +187,7 @@ const routeTree = rootRoute.addChildren([
     integratorRoute,
     invoicesRoute,
     paymentsRoute,
+    automatedPaymentsRoute,
     systemLogsRoute,
     notificationSettingsRoute,
   ]),

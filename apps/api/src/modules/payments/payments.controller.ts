@@ -6,7 +6,9 @@ import {
   Param,
   Query,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  Header,
+  Req,
 } from "@nestjs/common";
 import { PaymentsService } from "./payments.service";
 import { CreatePaymentLinkDto } from "./dto/create-payment-link.dto";
@@ -36,5 +38,35 @@ export class PaymentsController {
   @HttpCode(HttpStatus.OK)
   async sendNotification(@Param("linkId") linkId: string) {
     return this.paymentsService.sendNotification(linkId);
+  }
+
+  /**
+   * PayTR callback endpoint (public - auth gerektirmez).
+   * PayTR odeme sonucunu bu endpointe POST eder.
+   */
+  @Post("callback")
+  @HttpCode(HttpStatus.OK)
+  @Header("Content-Type", "text/plain")
+  async paymentCallback(@Body() body: Record<string, any>) {
+    await this.paymentsService.handleCallback(body);
+    return "OK";
+  }
+
+  /**
+   * PayTR basari redirect (GET).
+   */
+  @Get("success")
+  @Header("Content-Type", "text/plain")
+  async successPayment() {
+    return "OK";
+  }
+
+  /**
+   * PayTR hata redirect (GET).
+   */
+  @Get("error")
+  @Header("Content-Type", "text/plain")
+  async errorPayment() {
+    return "OK";
   }
 }
