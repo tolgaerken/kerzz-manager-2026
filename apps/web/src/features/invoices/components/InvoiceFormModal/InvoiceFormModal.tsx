@@ -67,7 +67,7 @@ export function InvoiceFormModal({
   if (!invoice) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Fatura Detayı" size="lg">
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">

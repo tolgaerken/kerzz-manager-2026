@@ -9,8 +9,12 @@ import { SoftwareProductsPage } from "./pages/SoftwareProductsPage";
 import { SalesPage } from "./pages/SalesPage";
 import { IntegratorPage } from "./pages/IntegratorPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
+import { PaymentsPage } from "./pages/PaymentsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
+import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
+import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
+import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -107,6 +111,34 @@ const invoicesRoute = createRoute({
   component: InvoicesPage,
 });
 
+// Payments page (admin)
+const paymentsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/finance/payments",
+  component: PaymentsPage,
+});
+
+// Public payment form (no auth)
+const publicPaymentFormRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/odeme/$linkId",
+  component: PublicPaymentFormPage,
+});
+
+// Public payment success (no auth)
+const publicPaymentOkRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/payment_ok/$id",
+  component: PublicPaymentOkPage,
+});
+
+// Public payment error (no auth)
+const publicPaymentErrorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/payment_error/$id",
+  component: PublicPaymentErrorPage,
+});
+
 // System Logs page
 const systemLogsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -133,6 +165,9 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  publicPaymentFormRoute,
+  publicPaymentOkRoute,
+  publicPaymentErrorRoute,
   dashboardLayoutRoute.addChildren([
     dashboardRoute,
     contractsRoute,
@@ -143,6 +178,7 @@ const routeTree = rootRoute.addChildren([
     salesRoute,
     integratorRoute,
     invoicesRoute,
+    paymentsRoute,
     systemLogsRoute,
     notificationSettingsRoute,
   ]),

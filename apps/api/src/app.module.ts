@@ -18,6 +18,7 @@ import { ContractItemsModule } from "./modules/contract-items";
 import { ContractDocumentsModule } from "./modules/contract-documents";
 import { ContractPaymentsModule } from "./modules/contract-payments";
 import { InvoicesModule } from "./modules/invoices";
+import { PaymentsModule } from "./modules/payments";
 import { LogsModule } from "./modules/logs";
 import { NotificationsModule } from "./modules/notifications";
 import { SystemLogsModule, AuditLogInterceptor } from "./modules/system-logs";
@@ -53,6 +54,7 @@ import { CronJobsModule } from "./modules/cron-jobs";
     ContractPaymentsModule,
     // Finance Modules
     InvoicesModule,
+    PaymentsModule,
     // Log & Notification Modules
     LogsModule,
     NotificationsModule,
