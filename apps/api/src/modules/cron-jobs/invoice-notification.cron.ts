@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -16,6 +17,7 @@ import {
   NotificationDispatchService,
   DispatchNotificationDto,
 } from "../notification-dispatch";
+import { PaymentsService } from "../payments/payments.service";
 import {
   buildInvoiceTemplateData,
 } from "../notification-queue/notification-data.helper";
@@ -26,6 +28,9 @@ import {
 
 @Injectable()
 export class InvoiceNotificationCron {
+  private readonly logger = new Logger(InvoiceNotificationCron.name);
+  private readonly paymentBaseUrl: string;
+
   constructor(
     @InjectModel(Invoice.name, CONTRACT_DB_CONNECTION)
     private invoiceModel: Model<InvoiceDocument>,
@@ -33,8 +38,46 @@ export class InvoiceNotificationCron {
     private customerModel: Model<CustomerDocument>,
     private settingsService: NotificationSettingsService,
     private dispatchService: NotificationDispatchService,
-    private systemLogsService: SystemLogsService
-  ) {}
+    private systemLogsService: SystemLogsService,
+    private paymentsService: PaymentsService,
+    private configService: ConfigService
+  ) {
+    this.paymentBaseUrl =
+      this.configService.get<string>("PAYMENT_BASE_URL") ||
+      "http://localhost:3889";
+  }
+
+  /**
+   * Fatura icin odeme linki olusturur veya fallback URL dondurur.
+   */
+  private async createPaymentLinkForInvoice(
+    invoice: Invoice,
+    customer: { name?: string; companyName?: string; email?: string; phone?: string }
+  ): Promise<string> {
+    try {
+      if (!customer.email || !invoice.grandTotal || invoice.grandTotal <= 0) {
+        return `${this.paymentBaseUrl}/odeme/${invoice.id}`;
+      }
+
+      const result = await this.paymentsService.createPaymentLink({
+        amount: invoice.grandTotal,
+        email: customer.email,
+        name: customer.name || "",
+        customerName: customer.companyName || customer.name || "",
+        customerId: invoice.customerId || "",
+        companyId: "VERI",
+        invoiceNo: invoice.invoiceNumber || "",
+        staffName: "Kerzz Bildirim Cron",
+      });
+
+      return result.url;
+    } catch (error) {
+      this.logger.warn(
+        `Fatura icin odeme linki olusturulamadi (${invoice.invoiceNumber}): ${error}`
+      );
+      return `${this.paymentBaseUrl}/odeme/${invoice.id}`;
+    }
+  }
 
   /**
    * Her gün saat 09:00'da çalışır
@@ -80,8 +123,13 @@ export class InvoiceNotificationCron {
         totalFailed += result.failed;
       }
 
-      // 2. Vadesi geçmiş faturalar
+      // 2. Vadesi geçmiş faturalar (lookback limiti dahilinde)
+      const lookbackDays = settings.invoiceLookbackDays ?? 90;
       for (const days of settings.invoiceOverdueDays) {
+        // Lookback limitini aşan günleri atla
+        if (days > lookbackDays) {
+          continue;
+        }
         const result = await this.processInvoicesOverdue(today, days, settings);
         totalSent += result.sent;
         totalFailed += result.failed;
@@ -241,10 +289,14 @@ export class InvoiceNotificationCron {
           continue;
         }
 
+        // Fatura icin odeme linki olustur
+        const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer);
+
         // Template verileri hazırla
         const templateData = buildInvoiceTemplateData(
           invoice,
           customer,
+          paymentLinkUrl,
           overdueDays
         );
 

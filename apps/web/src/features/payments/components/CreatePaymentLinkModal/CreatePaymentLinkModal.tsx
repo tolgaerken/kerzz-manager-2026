@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Modal } from "../../../../components/ui/Modal";
-import { PAYMENTS_CONSTANTS } from "../../constants/payments.constants";
+import { useCompanies } from "../../../companies";
 import type { CreatePaymentLinkInput } from "../../types/payment.types";
 
 interface CreatePaymentLinkModalProps {
@@ -34,6 +34,7 @@ export function CreatePaymentLinkModal({
 }: CreatePaymentLinkModalProps) {
   const [formData, setFormData] = useState<CreatePaymentLinkInput>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { data: companies = [] } = useCompanies();
 
   useEffect(() => {
     if (isOpen && !createdUrl) {
@@ -141,8 +142,8 @@ export function CreatePaymentLinkModal({
                 onChange={handleChange}
                 className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               >
-                {PAYMENTS_CONSTANTS.COMPANY_OPTIONS.map((c) => (
-                  <option key={c.id} value={c.id}>
+                {companies.map((c) => (
+                  <option key={c.idc} value={c.idc}>
                     {c.name}
                   </option>
                 ))}

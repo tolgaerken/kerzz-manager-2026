@@ -6,6 +6,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, SortOrder, Types } from "mongoose";
+import { randomBytes } from "crypto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import {
   PaymentUserToken,
@@ -19,6 +20,14 @@ import {
   ContractPayment,
   ContractPaymentDocument,
 } from "../contract-payments/schemas/contract-payment.schema";
+import {
+  ErpBalance,
+  ErpBalanceDocument,
+} from "../erp/schemas/erp-balance.schema";
+import {
+  Customer,
+  CustomerDocument,
+} from "../customers/schemas/customer.schema";
 import { PaytrService, CompanyType, PayTRCardItem } from "../paytr";
 import { AutoPaymentQueryDto } from "./dto/auto-payment-query.dto";
 import { CollectPaymentDto } from "./dto/collect-payment.dto";
@@ -42,6 +51,10 @@ export class AutomatedPaymentsService {
     private paymentLinkModel: Model<PaymentLinkDocument>,
     @InjectModel(ContractPayment.name, CONTRACT_DB_CONNECTION)
     private contractPaymentModel: Model<ContractPaymentDocument>,
+    @InjectModel(ErpBalance.name, CONTRACT_DB_CONNECTION)
+    private erpBalanceModel: Model<ErpBalanceDocument>,
+    @InjectModel(Customer.name, CONTRACT_DB_CONNECTION)
+    private customerModel: Model<CustomerDocument>,
     private paytrService: PaytrService,
     private configService: ConfigService
   ) {
@@ -63,15 +76,12 @@ export class AutomatedPaymentsService {
     query: AutoPaymentQueryDto
   ): Promise<PaginatedAutoPaymentTokensResponseDto> {
     const {
-      page = 1,
-      limit = 50,
       search,
       companyId,
       sortField = "createDate",
       sortOrder = "desc",
     } = query;
 
-    const skip = (page - 1) * limit;
     const filter: Record<string, unknown> = {};
 
     if (companyId) filter.companyId = companyId;
@@ -87,34 +97,90 @@ export class AutomatedPaymentsService {
     const sort: Record<string, SortOrder> = {};
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
-    const [docs, total] = await Promise.all([
-      this.tokenModel
-        .find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
+    const docs = await this.tokenModel
+      .find(filter)
+      .sort(sort)
+      .lean()
+      .exec();
+
+    const total = docs.length;
+
+    // 1) Musteri adini customers koleksiyonundan al
+    const customerIds = [
+      ...new Set(
+        (docs as any[]).map((d) => d.customerId).filter(Boolean)
+      ),
+    ];
+
+    let customerNameMap = new Map<string, string>();
+
+    if (customerIds.length > 0) {
+      const customers = await this.customerModel
+        .find({ id: { $in: customerIds } })
+        .select("id name companyName")
         .lean()
-        .exec(),
-      this.tokenModel.countDocuments(filter).exec(),
-    ]);
+        .exec();
 
-    const totalPages = Math.ceil(total / limit);
+      customerNameMap = new Map(
+        (customers as any[]).map((c) => [
+          c.id,
+          c.companyName || c.name || "",
+        ])
+      );
 
-    const data = docs.map((doc: any) => ({
-      _id: doc._id?.toString() ?? "",
-      id: doc.id ?? "",
-      customerId: doc.customerId ?? "",
-      email: doc.email ?? "",
-      erpId: doc.erpId ?? "",
-      companyId: doc.companyId ?? "",
-      userToken: doc.userToken ?? "",
-      sourceId: doc.sourceId ?? "",
-      source: doc.source ?? "io",
-      userId: doc.userId ?? "",
-      createDate: doc.createDate,
-    }));
+      this.logger.debug(
+        `Musteri eslestirme: ${customerIds.length} soruldu, ${customers.length} bulundu`
+      );
+    }
 
-    return { data, pagination: { page, limit, total, totalPages } };
+    // 2) ERP bakiye eslestirmesi (erp-balances varsa)
+    const erpLookupIds = new Set<string>();
+    for (const d of docs as any[]) {
+      if (d.erpId) erpLookupIds.add(d.erpId);
+      if (d.customerId) erpLookupIds.add(d.customerId);
+    }
+
+    let balanceMap = new Map<string, number>();
+
+    if (erpLookupIds.size > 0) {
+      const balances = await this.erpBalanceModel
+        .find({ CariKodu: { $in: [...erpLookupIds] } })
+        .select("CariKodu CariBakiye")
+        .lean()
+        .exec();
+
+      balanceMap = new Map(
+        (balances as any[]).map((b) => [b.CariKodu, b.CariBakiye ?? 0])
+      );
+
+      this.logger.debug(
+        `ERP bakiye eslestirme: ${erpLookupIds.size} anahtar soruldu, ${balances.length} sonuc bulundu`
+      );
+    }
+
+    const data = docs.map((doc: any) => {
+      const balance =
+        balanceMap.get(doc.erpId) ?? balanceMap.get(doc.customerId) ?? 0;
+      const customerName = customerNameMap.get(doc.customerId) ?? "";
+
+      return {
+        _id: doc._id?.toString() ?? "",
+        id: doc.id ?? "",
+        customerId: doc.customerId ?? "",
+        customerName,
+        email: doc.email ?? "",
+        erpId: doc.erpId ?? "",
+        companyId: doc.companyId ?? "",
+        userToken: doc.userToken ?? "",
+        sourceId: doc.sourceId ?? "",
+        source: doc.source ?? "io",
+        userId: doc.userId ?? "",
+        balance,
+        createDate: doc.createDate,
+      };
+    });
+
+    return { data, pagination: { total } };
   }
 
   /**
@@ -197,9 +263,10 @@ export class AutomatedPaymentsService {
     });
 
     // 7. DB'ye kaydet
+    const linkId = randomBytes(16).toString("hex");
     await this.paymentLinkModel.create({
       id: orderId,
-      linkId: "",
+      linkId,
       amount: dto.amount,
       canRecurring: false,
       createDate: new Date(),

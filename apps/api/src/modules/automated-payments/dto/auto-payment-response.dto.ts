@@ -2,6 +2,7 @@ export interface AutoPaymentTokenItemDto {
   _id: string;
   id: string;
   customerId: string;
+  customerName: string;
   email: string;
   erpId: string;
   companyId: string;
@@ -9,14 +10,12 @@ export interface AutoPaymentTokenItemDto {
   sourceId: string;
   source: string;
   userId: string;
+  balance: number;
   createDate: Date;
 }
 
 export interface AutoPaymentTokenPaginationDto {
-  page: number;
-  limit: number;
   total: number;
-  totalPages: number;
 }
 
 export interface PaginatedAutoPaymentTokensResponseDto {

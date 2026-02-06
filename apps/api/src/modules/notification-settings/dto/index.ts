@@ -20,6 +20,10 @@ export class UpdateNotificationSettingsDto {
   @IsOptional()
   invoiceOverdueDays?: number[];
 
+  @IsNumber()
+  @IsOptional()
+  invoiceLookbackDays?: number;
+
   @IsArray()
   @IsNumber({}, { each: true })
   @ArrayMinSize(1)
@@ -51,6 +55,7 @@ export class NotificationSettingsResponseDto {
   id: string;
   invoiceDueReminderDays: number[];
   invoiceOverdueDays: number[];
+  invoiceLookbackDays: number;
   contractExpiryDays: number[];
   emailEnabled: boolean;
   smsEnabled: boolean;

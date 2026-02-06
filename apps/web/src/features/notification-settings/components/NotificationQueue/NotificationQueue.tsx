@@ -39,7 +39,6 @@ export function NotificationQueue() {
     limit: 20,
   });
   const [contractParams, setContractParams] = useState<ContractQueueQueryParams>({
-    remainingDaysMax: 90,
     page: 1,
     limit: 20,
   });
@@ -225,19 +224,6 @@ export function NotificationQueue() {
       )}
       {queueTab === "contracts" && (
         <div className="flex flex-wrap items-center gap-4">
-          <input
-            type="number"
-            placeholder="Kalan gün (max)"
-            value={contractParams.remainingDaysMax ?? ""}
-            onChange={(e) =>
-              setContractParams((p) => ({
-                ...p,
-                remainingDaysMax: e.target.value ? Number(e.target.value) : undefined,
-                page: 1,
-              }))
-            }
-            className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-36"
-          />
           <input
             type="text"
             placeholder="Ara (firma, marka...)"

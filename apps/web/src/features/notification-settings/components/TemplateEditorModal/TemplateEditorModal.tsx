@@ -31,8 +31,8 @@ const SAMPLE_DATA: Record<string, string> = {
   amount: "5.250,00 TL",
   dueDate: "15.02.2026",
   overdueDays: "5",
-  paymentLink: "https://pay.kerzz.com/example-token",
-  confirmLink: "https://manager.kerzz.com/confirm/example-token",
+  paymentLink: "https://pay.kerzz.com/odeme/example-token",
+  confirmLink: "https://pay.kerzz.com/odeme/example-token",
   contractEndDate: "31.03.2026",
   remainingDays: "30",
 };

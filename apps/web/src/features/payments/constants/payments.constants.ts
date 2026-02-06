@@ -13,11 +13,4 @@ export const PAYMENTS_CONSTANTS = {
     { id: "pending", name: "Beklemede" },
     { id: "failed", name: "Başarısız" }
   ] as const,
-  COMPANY_OPTIONS: [
-    { id: "veri", name: "Veri" },
-    { id: "cloud", name: "Cloud" },
-    { id: "btt", name: "BTT" },
-    { id: "etya", name: "Etya" },
-    { id: "markamutfagi", name: "Marka Mutfağı" }
-  ] as const
 };

@@ -9,6 +9,7 @@
     "lint": "eslint src --max-warnings=0"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "latest",
     "@nestjs/config": "latest",
     "@nestjs/core": "latest",
@@ -18,6 +19,7 @@
     "@nestjs/passport": "latest",
     "@nestjs/platform-express": "latest",
     "@nestjs/schedule": "^6.1.1",
+    "axios": "^1.13.4",
     "class-transformer": "latest",
     "class-validator": "latest",
     "handlebars": "^4.7.8",

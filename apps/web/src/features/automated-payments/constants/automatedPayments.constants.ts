@@ -11,13 +11,4 @@ export const AUTOMATED_PAYMENTS_CONSTANTS = {
     DELETE_CARD: (customerId: string, ctoken: string) =>
       `/automated-payments/cards/${customerId}/${ctoken}`,
   },
-  DEFAULT_PAGE_SIZE: 50,
-  PAGE_SIZE_OPTIONS: [25, 50, 100] as const,
-  COMPANY_OPTIONS: [
-    { id: "VERI", name: "Veri" },
-    { id: "CLOUD", name: "Cloud" },
-    { id: "BTT", name: "BTT" },
-    { id: "ETYA", name: "Etya" },
-    { id: "MARKAMUTFAGI", name: "Marka Mutfağı" },
-  ] as const,
 };

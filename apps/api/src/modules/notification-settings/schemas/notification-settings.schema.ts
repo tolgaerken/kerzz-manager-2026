@@ -18,6 +18,10 @@ export class NotificationSettings {
   @Prop({ type: [Number], default: [3, 5, 10] })
   invoiceOverdueDays: number[];
 
+  // Ödenmemiş faturalar için geriye dönük maksimum tarama günü (varsayılan: 90)
+  @Prop({ type: Number, default: 90 })
+  invoiceLookbackDays: number;
+
   // Kontrat bitiş öncesi hatırlatma günleri
   @Prop({ type: [Number], default: [30, 15, 7] })
   contractExpiryDays: number[];

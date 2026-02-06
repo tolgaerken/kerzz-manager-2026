@@ -21,17 +21,17 @@ const formatCurrency = (value: number): string => {
 export const paymentPlanColumnDefs: ColDef<PaymentPlanItem>[] = [
   {
     field: "paid",
-    headerName: "Ödendi",
+    headerName: "Durum",
     width: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value
-        ? '<span class="text-green-600 font-bold">✓</span>'
-        : '<span class="text-red-500">✗</span>',
+    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
+      params.value ? "✓ Ödendi" : "✗ Ödenmedi",
+    cellClass: (params) =>
+      params.value ? "text-green-600 font-bold" : "text-red-500",
   },
   {
     field: "total",
     headerName: "Tutar",
-    width: 110,
+    width: 120,
     valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
       formatCurrency(params.value ?? 0),
     cellClass: "font-medium",
@@ -39,43 +39,48 @@ export const paymentPlanColumnDefs: ColDef<PaymentPlanItem>[] = [
   {
     field: "invoiceTotal",
     headerName: "Fatura",
-    width: 110,
+    width: 120,
     valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
       formatCurrency(params.value ?? 0),
   },
   {
+    field: "invoiceNo",
+    headerName: "Fatura No",
+    width: 130,
+    cellClass: "font-mono text-xs",
+  },
+  {
     field: "invoiceDate",
     headerName: "Fatura Tarihi",
-    width: 110,
+    width: 120,
     valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
       formatDate(params.value),
   },
   {
     field: "paymentDate",
     headerName: "Ödeme Tarihi",
-    width: 110,
+    width: 120,
     valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
       formatDate(params.value),
   },
   {
     field: "otoPaymentAttempt",
     headerName: "Son Deneme",
-    width: 110,
+    width: 120,
     valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
       formatDate(params.value),
   },
   {
     field: "dueDate",
     headerName: "Vade",
-    width: 100,
+    width: 110,
     valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
       formatDate(params.value),
   },
   {
     field: "onlinePaymentError",
     headerName: "Hata",
-    flex: 1,
-    minWidth: 120,
+    width: 200,
     cellClass: "text-red-500 text-xs",
   },
 ];

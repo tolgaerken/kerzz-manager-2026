@@ -9,6 +9,7 @@ import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { NotificationSettingsModule } from "../notification-settings";
 import { NotificationDispatchModule } from "../notification-dispatch";
+import { PaymentsModule } from "../payments/payments.module";
 import { SystemLogsModule } from "../system-logs";
 
 @Module({
@@ -24,6 +25,7 @@ import { SystemLogsModule } from "../system-logs";
     ),
     NotificationSettingsModule,
     NotificationDispatchModule,
+    PaymentsModule,
     SystemLogsModule,
   ],
   providers: [InvoiceNotificationCron, ContractNotificationCron],

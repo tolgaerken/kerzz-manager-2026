@@ -32,6 +32,9 @@ import { NotificationQueueModule } from "./modules/notification-queue";
 import { CronJobsModule } from "./modules/cron-jobs";
 import { PaytrModule } from "./modules/paytr";
 import { AutomatedPaymentsModule } from "./modules/automated-payments";
+// Company & ERP Modules
+import { CompaniesModule } from "./modules/companies";
+import { ErpModule } from "./modules/erp";
 
 @Module({
   imports: [
@@ -72,6 +75,9 @@ import { AutomatedPaymentsModule } from "./modules/automated-payments";
     NotificationSettingsModule,
     NotificationQueueModule,
     CronJobsModule,
+    // Company & ERP Modules
+    CompaniesModule,
+    ErpModule,
   ],
   providers: [
     {

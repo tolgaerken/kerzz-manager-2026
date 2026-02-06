@@ -43,11 +43,13 @@ export interface ContractLike {
 }
 
 /**
- * Fatura icin template data olusturur
+ * Fatura icin template data olusturur.
+ * paymentLink: olusturulmus odeme linki URL'si (PaymentsService araciligiyla uretilmeli)
  */
 export function buildInvoiceTemplateData(
   invoice: InvoiceLike,
   customer: CustomerLike,
+  paymentLink: string,
   overdueDays?: number
 ): Record<string, string> {
   return {
@@ -57,8 +59,8 @@ export function buildInvoiceTemplateData(
     amount: formatCurrency(invoice.grandTotal || 0),
     dueDate: formatDate(invoice.dueDate),
     overdueDays: overdueDays?.toString() ?? "0",
-    paymentLink: `https://pay.kerzz.com/${invoice.id}`,
-    confirmLink: `https://manager.kerzz.com/confirm/${invoice.id}`,
+    paymentLink,
+    confirmLink: paymentLink,
   };
 }
 

@@ -7,6 +7,7 @@ import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module"
 import { NotificationSettingsModule } from "../notification-settings";
 import { NotificationDispatchModule } from "../notification-dispatch";
 import { NotificationTemplatesModule } from "../notification-templates";
+import { PaymentsModule } from "../payments/payments.module";
 import { NotificationQueueController } from "./notification-queue.controller";
 import { NotificationQueueService } from "./notification-queue.service";
 
@@ -23,6 +24,7 @@ import { NotificationQueueService } from "./notification-queue.service";
     NotificationSettingsModule,
     NotificationDispatchModule,
     NotificationTemplatesModule,
+    PaymentsModule,
   ],
   controllers: [NotificationQueueController],
   providers: [NotificationQueueService],

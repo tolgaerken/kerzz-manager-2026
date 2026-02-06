@@ -9,6 +9,7 @@ export function GeneralSettings() {
   const [formData, setFormData] = useState({
     invoiceDueReminderDays: [0],
     invoiceOverdueDays: [3, 5, 10],
+    invoiceLookbackDays: 90,
     contractExpiryDays: [30, 15, 7],
     emailEnabled: true,
     smsEnabled: false,
@@ -21,6 +22,7 @@ export function GeneralSettings() {
       setFormData({
         invoiceDueReminderDays: settings.invoiceDueReminderDays,
         invoiceOverdueDays: settings.invoiceOverdueDays,
+        invoiceLookbackDays: settings.invoiceLookbackDays ?? 90,
         contractExpiryDays: settings.contractExpiryDays,
         emailEnabled: settings.emailEnabled,
         smsEnabled: settings.smsEnabled,
@@ -189,6 +191,29 @@ export function GeneralSettings() {
           />
           <p className="mt-1 text-xs text-[var(--color-muted)]">
             Örnek: 3, 5, 10 (Vadesi geçtikten 3, 5 ve 10 gün sonra bildirim gönderilir)
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-[var(--color-muted)] mb-1">
+            Geriye Dönük Maksimum Tarama Süresi (gün)
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={365}
+            value={formData.invoiceLookbackDays}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              if (!isNaN(val) && val >= 1) {
+                setFormData((prev) => ({ ...prev, invoiceLookbackDays: val }));
+              }
+            }}
+            placeholder="90"
+            className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
+          />
+          <p className="mt-1 text-xs text-[var(--color-muted)]">
+            Ödenmemiş faturalar için en fazla kaç gün geriye dönük tarama yapılacağını belirler. Varsayılan: 90 gün
           </p>
         </div>
       </div>

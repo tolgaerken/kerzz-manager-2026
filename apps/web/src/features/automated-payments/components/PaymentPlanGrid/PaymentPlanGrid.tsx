@@ -34,8 +34,8 @@ export function PaymentPlanGrid({
   );
 
   const onGridReady = useCallback(
-    (params: GridReadyEvent<PaymentPlanItem>) => {
-      params.api.sizeColumnsToFit();
+    (_params: GridReadyEvent<PaymentPlanItem>) => {
+      // Yatay scroll icin kolonlari serbest birak
     },
     []
   );

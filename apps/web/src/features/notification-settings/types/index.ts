@@ -67,6 +67,7 @@ export interface NotificationSettings {
   id: string;
   invoiceDueReminderDays: number[];
   invoiceOverdueDays: number[];
+  invoiceLookbackDays: number;
   contractExpiryDays: number[];
   emailEnabled: boolean;
   smsEnabled: boolean;
@@ -79,6 +80,7 @@ export interface NotificationSettings {
 export interface UpdateNotificationSettingsDto {
   invoiceDueReminderDays?: number[];
   invoiceOverdueDays?: number[];
+  invoiceLookbackDays?: number;
   contractExpiryDays?: number[];
   emailEnabled?: boolean;
   smsEnabled?: boolean;
@@ -192,7 +194,6 @@ export interface InvoiceQueueQueryParams {
 }
 
 export interface ContractQueueQueryParams {
-  remainingDaysMax?: number;
   search?: string;
   page?: number;
   limit?: number;

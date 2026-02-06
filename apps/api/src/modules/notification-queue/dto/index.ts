@@ -46,12 +46,6 @@ export class InvoiceQueueQueryDto {
 
 export class ContractQueueQueryDto {
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
-  remainingDaysMax?: number;
-
-  @IsOptional()
   @IsString()
   search?: string;
 

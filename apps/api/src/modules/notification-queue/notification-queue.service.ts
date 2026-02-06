@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import {
@@ -20,6 +21,7 @@ import {
   DispatchNotificationDto,
 } from "../notification-dispatch";
 import { NotificationTemplatesService } from "../notification-templates";
+import { PaymentsService } from "../payments/payments.service";
 import {
   buildInvoiceTemplateData,
   buildContractTemplateData,
@@ -41,6 +43,9 @@ import {
 
 @Injectable()
 export class NotificationQueueService {
+  private readonly logger = new Logger(NotificationQueueService.name);
+  private readonly paymentBaseUrl: string;
+
   constructor(
     @InjectModel(Invoice.name, CONTRACT_DB_CONNECTION)
     private invoiceModel: Model<InvoiceDocument>,
@@ -50,8 +55,46 @@ export class NotificationQueueService {
     private customerModel: Model<CustomerDocument>,
     private settingsService: NotificationSettingsService,
     private dispatchService: NotificationDispatchService,
-    private templatesService: NotificationTemplatesService
-  ) {}
+    private templatesService: NotificationTemplatesService,
+    private paymentsService: PaymentsService,
+    private configService: ConfigService
+  ) {
+    this.paymentBaseUrl =
+      this.configService.get<string>("PAYMENT_BASE_URL") ||
+      "http://localhost:3889";
+  }
+
+  /**
+   * Fatura icin odeme linki olusturur veya fallback URL dondurur.
+   */
+  private async createPaymentLinkForInvoice(
+    invoice: Invoice,
+    customer: { name?: string; companyName?: string; email?: string; phone?: string }
+  ): Promise<string> {
+    try {
+      if (!customer.email || !invoice.grandTotal || invoice.grandTotal <= 0) {
+        return `${this.paymentBaseUrl}/odeme/${invoice.id}`;
+      }
+
+      const result = await this.paymentsService.createPaymentLink({
+        amount: invoice.grandTotal,
+        email: customer.email,
+        name: customer.name || "",
+        customerName: customer.companyName || customer.name || "",
+        customerId: invoice.customerId || "",
+        companyId: "VERI",
+        invoiceNo: invoice.invoiceNumber || "",
+        staffName: "Kerzz Bildirim",
+      });
+
+      return result.url;
+    } catch (error) {
+      this.logger.warn(
+        `Fatura icin odeme linki olusturulamadi (${invoice.invoiceNumber}): ${error}`
+      );
+      return `${this.paymentBaseUrl}/odeme/${invoice.id}`;
+    }
+  }
 
   /**
    * Bildirim bekleyen faturalari musteri bilgileriyle listeler
@@ -63,6 +106,12 @@ export class NotificationQueueService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Geriye dönük tarama limitini ayarlardan al
+    const settings = await this.settingsService.getSettings();
+    const lookbackDays = settings.invoiceLookbackDays ?? 90;
+    const lookbackDate = new Date(today);
+    lookbackDate.setDate(lookbackDate.getDate() - lookbackDays);
+
     const filter: Record<string, unknown> = {
       isPaid: false,
     };
@@ -73,11 +122,14 @@ export class NotificationQueueService {
       filter.dueDate = { $gte: today, $lt: tomorrow };
     } else if (type === "overdue") {
       const dueDateRange: { $gte?: Date; $lt?: Date; $lte?: Date } = { $lt: today };
+      // Lookback limiti: overdueDaysMax veya lookbackDays'den hangisi daha kısıtlayıcıysa onu kullan
       if (overdueDaysMax != null) {
         const maxDate = new Date(today);
         maxDate.setDate(maxDate.getDate() - overdueDaysMax);
         maxDate.setHours(23, 59, 59, 999);
-        dueDateRange.$gte = maxDate;
+        dueDateRange.$gte = maxDate > lookbackDate ? maxDate : lookbackDate;
+      } else {
+        dueDateRange.$gte = lookbackDate;
       }
       if (overdueDaysMin != null) {
         const minDate = new Date(today);
@@ -91,7 +143,7 @@ export class NotificationQueueService {
       tomorrow.setDate(tomorrow.getDate() + 1);
       filter.$or = [
         { dueDate: { $gte: today, $lt: tomorrow } },
-        { dueDate: { $lt: today } },
+        { dueDate: { $gte: lookbackDate, $lt: today } },
       ];
     }
 
@@ -157,29 +209,50 @@ export class NotificationQueueService {
   }
 
   /**
-   * Bitisi yaklasan kontratlari musteri bilgileriyle listeler
+   * Ayarlardaki contractExpiryDays esik gunlerine tam denk gelen
+   * kontratlari musteri bilgileriyle listeler.
+   * Ornegin [30, 15, 7] ise sadece bugunden itibaren tam 30, 15 veya 7 gun
+   * sonra bitecek kontratlar dondurulur.
    */
   async getPendingContracts(
     query: ContractQueueQueryDto
   ): Promise<PaginatedQueueContractsResponseDto> {
-    const { remainingDaysMax = 90, search, page = 1, limit = 50 } = query;
+    const { search, page = 1, limit = 50 } = query;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const maxEndDate = new Date(today);
-    maxEndDate.setDate(maxEndDate.getDate() + remainingDaysMax);
+
+    // Ayarlardan esik gunlerini al (orn: [30, 15, 7])
+    const settings = await this.settingsService.getSettings();
+    const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
+
+    // Her esik gunu icin tarih araligi olustur (tam gun eslesmesi)
+    const dateRanges = expiryDays.map((days) => {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() + days);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return { endDate: { $gte: targetDate, $lt: nextDay } };
+    });
 
     const filter: Record<string, unknown> = {
       noEndDate: false,
       noNotification: false,
-      endDate: { $gte: today, $lte: maxEndDate },
+      $or: dateRanges,
     };
 
     if (search) {
-      filter.$or = [
-        { company: { $regex: search, $options: "i" } },
-        { brand: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
+      // search varsa $or zaten kullanildigindan $and ile birlestir
+      filter.$and = [
+        { $or: dateRanges },
+        {
+          $or: [
+            { company: { $regex: search, $options: "i" } },
+            { brand: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
+          ],
+        },
       ];
+      delete filter.$or;
     }
 
     const skip = (page - 1) * limit;
@@ -232,12 +305,31 @@ export class NotificationQueueService {
 
   /**
    * Ozet istatistikler
+   * Kontrat sayisi ayarlardaki contractExpiryDays esik gunlerine gore hesaplanir.
    */
   async getStats(): Promise<QueueStatsResponseDto> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Ayarlardan esik gunlerini al
+    const settings = await this.settingsService.getSettings();
+    const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
+
+    // Her esik gunu icin tarih araligi olustur (tam gun eslesmesi)
+    const dateRanges = expiryDays.map((days) => {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() + days);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return { endDate: { $gte: targetDate, $lt: nextDay } };
+    });
+
+    // Geriye dönük tarama limiti
+    const lookbackDays = settings.invoiceLookbackDays ?? 90;
+    const lookbackDate = new Date(today);
+    lookbackDate.setDate(lookbackDate.getDate() - lookbackDays);
 
     const [dueInvoices, overdueInvoices, pendingContracts] = await Promise.all([
       this.invoiceModel.countDocuments({
@@ -246,11 +338,12 @@ export class NotificationQueueService {
       }).exec(),
       this.invoiceModel.countDocuments({
         isPaid: false,
-        dueDate: { $lt: today },
+        dueDate: { $gte: lookbackDate, $lt: today },
       }).exec(),
       this.contractModel.countDocuments({
         noEndDate: false,
-        endDate: { $gte: today },
+        noNotification: false,
+        $or: dateRanges,
       }).exec(),
     ]);
 
@@ -332,7 +425,8 @@ export class NotificationQueueService {
         : "invoice-overdue-5"
       : "invoice-due";
 
-    const templateData = buildInvoiceTemplateData(invoice, customer, overdueDays > 0 ? overdueDays : undefined);
+    const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer);
+    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined);
     const notifications: DispatchNotificationDto[] = [];
 
     if (channels.includes("email") && settings.emailEnabled && customer.email) {
@@ -511,7 +605,8 @@ export class NotificationQueueService {
         : "invoice-due";
 
     const templateCode = `${templateCodeBase}-${channel}`;
-    const templateData = buildInvoiceTemplateData(invoice, customer, overdueDays > 0 ? overdueDays : undefined);
+    const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer);
+    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined);
 
     const rendered = await this.templatesService.renderTemplate(
       templateCode,

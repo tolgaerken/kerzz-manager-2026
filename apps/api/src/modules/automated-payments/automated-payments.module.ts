@@ -14,6 +14,14 @@ import {
   ContractPayment,
   ContractPaymentSchema,
 } from "../contract-payments/schemas/contract-payment.schema";
+import {
+  ErpBalance,
+  ErpBalanceSchema,
+} from "../erp/schemas/erp-balance.schema";
+import {
+  Customer,
+  CustomerSchema,
+} from "../customers/schemas/customer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { PaytrModule } from "../paytr";
 
@@ -24,6 +32,8 @@ import { PaytrModule } from "../paytr";
         { name: PaymentUserToken.name, schema: PaymentUserTokenSchema },
         { name: PaymentLink.name, schema: PaymentLinkSchema },
         { name: ContractPayment.name, schema: ContractPaymentSchema },
+        { name: ErpBalance.name, schema: ErpBalanceSchema },
+        { name: Customer.name, schema: CustomerSchema },
       ],
       CONTRACT_DB_CONNECTION
     ),

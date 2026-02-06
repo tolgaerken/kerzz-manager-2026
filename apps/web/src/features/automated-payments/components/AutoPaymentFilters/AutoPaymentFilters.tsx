@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import { AUTOMATED_PAYMENTS_CONSTANTS } from "../../constants/automatedPayments.constants";
+import { useCompanies } from "../../../companies";
 
 interface AutoPaymentFiltersProps {
   search: string;
@@ -16,6 +16,7 @@ export function AutoPaymentFilters({
   onCompanyChange,
   onClearFilters,
 }: AutoPaymentFiltersProps) {
+  const { data: companies = [] } = useCompanies();
   const hasFilters = !!search || !!companyId;
 
   return (
@@ -39,7 +40,7 @@ export function AutoPaymentFilters({
         className="px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
       >
         <option value="">Tüm Firmalar</option>
-        {AUTOMATED_PAYMENTS_CONSTANTS.COMPANY_OPTIONS.map((opt) => (
+        {companies.map((opt) => (
           <option key={opt.id} value={opt.id}>
             {opt.name}
           </option>

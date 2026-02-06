@@ -2,6 +2,7 @@ export interface AutoPaymentTokenItem {
   _id: string;
   id: string;
   customerId: string;
+  customerName: string;
   email: string;
   erpId: string;
   companyId: string;
@@ -9,14 +10,12 @@ export interface AutoPaymentTokenItem {
   sourceId: string;
   source: string;
   userId: string;
+  balance: number;
   createDate: string;
 }
 
 export interface AutoPaymentTokenPagination {
-  page: number;
-  limit: number;
   total: number;
-  totalPages: number;
 }
 
 export interface AutoPaymentTokensResponse {
@@ -25,8 +24,6 @@ export interface AutoPaymentTokensResponse {
 }
 
 export interface AutoPaymentQueryParams {
-  page?: number;
-  limit?: number;
   search?: string;
   companyId?: string;
   sortField?: string;

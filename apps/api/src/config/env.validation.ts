@@ -28,6 +28,9 @@ class EnvironmentVariables {
 
   @IsString()
   JWT_EXPIRES_IN: string = "7d";
+
+  @IsString()
+  NETSIS_SOCKET_URL: string;
 }
 
 export function validate(config: Record<string, unknown>) {
@@ -43,5 +46,7 @@ export function validate(config: Record<string, unknown>) {
     throw new Error(errors.toString());
   }
 
-  return validatedConfig;
+  // Sadece zorunlu alanlari dogrula, tum .env degiskenlerini koru
+  // (SMTP, SMS, PAYMENT_BASE_URL vb. opsiyonel alanlar icin)
+  return { ...config, ...validatedConfig };
 }

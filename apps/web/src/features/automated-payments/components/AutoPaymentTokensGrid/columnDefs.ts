@@ -13,6 +13,15 @@ const formatDate = (dateStr: string | null | undefined): string => {
   });
 };
 
+const formatCurrency = (value: number | null | undefined): string => {
+  if (value == null) return "-";
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    minimumFractionDigits: 2,
+  }).format(value);
+};
+
 export const tokenColumnDefs: ColDef<AutoPaymentTokenItem>[] = [
   {
     field: "companyId",
@@ -30,6 +39,14 @@ export const tokenColumnDefs: ColDef<AutoPaymentTokenItem>[] = [
       formatDate(params.value),
   },
   {
+    field: "customerName",
+    headerName: "Müşteri",
+    flex: 1,
+    minWidth: 180,
+    sortable: true,
+    filter: "agTextColumnFilter",
+  },
+  {
     field: "email",
     headerName: "E-posta",
     flex: 1,
@@ -40,8 +57,7 @@ export const tokenColumnDefs: ColDef<AutoPaymentTokenItem>[] = [
   {
     field: "customerId",
     headerName: "Müşteri ID",
-    flex: 1,
-    minWidth: 150,
+    width: 130,
     sortable: true,
     filter: "agTextColumnFilter",
     cellClass: "font-mono text-xs",
@@ -53,6 +69,21 @@ export const tokenColumnDefs: ColDef<AutoPaymentTokenItem>[] = [
     sortable: true,
     filter: "agTextColumnFilter",
     cellClass: "font-mono text-xs",
+  },
+  {
+    field: "balance",
+    headerName: "Bakiye",
+    width: 140,
+    sortable: true,
+    filter: "agNumberColumnFilter",
+    valueFormatter: (params: ValueFormatterParams<AutoPaymentTokenItem>) =>
+      formatCurrency(params.value),
+    cellClass: (params) => {
+      const val = params.value as number;
+      if (val > 0) return "text-red-600 font-semibold";
+      if (val < 0) return "text-green-600 font-semibold";
+      return "";
+    },
   },
   {
     field: "source",

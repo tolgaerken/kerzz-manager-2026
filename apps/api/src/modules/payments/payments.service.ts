@@ -49,7 +49,7 @@ export class PaymentsService {
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
-      "http://localhost:5173";
+      "http://localhost:3889";
   }
 
   /**

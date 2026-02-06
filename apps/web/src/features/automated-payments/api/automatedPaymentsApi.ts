@@ -25,8 +25,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
 function buildQueryString(params: AutoPaymentQueryParams): string {
   const searchParams = new URLSearchParams();
 
-  if (params.page) searchParams.set("page", params.page.toString());
-  if (params.limit) searchParams.set("limit", params.limit.toString());
   if (params.search) searchParams.set("search", params.search);
   if (params.companyId) searchParams.set("companyId", params.companyId);
   if (params.sortField) searchParams.set("sortField", params.sortField);

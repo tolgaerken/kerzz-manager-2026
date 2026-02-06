@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { RefreshCw, Trash2 } from "lucide-react";
 import {
   AutoPaymentTokensGrid,
@@ -9,7 +9,6 @@ import {
   usePaymentPlans,
   useCollectPayment,
   useDeleteToken,
-  AUTOMATED_PAYMENTS_CONSTANTS,
 } from "../features/automated-payments";
 import type {
   AutoPaymentTokenItem,
@@ -20,8 +19,6 @@ import type {
 export function AutomatedPaymentsPage() {
   // ── Query State ──
   const [queryParams, setQueryParams] = useState<AutoPaymentQueryParams>({
-    page: 1,
-    limit: AUTOMATED_PAYMENTS_CONSTANTS.DEFAULT_PAGE_SIZE,
     search: "",
     companyId: "",
     sortField: "createDate",
@@ -56,11 +53,11 @@ export function AutomatedPaymentsPage() {
 
   // ── Handlers ──
   const handleSearchChange = useCallback((search: string) => {
-    setQueryParams((prev) => ({ ...prev, search, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, search }));
   }, []);
 
   const handleCompanyChange = useCallback((companyId: string) => {
-    setQueryParams((prev) => ({ ...prev, companyId, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, companyId }));
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -68,7 +65,6 @@ export function AutomatedPaymentsPage() {
       ...prev,
       search: "",
       companyId: "",
-      page: 1,
     }));
   }, []);
 
@@ -108,25 +104,23 @@ export function AutomatedPaymentsPage() {
   const handleCollectBalance = useCallback(async () => {
     if (!selectedCustomer) return;
 
-    // Odenmemis planlarin toplam tutarini hesapla
-    const unpaidTotal = (paymentPlans || [])
-      .filter((p) => !p.paid)
-      .reduce((sum, p) => sum + (p.invoiceTotal || 0), 0);
+    // Gercek ERP cari bakiyesini kullan
+    const erpBalance = selectedCustomer.balance ?? 0;
 
-    if (unpaidTotal <= 0) return;
+    if (erpBalance <= 0) return;
 
     setBalanceLoading(true);
     try {
       await collectMutation.mutateAsync({
         customerId: selectedCustomer.customerId,
-        amount: unpaidTotal,
+        amount: erpBalance,
         mode: "balance",
         description: "Cari bakiye tahsilatı",
       });
     } finally {
       setBalanceLoading(false);
     }
-  }, [selectedCustomer, paymentPlans, collectMutation]);
+  }, [selectedCustomer, collectMutation]);
 
   // Ozel tahsilat
   const handleCollectCustomAmount = useCallback(
@@ -158,13 +152,8 @@ export function AutomatedPaymentsPage() {
     setSelectedTokens([]);
   }, [selectedTokens, deleteMutation]);
 
-  // Balance hesaplama
-  const unpaidBalance = useMemo(() => {
-    if (!paymentPlans) return 0;
-    return paymentPlans
-      .filter((p) => !p.paid)
-      .reduce((sum, p) => sum + (p.invoiceTotal || 0), 0);
-  }, [paymentPlans]);
+  // ERP cari bakiyesi (gercek bakiye)
+  const customerBalance = selectedCustomer?.balance ?? 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -214,7 +203,7 @@ export function AutomatedPaymentsPage() {
       <div className="px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
         <CollectionActionBar
           selectedCustomerId={selectedCustomer?.customerId || null}
-          balance={unpaidBalance}
+          balance={customerBalance}
           selectedPlanAmount={
             selectedPlan ? selectedPlan.invoiceTotal : null
           }
@@ -254,7 +243,7 @@ export function AutomatedPaymentsPage() {
             Ödeme Planları
             {selectedCustomer && (
               <span className="ml-2 text-[var(--color-foreground)]">
-                - {selectedCustomer.erpId || selectedCustomer.customerId}
+                - {selectedCustomer.customerName || selectedCustomer.erpId || selectedCustomer.customerId}
               </span>
             )}
           </div>
