@@ -1,0 +1,45 @@
+---
+description: Koleksiyonlar arası ilişki kuralı - _id değil id alanı kullanılmalı
+alwaysApply: true
+---
+
+# Koleksiyonlar Arası İlişki Kuralı
+
+Aşağıdaki koleksiyonlar diğer tablolarla `id` alanı üzerinden ilişkilendirilir, `_id` (ObjectId) üzerinden **DEĞİL**:
+
+- **Customer** — `Invoice.customerId` ve `Contract.customerId` → `Customer.id`
+- **License** — `ContractCashRegister.licanceId` ve `ContractSAAS.licanceId` → `License.id`
+
+## Doğru Kullanım
+
+```typescript
+// ✅ DOĞRU - id alanı üzerinden sorgula
+const customer = await this.customerModel
+  .findOne({ id: invoice.customerId })
+  .lean()
+  .exec();
+
+const license = await this.licenseModel
+  .findOne({ id: contract.licanceId })
+  .lean()
+  .exec();
+```
+
+## Yanlış Kullanım
+
+```typescript
+// ❌ YANLIŞ - _id ObjectId formatı bekler, ilişki ID'leri sayısal string olabilir
+const customer = await this.customerModel
+  .findOne({ _id: invoice.customerId })
+  .lean()
+  .exec();
+
+// ❌ YANLIŞ - findById de _id üzerinden çalışır
+const customer = await this.customerModel.findById(invoice.customerId);
+const license = await this.licenseModel.findById(contract.licanceId);
+```
+
+## Neden?
+
+- İlişki değerleri sayısal string olabilir (ör: "7982", "3421") ve geçerli MongoDB ObjectId formatında olmayabilir
+- `_id` ile sorgulamak `CastError: Cast to ObjectId failed` hatasına neden olur

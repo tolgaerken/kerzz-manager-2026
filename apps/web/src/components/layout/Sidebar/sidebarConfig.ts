@@ -7,7 +7,8 @@ import {
   Key,
   Package,
   Wallet,
-  ScrollText
+  ScrollText,
+  Bell
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -65,5 +66,10 @@ export const sidebarMenuItems: MenuItemProps[] = [
     subItems: [
       { label: "Sistem Logları", path: "/system/logs" },
     ],
+  },
+  {
+    icon: Bell,
+    label: "Bildirimler",
+    path: "/system/notifications",
   },
 ];

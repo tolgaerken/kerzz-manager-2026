@@ -1,0 +1,585 @@
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import {
+  Invoice,
+  InvoiceDocument,
+} from "../invoices/schemas/invoice.schema";
+import {
+  Contract,
+  ContractDocument,
+} from "../contracts/schemas/contract.schema";
+import {
+  Customer,
+  CustomerDocument,
+} from "../customers/schemas/customer.schema";
+import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { NotificationSettingsService } from "../notification-settings";
+import {
+  NotificationDispatchService,
+  DispatchNotificationDto,
+} from "../notification-dispatch";
+import { NotificationTemplatesService } from "../notification-templates";
+import {
+  buildInvoiceTemplateData,
+  buildContractTemplateData,
+  formatDate,
+} from "./notification-data.helper";
+import {
+  InvoiceQueueQueryDto,
+  ContractQueueQueryDto,
+  ManualSendDto,
+  QueueInvoiceItemDto,
+  QueueContractItemDto,
+  QueueCustomerDto,
+  PaginatedQueueInvoicesResponseDto,
+  PaginatedQueueContractsResponseDto,
+  QueueStatsResponseDto,
+  ManualSendResponseDto,
+  ManualSendResultItemDto,
+} from "./dto";
+
+@Injectable()
+export class NotificationQueueService {
+  constructor(
+    @InjectModel(Invoice.name, CONTRACT_DB_CONNECTION)
+    private invoiceModel: Model<InvoiceDocument>,
+    @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
+    private contractModel: Model<ContractDocument>,
+    @InjectModel(Customer.name, CONTRACT_DB_CONNECTION)
+    private customerModel: Model<CustomerDocument>,
+    private settingsService: NotificationSettingsService,
+    private dispatchService: NotificationDispatchService,
+    private templatesService: NotificationTemplatesService
+  ) {}
+
+  /**
+   * Bildirim bekleyen faturalari musteri bilgileriyle listeler
+   */
+  async getPendingInvoices(
+    query: InvoiceQueueQueryDto
+  ): Promise<PaginatedQueueInvoicesResponseDto> {
+    const { type = "all", overdueDaysMin, overdueDaysMax, search, page = 1, limit = 50 } = query;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const filter: Record<string, unknown> = {
+      isPaid: false,
+    };
+
+    if (type === "due") {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      filter.dueDate = { $gte: today, $lt: tomorrow };
+    } else if (type === "overdue") {
+      const dueDateRange: { $gte?: Date; $lt?: Date; $lte?: Date } = { $lt: today };
+      if (overdueDaysMax != null) {
+        const maxDate = new Date(today);
+        maxDate.setDate(maxDate.getDate() - overdueDaysMax);
+        maxDate.setHours(23, 59, 59, 999);
+        dueDateRange.$gte = maxDate;
+      }
+      if (overdueDaysMin != null) {
+        const minDate = new Date(today);
+        minDate.setDate(minDate.getDate() - overdueDaysMin);
+        minDate.setHours(0, 0, 0, 0);
+        dueDateRange.$lte = minDate;
+      }
+      filter.dueDate = dueDateRange;
+    } else {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      filter.$or = [
+        { dueDate: { $gte: today, $lt: tomorrow } },
+        { dueDate: { $lt: today } },
+      ];
+    }
+
+    if (search) {
+      filter.$and = filter.$and || [];
+      (filter.$and as unknown[]).push({
+        $or: [
+          { invoiceNumber: { $regex: search, $options: "i" } },
+          { name: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    const skip = (page - 1) * limit;
+    const [invoices, total] = await Promise.all([
+      this.invoiceModel
+        .find(filter)
+        .sort({ dueDate: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.invoiceModel.countDocuments(filter).exec(),
+    ]);
+
+    const customerIds = [...new Set(invoices.map((i) => i.customerId).filter(Boolean))] as string[];
+    const customers = await this.customerModel
+      .find({ id: { $in: customerIds } })
+      .lean()
+      .exec();
+    const customerMap = new Map(customers.map((c) => [c.id, c]));
+
+    const data: QueueInvoiceItemDto[] = invoices.map((inv) => {
+      const due = inv.dueDate ? new Date(inv.dueDate) : null;
+      due?.setHours(0, 0, 0, 0);
+      const overdueDays = due && due < today ? Math.floor((today.getTime() - due.getTime()) / (24 * 60 * 60 * 1000)) : 0;
+      const status: "due" | "overdue" = overdueDays > 0 ? "overdue" : "due";
+      const customer = inv.customerId ? customerMap.get(inv.customerId) : null;
+      return {
+        _id: (inv as { _id: { toString: () => string } })._id.toString(),
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber || "",
+        grandTotal: inv.grandTotal ?? 0,
+        dueDate: inv.dueDate ? formatDate(inv.dueDate) : "",
+        overdueDays,
+        status,
+        lastNotify: inv.lastNotify ? formatDate(inv.lastNotify) : null,
+        notifyCount: Array.isArray(inv.notify) ? inv.notify.length : 0,
+        customer: this.mapCustomer(customer ?? null),
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Bitisi yaklasan kontratlari musteri bilgileriyle listeler
+   */
+  async getPendingContracts(
+    query: ContractQueueQueryDto
+  ): Promise<PaginatedQueueContractsResponseDto> {
+    const { remainingDaysMax = 90, search, page = 1, limit = 50 } = query;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const maxEndDate = new Date(today);
+    maxEndDate.setDate(maxEndDate.getDate() + remainingDaysMax);
+
+    const filter: Record<string, unknown> = {
+      noEndDate: false,
+      noNotification: false,
+      endDate: { $gte: today, $lte: maxEndDate },
+    };
+
+    if (search) {
+      filter.$or = [
+        { company: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+    const [contracts, total] = await Promise.all([
+      this.contractModel
+        .find(filter)
+        .sort({ endDate: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.contractModel.countDocuments(filter).exec(),
+    ]);
+
+    const customerIds = [...new Set(contracts.map((c) => c.customerId).filter(Boolean))] as string[];
+    const customers = await this.customerModel
+      .find({ id: { $in: customerIds } })
+      .lean()
+      .exec();
+    const customerMap = new Map(customers.map((c) => [c.id, c]));
+
+    const data: QueueContractItemDto[] = contracts.map((cont) => {
+      const endDate = cont.endDate ? new Date(cont.endDate) : null;
+      const remainingDays = endDate
+        ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
+        : 0;
+      const customer = cont.customerId ? customerMap.get(cont.customerId) : null;
+      return {
+        _id: (cont as { _id: { toString: () => string } })._id.toString(),
+        id: cont.id,
+        contractId: cont.contractId || "",
+        company: cont.company || "",
+        brand: cont.brand || "",
+        endDate: cont.endDate ? formatDate(cont.endDate) : "",
+        remainingDays,
+        customer: this.mapCustomer(customer ?? null),
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Ozet istatistikler
+   */
+  async getStats(): Promise<QueueStatsResponseDto> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [dueInvoices, overdueInvoices, pendingContracts] = await Promise.all([
+      this.invoiceModel.countDocuments({
+        isPaid: false,
+        dueDate: { $gte: today, $lt: tomorrow },
+      }).exec(),
+      this.invoiceModel.countDocuments({
+        isPaid: false,
+        dueDate: { $lt: today },
+      }).exec(),
+      this.contractModel.countDocuments({
+        noEndDate: false,
+        endDate: { $gte: today },
+      }).exec(),
+    ]);
+
+    return {
+      dueInvoices,
+      overdueInvoices,
+      pendingInvoices: dueInvoices + overdueInvoices,
+      pendingContracts,
+    };
+  }
+
+  /**
+   * Secilen kayitlar icin manuel bildirim gonderir
+   */
+  async sendManualNotification(dto: ManualSendDto): Promise<ManualSendResponseDto> {
+    const settings = await this.settingsService.getSettings();
+    const results: ManualSendResultItemDto[] = [];
+    let sent = 0;
+    let failed = 0;
+
+    for (const item of dto.items) {
+      if (item.type === "invoice") {
+        const outcome = await this.sendForInvoice(item.id, dto.channels, settings);
+        for (const r of outcome) {
+          results.push(r);
+          if (r.success) sent++;
+          else failed++;
+        }
+      } else {
+        const outcome = await this.sendForContract(item.id, dto.channels, settings);
+        for (const r of outcome) {
+          results.push(r);
+          if (r.success) sent++;
+          else failed++;
+        }
+      }
+    }
+
+    return { sent, failed, results };
+  }
+
+  private async sendForInvoice(
+    invoiceId: string,
+    channels: ("email" | "sms")[],
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<ManualSendResultItemDto[]> {
+    const invoice = await this.invoiceModel.findOne({ id: invoiceId }).lean().exec();
+    if (!invoice || !invoice.customerId) {
+      return channels.map((ch) => ({
+        type: "invoice" as const,
+        id: invoiceId,
+        channel: ch,
+        success: false,
+        error: "Fatura veya müşteri bulunamadı",
+      }));
+    }
+
+    const customer = await this.customerModel.findOne({ id: invoice.customerId }).lean().exec();
+    if (!customer) {
+      return channels.map((ch) => ({
+        type: "invoice" as const,
+        id: invoiceId,
+        channel: ch,
+        success: false,
+        error: "Müşteri bulunamadı",
+      }));
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = invoice.dueDate ? new Date(invoice.dueDate) : null;
+    due?.setHours(0, 0, 0, 0);
+    const overdueDays = due && due < today
+      ? Math.floor((today.getTime() - due.getTime()) / (24 * 60 * 60 * 1000))
+      : 0;
+    const templateCodeBase = overdueDays > 0
+      ? overdueDays <= 3
+        ? "invoice-overdue-3"
+        : "invoice-overdue-5"
+      : "invoice-due";
+
+    const templateData = buildInvoiceTemplateData(invoice, customer, overdueDays > 0 ? overdueDays : undefined);
+    const notifications: DispatchNotificationDto[] = [];
+
+    if (channels.includes("email") && settings.emailEnabled && customer.email) {
+      notifications.push({
+        templateCode: `${templateCodeBase}-email`,
+        channel: "email",
+        recipient: { email: customer.email, name: customer.name },
+        contextType: "invoice",
+        contextId: invoice.id,
+        customerId: invoice.customerId,
+        invoiceId: invoice.id,
+        templateData,
+      });
+    }
+    if (channels.includes("sms") && settings.smsEnabled && customer.phone) {
+      notifications.push({
+        templateCode: `${templateCodeBase}-sms`,
+        channel: "sms",
+        recipient: { phone: customer.phone, name: customer.name },
+        contextType: "invoice",
+        contextId: invoice.id,
+        customerId: invoice.customerId,
+        invoiceId: invoice.id,
+        templateData,
+      });
+    }
+
+    const dispatchResults = await this.dispatchService.dispatchBulk(notifications);
+    const outcome: ManualSendResultItemDto[] = dispatchResults.map((r, idx) => ({
+      type: "invoice" as const,
+      id: invoiceId,
+      channel: notifications[idx]?.channel ?? (r.channel as "email" | "sms"),
+      success: r.success,
+      error: r.error,
+    }));
+
+    if (outcome.some((o) => o.success)) {
+      await this.invoiceModel.updateOne(
+        { id: invoiceId },
+        {
+          $set: { lastNotify: new Date() },
+          $push: {
+            notify: {
+              sms: channels.includes("sms"),
+              email: channels.includes("email"),
+              push: false,
+              sendTime: new Date(),
+              users: [{ name: customer.name || "", email: customer.email || "", gsm: customer.phone || "", smsText: "" }],
+            },
+          },
+        }
+      );
+    }
+
+    return outcome;
+  }
+
+  private async sendForContract(
+    contractId: string,
+    channels: ("email" | "sms")[],
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<ManualSendResultItemDto[]> {
+    const contract = await this.contractModel.findOne({ id: contractId }).lean().exec();
+    if (!contract || !contract.customerId) {
+      return channels.map((ch) => ({
+        type: "contract" as const,
+        id: contractId,
+        channel: ch,
+        success: false,
+        error: "Kontrat veya müşteri bulunamadı",
+      }));
+    }
+
+    const customer = await this.customerModel.findOne({ id: contract.customerId }).lean().exec();
+    if (!customer) {
+      return channels.map((ch) => ({
+        type: "contract" as const,
+        id: contractId,
+        channel: ch,
+        success: false,
+        error: "Müşteri bulunamadı",
+      }));
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = contract.endDate ? new Date(contract.endDate) : null;
+    const remainingDays = endDate
+      ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+
+    const templateData = buildContractTemplateData(contract, customer, remainingDays);
+    const notifications: DispatchNotificationDto[] = [];
+
+    if (channels.includes("email") && settings.emailEnabled && customer.email) {
+      notifications.push({
+        templateCode: "contract-expiry-email",
+        channel: "email",
+        recipient: { email: customer.email, name: customer.name },
+        contextType: "contract",
+        contextId: contract.id,
+        customerId: contract.customerId,
+        contractId: contract.id,
+        templateData,
+      });
+    }
+    if (channels.includes("sms") && settings.smsEnabled && customer.phone) {
+      notifications.push({
+        templateCode: "contract-expiry-sms",
+        channel: "sms",
+        recipient: { phone: customer.phone, name: customer.name },
+        contextType: "contract",
+        contextId: contract.id,
+        customerId: contract.customerId,
+        contractId: contract.id,
+        templateData,
+      });
+    }
+
+    const dispatchResults = await this.dispatchService.dispatchBulk(notifications);
+    return dispatchResults.map((r, idx) => ({
+      type: "contract" as const,
+      id: contractId,
+      channel: notifications[idx]?.channel ?? (r.channel as "email" | "sms"),
+      success: r.success,
+      error: r.error,
+    }));
+  }
+
+  /**
+   * Gerçek fatura/kontrat verileriyle template önizlemesi oluşturur
+   */
+  async previewNotification(
+    type: "invoice" | "contract",
+    id: string,
+    channel: "email" | "sms"
+  ): Promise<{
+    subject?: string;
+    body: string;
+    templateCode: string;
+    recipient: { name: string; email: string; phone: string };
+  }> {
+    if (type === "invoice") {
+      return this.previewInvoice(id, channel);
+    }
+    return this.previewContract(id, channel);
+  }
+
+  private async previewInvoice(
+    invoiceId: string,
+    channel: "email" | "sms"
+  ) {
+    const invoice = await this.invoiceModel.findOne({ id: invoiceId }).lean().exec();
+    if (!invoice || !invoice.customerId) {
+      throw new Error("Fatura bulunamadı");
+    }
+    const customer = await this.customerModel.findOne({ id: invoice.customerId }).lean().exec();
+    if (!customer) {
+      throw new Error("Müşteri bulunamadı");
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = invoice.dueDate ? new Date(invoice.dueDate) : null;
+    due?.setHours(0, 0, 0, 0);
+    const overdueDays =
+      due && due < today
+        ? Math.floor((today.getTime() - due.getTime()) / (24 * 60 * 60 * 1000))
+        : 0;
+
+    const templateCodeBase =
+      overdueDays > 0
+        ? overdueDays <= 3
+          ? "invoice-overdue-3"
+          : "invoice-overdue-5"
+        : "invoice-due";
+
+    const templateCode = `${templateCodeBase}-${channel}`;
+    const templateData = buildInvoiceTemplateData(invoice, customer, overdueDays > 0 ? overdueDays : undefined);
+
+    const rendered = await this.templatesService.renderTemplate(
+      templateCode,
+      templateData
+    );
+
+    return {
+      subject: rendered.subject,
+      body: rendered.body,
+      templateCode,
+      recipient: {
+        name: customer.name ?? "",
+        email: customer.email ?? "",
+        phone: customer.phone ?? "",
+      },
+    };
+  }
+
+  private async previewContract(
+    contractId: string,
+    channel: "email" | "sms"
+  ) {
+    const contract = await this.contractModel.findOne({ id: contractId }).lean().exec();
+    if (!contract || !contract.customerId) {
+      throw new Error("Kontrat bulunamadı");
+    }
+    const customer = await this.customerModel.findOne({ id: contract.customerId }).lean().exec();
+    if (!customer) {
+      throw new Error("Müşteri bulunamadı");
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = contract.endDate ? new Date(contract.endDate) : null;
+    const remainingDays = endDate
+      ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+
+    const templateCode = `contract-expiry-${channel}`;
+    const templateData = buildContractTemplateData(contract, customer, remainingDays);
+
+    const rendered = await this.templatesService.renderTemplate(
+      templateCode,
+      templateData
+    );
+
+    return {
+      subject: rendered.subject,
+      body: rendered.body,
+      templateCode,
+      recipient: {
+        name: customer.name ?? "",
+        email: customer.email ?? "",
+        phone: customer.phone ?? "",
+      },
+    };
+  }
+
+  private mapCustomer(customer: { id: string; name?: string; companyName?: string; email?: string; phone?: string } | null): QueueCustomerDto {
+    if (!customer) {
+      return { id: "", name: "", companyName: "", email: "", phone: "" };
+    }
+    return {
+      id: customer.id,
+      name: customer.name ?? "",
+      companyName: customer.companyName ?? "",
+      email: customer.email ?? "",
+      phone: customer.phone ?? "",
+    };
+  }
+}

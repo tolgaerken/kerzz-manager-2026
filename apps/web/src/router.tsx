@@ -10,6 +10,7 @@ import { SalesPage } from "./pages/SalesPage";
 import { IntegratorPage } from "./pages/IntegratorPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
+import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -113,6 +114,13 @@ const systemLogsRoute = createRoute({
   component: SystemLogsPage,
 });
 
+// Notification Settings page
+const notificationSettingsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/system/notifications",
+  component: NotificationSettingsPage,
+});
+
 // Index redirect
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -136,6 +144,7 @@ const routeTree = rootRoute.addChildren([
     integratorRoute,
     invoicesRoute,
     systemLogsRoute,
+    notificationSettingsRoute,
   ]),
 ]);
 

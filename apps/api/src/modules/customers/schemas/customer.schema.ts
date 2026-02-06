@@ -7,6 +7,9 @@ export type CustomerDocument = Customer & Document;
 export class Customer {
   _id: Types.ObjectId;
 
+  @Prop({ type: String, index: true })
+  id: string;
+
   @Prop({ type: String })
   taxNo: string;
 

@@ -21,6 +21,14 @@ import { InvoicesModule } from "./modules/invoices";
 import { LogsModule } from "./modules/logs";
 import { NotificationsModule } from "./modules/notifications";
 import { SystemLogsModule, AuditLogInterceptor } from "./modules/system-logs";
+// Notification System Modules
+import { EmailModule } from "./modules/email";
+import { SmsModule } from "./modules/sms";
+import { NotificationTemplatesModule } from "./modules/notification-templates";
+import { NotificationDispatchModule } from "./modules/notification-dispatch";
+import { NotificationSettingsModule } from "./modules/notification-settings";
+import { NotificationQueueModule } from "./modules/notification-queue";
+import { CronJobsModule } from "./modules/cron-jobs";
 
 @Module({
   imports: [
@@ -50,6 +58,14 @@ import { SystemLogsModule, AuditLogInterceptor } from "./modules/system-logs";
     NotificationsModule,
     // System Logs Module (Global)
     SystemLogsModule,
+    // Notification System Modules
+    EmailModule,
+    SmsModule,
+    NotificationTemplatesModule,
+    NotificationDispatchModule,
+    NotificationSettingsModule,
+    NotificationQueueModule,
+    CronJobsModule,
   ],
   providers: [
     {
