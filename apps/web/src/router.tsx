@@ -11,6 +11,7 @@ import { IntegratorPage } from "./pages/IntegratorPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
 import { AutomatedPaymentsPage } from "./pages/AutomatedPaymentsPage";
+import { BankTransactionsPage } from "./pages/BankTransactionsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { EDocCreditsPage } from "./pages/EDocCreditsPage";
@@ -127,6 +128,13 @@ const automatedPaymentsRoute = createRoute({
   component: AutomatedPaymentsPage,
 });
 
+// Bank Transactions page
+const bankTransactionsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/finance/bank-transactions",
+  component: BankTransactionsPage,
+});
+
 // E-Document Credits page
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -196,6 +204,7 @@ const routeTree = rootRoute.addChildren([
     invoicesRoute,
     paymentsRoute,
     automatedPaymentsRoute,
+    bankTransactionsRoute,
     eDocCreditsRoute,
     systemLogsRoute,
     notificationSettingsRoute,

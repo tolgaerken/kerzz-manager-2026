@@ -10,6 +10,7 @@ import {
   ContractPaymentsListResponseDto
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { generatePaymentId } from "./utils/id-generator";
 
 @Injectable()
 export class ContractPaymentsService {
@@ -46,7 +47,7 @@ export class ContractPaymentsService {
   }
 
   async create(dto: CreateContractPaymentDto): Promise<ContractPaymentResponseDto> {
-    const id = this.generateId();
+    const id = generatePaymentId();
     const now = new Date();
 
     const payment = new this.contractPaymentModel({
@@ -129,9 +130,4 @@ export class ContractPaymentsService {
     };
   }
 
-  private generateId(): string {
-    const uuid = crypto.randomUUID();
-    const suffix = Math.random().toString(16).substring(2, 6);
-    return `${uuid}-${suffix}`;
-  }
 }

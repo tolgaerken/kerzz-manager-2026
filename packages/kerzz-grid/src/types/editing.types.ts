@@ -42,3 +42,17 @@ export interface EditingState {
   /** Column id being edited */
   columnId: string;
 }
+
+/** A single pending change stored during batch edit mode */
+export interface PendingChange<TData = unknown> {
+  /** Row index of the changed cell */
+  rowIndex: number;
+  /** Column id of the changed cell */
+  columnId: string;
+  /** New value entered by the user */
+  newValue: unknown;
+  /** Original value before editing */
+  oldValue: unknown;
+  /** Reference to the row data */
+  row: TData;
+}

@@ -1,40 +1,59 @@
 /* ============================
    @kerzz/grid - Base Styles
+   ============================
+   Global tema entegrasyonu:
+   --theme-* CSS değişkenleri (kerzz-manager global tema sistemi) varsa
+   otomatik olarak kullanılır. Yoksa fallback değerler devreye girer.
    ============================ */
 
 .kz-grid {
-  --kz-bg: #ffffff;
-  --kz-header-bg: #f8fafc;
-  --kz-header-fg: #1e293b;
-  --kz-row-bg: #ffffff;
-  --kz-row-alt-bg: #f8fafc;
-  --kz-row-hover: #f1f5f9;
-  --kz-row-selected: #dbeafe;
-  --kz-border: #e2e8f0;
-  --kz-primary: #3b82f6;
-  --kz-primary-hover: #2563eb;
-  --kz-text: #1e293b;
-  --kz-text-muted: #64748b;
-  --kz-footer-bg: #f1f5f9;
-  --kz-footer-fg: #334155;
-  --kz-scrollbar-thumb: #cbd5e1;
-  --kz-scrollbar-track: #f1f5f9;
-  --kz-filter-bg: #ffffff;
-  --kz-filter-border: #e2e8f0;
-  --kz-filter-active: #3b82f6;
-  --kz-resize-handle: #94a3b8;
-  --kz-focus-ring: #3b82f6;
+  /* ---- Renkler (global tema ile entegre) ---- */
+  --kz-bg: var(--theme-background, #ffffff);
+  --kz-header-bg: var(--theme-surface-elevated, #f8fafc);
+  --kz-header-fg: var(--theme-foreground, #1e293b);
+  --kz-row-bg: var(--theme-surface, #ffffff);
+  --kz-row-alt-bg: var(--theme-surface-elevated, #f8fafc);
+  --kz-row-hover: var(--theme-surface-hover, #f1f5f9);
+  --kz-row-selected: color-mix(in srgb, var(--theme-primary, #3b82f6) 12%, var(--theme-surface, #ffffff));
+  --kz-border: var(--theme-border, #e2e8f0);
+  --kz-primary: var(--theme-primary, #3b82f6);
+  --kz-primary-hover: var(--theme-primary-hover, #2563eb);
+  --kz-text: var(--theme-foreground, #1e293b);
+  --kz-text-muted: var(--theme-muted-foreground, #64748b);
+  --kz-footer-bg: var(--theme-surface-elevated, #f1f5f9);
+  --kz-footer-fg: var(--theme-foreground, #334155);
+  --kz-scrollbar-thumb: color-mix(in srgb, var(--theme-foreground, #1e293b) 20%, var(--theme-background, #ffffff));
+  --kz-scrollbar-track: var(--theme-background, #f1f5f9);
+  --kz-filter-bg: var(--theme-surface, #ffffff);
+  --kz-filter-border: var(--theme-border, #e2e8f0);
+  --kz-filter-active: var(--theme-primary, #3b82f6);
+  --kz-resize-handle: var(--theme-muted, #94a3b8);
+  --kz-focus-ring: var(--theme-primary, #3b82f6);
+
+  /* ---- Semantic renkler ---- */
+  --kz-error: var(--theme-error, #ef4444);
+  --kz-error-foreground: var(--theme-error-foreground, #fca5a5);
+  --kz-warning: var(--theme-warning, #f59e0b);
+  --kz-warning-foreground: var(--theme-warning-foreground, #fffbeb);
+
+  /* ---- Tipografi ---- */
   --kz-font-size: 13px;
   --kz-header-font-size: 13px;
   --kz-footer-font-size: 12px;
   --kz-filter-font-size: 12px;
+
+  /* ---- Spacing ---- */
   --kz-row-height: 36px;
   --kz-header-height: 42px;
   --kz-footer-height: 38px;
   --kz-cell-padding-x: 12px;
   --kz-cell-padding-y: 4px;
+
+  /* ---- Border ---- */
   --kz-border-radius: 6px;
   --kz-border-width: 1px;
+
+  /* ---- Font ---- */
   --kz-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
 
@@ -73,7 +92,7 @@
 }
 
 .kz-grid ::-webkit-scrollbar-thumb:hover {
-  background: var(--kz-text-muted);
+  background: color-mix(in srgb, var(--kz-text) 35%, var(--kz-bg));
 }
 
 /* ---- Toolbar ---- */
@@ -141,13 +160,13 @@
 }
 
 .kz-toolbar__btn--danger {
-  color: #ef4444;
-  border-color: #fca5a5;
+  color: var(--kz-error);
+  border-color: var(--kz-error-foreground);
 }
 
 .kz-toolbar__btn--danger:hover {
-  background: #fef2f2;
-  border-color: #ef4444;
+  background: color-mix(in srgb, var(--kz-error) 8%, var(--kz-bg));
+  border-color: var(--kz-error);
 }
 
 .kz-toolbar__btn--disabled {
@@ -224,7 +243,7 @@
 
 .kz-toolbar-search__input:focus {
   border-color: var(--kz-primary);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--kz-primary) 15%, transparent);
 }
 
 .kz-toolbar-search__input::placeholder {
@@ -402,7 +421,7 @@
   min-height: var(--kz-row-height);
   border-bottom: var(--kz-border-width) solid var(--kz-border);
   background: var(--kz-row-bg);
-  transition: background 0.1s;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .kz-grid-row:hover {
@@ -415,12 +434,36 @@
 
 .kz-grid-row--selected {
   background: var(--kz-row-selected);
+  box-shadow: inset 3px 0 0 0 var(--kz-primary);
 }
 
-/* Row containing an editing cell needs higher z-index so dropdowns render above other rows */
-.kz-grid-row--editing,
+.kz-grid-row--selected:hover {
+  background: color-mix(in srgb, var(--kz-primary) 18%, var(--kz-row-bg));
+}
+
+/* Row containing an editing cell — highlight entire row and raise z-index */
+.kz-grid-row.kz-grid-row--editing,
 .kz-grid-row:has(.kz-grid-cell--editing) {
   z-index: 10;
+  background: color-mix(in srgb, var(--kz-primary) 8%, var(--kz-row-bg));
+}
+
+.kz-grid-row.kz-grid-row--editing:hover,
+.kz-grid-row:has(.kz-grid-cell--editing):hover {
+  background: color-mix(in srgb, var(--kz-primary) 14%, var(--kz-row-bg));
+}
+
+/* Row with pending changes in edit mode — doubled selector for specificity */
+.kz-grid-row.kz-grid-row--changed {
+  background: color-mix(in srgb, var(--kz-warning) 10%, var(--kz-row-bg));
+}
+
+.kz-grid-row.kz-grid-row--changed.kz-grid-row--striped {
+  background: color-mix(in srgb, var(--kz-warning) 15%, var(--kz-row-bg));
+}
+
+.kz-grid-row.kz-grid-row--changed:hover {
+  background: color-mix(in srgb, var(--kz-warning) 20%, var(--kz-row-bg));
 }
 
 /* ---- Cells ---- */
@@ -550,7 +593,8 @@
   background: var(--kz-filter-bg);
   border: var(--kz-border-width) solid var(--kz-filter-border);
   border-radius: var(--kz-border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 10%, transparent),
+    0 1px 3px color-mix(in srgb, var(--kz-text) 6%, transparent);
   font-size: var(--kz-filter-font-size);
   overflow: hidden;
 }
@@ -575,7 +619,7 @@
 
 .kz-filter-dropdown__search input:focus {
   border-color: var(--kz-primary);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--kz-primary) 15%, transparent);
 }
 
 .kz-filter-dropdown__actions {
@@ -680,7 +724,8 @@
   background: var(--kz-filter-bg);
   border: var(--kz-border-width) solid var(--kz-filter-border);
   border-radius: var(--kz-border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 10%, transparent),
+    0 1px 3px color-mix(in srgb, var(--kz-text) 6%, transparent);
   font-size: var(--kz-filter-font-size);
   padding: 8px;
   display: flex;
@@ -719,7 +764,7 @@
 
 .kz-filter-input input:focus {
   border-color: var(--kz-primary);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--kz-primary) 15%, transparent);
 }
 
 .kz-filter-input__row {
@@ -766,7 +811,8 @@
   background: var(--kz-filter-bg);
   border: var(--kz-border-width) solid var(--kz-filter-border);
   border-radius: var(--kz-border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 10%, transparent),
+    0 1px 3px color-mix(in srgb, var(--kz-text) 6%, transparent);
   font-size: var(--kz-filter-font-size);
   overflow: hidden;
 }
@@ -815,7 +861,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--kz-bg) 70%, transparent);
   z-index: 100;
 }
 
@@ -1010,6 +1056,10 @@
   background: var(--kz-row-selected);
 }
 
+.kz-grid-row--selected:hover .kz-selection-cell {
+  background: color-mix(in srgb, var(--kz-primary) 18%, var(--kz-row-bg));
+}
+
 .kz-grid-row:hover .kz-selection-cell {
   background: var(--kz-row-hover);
 }
@@ -1026,6 +1076,10 @@
   background: var(--kz-row-selected);
 }
 
+.kz-grid-row--striped.kz-grid-row--selected:hover .kz-selection-cell {
+  background: color-mix(in srgb, var(--kz-primary) 18%, var(--kz-row-bg));
+}
+
 /* ---- Editing ---- */
 .kz-grid-cell--editable {
   cursor: pointer;
@@ -1037,6 +1091,10 @@
   position: relative;
   z-index: 20;
   background: var(--kz-bg);
+}
+
+.kz-grid-cell.kz-grid-cell--changed {
+  background: color-mix(in srgb, var(--kz-warning) 15%, var(--kz-bg));
 }
 
 /* Common editor styles */
@@ -1068,7 +1126,100 @@
 .kz-editor--select {
   position: relative;
   outline: none;
+  width: 100%;
+  height: 100%;
   background: var(--kz-bg);
+}
+
+.kz-editor__select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: var(--kz-cell-padding-y) var(--kz-cell-padding-x);
+  min-height: var(--kz-row-height);
+  background: var(--kz-bg);
+  color: var(--kz-text);
+  box-shadow: inset 0 0 0 2px var(--kz-primary);
+  cursor: pointer;
+}
+
+.kz-editor__select-trigger-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kz-editor__select-trigger-chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--kz-text-muted);
+}
+
+/* Select dropdown opens below trigger */
+.kz-editor--select .kz-editor__dropdown {
+  top: 100%;
+  margin-top: 2px;
+}
+
+/* Autocomplete editor */
+.kz-editor--autocomplete {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--kz-bg);
+}
+
+.kz-editor__autocomplete-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--kz-cell-padding-y) var(--kz-cell-padding-x);
+  min-height: var(--kz-row-height);
+  background: var(--kz-bg);
+  box-shadow: inset 0 0 0 2px var(--kz-primary);
+  color: var(--kz-text);
+}
+
+.kz-editor__autocomplete-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--kz-text) 50%, transparent);
+}
+
+.kz-editor__autocomplete-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--kz-text);
+}
+
+.kz-editor__autocomplete-input::placeholder {
+  color: color-mix(in srgb, var(--kz-text) 50%, transparent);
+}
+
+.kz-editor__autocomplete-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--kz-text);
+  cursor: pointer;
+}
+
+.kz-editor__autocomplete-clear:hover {
+  background: var(--kz-row-hover);
 }
 
 .kz-editor__dropdown {
@@ -1077,22 +1228,38 @@
   left: 0;
   right: 0;
   background: var(--kz-bg);
+  color: var(--kz-text);
   border: var(--kz-border-width) solid var(--kz-border);
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 15%, transparent),
+    0 2px 4px color-mix(in srgb, var(--kz-text) 8%, transparent);
   max-height: 200px;
   overflow-y: auto;
   z-index: 100;
+}
+
+/* Dropdown positioned below input (for autocomplete editors) */
+.kz-editor--autocomplete .kz-editor__dropdown {
+  top: 100%;
+  margin-top: 2px;
+}
+
+.kz-editor__dropdown--empty {
+  padding: 8px var(--kz-cell-padding-x);
+  color: color-mix(in srgb, var(--kz-text) 50%, transparent);
+  font-size: inherit;
 }
 
 .kz-editor__dropdown-item {
   padding: 6px var(--kz-cell-padding-x);
   cursor: pointer;
   background: var(--kz-bg);
+  color: var(--kz-text);
   transition: background 0.1s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: inherit;
 }
 
 .kz-editor__dropdown-item--highlighted {
@@ -1101,6 +1268,10 @@
 
 .kz-editor__dropdown-item--selected {
   font-weight: 600;
-  color: var(--kz-primary);
-  background: var(--kz-row-selected);
+  color: var(--kz-text);
+  background: color-mix(in srgb, var(--kz-primary) 15%, var(--kz-bg));
+}
+
+.kz-editor__dropdown-item--selected.kz-editor__dropdown-item--highlighted {
+  background: color-mix(in srgb, var(--kz-primary) 25%, var(--kz-bg));
 }

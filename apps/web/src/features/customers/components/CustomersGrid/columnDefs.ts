@@ -1,70 +1,77 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { Customer } from "../../types";
 
-export const customerColumnDefs: ColDef<Customer>[] = [
+export const customerColumnDefs: GridColumnDef<Customer>[] = [
   {
-    field: "taxNo",
-    headerName: "Vergi No",
-    flex: 1,
+    id: "taxNo",
+    header: "Vergi No",
+    accessorKey: "taxNo",
+    width: 130,
     minWidth: 130,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "name",
-    headerName: "Ad",
-    flex: 1,
+    id: "name",
+    header: "Ad",
+    accessorKey: "name",
+    width: 150,
     minWidth: 150,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "companyName",
-    headerName: "Şirket Adı",
-    flex: 1.5,
+    id: "companyName",
+    header: "Şirket Adı",
+    accessorKey: "companyName",
+    width: 250,
     minWidth: 200,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "city",
-    headerName: "Şehir",
-    flex: 1,
+    id: "city",
+    header: "Şehir",
+    accessorKey: "city",
+    width: 120,
     minWidth: 120,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "district",
-    headerName: "İlçe",
-    flex: 1,
+    id: "district",
+    header: "İlçe",
+    accessorKey: "district",
+    width: 120,
     minWidth: 120,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "phone",
-    headerName: "Telefon",
-    flex: 1,
+    id: "phone",
+    header: "Telefon",
+    accessorKey: "phone",
+    width: 140,
     minWidth: 140,
     sortable: false,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "email",
-    headerName: "E-posta",
-    flex: 1.2,
+    id: "email",
+    header: "E-posta",
+    accessorKey: "email",
+    width: 200,
     minWidth: 180,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "enabled",
-    headerName: "Durum",
+    id: "enabled",
+    header: "Durum",
+    accessorKey: "enabled",
     width: 100,
     sortable: true,
-    valueFormatter: (params) => (params.value ? "Aktif" : "Pasif"),
-    cellClass: (params) =>
-      params.value ? "text-green-600" : "text-red-600"
+    cell: (value) => (value ? "Aktif" : "Pasif"),
+    cellClassName: (value) => (value ? "text-green-600" : "text-red-600")
   }
 ];

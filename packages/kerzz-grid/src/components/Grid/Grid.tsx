@@ -6,7 +6,7 @@ import type { GridColumnDef } from '../../types/column.types';
 import { useGridInstance } from '../../core/useGridInstance';
 import { useRowSelection } from '../../core/useRowSelection';
 import { useGridEditing } from '../../core/useGridEditing';
-import { ThemeProvider } from '../../theme/ThemeProvider';
+import { ThemeProvider, useIsAutoTheme } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { themeToCssVars } from '../../utils/memoize';
 import { GridHeader } from './GridHeader';
@@ -175,8 +175,13 @@ function GridInner<TData>(
     deselectAll: selection.deselectAll,
   }), [grid, selection]);
 
-  // Convert theme to CSS vars
-  const cssVars = useMemo(() => themeToCssVars(grid.theme), [grid.theme]);
+  // Auto tema modunda inline CSS vars uygulanmaz — grid, global --theme-* değişkenlerini kullanır.
+  // Explicit theme prop verildiğinde ise inline CSS vars ile override yapılır.
+  const isAutoTheme = useIsAutoTheme();
+  const cssVars = useMemo(
+    () => (isAutoTheme ? {} : themeToCssVars(grid.theme)),
+    [grid.theme, isAutoTheme],
+  );
 
   const gridStyle: React.CSSProperties = {
     ...cssVars,
@@ -220,6 +225,9 @@ function GridInner<TData>(
           cssVars={cssVars}
           searchTerm={grid.searchTerm}
           onSearchChange={grid.setSearchTerm}
+          editMode={editing.editMode}
+          onSaveAll={editing.saveAllChanges}
+          onCancelAll={editing.cancelAllChanges}
         />
       )}
 
@@ -318,6 +326,9 @@ function GridInner<TData>(
           getRowId={(row, index) => resolveRowId(row, index)}
           onSelectionToggle={selection.toggleRow}
           isEditing={editing.isEditing}
+          editMode={editing.editMode}
+          hasPendingChange={editing.hasPendingChange}
+          getPendingValue={editing.getPendingValue}
           onStartEditing={editing.startEditing}
           onSaveEdit={editing.saveValue}
           onCancelEdit={editing.stopEditing}

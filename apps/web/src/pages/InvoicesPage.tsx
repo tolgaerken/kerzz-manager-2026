@@ -74,6 +74,9 @@ export function InvoicesPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   // Queries & Mutations
   const queryClient = useQueryClient();
   const { data, isLoading, isRefetching, error } = useInvoices(queryParams);
@@ -166,6 +169,10 @@ export function InvoicesPage() {
     setSelectedInvoice(null);
   }, []);
 
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
+  }, []);
+
   // Excel export (basit CSV)
   const handleExportExcel = useCallback(() => {
     if (!data?.data) return;
@@ -255,6 +262,8 @@ export function InvoicesPage() {
           autoPaymentCustomerIds={autoPaymentCustomerIds}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
         />
       </div>
 

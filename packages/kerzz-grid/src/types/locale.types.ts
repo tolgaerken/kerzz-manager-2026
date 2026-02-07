@@ -48,6 +48,8 @@ export interface GridLocale {
   toolbarExportPdf: string;
   toolbarColumns: string;
   toolbarSearchPlaceholder: string;
+  toolbarSave: string;
+  toolbarCancel: string;
 
   // General
   noData: string;

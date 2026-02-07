@@ -2,7 +2,7 @@
 export { Grid } from './components/Grid/Grid';
 
 // Theme
-export { ThemeProvider, useGridTheme } from './theme/ThemeProvider';
+export { ThemeProvider, useGridTheme, useIsAutoTheme } from './theme/ThemeProvider';
 export { createTheme } from './theme/createTheme';
 export { lightTheme } from './theme/themes/light';
 export { darkTheme } from './theme/themes/dark';
@@ -98,6 +98,7 @@ export type {
   CellEditorProps,
   SelectEditorOption,
   EditingState,
+  PendingChange,
 } from './types/editing.types';
 
 // CSS import helper

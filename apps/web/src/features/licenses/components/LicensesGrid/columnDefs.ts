@@ -1,8 +1,8 @@
-import type { ColDef, ValueFormatterParams } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { License } from "../../types";
 import { getTypeName, getCompanyTypeName, getCategoryName } from "../../constants/licenses.constants";
 
-// Tarih formatlama
+/** Tarih formatlama */
 const formatDate = (dateStr: string | null): string => {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
@@ -15,7 +15,7 @@ const formatDate = (dateStr: string | null): string => {
   });
 };
 
-// Son online durumu için renk
+/** Son online durumu için renk */
 const getOnlineStatusClass = (lastOnline: string | null): string => {
   if (!lastOnline) return "text-gray-400";
 
@@ -25,44 +25,47 @@ const getOnlineStatusClass = (lastOnline: string | null): string => {
 
   if (diffHours < 1) return "text-green-500 font-semibold";
   if (diffHours < 24) return "text-yellow-500";
-  if (diffHours < 168) return "text-orange-500"; // 1 hafta
+  if (diffHours < 168) return "text-orange-500";
   return "text-red-500";
 };
 
-export const licenseColumnDefs: ColDef<License>[] = [
+export const licenseColumnDefs: GridColumnDef<License>[] = [
   {
-    field: "licenseId",
-    headerName: "ID",
+    id: "licenseId",
+    header: "ID",
+    accessorKey: "licenseId",
     width: 90,
     sortable: true,
     pinned: "left",
-    cellClass: "font-mono"
+    cellClassName: "font-mono"
   },
   {
-    field: "brandName",
-    headerName: "Tabela Adı",
-    flex: 1.5,
+    id: "brandName",
+    header: "Tabela Adı",
+    accessorKey: "brandName",
+    width: 200,
     minWidth: 200,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "customerName",
-    headerName: "Müşteri",
-    flex: 1.2,
+    id: "customerName",
+    header: "Müşteri",
+    accessorKey: "customerName",
+    width: 180,
     minWidth: 150,
     sortable: true,
-    filter: "agTextColumnFilter"
+    filter: { type: "input" }
   },
   {
-    field: "type",
-    headerName: "Tip",
+    id: "type",
+    header: "Tip",
+    accessorKey: "type",
     width: 120,
     sortable: true,
-    valueFormatter: (params: ValueFormatterParams<License>) =>
-      getTypeName(params.value || ""),
-    cellClass: (params) => {
-      switch (params.value) {
+    valueFormatter: (value) => getTypeName((value as string) || ""),
+    cellClassName: (value) => {
+      switch (value) {
         case "kerzz-pos":
           return "text-blue-500";
         case "orwi-pos":
@@ -72,96 +75,110 @@ export const licenseColumnDefs: ColDef<License>[] = [
         default:
           return "";
       }
-    }
+    },
+    filter: { type: "dropdown" }
   },
   {
-    field: "companyType",
-    headerName: "Şirket Tipi",
+    id: "companyType",
+    header: "Şirket Tipi",
+    accessorKey: "companyType",
     width: 110,
     sortable: true,
-    valueFormatter: (params: ValueFormatterParams<License>) =>
-      getCompanyTypeName(params.value || "")
+    valueFormatter: (value) => getCompanyTypeName((value as string) || ""),
+    filter: { type: "dropdown" }
   },
   {
-    field: "address.city",
-    headerName: "Şehir",
+    id: "city",
+    header: "Şehir",
+    accessorFn: (row) => row.address?.city || "-",
     width: 120,
     sortable: true,
-    valueGetter: (params) => params.data?.address?.city || "-"
+    filter: { type: "input" }
   },
   {
-    field: "phone",
-    headerName: "Telefon",
+    id: "phone",
+    header: "Telefon",
+    accessorKey: "phone",
     width: 140,
     sortable: false
   },
   {
-    field: "active",
-    headerName: "Aktif",
+    id: "active",
+    header: "Aktif",
+    accessorKey: "active",
     width: 80,
     sortable: true,
-    cellRenderer: (params: { value: boolean }) => {
-      return params.value ? "✓" : "✗";
-    },
-    cellClass: (params) => (params.value ? "text-green-500 text-center" : "text-red-500 text-center")
+    align: "center",
+    cell: (value) => (value ? "✓" : "✗"),
+    cellClassName: (value) =>
+      value ? "text-green-500 text-center" : "text-red-500 text-center",
+    filter: { type: "dropdown" }
   },
   {
-    field: "block",
-    headerName: "Bloke",
+    id: "block",
+    header: "Bloke",
+    accessorKey: "block",
     width: 80,
     sortable: true,
-    cellRenderer: (params: { value: boolean }) => {
-      return params.value ? "⛔" : "";
-    },
-    cellClass: "text-center"
+    align: "center",
+    cell: (value) => (value ? "⛔" : ""),
+    cellClassName: "text-center",
+    filter: { type: "dropdown" }
   },
   {
-    field: "haveContract",
-    headerName: "Kontrat",
+    id: "haveContract",
+    header: "Kontrat",
+    accessorKey: "haveContract",
     width: 90,
     sortable: true,
-    cellRenderer: (params: { value: boolean }) => {
-      return params.value ? "✓" : "✗";
-    },
-    cellClass: (params) => (params.value ? "text-green-500 text-center" : "text-gray-400 text-center")
+    align: "center",
+    cell: (value) => (value ? "✓" : "✗"),
+    cellClassName: (value) =>
+      value ? "text-green-500 text-center" : "text-gray-400 text-center",
+    filter: { type: "dropdown" }
   },
   {
-    field: "lastOnline",
-    headerName: "Son Online",
+    id: "lastOnline",
+    header: "Son Online",
+    accessorKey: "lastOnline",
     width: 150,
     sortable: true,
-    valueFormatter: (params: ValueFormatterParams<License>) => formatDate(params.value),
-    cellClass: (params) => getOnlineStatusClass(params.data?.lastOnline || null)
+    valueFormatter: (value) => formatDate(value as string | null),
+    cellClassName: (_value, row) => getOnlineStatusClass(row.lastOnline)
   },
   {
-    field: "lastVersion",
-    headerName: "Versiyon",
+    id: "lastVersion",
+    header: "Versiyon",
+    accessorKey: "lastVersion",
     width: 100,
     sortable: true,
-    cellClass: "font-mono text-xs"
+    cellClassName: "font-mono text-xs"
   },
   {
-    field: "licenseItems",
-    headerName: "Modüller",
+    id: "licenseItems",
+    header: "Modüller",
+    accessorFn: (row) => row.licenseItems?.length || 0,
     width: 90,
     sortable: false,
-    valueGetter: (params) => params.data?.licenseItems?.length || 0,
-    cellClass: "text-center"
+    align: "center",
+    cellClassName: "text-center"
   },
   {
-    field: "saasItems",
-    headerName: "SaaS",
+    id: "saasItems",
+    header: "SaaS",
+    accessorFn: (row) => row.saasItems?.length || 0,
     width: 80,
     sortable: false,
-    valueGetter: (params) => params.data?.saasItems?.length || 0,
-    cellClass: "text-center"
+    align: "center",
+    cellClassName: "text-center"
   },
   {
-    field: "category",
-    headerName: "Kategori",
+    id: "category",
+    header: "Kategori",
+    accessorKey: "category",
     width: 140,
     sortable: true,
-    valueFormatter: (params: ValueFormatterParams<License>) =>
-      getCategoryName(params.value || "") || "-"
+    valueFormatter: (value) => getCategoryName((value as string) || "") || "-",
+    filter: { type: "dropdown" }
   }
 ];

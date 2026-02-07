@@ -13,6 +13,12 @@ interface GridCellProps<TData> {
   width: number;
   value: unknown;
   isEditing?: boolean;
+  /** Whether the grid is in batch edit mode */
+  editMode?: boolean;
+  /** Pending value for this cell (undefined if no pending change) */
+  pendingValue?: unknown;
+  /** Whether this cell has a pending change */
+  hasPendingChange?: boolean;
   onStartEditing?: (rowIndex: number, columnId: string) => void;
   onSave?: (newValue: unknown) => void;
   onCancel?: () => void;
@@ -40,25 +46,43 @@ function GridCellInner<TData>({
   width,
   value,
   isEditing,
+  editMode,
+  pendingValue,
+  hasPendingChange,
   onStartEditing,
   onSave,
   onCancel,
   context,
 }: GridCellProps<TData>) {
-  const align = resolveAlign(column.align, value);
+  // Use pending value for display when available
+  const displayValue = hasPendingChange ? pendingValue : value;
+
+  const align = resolveAlign(column.align, displayValue);
   const alignClass = align ? `kz-grid-cell--align-${align}` : '';
   const editable = resolveEditable(column, row);
 
   const className =
     typeof column.cellClassName === 'function'
-      ? column.cellClassName(value, row)
+      ? column.cellClassName(displayValue, row)
       : column.cellClassName ?? '';
 
+  // Double-click: always starts editing (entry point for edit mode)
   const handleDoubleClick = useCallback(() => {
     if (editable && onStartEditing) {
       onStartEditing(rowIndex, column.id);
     }
   }, [editable, onStartEditing, rowIndex, column.id]);
+
+  // Single-click: starts editing only when in edit mode
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (editMode && editable && onStartEditing) {
+        e.stopPropagation();
+        onStartEditing(rowIndex, column.id);
+      }
+    },
+    [editMode, editable, onStartEditing, rowIndex, column.id],
+  );
 
   // Resolve options for select editor
   const resolvedOptions = useMemo((): SelectEditorOption[] => {
@@ -72,8 +96,11 @@ function GridCellInner<TData>({
   if (isEditing && editable && column.cellEditor) {
     const editorType = column.cellEditor.type;
 
+    // Pass pending value to editor if available, otherwise original value
+    const editorValue = hasPendingChange ? pendingValue : value;
+
     const baseProps: CellEditorProps<TData> = {
-      value,
+      value: editorValue,
       row,
       column,
       onSave: onSave ?? (() => {}),
@@ -117,18 +144,29 @@ function GridCellInner<TData>({
 
   // Display mode: use cell renderer, valueFormatter, or raw value
   const content = column.cell
-    ? column.cell(value, row, context)
+    ? column.cell(displayValue, row, context)
     : column.valueFormatter
-      ? column.valueFormatter(value, row)
-      : value != null
-        ? String(value)
+      ? column.valueFormatter(displayValue, row)
+      : displayValue != null
+        ? String(displayValue)
         : '';
+
+  const cellClasses = [
+    'kz-grid-cell',
+    editable && 'kz-grid-cell--editable',
+    hasPendingChange && 'kz-grid-cell--changed',
+    alignClass,
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div
-      className={`kz-grid-cell ${editable ? 'kz-grid-cell--editable' : ''} ${alignClass} ${className}`.trim()}
+      className={cellClasses}
       style={{ width, minWidth: column.minWidth ?? 50 }}
       onDoubleClick={handleDoubleClick}
+      onClick={handleClick}
     >
       <span className="kz-grid-cell__content">{content}</span>
     </div>

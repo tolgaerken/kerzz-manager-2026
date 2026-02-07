@@ -4,7 +4,7 @@ import type { ToolbarConfig, ToolbarButtonConfig } from '../../types/toolbar.typ
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSeparator } from './ToolbarSeparator';
 import { ToolbarSearchInput } from './ToolbarSearchInput';
-import { ExcelIcon, PdfIcon, ColumnsIcon } from './ToolbarIcons';
+import { ExcelIcon, PdfIcon, ColumnsIcon, SaveIcon, CancelIcon } from './ToolbarIcons';
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
 import { Portal } from '../Portal/Portal';
 import { useLocale } from '../../i18n/useLocale';
@@ -23,6 +23,12 @@ interface GridToolbarProps<TData> {
   cssVars: React.CSSProperties;
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  /** Whether the grid is in batch edit mode */
+  editMode?: boolean;
+  /** Commit all pending changes */
+  onSaveAll?: () => void;
+  /** Discard all pending changes */
+  onCancelAll?: () => void;
 }
 
 export function GridToolbar<TData>({
@@ -37,6 +43,9 @@ export function GridToolbar<TData>({
   cssVars,
   searchTerm,
   onSearchChange,
+  editMode,
+  onSaveAll,
+  onCancelAll,
 }: GridToolbarProps<TData>) {
   const locale = useLocale();
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
@@ -85,7 +94,7 @@ export function GridToolbar<TData>({
 
   return (
     <div className="kz-toolbar">
-      {/* Left: Search + Custom buttons */}
+      {/* Left: Search + Custom buttons + Edit mode actions */}
       <div className="kz-toolbar__left">
         {showSearch && (
           <ToolbarSearchInput value={searchTerm} onChange={onSearchChange} />
@@ -100,6 +109,25 @@ export function GridToolbar<TData>({
             variant={btn.variant}
           />
         ))}
+
+        {/* Edit mode: Save & Cancel buttons */}
+        {editMode && (
+          <>
+            {(hasCustomButtons || showSearch) && <ToolbarSeparator />}
+            <ToolbarButton
+              label={locale.toolbarSave}
+              icon={<SaveIcon />}
+              onClick={onSaveAll ?? (() => {})}
+              variant="primary"
+            />
+            <ToolbarButton
+              label={locale.toolbarCancel}
+              icon={<CancelIcon />}
+              onClick={onCancelAll ?? (() => {})}
+              variant="danger"
+            />
+          </>
+        )}
       </div>
 
       {/* Right: Built-in buttons */}

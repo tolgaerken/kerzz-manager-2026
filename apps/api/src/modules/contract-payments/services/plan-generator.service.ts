@@ -1,12 +1,20 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { addMonths, startOfMonth, differenceInCalendarDays, getMonth, getYear } from "date-fns";
-import { ContractPayment, ContractPaymentDocument } from "../schemas/contract-payment.schema";
-import { InvoiceSummary, InvoiceRow, MonthlyPaymentStatus, YearlyPaymentStatus } from "../interfaces/payment-plan.interfaces";
-import { Contract, ContractDocument } from "../../contracts/schemas/contract.schema";
+import { Model, AnyBulkWriteOperation } from "mongoose";
+import { addMonths, startOfMonth, getMonth, getYear } from "date-fns";
+import {
+  ContractPayment,
+  ContractPaymentDocument,
+} from "../schemas/contract-payment.schema";
+import {
+  InvoiceSummary,
+  MonthlyPaymentStatus,
+  YearlyPaymentStatus,
+} from "../interfaces/payment-plan.interfaces";
+import { Contract } from "../../contracts/schemas/contract.schema";
 import { Customer } from "../../customers/schemas/customer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
+import { generatePaymentId, generateShortId } from "../utils/id-generator";
 
 @Injectable()
 export class PlanGeneratorService {
@@ -15,13 +23,11 @@ export class PlanGeneratorService {
   constructor(
     @InjectModel(ContractPayment.name, CONTRACT_DB_CONNECTION)
     private paymentModel: Model<ContractPaymentDocument>,
-    @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
-    private contractModel: Model<ContractDocument>,
   ) {}
 
   /**
-   * Kontrat icin odeme planlari olusturur.
-   * io-cloud-2025 generatePlans() + syncPlans() metodlarinin NestJS karsiligi.
+   * Kontrat icin odeme planlari olusturur ve senkronize eder.
+   * Senkronizasyon sonrasi guncel plan listesini dondurur (ekstra sorgu yapmaz).
    */
   async generateAndSyncPlans(
     contract: Contract,
@@ -33,6 +39,7 @@ export class PlanGeneratorService {
     // Mevcut planlari cek
     const existingPlans = await this.paymentModel
       .find({ contractId: contract.id })
+      .sort({ payDate: 1 })
       .lean()
       .exec();
 
@@ -45,15 +52,8 @@ export class PlanGeneratorService {
       customer,
     );
 
-    // Senkronize et
-    await this.syncPlans(existingPlans, newPlans, customer);
-
-    // Guncel planlari dondur
-    return this.paymentModel
-      .find({ contractId: contract.id })
-      .sort({ payDate: 1 })
-      .lean()
-      .exec();
+    // Senkronize et ve nihai plan listesini dondur
+    return this.syncPlans(existingPlans, newPlans, customer);
   }
 
   /**
@@ -72,7 +72,7 @@ export class PlanGeneratorService {
       const date = addMonths(start, ix);
 
       const plan: Partial<ContractPayment> = {
-        id: this.generateId(),
+        id: generatePaymentId(),
         contractId: contract.id,
         payDate: startOfMonth(date),
         total: invoiceSummary.total,
@@ -91,7 +91,7 @@ export class PlanGeneratorService {
           totalUsd: 0,
           totalEur: 0,
         })),
-        ref: `${customer.id}-${this.generateShortId()}`,
+        ref: `${customer.id}-${generateShortId()}`,
         customerId: customer.id || "",
         companyId: customer.erpId || "",
         balance: 0,
@@ -110,61 +110,89 @@ export class PlanGeneratorService {
   /**
    * Mevcut planlar ile yeni planlari senkronize eder.
    * Faturasi kesilmis planlari korur, faturasiz planlari gunceller.
+   * bulkWrite ile tek islemde DB'ye yazar ve nihai plan listesini dondurur.
    */
   private async syncPlans(
     existingPlans: ContractPayment[],
     newPlans: Partial<ContractPayment>[],
     customer: Customer,
-  ): Promise<void> {
-    // Faturasi kesilmis planlari koru
-    const invoicedPlans = existingPlans.filter((p) => p.invoiceNo && p.invoiceNo !== "");
+  ): Promise<ContractPayment[]> {
+    const bulkOps: AnyBulkWriteOperation<ContractPaymentDocument>[] = [];
+    const finalPlans: ContractPayment[] = [];
+
+    // Faturasi kesilmis planlari koru ve guncelle
+    const invoicedPlans = existingPlans.filter(
+      (p) => p.invoiceNo && p.invoiceNo !== "",
+    );
+
+    // Faturali planlarin aylarini takip et (yeni planlardan cikarilacak)
+    const invoicedMonths = new Set<string>();
 
     for (const invoicedPlan of invoicedPlans) {
-      invoicedPlan.customerId = customer.id || "";
-      await this.paymentModel
-        .findOneAndUpdate({ id: invoicedPlan.id }, invoicedPlan)
-        .exec();
+      const updatedPlan = { ...invoicedPlan, customerId: customer.id || "" };
 
-      // Ayni ay icin yeni plandan cikar
-      const invoicedDate = new Date(invoicedPlan.payDate);
-      const matchIndex = newPlans.findIndex((np) => {
-        if (!np.payDate) return false;
-        const npDate = new Date(np.payDate);
-        return (
-          npDate.getMonth() === invoicedDate.getMonth() &&
-          npDate.getFullYear() === invoicedDate.getFullYear()
-        );
+      bulkOps.push({
+        updateOne: {
+          filter: { id: invoicedPlan.id },
+          update: { $set: { customerId: customer.id || "" } },
+        },
       });
 
-      if (matchIndex !== -1) {
-        newPlans.splice(matchIndex, 1);
-      }
+      finalPlans.push(updatedPlan as ContractPayment);
+
+      const invoicedDate = new Date(invoicedPlan.payDate);
+      const monthKey = `${invoicedDate.getFullYear()}-${invoicedDate.getMonth()}`;
+      invoicedMonths.add(monthKey);
     }
 
-    // Faturasiz planlari upsert et
-    const uninvoicedPlans = newPlans.filter(
+    // Faturali aylarla eslesen yeni planlari cikar
+    const remainingNewPlans = newPlans.filter((np) => {
+      if (!np.payDate) return true;
+      const npDate = new Date(np.payDate);
+      const monthKey = `${npDate.getFullYear()}-${npDate.getMonth()}`;
+      return !invoicedMonths.has(monthKey);
+    });
+
+    // Faturasiz yeni planlari upsert et
+    const uninvoicedPlans = remainingNewPlans.filter(
       (p) => !p.invoiceNo || p.invoiceNo === "",
     );
 
     for (const plan of uninvoicedPlans) {
       plan.customerId = customer.id || "";
-      await this.paymentModel
-        .findOneAndUpdate({ id: plan.id }, plan, { upsert: true, new: true })
-        .exec();
+
+      bulkOps.push({
+        updateOne: {
+          filter: { id: plan.id },
+          update: { $set: plan },
+          upsert: true,
+        },
+      });
+
+      finalPlans.push(plan as ContractPayment);
     }
+
+    // Tek seferde DB'ye yaz
+    if (bulkOps.length > 0) {
+      await this.paymentModel.bulkWrite(bulkOps);
+    }
+
+    // payDate'e gore sirala
+    finalPlans.sort(
+      (a, b) =>
+        new Date(a.payDate).getTime() - new Date(b.payDate).getTime(),
+    );
+
+    return finalPlans;
   }
 
   /**
-   * Kontrat icin aylik odeme durumlarini kontrol eder.
+   * Plan listesinden aylik odeme durumlarini hesaplar (DB sorgusu yapmaz).
    */
-  async getMonthlyPaymentStatus(contractId: string): Promise<MonthlyPaymentStatus[]> {
-    const payments = await this.paymentModel
-      .find({ contractId })
-      .sort({ payDate: 1 })
-      .lean()
-      .exec();
-
-    return payments.map((payment) => ({
+  static buildMonthlyPaymentStatus(
+    plans: ContractPayment[],
+  ): MonthlyPaymentStatus[] {
+    return plans.map((payment) => ({
       year: getYear(payment.payDate).toString(),
       month: (getMonth(payment.payDate) + 1).toString(),
       invoice: !!payment.invoiceNo && payment.invoiceNo !== "",
@@ -179,20 +207,22 @@ export class PlanGeneratorService {
   }
 
   /**
-   * Kontrat icin yillik odeme durumunu kontrol eder.
+   * Plan listesinden yillik odeme durumunu hesaplar (DB sorgusu yapmaz).
    */
-  async getYearlyPaymentStatus(contractId: string): Promise<YearlyPaymentStatus | null> {
-    const payments = await this.paymentModel
-      .find({ contractId })
-      .lean()
-      .exec();
-
-    if (payments.length === 0) {
-      return { invoice: false, payment: false, payDate: undefined, invoiceDate: undefined };
+  static buildYearlyPaymentStatus(
+    plans: ContractPayment[],
+  ): YearlyPaymentStatus | null {
+    if (plans.length === 0) {
+      return {
+        invoice: false,
+        payment: false,
+        payDate: undefined,
+        invoiceDate: undefined,
+      };
     }
 
-    if (payments.length === 1) {
-      const p = payments[0];
+    if (plans.length === 1) {
+      const p = plans[0];
       return {
         invoice: !!p.invoiceNo && p.invoiceNo !== "",
         payment: p.paid || false,
@@ -201,7 +231,43 @@ export class PlanGeneratorService {
       };
     }
 
-    return { invoice: false, payment: false, payDate: undefined, invoiceDate: undefined };
+    return {
+      invoice: false,
+      payment: false,
+      payDate: undefined,
+      invoiceDate: undefined,
+    };
+  }
+
+  /**
+   * Kontrat icin aylik odeme durumlarini kontrol eder (DB'den okur).
+   * Disaridan bagimsiz cagrildiginda kullanilir.
+   */
+  async getMonthlyPaymentStatus(
+    contractId: string,
+  ): Promise<MonthlyPaymentStatus[]> {
+    const payments = await this.paymentModel
+      .find({ contractId })
+      .sort({ payDate: 1 })
+      .lean()
+      .exec();
+
+    return PlanGeneratorService.buildMonthlyPaymentStatus(payments);
+  }
+
+  /**
+   * Kontrat icin yillik odeme durumunu kontrol eder (DB'den okur).
+   * Disaridan bagimsiz cagrildiginda kullanilir.
+   */
+  async getYearlyPaymentStatus(
+    contractId: string,
+  ): Promise<YearlyPaymentStatus | null> {
+    const payments = await this.paymentModel
+      .find({ contractId })
+      .lean()
+      .exec();
+
+    return PlanGeneratorService.buildYearlyPaymentStatus(payments);
   }
 
   /**
@@ -227,15 +293,5 @@ export class PlanGeneratorService {
       .sort({ payDate: 1 })
       .lean()
       .exec();
-  }
-
-  private generateId(): string {
-    const uuid = crypto.randomUUID();
-    const suffix = Math.random().toString(16).substring(2, 6);
-    return `${uuid}-${suffix}`;
-  }
-
-  private generateShortId(): string {
-    return crypto.randomUUID().substring(0, 8);
   }
 }

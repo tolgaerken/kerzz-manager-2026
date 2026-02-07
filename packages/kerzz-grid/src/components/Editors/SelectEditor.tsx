@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { CellEditorProps } from '../../types/editing.types';
 import type { SelectEditorOption } from '../../types/editing.types';
 
@@ -16,11 +16,23 @@ export function SelectEditor<TData>({
   const [highlightedIndex, setHighlightedIndex] = useState(() =>
     Math.max(options.findIndex((o) => o.id === currentValue), 0),
   );
+  // Guard: prevent accidental selection from double-click propagation
+  const [armed, setArmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Current selected option label
+  const currentLabel = useMemo(() => {
+    const found = options.find((o) => o.id === currentValue);
+    return found?.name ?? currentValue;
+  }, [options, currentValue]);
+
   useEffect(() => {
     containerRef.current?.focus();
+    // Arm after a short delay so the double-click's second mousedown
+    // doesn't accidentally trigger a selection on a dropdown item.
+    const timer = setTimeout(() => setArmed(true), 80);
+    return () => clearTimeout(timer);
   }, []);
 
   // Scroll to highlighted
@@ -79,6 +91,15 @@ export function SelectEditor<TData>({
         }
       }}
     >
+      {/* Trigger: shows current value */}
+      <div className="kz-editor__select-trigger">
+        <span className="kz-editor__select-trigger-label">{currentLabel}</span>
+        <svg className="kz-editor__select-trigger-chevron" viewBox="0 0 12 12" fill="none">
+          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* Dropdown: below trigger */}
       <div ref={listRef} className="kz-editor__dropdown">
         {options.map((option, index) => (
           <div
@@ -88,7 +109,10 @@ export function SelectEditor<TData>({
             }${option.id === currentValue ? ' kz-editor__dropdown-item--selected' : ''}`}
             onMouseDown={(e) => {
               e.preventDefault();
-              handleSelect(option);
+              // Only allow selection after the arm delay
+              if (armed) {
+                handleSelect(option);
+              }
             }}
             onMouseEnter={() => setHighlightedIndex(index)}
           >

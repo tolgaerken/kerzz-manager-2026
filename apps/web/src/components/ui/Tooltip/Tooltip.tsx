@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface TooltipProps {
   content: string;
@@ -14,10 +15,34 @@ export function Tooltip({
   disabled = false 
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gap = 8;
+
+    switch (position) {
+      case "right":
+        setCoords({ top: rect.top + rect.height / 2, left: rect.right + gap });
+        break;
+      case "left":
+        setCoords({ top: rect.top + rect.height / 2, left: rect.left - gap });
+        break;
+      case "top":
+        setCoords({ top: rect.top - gap, left: rect.left + rect.width / 2 });
+        break;
+      case "bottom":
+        setCoords({ top: rect.bottom + gap, left: rect.left + rect.width / 2 });
+        break;
+    }
+  }, [position]);
 
   const showTooltip = () => {
     if (disabled) return;
+    updatePosition();
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
     }, 200);
@@ -38,28 +63,34 @@ export function Tooltip({
     };
   }, []);
 
-  const positionClasses = {
-    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
-    right: "left-full top-1/2 -translate-y-1/2 ml-2",
-    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
-    left: "right-full top-1/2 -translate-y-1/2 mr-2",
+  const transformClasses: Record<string, string> = {
+    top: "-translate-x-1/2 -translate-y-full",
+    right: "-translate-y-1/2",
+    bottom: "-translate-x-1/2",
+    left: "-translate-x-full -translate-y-1/2",
   };
 
   return (
-    <div 
-      className="relative inline-flex"
-      onMouseEnter={showTooltip}
-      onMouseLeave={hideTooltip}
-    >
-      {children}
-      {isVisible && !disabled && (
-        <div
-          className={`absolute z-50 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-lg ${positionClasses[position]}`}
-          role="tooltip"
-        >
-          {content}
-        </div>
-      )}
-    </div>
+    <>
+      <div 
+        ref={triggerRef}
+        className="inline-flex"
+        onMouseEnter={showTooltip}
+        onMouseLeave={hideTooltip}
+      >
+        {children}
+      </div>
+      {isVisible && !disabled &&
+        createPortal(
+          <div
+            className={`fixed z-[9999] whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-lg ${transformClasses[position]}`}
+            style={{ top: coords.top, left: coords.left }}
+            role="tooltip"
+          >
+            {content}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

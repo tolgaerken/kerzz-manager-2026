@@ -9,7 +9,7 @@ import {
   Wallet,
   ScrollText,
   Bell,
-  FileCheck
+  FileCheck,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -43,6 +43,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "Faturalar", path: "/finance/invoices" },
       { label: "Online Ödemeler", path: "/finance/payments" },
       { label: "Otomatik Ödemeler", path: "/finance/automated-payments" },
+      { label: "Banka İşlemleri", path: "/finance/bank-transactions" },
     ],
   },
   {

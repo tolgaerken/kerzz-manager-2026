@@ -49,6 +49,8 @@ export const tr: GridLocale = {
   toolbarExportPdf: 'PDF',
   toolbarColumns: 'Sütunlar',
   toolbarSearchPlaceholder: 'Ara...',
+  toolbarSave: 'Kaydet',
+  toolbarCancel: 'İptal',
 
   // General
   noData: 'Veri bulunamadı',

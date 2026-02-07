@@ -10,6 +10,8 @@ interface InvoicesGridProps {
   autoPaymentCustomerIds: Set<string>;
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
   onRowDoubleClick?: (invoice: Invoice) => void;
+  selectedIds?: string[];
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
 export function InvoicesGrid({
@@ -17,7 +19,9 @@ export function InvoicesGrid({
   loading,
   autoPaymentCustomerIds,
   onSortChange,
-  onRowDoubleClick
+  onRowDoubleClick,
+  selectedIds,
+  onSelectionChange
 }: InvoicesGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(500);
@@ -72,6 +76,9 @@ export function InvoicesGrid({
         getRowId={(row) => row._id}
         onRowDoubleClick={handleRowDoubleClick}
         onSortChange={handleSortChange}
+        selectionMode="multiple"
+        selectedIds={selectedIds}
+        onSelectionChange={onSelectionChange}
         stripedRows
         stateKey="invoices-grid"
         toolbar={{

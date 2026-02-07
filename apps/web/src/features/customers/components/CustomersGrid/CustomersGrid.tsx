@@ -1,16 +1,8 @@
-import { useCallback, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type GridReadyEvent,
-  type SortChangedEvent,
-  themeQuartz
-} from "ag-grid-community";
+import { useCallback } from "react";
+import { Grid } from "@kerzz/grid";
+import type { SortingState } from "@tanstack/react-table";
 import { customerColumnDefs } from "./columnDefs";
 import type { Customer } from "../../types";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface CustomersGridProps {
   data: Customer[];
@@ -25,75 +17,43 @@ export function CustomersGrid({
   onSortChange,
   onRowDoubleClick
 }: CustomersGridProps) {
-  const gridRef = useRef<AgGridReact<Customer>>(null);
-
-  const defaultColDef = useMemo(
-    () => ({
-      resizable: true,
-      sortable: true
-    }),
-    []
-  );
-
-  const onGridReady = useCallback((params: GridReadyEvent<Customer>) => {
-    params.api.sizeColumnsToFit();
-  }, []);
-
-  const handleSortChanged = useCallback(
-    (event: SortChangedEvent<Customer>) => {
-      const sortModel = event.api.getColumnState().find((col) => col.sort);
-      if (sortModel && sortModel.colId) {
-        onSortChange(sortModel.colId, sortModel.sort as "asc" | "desc");
+  const handleSortChange = useCallback(
+    (sorting: SortingState) => {
+      if (sorting.length > 0) {
+        onSortChange(sorting[0].id, sorting[0].desc ? "desc" : "asc");
       }
     },
     [onSortChange]
   );
 
-  const handleRowDoubleClicked = useCallback(
-    (event: { data: Customer | undefined }) => {
-      if (event.data && onRowDoubleClick) {
-        onRowDoubleClick(event.data);
-      }
+  const handleRowDoubleClick = useCallback(
+    (row: Customer) => {
+      onRowDoubleClick?.(row);
     },
     [onRowDoubleClick]
   );
 
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 40,
-    headerHeight: 44
-  });
-
   return (
     <div className="h-full w-full flex-1">
-      <AgGridReact<Customer>
-        ref={gridRef}
-        theme={customTheme}
-        rowData={data}
-        columnDefs={customerColumnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onSortChanged={handleSortChanged}
-        onRowDoubleClicked={handleRowDoubleClicked}
+      <Grid<Customer>
+        data={data}
+        columns={customerColumnDefs}
+        height="100%"
+        width="100%"
+        locale="tr"
         loading={loading}
-        rowSelection={{ mode: "singleRow" }}
-        suppressCellFocus={true}
-        animateRows={false}
-        suppressMovableColumns={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => params.data._id}
-        rowBuffer={20}
-        suppressScrollOnNewData={true}
-        debounceVerticalScrollbar={true}
+        stateKey="customers-grid"
+        stateStorage="localStorage"
+        getRowId={(row) => row._id}
+        stripedRows
+        onSortChange={handleSortChange}
+        onRowDoubleClick={handleRowDoubleClick}
+        toolbar={{
+          showSearch: true,
+          showColumnVisibility: true,
+          showExcelExport: true,
+          showPdfExport: false
+        }}
       />
     </div>
   );

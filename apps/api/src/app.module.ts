@@ -41,6 +41,7 @@ import { ErpModule } from "./modules/erp";
 // Utility Modules
 import { ExchangeRateModule } from "./modules/exchange-rate";
 import { ErpSettingsModule } from "./modules/erp-settings";
+import { BankTransactionsModule } from "./modules/bank-transactions";
 
 @Module({
   imports: [
@@ -89,6 +90,8 @@ import { ErpSettingsModule } from "./modules/erp-settings";
     // Company & ERP Modules
     CompaniesModule,
     ErpModule,
+    // Bank Integration Module
+    BankTransactionsModule,
     // Utility Modules
     ExchangeRateModule,
     ErpSettingsModule,

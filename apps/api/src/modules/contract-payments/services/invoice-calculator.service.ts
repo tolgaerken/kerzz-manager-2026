@@ -3,15 +3,49 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ExchangeRateService } from "../../exchange-rate";
 import { ErpSettingsService } from "../../erp-settings";
-import { InvoiceRow, InvoiceSummary, CurrencyType } from "../interfaces/payment-plan.interfaces";
-import { ContractCashRegister, ContractCashRegisterDocument } from "../../contract-cash-registers/schemas/contract-cash-register.schema";
-import { ContractSupport, ContractSupportDocument } from "../../contract-supports/schemas/contract-support.schema";
-import { ContractItem, ContractItemDocument } from "../../contract-items/schemas/contract-item.schema";
-import { ContractSaas, ContractSaasDocument } from "../../contract-saas/schemas/contract-saas.schema";
-import { ContractVersion, ContractVersionDocument } from "../../contract-versions/schemas/contract-version.schema";
-import { SoftwareProduct, SoftwareProductDocument } from "../../software-products/schemas/software-product.schema";
-import { Contract, ContractDocument } from "../../contracts/schemas/contract.schema";
+import {
+  InvoiceRow,
+  InvoiceSummary,
+  CurrencyType,
+  SubTotals,
+  CalculateAllResult,
+} from "../interfaces/payment-plan.interfaces";
+import {
+  ContractCashRegister,
+  ContractCashRegisterDocument,
+} from "../../contract-cash-registers/schemas/contract-cash-register.schema";
+import {
+  ContractSupport,
+  ContractSupportDocument,
+} from "../../contract-supports/schemas/contract-support.schema";
+import {
+  ContractItem,
+  ContractItemDocument,
+} from "../../contract-items/schemas/contract-item.schema";
+import {
+  ContractSaas,
+  ContractSaasDocument,
+} from "../../contract-saas/schemas/contract-saas.schema";
+import {
+  ContractVersion,
+  ContractVersionDocument,
+} from "../../contract-versions/schemas/contract-version.schema";
+import {
+  SoftwareProduct,
+  SoftwareProductDocument,
+} from "../../software-products/schemas/software-product.schema";
+import {
+  Contract,
+  ContractDocument,
+} from "../../contracts/schemas/contract.schema";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
+import { generateShortId } from "../utils/id-generator";
+import {
+  EFTPOS_DESCRIPTION,
+  EFTPOS_NO_VAT_DESCRIPTION,
+  SUPPORT_DESCRIPTION,
+  VERSION_DESCRIPTION,
+} from "../constants/invoice.constants";
 
 @Injectable()
 export class InvoiceCalculatorService {
@@ -37,17 +71,13 @@ export class InvoiceCalculatorService {
   ) {}
 
   /**
-   * Bir kontrat icin aylik fatura ozetini hesaplar.
-   * io-cloud-2025 calculateMonthlyFee() metodunun NestJS karsiligi.
+   * Tek seferde fatura ozeti ve alt toplamlari hesaplar.
+   * Veritabani sorgularini tek noktada toplar, tekrar eden sorgulari onler.
    */
-  async calculateMonthlyFee(contractId: string): Promise<InvoiceSummary> {
-    const contract = await this.contractModel
-      .findOne({ id: contractId })
-      .lean()
-      .exec();
-
-    const [cashRegisters, supports, items, saasItems, versions] =
+  async calculateAll(contractId: string): Promise<CalculateAllResult> {
+    const [contract, cashRegisters, supports, items, saasItems, versions] =
       await Promise.all([
+        this.contractModel.findOne({ id: contractId }).lean().exec(),
         this.cashRegisterModel.find({ contractId }).lean().exec(),
         this.supportModel.find({ contractId }).lean().exec(),
         this.itemModel.find({ contractId }).lean().exec(),
@@ -55,14 +85,63 @@ export class InvoiceCalculatorService {
         this.versionModel.find({ contractId }).lean().exec(),
       ]);
 
+    const invoiceSummary = await this.buildInvoiceSummary(
+      contract,
+      cashRegisters,
+      supports,
+      items,
+      saasItems,
+      versions,
+    );
+
+    const subTotals = await this.buildSubTotals(
+      cashRegisters,
+      supports,
+      items,
+      saasItems,
+      versions,
+    );
+
+    return { invoiceSummary, subTotals };
+  }
+
+  /**
+   * Bir kontrat icin aylik fatura ozetini hesaplar.
+   * Disaridan (controller preview/monthly-fee) cagrildiginda kullanilir.
+   */
+  async calculateMonthlyFee(contractId: string): Promise<InvoiceSummary> {
+    const { invoiceSummary } = await this.calculateAll(contractId);
+    return invoiceSummary;
+  }
+
+  /**
+   * Kontrat alt kalem toplamlarini hesaplar (saas, support, vb.)
+   * Disaridan bagimsiz cagrildiginda kullanilir.
+   */
+  async calculateSubTotals(contractId: string): Promise<SubTotals> {
+    const { subTotals } = await this.calculateAll(contractId);
+    return subTotals;
+  }
+
+  /**
+   * Yuklu veriden fatura ozeti olusturur (DB sorgusu yapmaz).
+   */
+  private async buildInvoiceSummary(
+    contract: Contract | null,
+    cashRegisters: ContractCashRegister[],
+    supports: ContractSupport[],
+    items: ContractItem[],
+    saasItems: ContractSaas[],
+    versions: ContractVersion[],
+  ): Promise<InvoiceSummary> {
     const rows: InvoiceRow[] = [];
 
     // EFT-POS satirlari
     const noVat = contract?.noVat ?? false;
     const eftPosErpId = this.erpSettingsService.getErpId("eftPOS", noVat);
     const eftPosDescription = noVat
-      ? "EFT-POS ENTEGRASYON API (ORWI)"
-      : "EFT-POS ENTEGRASYON HİZMETİ";
+      ? EFTPOS_NO_VAT_DESCRIPTION
+      : EFTPOS_DESCRIPTION;
 
     const eftPosRows = await this.groupAndProcess(
       cashRegisters.filter((o) => o.enabled),
@@ -75,7 +154,7 @@ export class InvoiceCalculatorService {
     const supportErpId = this.erpSettingsService.getErpId("support");
     const supportRows = await this.groupAndProcess(
       supports.filter((o) => o.enabled),
-      "KERZZ ONLİNE HİZMETLER VE ÇAĞRI MERKEZİ PAKETİ",
+      SUPPORT_DESCRIPTION,
       supportErpId,
     );
     rows.push(...supportRows);
@@ -84,7 +163,7 @@ export class InvoiceCalculatorService {
     const versionErpId = this.erpSettingsService.getErpId("version");
     const versionRows = await this.groupAndProcess(
       versions.filter((o) => o.enabled),
-      "SÜRÜM YENİLEME HİZMETİ",
+      VERSION_DESCRIPTION,
       versionErpId,
     );
     rows.push(...versionRows);
@@ -93,19 +172,19 @@ export class InvoiceCalculatorService {
     const itemRows = await this.processItems(items.filter((o) => o.enabled));
     rows.push(...itemRows);
 
-    // SaaS satirlari (her birini ayri isle)
+    // SaaS satirlari (batch product lookup ile)
     const saasRows = await this.processSaas(saasItems.filter((o) => o.enabled));
     rows.push(...saasRows);
 
     // Toplami 0 olan satirlari filtrele
     const filteredRows = rows.filter((r) => r.total !== 0);
 
-    const total = this.roundTwo(
+    const total = this.safeRound(
       filteredRows.reduce((sum, r) => sum + r.total, 0),
     );
 
-    const summary: InvoiceSummary = {
-      id: this.generateId(),
+    return {
+      id: generateShortId(),
       total,
       rows: filteredRows,
       support: supports,
@@ -114,8 +193,60 @@ export class InvoiceCalculatorService {
       saas: saasItems,
       version: versions,
     };
+  }
 
-    return summary;
+  /**
+   * Yuklu veriden alt toplamlari hesaplar (DB sorgusu yapmaz).
+   */
+  private async buildSubTotals(
+    cashRegisters: ContractCashRegister[],
+    supports: ContractSupport[],
+    items: ContractItem[],
+    saasItems: ContractSaas[],
+    versions: ContractVersion[],
+  ): Promise<SubTotals> {
+    const saasTotal = await this.calculateTotal(
+      saasItems.filter((o) => o.enabled),
+    );
+    const supportTotal = await this.calculateTotal(
+      supports.filter((o) => o.enabled),
+    );
+    const cashRegisterTotal = await this.calculateTotal(
+      cashRegisters.filter((o) => o.enabled),
+    );
+    const itemsTotal = await this.calculateTotal(
+      items.filter((o) => o.enabled),
+      true,
+    );
+    const versionTotal = await this.calculateTotal(
+      versions.filter((o) => o.enabled),
+    );
+
+    const oldSaasTotal = await this.calculateOldTotal(saasItems);
+    const oldSupportTotal = await this.calculateOldTotal(supports);
+    const oldCashRegisterTotal = await this.calculateOldTotal(cashRegisters);
+    const oldItemsTotal = await this.calculateOldTotal(items);
+    const oldVersionTotal = await this.calculateOldTotal(versions);
+    const oldTotal =
+      oldSaasTotal +
+      oldSupportTotal +
+      oldCashRegisterTotal +
+      oldItemsTotal +
+      oldVersionTotal;
+
+    return {
+      saasTotal,
+      supportTotal,
+      cashRegisterTotal,
+      itemsTotal,
+      versionTotal,
+      oldSaasTotal,
+      oldSupportTotal,
+      oldCashRegisterTotal,
+      oldItemsTotal,
+      oldVersionTotal,
+      oldTotal,
+    };
   }
 
   /**
@@ -146,12 +277,12 @@ export class InvoiceCalculatorService {
         firstItem.currency as CurrencyType,
       );
       const rawPrice = Number(firstItem.price) || 0;
-      const price = this.roundTwo(rawPrice * rate);
+      const price = this.safeRound(rawPrice * rate);
       const count = group.length;
-      const total = this.roundTwo(price * count);
+      const total = this.safeRound(price * count);
 
       result.push({
-        id: this.generateId(),
+        id: generateShortId(),
         itemId,
         description,
         qty: count,
@@ -174,11 +305,11 @@ export class InvoiceCalculatorService {
         item.currency as CurrencyType,
       );
       const rawPrice = Number(item.price) || 0;
-      const price = this.roundTwo(rawPrice * rate);
-      const total = this.roundTwo(price * (item.qty || 1));
+      const price = this.safeRound(rawPrice * rate);
+      const total = this.safeRound(price * (item.qty || 1));
 
       result.push({
-        id: this.generateId(),
+        id: generateShortId(),
         itemId: item.erpId || "",
         description: item.description,
         qty: item.qty || 1,
@@ -192,8 +323,26 @@ export class InvoiceCalculatorService {
 
   /**
    * SaaS kalemlerini fatura satirlarina donusturur.
+   * Tum product ID'lerini tek seferde batch olarak sorgular.
    */
   private async processSaas(saasItems: ContractSaas[]): Promise<InvoiceRow[]> {
+    if (saasItems.length === 0) return [];
+
+    // Tum product ID'lerini tek sorguda cek
+    const productIds = saasItems
+      .map((s) => s.productId)
+      .filter((id): id is string => !!id);
+
+    const products =
+      productIds.length > 0
+        ? await this.softwareProductModel
+            .find({ id: { $in: productIds } })
+            .lean()
+            .exec()
+        : [];
+
+    const productMap = new Map(products.map((p) => [p.id, p.erpId || ""]));
+
     const result: InvoiceRow[] = [];
 
     for (const saasItem of saasItems) {
@@ -201,21 +350,15 @@ export class InvoiceCalculatorService {
         saasItem.currency as CurrencyType,
       );
       const rawPrice = Number(saasItem.price) || 0;
-      const price = this.roundTwo(rawPrice * rate);
-      const total = this.roundTwo(price * (saasItem.qty || 1));
+      const price = this.safeRound(rawPrice * rate);
+      const total = this.safeRound(price * (saasItem.qty || 1));
 
-      // SoftwareProduct'tan erpId bul
-      let erpId = "";
-      if (saasItem.productId) {
-        const product = await this.softwareProductModel
-          .findOne({ id: saasItem.productId })
-          .lean()
-          .exec();
-        erpId = product?.erpId || "";
-      }
+      const erpId = saasItem.productId
+        ? productMap.get(saasItem.productId) || ""
+        : "";
 
       result.push({
-        id: this.generateId(),
+        id: generateShortId(),
         itemId: erpId,
         description: `${saasItem.description} (${saasItem.licanceId})`,
         qty: saasItem.qty || 1,
@@ -228,80 +371,12 @@ export class InvoiceCalculatorService {
   }
 
   /**
-   * Kontrat alt kalem toplamlarini hesaplar (saas, support, vb.)
-   */
-  async calculateSubTotals(contractId: string): Promise<{
-    saasTotal: number;
-    supportTotal: number;
-    cashRegisterTotal: number;
-    itemsTotal: number;
-    versionTotal: number;
-    oldSaasTotal: number;
-    oldSupportTotal: number;
-    oldCashRegisterTotal: number;
-    oldItemsTotal: number;
-    oldVersionTotal: number;
-    oldTotal: number;
-  }> {
-    const [cashRegisters, supports, items, saasItems, versions] =
-      await Promise.all([
-        this.cashRegisterModel.find({ contractId }).lean().exec(),
-        this.supportModel.find({ contractId }).lean().exec(),
-        this.itemModel.find({ contractId }).lean().exec(),
-        this.saasModel.find({ contractId }).lean().exec(),
-        this.versionModel.find({ contractId }).lean().exec(),
-      ]);
-
-    const saasTotal = await this.calculateTotal(saasItems.filter((o) => o.enabled));
-    const supportTotal = await this.calculateTotal(supports.filter((o) => o.enabled));
-    const cashRegisterTotal = await this.calculateTotal(cashRegisters.filter((o) => o.enabled));
-    const itemsTotal = await this.calculateItemsTotal(items.filter((o) => o.enabled));
-    const versionTotal = await this.calculateTotal(versions.filter((o) => o.enabled));
-
-    const oldSaasTotal = await this.calculateOldTotal(saasItems);
-    const oldSupportTotal = await this.calculateOldTotal(supports);
-    const oldCashRegisterTotal = await this.calculateOldTotal(cashRegisters);
-    const oldItemsTotal = await this.calculateOldTotal(items);
-    const oldVersionTotal = await this.calculateOldTotal(versions);
-    const oldTotal = oldSaasTotal + oldSupportTotal + oldCashRegisterTotal + oldItemsTotal + oldVersionTotal;
-
-    return {
-      saasTotal,
-      supportTotal,
-      cashRegisterTotal,
-      itemsTotal,
-      versionTotal,
-      oldSaasTotal,
-      oldSupportTotal,
-      oldCashRegisterTotal,
-      oldItemsTotal,
-      oldVersionTotal,
-      oldTotal,
-    };
-  }
-
-  /**
-   * Fiyatlari TL'ye cevirip toplam hesaplar
+   * Fiyatlari TL'ye cevirip toplam hesaplar.
+   * useQty true ise qty ile carpar (items icin).
    */
   private async calculateTotal(
-    data: Array<{ price: number; currency: string }>,
-  ): Promise<number> {
-    let sum = 0;
-    for (const item of data) {
-      const price = Number(item.price) || 0;
-      const rate = await this.exchangeRateService.getRate(
-        item.currency as CurrencyType,
-      );
-      sum += price * rate;
-    }
-    return this.safeRound(sum);
-  }
-
-  /**
-   * Items icin qty ile carparak toplam hesaplar
-   */
-  private async calculateItemsTotal(
     data: Array<{ price: number; currency: string; qty?: number }>,
+    useQty = false,
   ): Promise<number> {
     let sum = 0;
     for (const item of data) {
@@ -309,7 +384,8 @@ export class InvoiceCalculatorService {
       const rate = await this.exchangeRateService.getRate(
         item.currency as CurrencyType,
       );
-      sum += price * rate * (item.qty || 1);
+      const multiplier = useQty ? item.qty || 1 : 1;
+      sum += price * rate * multiplier;
     }
     return this.safeRound(sum);
   }
@@ -318,7 +394,12 @@ export class InvoiceCalculatorService {
    * Eski fiyat toplamlarini hesaplar (old_price kullanir)
    */
   private async calculateOldTotal(
-    data: Array<{ old_price: number; currency: string; qty?: number; enabled: boolean }>,
+    data: Array<{
+      old_price: number;
+      currency: string;
+      qty?: number;
+      enabled: boolean;
+    }>,
   ): Promise<number> {
     const enabledItems = data.filter((d) => d.enabled);
     if (enabledItems.length === 0) return 0;
@@ -334,16 +415,8 @@ export class InvoiceCalculatorService {
     return this.safeRound(sum);
   }
 
-  private roundTwo(value: number): number {
-    return this.safeRound(value);
-  }
-
   private safeRound(value: number): number {
     if (isNaN(value) || !isFinite(value)) return 0;
     return parseFloat(value.toFixed(2));
-  }
-
-  private generateId(): string {
-    return crypto.randomUUID().substring(0, 8);
   }
 }

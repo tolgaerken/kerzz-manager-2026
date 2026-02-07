@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Tooltip } from "../../ui";
 import { useSidebarStore } from "../../../store/sidebarStore";
+import { SidebarPopover } from "./SidebarPopover";
 
 export interface SubMenuItem {
   label: string;
@@ -36,18 +37,16 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
   const activeClasses = "bg-surface-hover text-foreground";
   const inactiveClasses = "text-muted-foreground hover:bg-surface-elevated hover:text-foreground";
 
-  // Collapsed state with sub-items - show tooltip with sub-item info
+  // Collapsed state with sub-items - show flyout popover
   if (isCollapsed && hasSubItems) {
-    const tooltipContent = `${label}: ${subItems.map(s => s.label).join(", ")}`;
     return (
-      <Tooltip content={tooltipContent} position="right">
+      <SidebarPopover label={label} subItems={subItems}>
         <button
-          onClick={handleToggle}
           className={`${baseClasses} ${paddingClasses} ${isSubItemActive ? activeClasses : inactiveClasses}`}
         >
           <Icon className="h-5 w-5 shrink-0" />
         </button>
-      </Tooltip>
+      </SidebarPopover>
     );
   }
 

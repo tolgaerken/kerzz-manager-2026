@@ -21,6 +21,12 @@ interface GridRowProps<TData> {
   // Editing props
   /** Check if a cell is being edited */
   isEditing?: (rowIndex: number, columnId: string) => boolean;
+  /** Whether the grid is in batch edit mode */
+  editMode?: boolean;
+  /** Check if a cell has a pending change */
+  hasPendingChange?: (rowIndex: number, columnId: string) => boolean;
+  /** Get pending value for a cell */
+  getPendingValue?: (rowIndex: number, columnId: string) => unknown | undefined;
   /** Start editing a cell */
   onStartEditing?: (rowIndex: number, columnId: string) => void;
   /** Save edited value */
@@ -44,6 +50,9 @@ function GridRowInner<TData>({
   isSelected,
   onSelectionToggle,
   isEditing,
+  editMode,
+  hasPendingChange,
+  getPendingValue,
   onStartEditing,
   onSaveEdit,
   onCancelEdit,
@@ -53,11 +62,16 @@ function GridRowInner<TData>({
     ? columns.some((col) => isEditing(rowIndex, col.id))
     : false;
 
+  const hasPendingRow = hasPendingChange
+    ? columns.some((col) => hasPendingChange(rowIndex, col.id))
+    : false;
+
   const classNames = [
     'kz-grid-row',
     isStriped && 'kz-grid-row--striped',
     isSelected && 'kz-grid-row--selected',
     hasEditingCell && 'kz-grid-row--editing',
+    hasPendingRow && 'kz-grid-row--changed',
   ]
     .filter(Boolean)
     .join(' ');
@@ -80,6 +94,9 @@ function GridRowInner<TData>({
           ? col.accessorFn(row)
           : (row as Record<string, unknown>)[col.accessorKey ?? col.id];
 
+        const cellHasPending = hasPendingChange?.(rowIndex, col.id) ?? false;
+        const pendingVal = cellHasPending ? getPendingValue?.(rowIndex, col.id) : undefined;
+
         return (
           <GridCell
             key={col.id}
@@ -89,6 +106,9 @@ function GridRowInner<TData>({
             width={getColumnWidth(col.id, col.width ?? 150)}
             value={value}
             isEditing={isEditing?.(rowIndex, col.id)}
+            editMode={editMode}
+            pendingValue={pendingVal}
+            hasPendingChange={cellHasPending}
             onStartEditing={onStartEditing}
             onSave={onSaveEdit}
             onCancel={onCancelEdit}

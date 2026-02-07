@@ -24,6 +24,12 @@ interface GridBodyProps<TData> {
   onSelectionToggle?: (rowId: string, shiftKey: boolean) => void;
   // Editing props
   isEditing?: (rowIndex: number, columnId: string) => boolean;
+  /** Whether the grid is in batch edit mode */
+  editMode?: boolean;
+  /** Check if a cell has a pending change */
+  hasPendingChange?: (rowIndex: number, columnId: string) => boolean;
+  /** Get pending value for a cell */
+  getPendingValue?: (rowIndex: number, columnId: string) => unknown | undefined;
   onStartEditing?: (rowIndex: number, columnId: string) => void;
   onSaveEdit?: (newValue: unknown) => void;
   onCancelEdit?: () => void;
@@ -46,6 +52,9 @@ export function GridBody<TData>({
   getRowId,
   onSelectionToggle,
   isEditing,
+  editMode,
+  hasPendingChange,
+  getPendingValue,
   onStartEditing,
   onSaveEdit,
   onCancelEdit,
@@ -82,6 +91,9 @@ export function GridBody<TData>({
               isSelected={isSelected}
               onSelectionToggle={(shiftKey) => onSelectionToggle?.(rowId, shiftKey)}
               isEditing={isEditing}
+              editMode={editMode}
+              hasPendingChange={hasPendingChange}
+              getPendingValue={getPendingValue}
               onStartEditing={onStartEditing}
               onSaveEdit={onSaveEdit}
               onCancelEdit={onCancelEdit}

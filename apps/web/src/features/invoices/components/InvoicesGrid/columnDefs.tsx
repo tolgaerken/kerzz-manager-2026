@@ -23,28 +23,30 @@ const formatDate = (value: string | Date | null | undefined): string => {
 };
 
 // Fatura tipi etiket haritası
-const invoiceTypeMap: Record<string, { label: string; className: string }> = {
+const invoiceTypeMap: Record<string, { label: string; color: string; bg: string }> = {
   contract: {
     label: "Kontrat",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+    color: "var(--color-info-foreground)",
+    bg: "color-mix(in oklch, var(--color-info) 15%, transparent)"
   },
   sale: {
     label: "Satış",
-    className:
-      "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+    color: "var(--color-primary)",
+    bg: "color-mix(in oklch, var(--color-primary) 15%, transparent)"
   },
   eDocuments: {
     label: "E-Belge",
-    className:
-      "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
+    color: "var(--color-warning-foreground)",
+    bg: "color-mix(in oklch, var(--color-warning) 15%, transparent)"
   }
 };
 
-// Badge bileşeni
-function Badge({ className, children }: { className: string; children: string }) {
+// Badge bileşeni (tema uyumlu inline style)
+function Badge({ color, bg, children }: { color: string; bg: string; children: string }) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${className}`}
+      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+      style={{ color, backgroundColor: bg }}
     >
       {children}
     </span>
@@ -61,44 +63,32 @@ export function createInvoiceColumnDefs(
   return [
     {
       id: "isPaid",
-      header: "Durum",
+      header: "Ödeme",
       accessorKey: "isPaid",
-      width: 100,
+      width: 80,
       sortable: true,
+      align: "center",
       filter: { type: "dropdown", showCounts: true },
-      cell: (value) => {
-        if (value) {
-          return (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-              Ödendi
-            </Badge>
-          );
-        }
-        return (
-          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-            Ödenmedi
-          </Badge>
-        );
-      }
+      cell: (value) => (value ? "✓" : "✗"),
+      cellClassName: (value) =>
+        value
+          ? "text-[var(--color-success)] font-bold text-center"
+          : "text-[var(--color-error)] text-center"
     },
     {
       id: "autoPayment",
       header: "Oto. Ödeme",
-      width: 110,
+      width: 90,
       sortable: true,
+      align: "center",
       filter: { type: "dropdown", showCounts: true },
       accessorFn: (row) =>
         autoPaymentCustomerIds.has(row.customerId) ? "Kayıtlı" : "",
-      cell: (value) => {
-        if (value === "Kayıtlı") {
-          return (
-            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
-              Kayıtlı
-            </Badge>
-          );
-        }
-        return null;
-      }
+      cell: (value) => (value === "Kayıtlı" ? "✓" : "✗"),
+      cellClassName: (value) =>
+        value === "Kayıtlı"
+          ? "text-[var(--color-success)] font-bold text-center"
+          : "text-[var(--color-muted)] text-center"
     },
     {
       id: "invoiceNumber",
@@ -160,9 +150,10 @@ export function createInvoiceColumnDefs(
       cell: (value) => {
         const type = invoiceTypeMap[value as string] || {
           label: value as string,
-          className: "bg-gray-100 text-gray-800"
+          color: "var(--color-muted-foreground)",
+          bg: "var(--color-surface-elevated)"
         };
-        return <Badge className={type.className}>{type.label}</Badge>;
+        return <Badge color={type.color} bg={type.bg}>{type.label}</Badge>;
       }
     },
     {

@@ -78,3 +78,24 @@ export interface PricedContractItem {
   qty?: number;
   priceHistory?: PriceHistoryItem[];
 }
+
+/** Kontrat alt kalem toplam sonuclari */
+export interface SubTotals {
+  saasTotal: number;
+  supportTotal: number;
+  cashRegisterTotal: number;
+  itemsTotal: number;
+  versionTotal: number;
+  oldSaasTotal: number;
+  oldSupportTotal: number;
+  oldCashRegisterTotal: number;
+  oldItemsTotal: number;
+  oldVersionTotal: number;
+  oldTotal: number;
+}
+
+/** calculateAll sonuc tipi */
+export interface CalculateAllResult {
+  invoiceSummary: InvoiceSummary;
+  subTotals: SubTotals;
+}
