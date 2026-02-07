@@ -26,36 +26,42 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  const handleAdd = useCallback(() => {
-    const newPayment: Omit<ContractPayment, "_id" | "id"> = {
-      contractId,
-      company: "",
-      brand: "",
-      customerId: "",
-      licanceId: "",
-      invoiceNo: "",
-      paid: false,
-      payDate: new Date().toISOString(),
-      paymentDate: "",
-      invoiceDate: new Date().toISOString(),
-      total: 0,
-      invoiceTotal: 0,
-      balance: 0,
-      list: [],
-      yearly: false,
-      eInvoice: false,
-      uuid: "",
-      ref: "",
-      taxNo: "",
-      internalFirm: "",
-      contractNumber: 0,
-      segment: "",
-      block: false,
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newPayment);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractPayment => ({
+    id: "",
+    _id: "",
+    contractId,
+    company: "",
+    brand: "",
+    customerId: "",
+    licanceId: "",
+    invoiceNo: "",
+    paid: false,
+    payDate: new Date().toISOString(),
+    paymentDate: "",
+    invoiceDate: new Date().toISOString(),
+    total: 0,
+    invoiceTotal: 0,
+    balance: 0,
+    list: [],
+    yearly: false,
+    eInvoice: false,
+    uuid: "",
+    ref: "",
+    taxNo: "",
+    internalFirm: "",
+    contractNumber: 0,
+    segment: "",
+    block: false,
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractPayment[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -99,11 +105,11 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="Ödeme Ekle"
       />
     </div>
   );

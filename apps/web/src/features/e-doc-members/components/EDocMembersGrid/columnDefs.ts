@@ -114,6 +114,7 @@ export const eDocMemberColumnDefs: GridColumnDef<EDocMemberItem>[] = [
     width: 120,
     sortable: true,
     cell: (value) => formatCurrency(value as number),
+    cellClassName: "font-mono tabular-nums text-xs",
   },
   {
     id: "totalCharge",
@@ -122,7 +123,7 @@ export const eDocMemberColumnDefs: GridColumnDef<EDocMemberItem>[] = [
     width: 110,
     sortable: true,
     cell: (value) => formatNumber(value as number),
-    cellClassName: () => "text-[var(--color-success)]",
+    cellClassName: () => "font-mono tabular-nums text-xs text-[var(--color-success)]",
   },
   {
     id: "totalConsumption",
@@ -131,7 +132,7 @@ export const eDocMemberColumnDefs: GridColumnDef<EDocMemberItem>[] = [
     width: 120,
     sortable: true,
     cell: (value) => formatNumber(value as number),
-    cellClassName: () => "text-[var(--color-error)]",
+    cellClassName: () => "font-mono tabular-nums text-xs text-[var(--color-error)]",
   },
   {
     id: "monthlyAverage",
@@ -140,7 +141,7 @@ export const eDocMemberColumnDefs: GridColumnDef<EDocMemberItem>[] = [
     width: 120,
     sortable: true,
     cell: (value) => formatNumber(value as number),
-    cellClassName: () => "text-[var(--color-info)]",
+    cellClassName: () => "font-mono tabular-nums text-xs text-[var(--color-info)]",
   },
   {
     id: "creditBalance",

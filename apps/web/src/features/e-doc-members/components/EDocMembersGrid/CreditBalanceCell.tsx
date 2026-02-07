@@ -27,40 +27,42 @@ function getStatusInfo(status: BalanceStatus): StatusInfo {
       return {
         label: "TÜKENDİ",
         className:
-          "bg-[var(--color-error)] text-[var(--color-error-foreground)]",
+          "bg-[var(--color-error)]/15 text-[var(--color-error)] font-bold",
         badgeClassName:
-          "bg-[var(--color-error)]/15 text-[var(--color-error)] border-[var(--color-error)]/30",
+          "bg-[var(--color-error)]/15 text-[var(--color-error)] border border-[var(--color-error)]/30",
       };
     case "critical":
       return {
         label: "KRİTİK",
         className:
-          "bg-[var(--color-warning)] text-[var(--color-warning-foreground)]",
+          "bg-[var(--color-warning)]/15 text-[var(--color-warning)] font-bold",
         badgeClassName:
-          "bg-[var(--color-warning)]/15 text-[var(--color-warning)] border-[var(--color-warning)]/30",
+          "bg-[var(--color-warning)]/15 text-[var(--color-warning)] border border-[var(--color-warning)]/30",
       };
     case "low":
       return {
         label: "DÜŞÜK",
         className:
-          "bg-[var(--color-warning)]/20 text-[var(--color-foreground)]",
+          "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
         badgeClassName:
-          "bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20",
+          "bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20",
       };
     case "limited": {
       return {
         label: "",
-        className: "bg-[var(--color-info)] text-[var(--color-info-foreground)]",
+        className:
+          "bg-[var(--color-info)]/15 text-[var(--color-info)]",
         badgeClassName:
-          "bg-[var(--color-info)]/15 text-[var(--color-info)] border-[var(--color-info)]/30",
+          "bg-[var(--color-info)]/15 text-[var(--color-info)] border border-[var(--color-info)]/30",
       };
     }
     case "sufficient":
       return {
         label: "YETERLİ",
-        className: "",
+        className:
+          "text-[var(--color-success)]",
         badgeClassName:
-          "bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/30",
+          "bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/30",
       };
   }
 }
@@ -100,14 +102,14 @@ export function CreditBalanceCell({ row }: CreditBalanceCellProps) {
   return (
     <div className="flex items-center justify-between gap-2 w-full px-1">
       <span
-        className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded border ${info.badgeClassName}`}
-      >
-        {label}
-      </span>
-      <span
-        className={`inline-flex items-center px-2 py-0.5 text-xs font-bold rounded ${info.className}`}
+        className={`inline-flex items-center px-2 py-0.5 text-xs font-bold font-mono tabular-nums rounded ${info.className}`}
       >
         {formatNumber(creditBalance)}
+      </span>
+      <span
+        className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded ${info.badgeClassName}`}
+      >
+        {label}
       </span>
     </div>
   );

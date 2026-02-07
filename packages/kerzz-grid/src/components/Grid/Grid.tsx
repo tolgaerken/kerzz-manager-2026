@@ -42,6 +42,8 @@ function GridInner<TData>(
     context,
     onCellValueChange,
     onRowAdd,
+    onEditSave,
+    onEditCancel,
   } = props;
 
   const locale = useLocale();
@@ -89,6 +91,8 @@ function GridInner<TData>(
     data: grid.filteredData,
     onCellValueChange,
     onRowAdd,
+    onEditSave,
+    onEditCancel,
   });
 
   // Toggle select all handler

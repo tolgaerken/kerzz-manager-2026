@@ -83,27 +83,33 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     [licenses, products, handleLicenseSelect]
   );
 
-  const handleAdd = useCallback(() => {
-    const newSaas: Omit<ContractSaas, "_id" | "id"> = {
-      contractId,
-      brand: "",
-      licanceId: "",
-      description: "",
-      price: 0,
-      old_price: 0,
-      qty: 1,
-      currency: "tl",
-      yearly: false,
-      enabled: true,
-      expired: false,
-      blocked: false,
-      productId: "",
-      total: 0,
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newSaas);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractSaas => ({
+    id: "",
+    _id: "",
+    contractId,
+    brand: "",
+    licanceId: "",
+    description: "",
+    price: 0,
+    old_price: 0,
+    qty: 1,
+    currency: "tl",
+    yearly: false,
+    enabled: true,
+    expired: false,
+    blocked: false,
+    productId: "",
+    total: 0,
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractSaas[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -159,11 +165,11 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="SaaS Ekle"
         context={gridContext}
       />
     </div>

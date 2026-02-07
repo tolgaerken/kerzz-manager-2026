@@ -73,6 +73,11 @@ export interface GridProps<TData = unknown> {
 
   /** Fired when the add-row button is clicked in the toolbar (edit mode) */
   onRowAdd?: () => void;
+
+  /** Fired after all pending changes are committed (Save button clicked) */
+  onEditSave?: () => void;
+  /** Fired after all pending changes are discarded (Cancel button clicked) */
+  onEditCancel?: () => void;
 }
 
 export interface GridState {

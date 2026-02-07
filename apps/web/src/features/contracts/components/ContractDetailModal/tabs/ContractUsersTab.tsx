@@ -26,18 +26,24 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  const handleAdd = useCallback(() => {
-    const newUser: Omit<ContractUser, "_id" | "id"> = {
-      contractId,
-      name: "",
-      email: "",
-      gsm: "",
-      role: "other",
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newUser);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractUser => ({
+    id: "",
+    _id: "",
+    contractId,
+    name: "",
+    email: "",
+    gsm: "",
+    role: "other",
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractUser[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -81,11 +87,11 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="Kullanıcı Ekle"
       />
     </div>
   );

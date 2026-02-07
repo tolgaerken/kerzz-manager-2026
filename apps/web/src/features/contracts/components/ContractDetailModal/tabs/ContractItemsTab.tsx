@@ -26,25 +26,31 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  const handleAdd = useCallback(() => {
-    const newItem: Omit<ContractItem, "_id" | "id"> = {
-      contractId,
-      itemId: "",
-      description: "",
-      price: 0,
-      old_price: 0,
-      qty: 1,
-      qtyDynamic: false,
-      currency: "tl",
-      yearly: false,
-      enabled: true,
-      expired: false,
-      erpId: "",
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newItem);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractItem => ({
+    id: "",
+    _id: "",
+    contractId,
+    itemId: "",
+    description: "",
+    price: 0,
+    old_price: 0,
+    qty: 1,
+    qtyDynamic: false,
+    currency: "tl",
+    yearly: false,
+    enabled: true,
+    expired: false,
+    erpId: "",
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractItem[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -88,11 +94,11 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="Kalem Ekle"
       />
     </div>
   );

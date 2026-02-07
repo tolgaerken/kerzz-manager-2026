@@ -68,26 +68,32 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     [licenses, handleLicenseSelect]
   );
 
-  const handleAdd = useCallback(() => {
-    const newSupport: Omit<ContractSupport, "_id" | "id"> = {
-      contractId,
-      brand: "",
-      licanceId: "",
-      price: 0,
-      old_price: 0,
-      currency: "tl",
-      type: "",
-      yearly: false,
-      enabled: true,
-      blocked: false,
-      expired: false,
-      lastOnlineDay: 0,
-      calulatedPrice: 0,
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newSupport);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractSupport => ({
+    id: "",
+    _id: "",
+    contractId,
+    brand: "",
+    licanceId: "",
+    price: 0,
+    old_price: 0,
+    currency: "tl",
+    type: "",
+    yearly: false,
+    enabled: true,
+    blocked: false,
+    expired: false,
+    lastOnlineDay: 0,
+    calulatedPrice: 0,
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractSupport[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -139,11 +145,11 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="Destek Ekle"
         context={gridContext}
       />
     </div>

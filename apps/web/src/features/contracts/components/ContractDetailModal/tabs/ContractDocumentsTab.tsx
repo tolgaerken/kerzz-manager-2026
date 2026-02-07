@@ -26,24 +26,30 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  const handleAdd = useCallback(() => {
-    const newDocument: Omit<ContractDocument, "_id" | "id"> = {
-      contractId,
-      description: "",
-      filename: "",
-      type: "",
-      documentDate: new Date().toISOString(),
-      userId: "",
-      saleId: "",
-      offerId: "",
-      customerId: "",
-      licanceId: "",
-      documentVersion: "1",
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newDocument);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractDocument => ({
+    id: "",
+    _id: "",
+    contractId,
+    description: "",
+    filename: "",
+    type: "",
+    documentDate: new Date().toISOString(),
+    userId: "",
+    saleId: "",
+    offerId: "",
+    customerId: "",
+    licanceId: "",
+    documentVersion: "1",
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractDocument[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -87,11 +93,11 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="Döküman Ekle"
       />
     </div>
   );

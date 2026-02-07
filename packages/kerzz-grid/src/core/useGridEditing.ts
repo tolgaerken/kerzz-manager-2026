@@ -7,6 +7,8 @@ export interface UseGridEditingProps<TData> {
   data: TData[];
   onCellValueChange?: (row: TData, columnId: string, newValue: unknown, oldValue: unknown) => void;
   onRowAdd?: () => void;
+  onEditSave?: () => void;
+  onEditCancel?: () => void;
 }
 
 export interface UseGridEditingReturn {
@@ -43,6 +45,8 @@ export function useGridEditing<TData>({
   data,
   onCellValueChange,
   onRowAdd,
+  onEditSave,
+  onEditCancel,
 }: UseGridEditingProps<TData>): UseGridEditingReturn {
   const [editingCell, setEditingCell] = useState<EditingState | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -227,7 +231,10 @@ export function useGridEditing<TData>({
     setPendingChanges(empty);
     setEditingCell(null);
     setEditMode(false);
-  }, [onCellValueChange]);
+
+    // Notify parent that save completed (e.g. for pending new rows)
+    onEditSave?.();
+  }, [onCellValueChange, onEditSave]);
 
   const cancelAllChanges = useCallback(() => {
     const empty = new Map<string, PendingChange<TData>>();
@@ -235,7 +242,10 @@ export function useGridEditing<TData>({
     setPendingChanges(empty);
     setEditingCell(null);
     setEditMode(false);
-  }, []);
+
+    // Notify parent that cancel completed (e.g. to discard pending new rows)
+    onEditCancel?.();
+  }, [onEditCancel]);
 
   const hasPendingChange = useCallback(
     (rowIndex: number, columnId: string): boolean => {

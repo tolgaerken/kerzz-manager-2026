@@ -81,27 +81,33 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     [licenses, eftPosModels, handleLicenseSelect]
   );
 
-  const handleAdd = useCallback(() => {
-    const newCashRegister: Omit<ContractCashRegister, "_id" | "id"> = {
-      contractId,
-      brand: "",
-      licanceId: "",
-      legalId: "",
-      model: "",
-      type: "tsm",
-      price: 0,
-      old_price: 0,
-      currency: "tl",
-      yearly: false,
-      enabled: true,
-      expired: false,
-      eftPosActive: false,
-      folioClose: false,
-      editDate: new Date().toISOString(),
-      editUser: ""
-    };
-    createMutation.mutate(newCashRegister);
-  }, [contractId, createMutation]);
+  const createEmptyRow = useCallback((): ContractCashRegister => ({
+    id: "",
+    _id: "",
+    contractId,
+    brand: "",
+    licanceId: "",
+    legalId: "",
+    model: "",
+    type: "tsm",
+    price: 0,
+    old_price: 0,
+    currency: "tl",
+    yearly: false,
+    enabled: true,
+    expired: false,
+    eftPosActive: false,
+    folioClose: false,
+    editDate: new Date().toISOString(),
+    editUser: ""
+  }), [contractId]);
+
+  const handleSaveNewRows = useCallback((rows: ContractCashRegister[]) => {
+    rows.forEach((row) => {
+      const { _id, id, ...data } = row;
+      createMutation.mutate(data);
+    });
+  }, [createMutation]);
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -153,11 +159,11 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
         getRowId={(row) => row.id || row._id}
         onCellValueChange={handleCellValueChange}
         onRowClick={handleRowClick}
-        onAdd={handleAdd}
+        createEmptyRow={createEmptyRow}
+        onSaveNewRows={handleSaveNewRows}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
         processing={isProcessing}
-        addLabel="Yazarkasa Ekle"
         context={gridContext}
       />
     </div>
