@@ -54,6 +54,7 @@ export const tr: GridLocale = {
   toolbarSearchPlaceholder: 'Ara...',
   toolbarSave: 'Kaydet',
   toolbarCancel: 'İptal',
+  toolbarAddRow: 'Satır Ekle',
 
   // General
   noData: 'Veri bulunamadı',

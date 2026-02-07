@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
-import type { CellEditorProps, SelectEditorOption } from '../../types/editing.types';
+import type { CellEditorProps, SelectEditorOption, NavigationDirection } from '../../types/editing.types';
 import { TextEditor } from '../Editors/TextEditor';
 import { NumberEditor } from '../Editors/NumberEditor';
 import { SelectEditor } from '../Editors/SelectEditor';
@@ -22,6 +22,8 @@ interface GridCellProps<TData> {
   onStartEditing?: (rowIndex: number, columnId: string) => void;
   onSave?: (newValue: unknown) => void;
   onCancel?: () => void;
+  /** Save value and navigate to next editable cell */
+  onSaveAndMoveNext?: (newValue: unknown, direction: NavigationDirection) => void;
   context?: Record<string, unknown>;
 }
 
@@ -52,6 +54,7 @@ function GridCellInner<TData>({
   onStartEditing,
   onSave,
   onCancel,
+  onSaveAndMoveNext,
   context,
 }: GridCellProps<TData>) {
   // Use pending value for display when available
@@ -105,6 +108,7 @@ function GridCellInner<TData>({
       column,
       onSave: onSave ?? (() => {}),
       onCancel: onCancel ?? (() => {}),
+      onSaveAndMoveNext,
       context,
     };
 

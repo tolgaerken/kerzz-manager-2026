@@ -4,7 +4,7 @@ import type { ToolbarConfig, ToolbarButtonConfig } from '../../types/toolbar.typ
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSeparator } from './ToolbarSeparator';
 import { ToolbarSearchInput } from './ToolbarSearchInput';
-import { ExcelIcon, PdfIcon, ColumnsIcon, SaveIcon, CancelIcon } from './ToolbarIcons';
+import { ExcelIcon, PdfIcon, ColumnsIcon, SaveIcon, CancelIcon, AddRowIcon } from './ToolbarIcons';
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
 import { Portal } from '../Portal/Portal';
 import { useLocale } from '../../i18n/useLocale';
@@ -29,6 +29,8 @@ interface GridToolbarProps<TData> {
   onSaveAll?: () => void;
   /** Discard all pending changes */
   onCancelAll?: () => void;
+  /** Add a new row (only shown when editMode is true and showAddRow is not false) */
+  onAddRow?: () => void;
 }
 
 export function GridToolbar<TData>({
@@ -46,6 +48,7 @@ export function GridToolbar<TData>({
   editMode,
   onSaveAll,
   onCancelAll,
+  onAddRow,
 }: GridToolbarProps<TData>) {
   const locale = useLocale();
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
@@ -55,6 +58,7 @@ export function GridToolbar<TData>({
   const showExcel = config.showExcelExport !== false;
   const showPdf = config.showPdfExport !== false;
   const showColumns = config.showColumnVisibility !== false;
+  const showAddRow = config.showAddRow !== false;
   const customButtons = config.customButtons ?? [];
   const fileName = config.exportFileName ?? 'grid-export';
 
@@ -110,10 +114,17 @@ export function GridToolbar<TData>({
           />
         ))}
 
-        {/* Edit mode: Save & Cancel buttons */}
+        {/* Edit mode: Add Row, Save & Cancel buttons */}
         {editMode && (
           <>
             {(hasCustomButtons || showSearch) && <ToolbarSeparator />}
+            {showAddRow && onAddRow && (
+              <ToolbarButton
+                label={locale.toolbarAddRow}
+                icon={<AddRowIcon />}
+                onClick={onAddRow}
+              />
+            )}
             <ToolbarButton
               label={locale.toolbarSave}
               icon={<SaveIcon />}

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { GridColumnDef } from '../../types/column.types';
+import type { NavigationDirection } from '../../types/editing.types';
 import { GridRow } from './GridRow';
 
 interface GridBodyProps<TData> {
@@ -33,6 +34,8 @@ interface GridBodyProps<TData> {
   onStartEditing?: (rowIndex: number, columnId: string) => void;
   onSaveEdit?: (newValue: unknown) => void;
   onCancelEdit?: () => void;
+  /** Save value and navigate to next editable cell */
+  onSaveAndMoveNext?: (newValue: unknown, direction: NavigationDirection) => void;
   context?: Record<string, unknown>;
 }
 
@@ -58,6 +61,7 @@ export function GridBody<TData>({
   onStartEditing,
   onSaveEdit,
   onCancelEdit,
+  onSaveAndMoveNext,
   context,
 }: GridBodyProps<TData>) {
   return (
@@ -97,6 +101,7 @@ export function GridBody<TData>({
               onStartEditing={onStartEditing}
               onSaveEdit={onSaveEdit}
               onCancelEdit={onCancelEdit}
+              onSaveAndMoveNext={onSaveAndMoveNext}
               context={context}
             />
           );

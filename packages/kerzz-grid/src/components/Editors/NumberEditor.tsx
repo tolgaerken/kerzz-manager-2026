@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { CellEditorProps } from '../../types/editing.types';
 
-export function NumberEditor<TData>({ value, onSave, onCancel }: CellEditorProps<TData>) {
+export function NumberEditor<TData>({ value, onSave, onCancel, onSaveAndMoveNext }: CellEditorProps<TData>) {
   const [text, setText] = useState(value != null ? String(value) : '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -15,20 +15,32 @@ export function NumberEditor<TData>({ value, onSave, onCancel }: CellEditorProps
     onSave(isNaN(num) ? value : num);
   }, [text, value, onSave]);
 
+  const saveAndMove = useCallback(
+    (direction: 'tab' | 'enter') => {
+      if (!onSaveAndMoveNext) {
+        save();
+        return;
+      }
+      const num = text === '' ? 0 : Number(text);
+      onSaveAndMoveNext(isNaN(num) ? value : num, direction);
+    },
+    [text, value, onSaveAndMoveNext, save],
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        save();
+        saveAndMove('enter');
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onCancel();
       } else if (e.key === 'Tab') {
         e.preventDefault();
-        save();
+        saveAndMove('tab');
       }
     },
-    [save, onCancel],
+    [saveAndMove, onCancel],
   );
 
   const handleBlur = useCallback(() => {

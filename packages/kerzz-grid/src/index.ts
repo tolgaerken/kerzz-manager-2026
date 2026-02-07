@@ -99,6 +99,7 @@ export type {
   SelectEditorOption,
   EditingState,
   PendingChange,
+  NavigationDirection,
 } from './types/editing.types';
 
 // CSS import helper

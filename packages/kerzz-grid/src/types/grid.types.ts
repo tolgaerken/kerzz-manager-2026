@@ -70,6 +70,9 @@ export interface GridProps<TData = unknown> {
   onColumnOrderChange?: (columnOrder: string[]) => void;
   /** Fired when column visibility changes */
   onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
+
+  /** Fired when the add-row button is clicked in the toolbar (edit mode) */
+  onRowAdd?: () => void;
 }
 
 export interface GridState {
@@ -98,4 +101,6 @@ export interface GridRef {
   selectAll: () => void;
   /** Deselect all rows */
   deselectAll: () => void;
+  /** Trigger add-row flow (emits onRowAdd and auto-edits the new row) */
+  addRow: () => void;
 }

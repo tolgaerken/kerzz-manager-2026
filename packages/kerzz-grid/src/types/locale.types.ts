@@ -53,6 +53,7 @@ export interface GridLocale {
   toolbarSearchPlaceholder: string;
   toolbarSave: string;
   toolbarCancel: string;
+  toolbarAddRow: string;
 
   // General
   noData: string;

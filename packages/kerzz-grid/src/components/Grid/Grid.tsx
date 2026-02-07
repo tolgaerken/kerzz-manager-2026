@@ -41,6 +41,7 @@ function GridInner<TData>(
     // Editing props
     context,
     onCellValueChange,
+    onRowAdd,
   } = props;
 
   const locale = useLocale();
@@ -87,6 +88,7 @@ function GridInner<TData>(
     columns: grid.orderedColumns as GridColumnDef<TData>[],
     data: grid.filteredData,
     onCellValueChange,
+    onRowAdd,
   });
 
   // Toggle select all handler
@@ -173,7 +175,8 @@ function GridInner<TData>(
     getSelectedIds: () => Array.from(selection.selectedIds),
     selectAll: selection.selectAll,
     deselectAll: selection.deselectAll,
-  }), [grid, selection]);
+    addRow: editing.requestAddRow,
+  }), [grid, selection, editing.requestAddRow]);
 
   // Auto tema modunda inline CSS vars uygulanmaz — grid, global --theme-* değişkenlerini kullanır.
   // Explicit theme prop verildiğinde ise inline CSS vars ile override yapılır.
@@ -228,6 +231,7 @@ function GridInner<TData>(
           editMode={editing.editMode}
           onSaveAll={editing.saveAllChanges}
           onCancelAll={editing.cancelAllChanges}
+          onAddRow={onRowAdd ? editing.requestAddRow : undefined}
         />
       )}
 
@@ -332,6 +336,7 @@ function GridInner<TData>(
           onStartEditing={editing.startEditing}
           onSaveEdit={editing.saveValue}
           onCancelEdit={editing.stopEditing}
+          onSaveAndMoveNext={editing.saveAndMoveNext}
           context={context}
         />
       ) : (

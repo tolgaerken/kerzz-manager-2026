@@ -54,6 +54,7 @@ export const en: GridLocale = {
   toolbarSearchPlaceholder: 'Search...',
   toolbarSave: 'Save',
   toolbarCancel: 'Cancel',
+  toolbarAddRow: 'Add Row',
 
   // General
   noData: 'No data found',

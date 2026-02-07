@@ -3,6 +3,9 @@ import type { GridColumnDef } from './column.types';
 /** Built-in cell editor types */
 export type CellEditorType = 'text' | 'number' | 'select' | 'boolean' | 'custom';
 
+/** Direction hint passed by editors when saving and navigating */
+export type NavigationDirection = 'tab' | 'enter';
+
 /** Option item for select-type editors */
 export interface SelectEditorOption {
   id: string;
@@ -31,6 +34,8 @@ export interface CellEditorProps<TData = unknown> {
   onSave: (newValue: unknown) => void;
   /** Cancel editing and close editor */
   onCancel: () => void;
+  /** Save the value and navigate to the next editable cell */
+  onSaveAndMoveNext?: (newValue: unknown, direction: NavigationDirection) => void;
   /** External context data passed from Grid props */
   context?: Record<string, unknown>;
 }

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { CellEditorProps } from '../../types/editing.types';
 
-export function TextEditor<TData>({ value, onSave, onCancel }: CellEditorProps<TData>) {
+export function TextEditor<TData>({ value, onSave, onCancel, onSaveAndMoveNext }: CellEditorProps<TData>) {
   const [text, setText] = useState(value != null ? String(value) : '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -14,16 +14,24 @@ export function TextEditor<TData>({ value, onSave, onCancel }: CellEditorProps<T
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        onSave(text);
+        if (onSaveAndMoveNext) {
+          onSaveAndMoveNext(text, 'enter');
+        } else {
+          onSave(text);
+        }
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onCancel();
       } else if (e.key === 'Tab') {
         e.preventDefault();
-        onSave(text);
+        if (onSaveAndMoveNext) {
+          onSaveAndMoveNext(text, 'tab');
+        } else {
+          onSave(text);
+        }
       }
     },
-    [text, onSave, onCancel],
+    [text, onSave, onCancel, onSaveAndMoveNext],
   );
 
   const handleBlur = useCallback(() => {

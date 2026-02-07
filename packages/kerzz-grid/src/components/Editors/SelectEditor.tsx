@@ -4,6 +4,7 @@ import type { SelectEditorOption } from '../../types/editing.types';
 
 interface SelectEditorInternalProps<TData> extends CellEditorProps<TData> {
   options: SelectEditorOption[];
+  onSaveAndMoveNext?: CellEditorProps<TData>['onSaveAndMoveNext'];
 }
 
 export function SelectEditor<TData>({
@@ -11,6 +12,7 @@ export function SelectEditor<TData>({
   options,
   onSave,
   onCancel,
+  onSaveAndMoveNext,
 }: SelectEditorInternalProps<TData>) {
   const currentValue = value != null ? String(value) : '';
   const [highlightedIndex, setHighlightedIndex] = useState(() =>
@@ -50,6 +52,17 @@ export function SelectEditor<TData>({
     [onSave],
   );
 
+  const handleSelectAndMove = useCallback(
+    (option: SelectEditorOption, direction: 'tab' | 'enter') => {
+      if (onSaveAndMoveNext) {
+        onSaveAndMoveNext(option.id, direction);
+      } else {
+        onSave(option.id);
+      }
+    },
+    [onSave, onSaveAndMoveNext],
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       switch (e.key) {
@@ -63,7 +76,7 @@ export function SelectEditor<TData>({
           break;
         case 'Enter':
           e.preventDefault();
-          if (options[highlightedIndex]) handleSelect(options[highlightedIndex]);
+          if (options[highlightedIndex]) handleSelectAndMove(options[highlightedIndex], 'enter');
           break;
         case 'Escape':
           e.preventDefault();
@@ -71,11 +84,11 @@ export function SelectEditor<TData>({
           break;
         case 'Tab':
           e.preventDefault();
-          if (options[highlightedIndex]) handleSelect(options[highlightedIndex]);
+          if (options[highlightedIndex]) handleSelectAndMove(options[highlightedIndex], 'tab');
           break;
       }
     },
-    [options, highlightedIndex, handleSelect, onCancel],
+    [options, highlightedIndex, handleSelectAndMove, onCancel],
   );
 
   return (

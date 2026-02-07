@@ -1,5 +1,6 @@
 import React from 'react';
 import type { GridColumnDef } from '../../types/column.types';
+import type { NavigationDirection } from '../../types/editing.types';
 import { GridCell } from './GridCell';
 import { SelectionCell } from '../Selection/SelectionCell';
 
@@ -33,6 +34,8 @@ interface GridRowProps<TData> {
   onSaveEdit?: (newValue: unknown) => void;
   /** Cancel editing */
   onCancelEdit?: () => void;
+  /** Save value and navigate to next editable cell */
+  onSaveAndMoveNext?: (newValue: unknown, direction: NavigationDirection) => void;
   /** External context for editors */
   context?: Record<string, unknown>;
 }
@@ -56,6 +59,7 @@ function GridRowInner<TData>({
   onStartEditing,
   onSaveEdit,
   onCancelEdit,
+  onSaveAndMoveNext,
   context,
 }: GridRowProps<TData>) {
   const hasEditingCell = isEditing
@@ -112,6 +116,7 @@ function GridRowInner<TData>({
             onStartEditing={onStartEditing}
             onSave={onSaveEdit}
             onCancel={onCancelEdit}
+            onSaveAndMoveNext={onSaveAndMoveNext}
             context={context}
           />
         );

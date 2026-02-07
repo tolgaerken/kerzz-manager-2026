@@ -32,4 +32,6 @@ export interface ToolbarConfig<TData = unknown> {
   onExportPdf?: (data: TData[], columns: GridColumnDef<TData>[]) => void;
   /** File name for exports (without extension). Default: 'grid-export' */
   exportFileName?: string;
+  /** Show add-row button when edit mode is active (default: true) */
+  showAddRow?: boolean;
 }

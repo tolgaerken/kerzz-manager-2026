@@ -11,6 +11,7 @@ Yuksek performansli, esnek temali, coklu dil destekli React data grid bileseni.
 - **Siralama**: Tek tik siralama (artan/azalan/temizle)
 - **Kolon Yonetimi**: Surukle-birak ile sira degistirme, boyutlandirma, goster/gizle
 - **Footer Aggregation**: Toplam, ortalama, adet, min, max, benzersiz sayi
+- **Satir Ekleme (Inline Add Row)**: Edit modunda toolbar'dan yeni satir ekleme, otomatik focus ve Tab/Enter ile hucre navigasyonu
 - **State Persistence**: localStorage ile kademeli durum saklama
 - **TypeScript**: Tam tip guvenligi
 
