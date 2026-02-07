@@ -17,6 +17,7 @@ import { ContractVersionsModule } from "./modules/contract-versions";
 import { ContractItemsModule } from "./modules/contract-items";
 import { ContractDocumentsModule } from "./modules/contract-documents";
 import { ContractPaymentsModule } from "./modules/contract-payments";
+import { ContractInvoicesModule } from "./modules/contract-invoices";
 import { InvoicesModule } from "./modules/invoices";
 import { PaymentsModule } from "./modules/payments";
 import { LogsModule } from "./modules/logs";
@@ -33,6 +34,7 @@ import { CronJobsModule } from "./modules/cron-jobs";
 import { PaytrModule } from "./modules/paytr";
 import { AutomatedPaymentsModule } from "./modules/automated-payments";
 import { EDocCreditsModule } from "./modules/e-doc-credits";
+import { EInvoicePricesModule } from "./modules/e-invoice-prices";
 // MongoDB WebSocket Module
 import { MongoWsModule } from "./modules/mongo-ws";
 // Company & ERP Modules
@@ -65,6 +67,7 @@ import { BankTransactionsModule } from "./modules/bank-transactions";
     ContractItemsModule,
     ContractDocumentsModule,
     ContractPaymentsModule,
+    ContractInvoicesModule,
     // Finance Modules
     InvoicesModule,
     PaymentsModule,
@@ -72,6 +75,7 @@ import { BankTransactionsModule } from "./modules/bank-transactions";
     AutomatedPaymentsModule,
     // E-Document Modules
     EDocCreditsModule,
+    EInvoicePricesModule,
     // MongoDB WebSocket Module (Global)
     MongoWsModule,
     // Log & Notification Modules

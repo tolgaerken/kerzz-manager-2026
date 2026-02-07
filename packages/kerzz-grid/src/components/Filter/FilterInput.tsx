@@ -18,6 +18,8 @@ const defaultConditions: FilterCondition[] = [
   'startsWith',
   'endsWith',
   'notContains',
+  'blank',
+  'notBlank',
 ];
 
 export function FilterInput({
@@ -39,11 +41,15 @@ export function FilterInput({
   const [value, setValue] = useState(activeFilter?.value ?? '');
   const [valueTo, setValueTo] = useState(activeFilter?.valueTo ?? '');
 
+  /** Conditions that don't require a value input */
+  const isNoValueCondition = (cond: FilterCondition) =>
+    cond === 'today' || cond === 'thisWeek' || cond === 'blank' || cond === 'notBlank';
+
   const applyFilter = useCallback(
     (cond: FilterCondition, val: string, valTo?: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        if (!val && cond !== 'today' && cond !== 'thisWeek') {
+        if (!val && !isNoValueCondition(cond)) {
           onClear();
         } else {
           onApply({ type: 'input', condition: cond, value: val, valueTo: valTo });
@@ -107,16 +113,18 @@ export function FilterInput({
         value={condition}
         onChange={handleConditionChange}
       />
-      <div className="kz-filter-input__row">
-        <input
-          type="text"
-          placeholder={locale.filterPlaceholder}
-          value={value}
-          onChange={(e) => handleValueChange(e.target.value)}
-          autoFocus
-        />
-        {value && <FilterClearButton onClick={handleClear} title={locale.filterClear} />}
-      </div>
+      {!isNoValueCondition(condition) && (
+        <div className="kz-filter-input__row">
+          <input
+            type="text"
+            placeholder={locale.filterPlaceholder}
+            value={value}
+            onChange={(e) => handleValueChange(e.target.value)}
+            autoFocus
+          />
+          {value && <FilterClearButton onClick={handleClear} title={locale.filterClear} />}
+        </div>
+      )}
       {condition === 'between' && (
         <div className="kz-filter-input__row">
           <span style={{ fontSize: '11px', color: 'var(--kz-text-muted)' }}>

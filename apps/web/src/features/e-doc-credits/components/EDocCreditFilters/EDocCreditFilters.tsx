@@ -8,9 +8,11 @@ interface EDocCreditFiltersProps {
   search: string;
   currency: string;
   internalFirm: string;
+  monthYear: string;
   onSearchChange: (value: string) => void;
   onCurrencyChange: (value: string) => void;
   onInternalFirmChange: (value: string) => void;
+  onMonthYearChange: (value: string) => void;
   onClearFilters: () => void;
 }
 
@@ -18,12 +20,14 @@ export function EDocCreditFilters({
   search,
   currency,
   internalFirm,
+  monthYear,
   onSearchChange,
   onCurrencyChange,
   onInternalFirmChange,
+  onMonthYearChange,
   onClearFilters,
 }: EDocCreditFiltersProps) {
-  const hasFilters = !!search || !!currency || !!internalFirm;
+  const hasFilters = !!search || !!currency || !!internalFirm || !!monthYear;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -38,6 +42,14 @@ export function EDocCreditFilters({
           className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
         />
       </div>
+
+      {/* Ay/Yıl Tarih Filtresi */}
+      <input
+        type="month"
+        value={monthYear}
+        onChange={(e) => onMonthYearChange(e.target.value)}
+        className="px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+      />
 
       {/* Para Birimi Filtresi */}
       <select

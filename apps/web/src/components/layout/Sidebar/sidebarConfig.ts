@@ -24,6 +24,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     label: "Kontrat",
     subItems: [
       { label: "Kontratları Göster", path: "/contracts" },
+      { label: "Sözleşme Faturaları", path: "/contract-invoices" },
     ],
   },
   {
@@ -69,6 +70,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     label: "E-Belge",
     subItems: [
       { label: "Kontör Yüklemeleri", path: "/e-documents/credits" },
+      { label: "Fiyat Tanımları", path: "/e-documents/invoice-prices" },
     ],
   },
   {

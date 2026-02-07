@@ -41,7 +41,7 @@ function matchesInputFilter(
 ): boolean {
   const { condition, value, valueTo } = filter;
 
-  if (!value && condition !== 'today' && condition !== 'thisWeek') {
+  if (!value && condition !== 'today' && condition !== 'thisWeek' && condition !== 'blank' && condition !== 'notBlank') {
     return true; // No filter value, pass everything
   }
 
@@ -123,6 +123,10 @@ function applyCondition(
       endOfWeek.setDate(startOfWeek.getDate() + 7);
       return d >= startOfWeek && d < endOfWeek;
     }
+    case 'blank':
+      return cellValue == null || String(cellValue).trim() === '';
+    case 'notBlank':
+      return cellValue != null && String(cellValue).trim() !== '';
     default:
       return true;
   }

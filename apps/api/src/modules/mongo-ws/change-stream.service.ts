@@ -44,6 +44,7 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
     this.registerCollection("contract-payments");
     this.registerCollection("bank-transactions");
     this.registerCollection("global-invoices");
+    this.registerCollection("online-payments");
   }
 
   onModuleDestroy() {

@@ -49,6 +49,17 @@ export class EDocCreditsService {
       ];
     }
 
+    // Ay ve yıl bazlı tarih filtresi
+    if (query.year && query.month) {
+      const startDate = new Date(query.year, query.month - 1, 1);
+      const endDate = new Date(query.year, query.month, 1);
+      filter.date = { $gte: startDate, $lt: endDate };
+    } else if (query.year) {
+      const startDate = new Date(query.year, 0, 1);
+      const endDate = new Date(query.year + 1, 0, 1);
+      filter.date = { $gte: startDate, $lt: endDate };
+    }
+
     const sortField = query.sortField || "date";
     const sortOrder = query.sortOrder === "asc" ? 1 : -1;
 

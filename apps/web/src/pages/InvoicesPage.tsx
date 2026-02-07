@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, FileSpreadsheet, CreditCard, AlertTriangle, CheckCircle, X } from "lucide-react";
+import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import { useCollectPayment } from "../features/automated-payments";
 import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
@@ -8,8 +8,11 @@ import {
   InvoicesGrid,
   InvoicesFilters,
   InvoiceFormModal,
+  BatchCollectProgressModal,
+  FloatingCollectProgressBar,
   useInvoices,
   useUpdateInvoice,
+  useBatchCollectPayment,
   invoicesKeys
 } from "../features/invoices";
 import type {
@@ -88,6 +91,9 @@ export function InvoicesPage() {
   // Tahsilat loading state
   const [collectLoading, setCollectLoading] = useState(false);
 
+  // Odeme sonucu beklenen fatura numaralari (spinner gosterimi icin)
+  const [pendingPaymentInvoiceNos, setPendingPaymentInvoiceNos] = useState<Set<string>>(new Set());
+
   // Bildirimi 8 saniye sonra otomatik kapat
   useEffect(() => {
     if (!paymentNotification) return;
@@ -101,18 +107,62 @@ export function InvoicesPage() {
   const updateMutation = useUpdateInvoice();
   const { data: tokensData } = useAutoPaymentTokens({});
   const collectMutation = useCollectPayment();
+  const batchCollect = useBatchCollectPayment();
 
   // MongoDB Change Stream - global-invoices degisikliklerini dinle
   useMongoChangeStream("global-invoices", (event) => {
     const fields = event.updatedFields;
+    const doc = event.fullDocument;
 
     // isPaid veya paymentSuccessDate degistiyse fatura listesini yenile
     if (
       fields?.isPaid !== undefined ||
       fields?.paymentSuccessDate !== undefined
     ) {
+      // Pending set'ten cikar
+      const invoiceNumber = doc?.invoiceNumber as string | undefined;
+      if (invoiceNumber) {
+        setPendingPaymentInvoiceNos((prev) => {
+          if (!prev.has(invoiceNumber)) return prev;
+          const next = new Set(prev);
+          next.delete(invoiceNumber);
+          return next;
+        });
+      }
       queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
     }
+  });
+
+  // MongoDB Change Stream - online-payments degisikliklerini dinle (hata takibi)
+  useMongoChangeStream("online-payments", (event) => {
+    const fields = event.updatedFields;
+    const doc = event.fullDocument;
+
+    if (fields?.status === undefined || !doc) return;
+
+    const invoiceNo = doc.invoiceNo as string | undefined;
+    if (!invoiceNo) return;
+
+    // Bu fatura bizim bekledigimiz faturalardan biri mi?
+    setPendingPaymentInvoiceNos((prev) => {
+      if (!prev.has(invoiceNo)) return prev;
+
+      const status = fields.status as string;
+      const statusMessage = (fields.statusMessage ?? doc.statusMessage ?? "") as string;
+
+      if (status !== "success") {
+        // Basarisiz odeme - hata toast goster
+        setPaymentNotification({
+          type: "error",
+          message: statusMessage || "Ödeme işlemi başarısız oldu",
+        });
+      }
+
+      // Her durumda pending'den cikar (success durumunda global-invoices zaten yenileyecek)
+      const next = new Set(prev);
+      next.delete(invoiceNo);
+      return next;
+    });
   });
 
   // Refresh handler
@@ -230,29 +280,32 @@ export function InvoicesPage() {
     link.click();
   }, [data]);
 
-  // Secili faturayı bul
-  const selectedInvoiceForPayment = useMemo(() => {
-    if (selectedIds.length !== 1 || !data?.data) return null;
-    return data.data.find((inv) => inv._id === selectedIds[0]) ?? null;
-  }, [selectedIds, data]);
+  // Secili ve tahsil edilebilir faturaları bul
+  const collectableInvoices = useMemo(() => {
+    if (selectedIds.length === 0 || !data?.data) return [];
+    return data.data.filter(
+      (inv) =>
+        selectedIds.includes(inv._id) &&
+        !inv.isPaid &&
+        autoPaymentCustomerIds.has(inv.customerId)
+    );
+  }, [selectedIds, data, autoPaymentCustomerIds]);
 
-  // Secili fatura icin otomatik odeme kaydi var mi?
-  const canCollect = useMemo(() => {
-    if (!selectedInvoiceForPayment) return false;
-    if (selectedInvoiceForPayment.isPaid) return false;
-    return autoPaymentCustomerIds.has(selectedInvoiceForPayment.customerId);
-  }, [selectedInvoiceForPayment, autoPaymentCustomerIds]);
+  // Tahsil edilebilir fatura var mi?
+  const canCollect = collectableInvoices.length > 0;
+  const isBatchRunning = batchCollect.progress?.status === "running";
 
-  // Tahsil et handler
-  const handleCollectPayment = useCallback(async () => {
-    if (!selectedInvoiceForPayment || !canCollect) return;
+  // Tekli tahsil et handler
+  const handleSingleCollect = useCallback(async () => {
+    if (collectableInvoices.length !== 1) return;
+    const invoice = collectableInvoices[0];
     setCollectLoading(true);
     try {
       const result = await collectMutation.mutateAsync({
-        customerId: selectedInvoiceForPayment.customerId,
-        amount: selectedInvoiceForPayment.grandTotal,
+        customerId: invoice.customerId,
+        amount: invoice.grandTotal,
         mode: "custom",
-        invoiceNo: selectedInvoiceForPayment.invoiceNumber,
+        invoiceNo: invoice.invoiceNumber,
       });
       if (!result.success) {
         setPaymentNotification({
@@ -260,12 +313,13 @@ export function InvoicesPage() {
           message: result.paymentError || result.message,
         });
       } else {
+        if (invoice.invoiceNumber) {
+          setPendingPaymentInvoiceNos((prev) => new Set(prev).add(invoice.invoiceNumber));
+        }
         setPaymentNotification({
           type: "success",
           message: result.message,
         });
-        // Fatura listesini yenile
-        queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
       }
     } catch (err: unknown) {
       const errorMessage =
@@ -274,22 +328,71 @@ export function InvoicesPage() {
     } finally {
       setCollectLoading(false);
     }
-  }, [selectedInvoiceForPayment, canCollect, collectMutation, queryClient]);
+  }, [collectableInvoices, collectMutation]);
+
+  // Çoklu tahsil et handler (batch modal ile)
+  const handleBatchCollect = useCallback(() => {
+    if (collectableInvoices.length === 0) return;
+    batchCollect.startBatchCollect(collectableInvoices);
+  }, [collectableInvoices, batchCollect]);
+
+  // Tahsil et: tekli ise direkt, çoklu ise batch modal
+  const handleCollectPayment = useCallback(() => {
+    if (collectableInvoices.length === 1) {
+      handleSingleCollect();
+    } else {
+      handleBatchCollect();
+    }
+  }, [collectableInvoices.length, handleSingleCollect, handleBatchCollect]);
+
+  // Batch modal handler'ları
+  const handleBatchMinimize = useCallback(() => {
+    batchCollect.minimizeBatchCollect();
+  }, [batchCollect]);
+
+  const handleBatchMaximize = useCallback(() => {
+    batchCollect.maximizeBatchCollect();
+  }, [batchCollect]);
+
+  const handleBatchPause = useCallback(() => {
+    batchCollect.pauseBatchCollect();
+  }, [batchCollect]);
+
+  const handleBatchResume = useCallback(() => {
+    batchCollect.resumeBatchCollect();
+  }, [batchCollect]);
+
+  const handleBatchCancel = useCallback(() => {
+    batchCollect.cancelBatchCollect();
+  }, [batchCollect]);
+
+  const handleBatchClose = useCallback(() => {
+    batchCollect.clearBatchCollect();
+    // Batch tamamlaninca listeyi yenile
+    queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
+  }, [batchCollect, queryClient]);
 
   // Grid toolbar custom buttons
-  const toolbarCustomButtons = useMemo(
-    () => [
+  const toolbarCustomButtons = useMemo(() => {
+    const getLabel = () => {
+      if (collectLoading || isBatchRunning) return "Tahsil Ediliyor...";
+      if (collectableInvoices.length > 1) return `Tahsil Et (${collectableInvoices.length})`;
+      return "Tahsil Et";
+    };
+
+    return [
       {
         id: "collect-payment",
-        label: collectLoading ? "Tahsil Ediliyor..." : "Tahsil Et",
-        icon: <CreditCard className="w-4 h-4" />,
+        label: getLabel(),
+        icon: collectLoading || isBatchRunning
+          ? <Loader2 className="w-4 h-4 animate-spin" />
+          : <CreditCard className="w-4 h-4" />,
         onClick: handleCollectPayment,
-        disabled: !canCollect || collectLoading,
+        disabled: !canCollect || collectLoading || isBatchRunning,
         variant: "primary" as const,
       },
-    ],
-    [canCollect, collectLoading, handleCollectPayment]
-  );
+    ];
+  }, [canCollect, collectLoading, isBatchRunning, collectableInvoices.length, handleCollectPayment]);
 
   return (
     <div className="flex flex-col h-full">
@@ -394,6 +497,7 @@ export function InvoicesPage() {
           data={data?.data || []}
           loading={isLoading}
           autoPaymentCustomerIds={autoPaymentCustomerIds}
+          pendingPaymentInvoiceNos={pendingPaymentInvoiceNos}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
           selectedIds={selectedIds}
@@ -410,6 +514,30 @@ export function InvoicesPage() {
         onSave={handleFormSave}
         isLoading={updateMutation.isPending}
       />
+
+      {/* Batch Collect Progress Modal (full screen) */}
+      {batchCollect.progress && !batchCollect.progress.isMinimized && (
+        <BatchCollectProgressModal
+          progress={batchCollect.progress}
+          onMinimize={handleBatchMinimize}
+          onPause={handleBatchPause}
+          onResume={handleBatchResume}
+          onCancel={handleBatchCancel}
+          onClose={handleBatchClose}
+        />
+      )}
+
+      {/* Floating Collect Progress Bar (minimized) */}
+      {batchCollect.progress && batchCollect.progress.isMinimized && (
+        <FloatingCollectProgressBar
+          progress={batchCollect.progress}
+          onMaximize={handleBatchMaximize}
+          onPause={handleBatchPause}
+          onResume={handleBatchResume}
+          onCancel={handleBatchCancel}
+          onClose={handleBatchClose}
+        />
+      )}
     </div>
   );
 }

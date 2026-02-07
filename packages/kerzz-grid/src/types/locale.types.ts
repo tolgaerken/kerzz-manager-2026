@@ -18,6 +18,9 @@ export interface GridLocale {
   filterSelectAll: string;
   filterDeselectAll: string;
   filterShowBlanks: string;
+  filterShowFilled: string;
+  filterBlank: string;
+  filterNotBlank: string;
   filterSearchPlaceholder: string;
   filterOk: string;
   filterCancel: string;

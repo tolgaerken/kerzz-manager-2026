@@ -35,13 +35,13 @@ export function FilterDropdown<TData>({
     [data, column],
   );
 
+  // Always compute blanks count so we can always show the empty/filled options
   const blanksCount = useMemo(
-    () =>
-      filterConfig.showBlanks !== false
-        ? countBlanks(data, column.accessorKey ?? column.id, column.accessorFn as ((row: TData) => unknown) | undefined)
-        : 0,
-    [data, column, filterConfig.showBlanks],
+    () => countBlanks(data, column.accessorKey ?? column.id, column.accessorFn as ((row: TData) => unknown) | undefined),
+    [data, column],
   );
+
+  const filledCount = useMemo(() => data.length - blanksCount, [data.length, blanksCount]);
 
   // Local state for selections
   const [selectedValues, setSelectedValues] = useState<Set<string>>(() => {
@@ -79,6 +79,23 @@ export function FilterDropdown<TData>({
     setSelectedValues(new Set());
     setShowBlanks(false);
   }, []);
+
+  // Check if all non-blank values are selected (for "Dolu Olanlar" toggle)
+  const allNonBlanksSelected = useMemo(
+    () => uniqueValues.length > 0 && uniqueValues.every((v) => selectedValues.has(v.value)),
+    [uniqueValues, selectedValues],
+  );
+
+  const handleFilledToggle = useCallback(
+    (_val: string, checked: boolean) => {
+      if (checked) {
+        setSelectedValues(new Set(uniqueValues.map((v) => v.value)));
+      } else {
+        setSelectedValues(new Set());
+      }
+    },
+    [uniqueValues],
+  );
 
   // Apply on change (skip initial render)
   useEffect(() => {
@@ -153,18 +170,25 @@ export function FilterDropdown<TData>({
 
       {/* Items list */}
       <div className="kz-filter-dropdown__list">
-        {/* Blanks option */}
-        {filterConfig.showBlanks !== false && blanksCount > 0 && (
-          <FilterDropdownItem
-            value="__blanks__"
-            displayValue={locale.filterShowBlanks}
-            count={blanksCount}
-            checked={showBlanks}
-            showCounts={filterConfig.showCounts !== false}
-            isBlank
-            onChange={(_val, checked) => setShowBlanks(checked)}
-          />
-        )}
+        {/* Always show Empty / Non-Empty options */}
+        <FilterDropdownItem
+          value="__blanks__"
+          displayValue={locale.filterShowBlanks}
+          count={blanksCount}
+          checked={showBlanks}
+          showCounts={filterConfig.showCounts !== false}
+          isBlank
+          onChange={(_val, checked) => setShowBlanks(checked)}
+        />
+        <FilterDropdownItem
+          value="__filled__"
+          displayValue={locale.filterShowFilled}
+          count={filledCount}
+          checked={allNonBlanksSelected}
+          showCounts={filterConfig.showCounts !== false}
+          isBlank
+          onChange={handleFilledToggle}
+        />
 
         {/* Unique values */}
         {filteredValues.map((item) => (

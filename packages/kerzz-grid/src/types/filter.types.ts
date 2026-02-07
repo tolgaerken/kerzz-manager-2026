@@ -3,7 +3,9 @@ export type TextFilterCondition =
   | 'equals'
   | 'startsWith'
   | 'endsWith'
-  | 'notContains';
+  | 'notContains'
+  | 'blank'
+  | 'notBlank';
 
 export type NumberFilterCondition =
   | 'equals'

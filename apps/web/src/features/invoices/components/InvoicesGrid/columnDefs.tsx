@@ -58,7 +58,8 @@ function Badge({ color, bg, children }: { color: string; bg: string; children: s
  * @param autoPaymentCustomerIds Otomatik ödeme talimatı kayıtlı müşteri ID'leri
  */
 export function createInvoiceColumnDefs(
-  autoPaymentCustomerIds: Set<string>
+  autoPaymentCustomerIds: Set<string>,
+  pendingPaymentInvoiceNos: Set<string> = new Set()
 ): GridColumnDef<Invoice>[] {
   return [
     {
@@ -69,11 +70,20 @@ export function createInvoiceColumnDefs(
       sortable: true,
       align: "center",
       filter: { type: "dropdown", showCounts: true },
-      cell: (value) => (value ? "✓" : "✗"),
-      cellClassName: (value) =>
-        value
-          ? "text-[var(--color-success)] font-bold text-center"
-          : "text-[var(--color-error)] text-center"
+      cell: (value, row: Invoice) => {
+        if (pendingPaymentInvoiceNos.has(row.invoiceNumber)) {
+          return (
+            <span className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          );
+        }
+        return value ? "✓" : "✗";
+      },
+      cellClassName: (value, row: Invoice) =>
+        pendingPaymentInvoiceNos.has(row.invoiceNumber)
+          ? "text-center"
+          : value
+            ? "text-[var(--color-success)] font-bold text-center"
+            : "text-[var(--color-error)] text-center"
     },
     {
       id: "autoPayment",

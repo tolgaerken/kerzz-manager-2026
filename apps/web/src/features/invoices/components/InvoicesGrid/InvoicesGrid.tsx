@@ -9,6 +9,7 @@ interface InvoicesGridProps {
   data: Invoice[];
   loading: boolean;
   autoPaymentCustomerIds: Set<string>;
+  pendingPaymentInvoiceNos?: Set<string>;
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
   onRowDoubleClick?: (invoice: Invoice) => void;
   selectedIds?: string[];
@@ -20,6 +21,7 @@ export function InvoicesGrid({
   data,
   loading,
   autoPaymentCustomerIds,
+  pendingPaymentInvoiceNos,
   onSortChange,
   onRowDoubleClick,
   selectedIds,
@@ -46,8 +48,8 @@ export function InvoicesGrid({
 
   // Sütun tanımları
   const columns = useMemo(
-    () => createInvoiceColumnDefs(autoPaymentCustomerIds),
-    [autoPaymentCustomerIds]
+    () => createInvoiceColumnDefs(autoPaymentCustomerIds, pendingPaymentInvoiceNos),
+    [autoPaymentCustomerIds, pendingPaymentInvoiceNos]
   );
 
   // SortingState -> (sortField, sortOrder) dönüşümü

@@ -15,6 +15,8 @@ import { BankTransactionsPage } from "./pages/BankTransactionsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { EDocCreditsPage } from "./pages/EDocCreditsPage";
+import { EInvoicePricesPage } from "./pages/EInvoicePricesPage";
+import { ContractInvoicesPage } from "./pages/ContractInvoicesPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
@@ -135,11 +137,25 @@ const bankTransactionsRoute = createRoute({
   component: BankTransactionsPage,
 });
 
+// Contract Invoices page
+const contractInvoicesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contract-invoices",
+  component: ContractInvoicesPage,
+});
+
 // E-Document Credits page
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/e-documents/credits",
   component: EDocCreditsPage,
+});
+
+// E-Invoice Prices page
+const eInvoicePricesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/e-documents/invoice-prices",
+  component: EInvoicePricesPage,
 });
 
 // Public payment form (no auth)
@@ -201,11 +217,13 @@ const routeTree = rootRoute.addChildren([
     softwareProductsRoute,
     salesRoute,
     integratorRoute,
+    contractInvoicesRoute,
     invoicesRoute,
     paymentsRoute,
     automatedPaymentsRoute,
     bankTransactionsRoute,
     eDocCreditsRoute,
+    eInvoicePricesRoute,
     systemLogsRoute,
     notificationSettingsRoute,
   ]),

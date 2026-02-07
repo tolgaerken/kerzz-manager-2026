@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsDateString } from "class-validator";
+import { Type } from "class-transformer";
 
 export class EDocCreditQueryDto {
   @IsOptional()
@@ -16,6 +17,16 @@ export class EDocCreditQueryDto {
   @IsOptional()
   @IsString()
   internalFirm?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  month?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  year?: number;
 
   @IsOptional()
   @IsString()

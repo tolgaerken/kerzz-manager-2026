@@ -1,0 +1,59 @@
+---
+description: Tema renk sistemi kuralları - Hard-coded renkler yerine tema değişkenleri kullanımı zorunludur
+globs: "**/*.{tsx,ts,css}"
+alwaysApply: true
+---
+
+# Tema Renk Sistemi - Zorunlu Kurallar
+
+Projede tüm renkler tema değişkenleri (`var(--color-*)`) üzerinden kullanılmalıdır. **Hard-coded Tailwind renkleri (red-500, blue-600, amber-50, green-700 vb.) kesinlikle yasaktır.**
+
+## Kullanılabilir Tema Değişkenleri
+
+| Değişken | Kullanım |
+|----------|----------|
+| `--color-foreground` | Ana metin rengi |
+| `--color-muted-foreground` | Soluk metin |
+| `--color-surface` | Yüzey arka planı |
+| `--color-surface-elevated` | Yükseltilmiş yüzey |
+| `--color-surface-hover` | Hover durumu |
+| `--color-border` | Kenarlık |
+| `--color-primary` | Ana vurgu rengi |
+| `--color-primary-foreground` | Primary üzerinde metin |
+| `--color-success` / `--color-success-foreground` | Başarı durumu |
+| `--color-warning` / `--color-warning-foreground` | Uyarı durumu |
+| `--color-error` / `--color-error-foreground` | Hata durumu |
+| `--color-info` / `--color-info-foreground` | Bilgi durumu |
+
+## Doğru Kullanım Örnekleri
+
+```tsx
+// ✅ DOĞRU - Tema değişkenleri
+className="text-[var(--color-error)]"
+className="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30"
+className="text-[var(--color-success-foreground)] bg-[var(--color-success)]"
+className="bg-[var(--color-primary)]/10"
+
+// ❌ YANLIŞ - Hard-coded renkler
+className="text-red-500"
+className="bg-amber-50 dark:bg-amber-900/20"
+className="text-green-600 dark:text-green-400"
+className="bg-blue-50 dark:bg-blue-900/20"
+```
+
+## Opaklık/Saydamlık Kullanımı
+
+Arka planlar için tema rengine Tailwind opaklık modifayırı ekleyin:
+
+```tsx
+// Hafif arka plan (bilgi kutusu, uyarı alanı vb.)
+className="bg-[var(--color-warning)]/10"
+
+// Kenarlık
+className="border border-[var(--color-warning)]/30"
+
+// Hover efekti
+className="hover:bg-[var(--color-error)]/10"
+```
+
+Bu kural dark/light tema geçişlerinin sorunsuz çalışmasını garantiler.

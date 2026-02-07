@@ -25,6 +25,8 @@ export interface EDocCreditQueryParams {
   erpId?: string;
   currency?: string;
   internalFirm?: string;
+  month?: number;
+  year?: number;
   sortField?: string;
   sortOrder?: "asc" | "desc";
 }

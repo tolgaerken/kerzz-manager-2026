@@ -22,6 +22,8 @@ const conditionLocaleMap: Record<FilterCondition, string> = {
   after: 'filterAfter',
   today: 'filterToday',
   thisWeek: 'filterThisWeek',
+  blank: 'filterBlank',
+  notBlank: 'filterNotBlank',
 };
 
 export const FilterConditionSelect = React.memo(function FilterConditionSelect({

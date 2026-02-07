@@ -27,6 +27,8 @@ function buildQueryString(params: EDocCreditQueryParams): string {
   if (params.erpId) searchParams.set("erpId", params.erpId);
   if (params.currency) searchParams.set("currency", params.currency);
   if (params.internalFirm) searchParams.set("internalFirm", params.internalFirm);
+  if (params.month) searchParams.set("month", params.month.toString());
+  if (params.year) searchParams.set("year", params.year.toString());
   if (params.sortField) searchParams.set("sortField", params.sortField);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
 

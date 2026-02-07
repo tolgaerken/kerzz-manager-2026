@@ -20,12 +20,17 @@ import type {
 
 export function EDocCreditsPage() {
   // -- Query State --
-  const [queryParams, setQueryParams] = useState<EDocCreditQueryParams>({
-    search: "",
-    currency: "",
-    internalFirm: "",
-    sortField: "date",
-    sortOrder: "desc",
+  const [queryParams, setQueryParams] = useState<EDocCreditQueryParams>(() => {
+    const now = new Date();
+    return {
+      search: "",
+      currency: "",
+      internalFirm: "",
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+      sortField: "date",
+      sortOrder: "desc",
+    };
   });
 
   // -- Selection State --
@@ -65,12 +70,31 @@ export function EDocCreditsPage() {
     setQueryParams((prev) => ({ ...prev, internalFirm }));
   }, []);
 
+  const handleMonthYearChange = useCallback((monthYear: string) => {
+    if (monthYear) {
+      const [yearStr, monthStr] = monthYear.split("-");
+      setQueryParams((prev) => ({
+        ...prev,
+        year: parseInt(yearStr, 10),
+        month: parseInt(monthStr, 10),
+      }));
+    } else {
+      setQueryParams((prev) => ({
+        ...prev,
+        year: undefined,
+        month: undefined,
+      }));
+    }
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setQueryParams((prev) => ({
       ...prev,
       search: "",
       currency: "",
       internalFirm: "",
+      month: undefined,
+      year: undefined,
     }));
   }, []);
 
@@ -230,9 +254,15 @@ export function EDocCreditsPage() {
           search={queryParams.search || ""}
           currency={queryParams.currency || ""}
           internalFirm={queryParams.internalFirm || ""}
+          monthYear={
+            queryParams.year && queryParams.month
+              ? `${queryParams.year}-${String(queryParams.month).padStart(2, "0")}`
+              : ""
+          }
           onSearchChange={handleSearchChange}
           onCurrencyChange={handleCurrencyChange}
           onInternalFirmChange={handleInternalFirmChange}
+          onMonthYearChange={handleMonthYearChange}
           onClearFilters={handleClearFilters}
         />
       </div>
