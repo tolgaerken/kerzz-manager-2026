@@ -40,4 +40,5 @@ export interface CollectPaymentResponseDto {
   paymentId: string;
   amount: number;
   message: string;
+  paymentError?: string;
 }

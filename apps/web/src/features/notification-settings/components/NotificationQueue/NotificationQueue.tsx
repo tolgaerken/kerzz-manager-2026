@@ -1,12 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   RefreshCw,
   Mail,
   MessageSquare,
   FileText,
   Building,
-  ChevronLeft,
-  ChevronRight,
   Send,
   CheckCircle,
   XCircle,
@@ -19,7 +17,11 @@ import {
   useQueueStats,
   useSendManualNotification,
   useQueuePreview,
+  useNotificationSettings,
 } from "../../hooks";
+import { InvoiceQueueGrid } from "../InvoiceQueueGrid";
+import { ContractQueueGrid } from "../ContractQueueGrid";
+import { OverdueDaysFilter } from "../OverdueDaysFilter";
 import type {
   QueueInvoiceItem,
   QueueContractItem,
@@ -35,12 +37,10 @@ export function NotificationQueue() {
   const [queueTab, setQueueTab] = useState<QueueTab>("invoices");
   const [invoiceParams, setInvoiceParams] = useState<InvoiceQueueQueryParams>({
     type: "all",
-    page: 1,
-    limit: 20,
+    limit: 10000,
   });
   const [contractParams, setContractParams] = useState<ContractQueueQueryParams>({
-    page: 1,
-    limit: 20,
+    limit: 10000,
   });
   const [selected, setSelected] = useState<ManualSendItem[]>([]);
   const [resultModal, setResultModal] = useState<{
@@ -48,59 +48,60 @@ export function NotificationQueue() {
     failed: number;
     results: { type: string; id: string; channel: string; success: boolean; error?: string }[];
   } | null>(null);
+  const [selectedOverdueDays, setSelectedOverdueDays] = useState<number[]>([]);
   const [previewParams, setPreviewParams] = useState<QueuePreviewParams | null>(null);
 
+  const { data: settings } = useNotificationSettings();
   const { data: stats, isLoading: statsLoading } = useQueueStats();
   const { data: invoiceData, isLoading: invoicesLoading } = useInvoiceQueue(invoiceParams);
   const { data: contractData, isLoading: contractsLoading } = useContractQueue(contractParams);
   const sendMutation = useSendManualNotification();
   const { data: previewData, isLoading: previewLoading } = useQueuePreview(previewParams);
 
-  const toggleInvoice = useCallback((item: QueueInvoiceItem) => {
+  // Combobox'tan seçilen günlere göre faturaları filtrele
+  const filteredInvoices = useMemo(() => {
+    const data = invoiceData?.data ?? [];
+    if (selectedOverdueDays.length === 0) return data;
+
+    return data.filter((inv) => {
+      return selectedOverdueDays.some((val) => {
+        if (val >= 0) {
+          // Pozitif/sıfır: vadesi bugün veya vadeden önce (due)
+          return inv.overdueDays === 0 && val === 0;
+        }
+        // Negatif: vadesi geçmiş gün sayısı (overdue)
+        return inv.overdueDays === Math.abs(val);
+      });
+    });
+  }, [invoiceData?.data, selectedOverdueDays]);
+
+  const handleInvoiceSelectionChanged = useCallback((items: QueueInvoiceItem[]) => {
     setSelected((prev) => {
-      const exists = prev.some((s) => s.type === "invoice" && s.id === item.id);
-      if (exists) return prev.filter((s) => !(s.type === "invoice" && s.id === item.id));
-      return [...prev, { type: "invoice" as const, id: item.id }];
+      const nonInvoice = prev.filter((s) => s.type !== "invoice");
+      return [...nonInvoice, ...items.map((i) => ({ type: "invoice" as const, id: i.id }))];
     });
   }, []);
 
-  const toggleContract = useCallback((item: QueueContractItem) => {
+  const handleContractSelectionChanged = useCallback((items: QueueContractItem[]) => {
     setSelected((prev) => {
-      const exists = prev.some((s) => s.type === "contract" && s.id === item.id);
-      if (exists) return prev.filter((s) => !(s.type === "contract" && s.id === item.id));
-      return [...prev, { type: "contract" as const, id: item.id }];
+      const nonContract = prev.filter((s) => s.type !== "contract");
+      return [...nonContract, ...items.map((i) => ({ type: "contract" as const, id: i.id }))];
     });
   }, []);
 
-  const selectAllInvoices = useCallback(() => {
-    if (!invoiceData?.data.length) return;
-    const currentIds = new Set(selected.filter((s) => s.type === "invoice").map((s) => s.id));
-    const allSelected = invoiceData.data.every((i) => currentIds.has(i.id));
-    if (allSelected) {
-      setSelected((prev) => prev.filter((s) => s.type !== "invoice"));
-    } else {
-      const other = selected.filter((s) => s.type !== "invoice");
-      setSelected([
-        ...other,
-        ...invoiceData.data.map((i) => ({ type: "invoice" as const, id: i.id })),
-      ]);
-    }
-  }, [invoiceData?.data, selected]);
+  const handlePreviewEmail = useCallback(
+    (id: string) => {
+      setPreviewParams({ type: queueTab === "invoices" ? "invoice" : "contract", id, channel: "email" });
+    },
+    [queueTab]
+  );
 
-  const selectAllContracts = useCallback(() => {
-    if (!contractData?.data.length) return;
-    const currentIds = new Set(selected.filter((s) => s.type === "contract").map((s) => s.id));
-    const allSelected = contractData.data.every((i) => currentIds.has(i.id));
-    if (allSelected) {
-      setSelected((prev) => prev.filter((s) => s.type !== "contract"));
-    } else {
-      const other = selected.filter((s) => s.type !== "contract");
-      setSelected([
-        ...other,
-        ...contractData.data.map((i) => ({ type: "contract" as const, id: i.id })),
-      ]);
-    }
-  }, [contractData?.data, selected]);
+  const handlePreviewSms = useCallback(
+    (id: string) => {
+      setPreviewParams({ type: queueTab === "invoices" ? "invoice" : "contract", id, channel: "sms" });
+    },
+    [queueTab]
+  );
 
   const handleSend = useCallback(
     (channels: ("email" | "sms")[]) => {
@@ -122,14 +123,8 @@ export function NotificationQueue() {
     [selected, sendMutation]
   );
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
-
-  const isInvoiceSelected = (id: string) => selected.some((s) => s.type === "invoice" && s.id === id);
-  const isContractSelected = (id: string) => selected.some((s) => s.type === "contract" && s.id === id);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col h-full">
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4">
@@ -193,7 +188,6 @@ export function NotificationQueue() {
               setInvoiceParams((p) => ({
                 ...p,
                 type: e.target.value as InvoiceQueueQueryParams["type"],
-                page: 1,
               }))
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
@@ -202,24 +196,21 @@ export function NotificationQueue() {
             <option value="due">Vadesi bugün</option>
             <option value="overdue">Vadesi geçmiş</option>
           </select>
+          <OverdueDaysFilter
+            dueDays={settings?.invoiceDueReminderDays ?? [0]}
+            overdueDays={settings?.invoiceOverdueDays ?? [3, 5, 10]}
+            selectedDays={selectedOverdueDays}
+            onChange={setSelectedOverdueDays}
+          />
           <input
             type="text"
             placeholder="Ara (fatura no, açıklama...)"
             value={invoiceParams.search ?? ""}
             onChange={(e) =>
-              setInvoiceParams((p) => ({ ...p, search: e.target.value || undefined, page: 1 }))
+              setInvoiceParams((p) => ({ ...p, search: e.target.value || undefined }))
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
           />
-          <button
-            onClick={() =>
-              setInvoiceParams((p) => ({ ...p, page: (p.page ?? 1) - 1 }))
-            }
-            disabled={!invoiceData?.meta || invoiceData.meta.page <= 1}
-            className="p-2 text-[var(--color-foreground)] disabled:opacity-50"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
         </div>
       )}
       {queueTab === "contracts" && (
@@ -229,7 +220,7 @@ export function NotificationQueue() {
             placeholder="Ara (firma, marka...)"
             value={contractParams.search ?? ""}
             onChange={(e) =>
-              setContractParams((p) => ({ ...p, search: e.target.value || undefined, page: 1 }))
+              setContractParams((p) => ({ ...p, search: e.target.value || undefined }))
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
           />
@@ -271,309 +262,27 @@ export function NotificationQueue() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto bg-[var(--color-surface-elevated)] rounded-lg">
+      {/* AG Grid */}
+      <div className="flex-1 min-h-[400px]">
         {queueTab === "invoices" && (
-          <>
-            {invoicesLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <RefreshCw className="w-6 h-6 animate-spin text-[var(--color-muted)]" />
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)]">
-                    <th className="w-10 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={
-                          invoiceData?.data.length
-                            ? invoiceData.data.every((i) => isInvoiceSelected(i.id))
-                            : false
-                        }
-                        onChange={selectAllInvoices}
-                        className="w-4 h-4"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Fatura No
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Müşteri
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Tutar
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Son Ödeme
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Geciken Gün
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Son Bildirim
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Bildirim Sayısı
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      İşlemler
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceData?.data.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface)]"
-                    >
-                      <td className="w-10 px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={isInvoiceSelected(row.id)}
-                          onChange={() => toggleInvoice(row)}
-                          className="w-4 h-4"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm font-mono text-[var(--color-foreground)]">
-                        {row.invoiceNumber}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {row.customer.companyName || row.customer.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {formatCurrency(row.grandTotal)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {row.dueDate}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={
-                            row.overdueDays > 0
-                              ? "text-red-600 font-medium"
-                              : "text-[var(--color-muted)]"
-                          }
-                        >
-                          {row.overdueDays}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-muted)]">
-                        {row.lastNotify ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {row.notifyCount}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() =>
-                              setPreviewParams({ type: "invoice", id: row.id, channel: "email" })
-                            }
-                            title="E-posta Önizleme"
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              setPreviewParams({ type: "invoice", id: row.id, channel: "sms" })
-                            }
-                            title="SMS Önizleme"
-                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!invoiceData?.data || invoiceData.data.length === 0) && (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="px-4 py-8 text-center text-[var(--color-muted)]"
-                      >
-                        Bildirim bekleyen fatura bulunamadı.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </>
+          <InvoiceQueueGrid
+            data={filteredInvoices}
+            loading={invoicesLoading}
+            onSelectionChanged={handleInvoiceSelectionChanged}
+            onPreviewEmail={handlePreviewEmail}
+            onPreviewSms={handlePreviewSms}
+          />
         )}
-
         {queueTab === "contracts" && (
-          <>
-            {contractsLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <RefreshCw className="w-6 h-6 animate-spin text-[var(--color-muted)]" />
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)]">
-                    <th className="w-10 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={
-                          contractData?.data.length
-                            ? contractData.data.every((i) => isContractSelected(i.id))
-                            : false
-                        }
-                        onChange={selectAllContracts}
-                        className="w-4 h-4"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Kontrat / Firma
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Müşteri
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Bitiş Tarihi
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      Kalan Gün
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      İletişim
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-muted)] uppercase">
-                      İşlemler
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contractData?.data.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface)]"
-                    >
-                      <td className="w-10 px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={isContractSelected(row.id)}
-                          onChange={() => toggleContract(row)}
-                          className="w-4 h-4"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        <div>
-                          <p className="font-medium">{row.contractId || row.company}</p>
-                          {row.brand && (
-                            <p className="text-xs text-[var(--color-muted)]">{row.brand}</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {row.customer.companyName || row.customer.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {row.endDate}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
-                        {row.remainingDays}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-muted)]">
-                        {row.customer.email || row.customer.phone || "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() =>
-                              setPreviewParams({ type: "contract", id: row.id, channel: "email" })
-                            }
-                            title="E-posta Önizleme"
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              setPreviewParams({ type: "contract", id: row.id, channel: "sms" })
-                            }
-                            title="SMS Önizleme"
-                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!contractData?.data || contractData.data.length === 0) && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="px-4 py-8 text-center text-[var(--color-muted)]"
-                      >
-                        Bildirim bekleyen kontrat bulunamadı.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </>
+          <ContractQueueGrid
+            data={contractData?.data ?? []}
+            loading={contractsLoading}
+            onSelectionChanged={handleContractSelectionChanged}
+            onPreviewEmail={handlePreviewEmail}
+            onPreviewSms={handlePreviewSms}
+          />
         )}
       </div>
-
-      {/* Pagination */}
-      {queueTab === "invoices" && invoiceData?.meta && invoiceData.meta.totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-elevated)] rounded-lg">
-          <div className="text-sm text-[var(--color-muted)]">
-            Toplam {invoiceData.meta.total} kayıt
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setInvoiceParams((p) => ({ ...p, page: (p.page ?? 1) - 1 }))}
-              disabled={invoiceData.meta.page === 1}
-              className="p-2 text-[var(--color-foreground)] disabled:opacity-50"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="text-sm text-[var(--color-foreground)]">
-              {invoiceData.meta.page} / {invoiceData.meta.totalPages}
-            </span>
-            <button
-              onClick={() => setInvoiceParams((p) => ({ ...p, page: (p.page ?? 1) + 1 }))}
-              disabled={invoiceData.meta.page === invoiceData.meta.totalPages}
-              className="p-2 text-[var(--color-foreground)] disabled:opacity-50"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
-      {queueTab === "contracts" && contractData?.meta && contractData.meta.totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-elevated)] rounded-lg">
-          <div className="text-sm text-[var(--color-muted)]">
-            Toplam {contractData.meta.total} kayıt
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setContractParams((p) => ({ ...p, page: (p.page ?? 1) - 1 }))}
-              disabled={contractData.meta.page === 1}
-              className="p-2 text-[var(--color-foreground)] disabled:opacity-50"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="text-sm text-[var(--color-foreground)]">
-              {contractData.meta.page} / {contractData.meta.totalPages}
-            </span>
-            <button
-              onClick={() => setContractParams((p) => ({ ...p, page: (p.page ?? 1) + 1 }))}
-              disabled={contractData.meta.page === contractData.meta.totalPages}
-              className="p-2 text-[var(--color-foreground)] disabled:opacity-50"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Preview modal */}
       {previewParams && (
@@ -591,7 +300,6 @@ export function NotificationQueue() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {/* Kanal değiştirme butonları */}
                 <button
                   onClick={() =>
                     setPreviewParams((p) => (p ? { ...p, channel: "email" } : null))
@@ -633,7 +341,6 @@ export function NotificationQueue() {
                 </div>
               ) : previewData ? (
                 <div className="space-y-4">
-                  {/* Recipient info */}
                   <div className="flex flex-wrap gap-4 text-sm bg-[var(--color-surface-elevated)] rounded-lg p-3">
                     <div>
                       <span className="text-[var(--color-muted)]">Alıcı:</span>{" "}
@@ -659,7 +366,6 @@ export function NotificationQueue() {
                     </div>
                   </div>
 
-                  {/* Subject */}
                   {previewParams.channel === "email" && previewData.subject && (
                     <div>
                       <h4 className="text-sm font-medium text-[var(--color-foreground)] mb-1">
@@ -671,7 +377,6 @@ export function NotificationQueue() {
                     </div>
                   )}
 
-                  {/* Body */}
                   <div>
                     <h4 className="text-sm font-medium text-[var(--color-foreground)] mb-1">
                       İçerik

@@ -85,6 +85,7 @@ export class NotificationQueueService {
         companyId: "VERI",
         invoiceNo: invoice.invoiceNumber || "",
         staffName: "Kerzz Bildirim",
+        canRecurring: true,
       });
 
       return result.url;

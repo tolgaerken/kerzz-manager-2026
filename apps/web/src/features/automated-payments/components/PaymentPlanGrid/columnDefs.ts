@@ -1,4 +1,4 @@
-import type { ColDef, ValueFormatterParams } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { PaymentPlanItem } from "../../types/automatedPayment.types";
 
 const formatDate = (dateStr: string | null | undefined): string => {
@@ -18,69 +18,81 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-export const paymentPlanColumnDefs: ColDef<PaymentPlanItem>[] = [
+export const paymentPlanColumnDefs: GridColumnDef<PaymentPlanItem>[] = [
   {
-    field: "paid",
-    headerName: "Durum",
+    id: "paid",
+    header: "Durum",
+    accessorKey: "paid",
     width: 80,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      params.value ? "✓ Ödendi" : "✗ Ödenmedi",
-    cellClass: (params) =>
-      params.value ? "text-green-600 font-bold" : "text-red-500",
+    cell: (value) => (value ? "✓ Ödendi" : "✗ Ödenmedi"),
+    cellClassName: (_value: unknown, row: PaymentPlanItem) =>
+      row.paid ? "text-green-600 font-bold" : "text-red-500",
+    footer: { aggregate: "count", label: "Adet:" },
   },
   {
-    field: "total",
-    headerName: "Tutar",
+    id: "total",
+    header: "Tutar",
+    accessorKey: "total",
     width: 120,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      formatCurrency(params.value ?? 0),
-    cellClass: "font-medium",
+    cell: (value) => formatCurrency((value as number) ?? 0),
+    cellClassName: "font-mono font-medium",
+    footer: {
+      aggregate: "sum",
+      format: (v) => formatCurrency(v),
+    },
   },
   {
-    field: "invoiceTotal",
-    headerName: "Fatura",
+    id: "invoiceTotal",
+    header: "Fatura",
+    accessorKey: "invoiceTotal",
     width: 120,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      formatCurrency(params.value ?? 0),
+    cell: (value) => formatCurrency((value as number) ?? 0),
+    cellClassName: "font-mono",
+    footer: {
+      aggregate: "sum",
+      format: (v) => formatCurrency(v),
+    },
   },
   {
-    field: "invoiceNo",
-    headerName: "Fatura No",
+    id: "invoiceNo",
+    header: "Fatura No",
+    accessorKey: "invoiceNo",
     width: 130,
-    cellClass: "font-mono text-xs",
+    cellClassName: "font-mono text-xs",
   },
   {
-    field: "invoiceDate",
-    headerName: "Fatura Tarihi",
+    id: "invoiceDate",
+    header: "Fatura Tarihi",
+    accessorKey: "invoiceDate",
     width: 120,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      formatDate(params.value),
+    cell: (value) => formatDate(value as string),
   },
   {
-    field: "paymentDate",
-    headerName: "Ödeme Tarihi",
+    id: "paymentDate",
+    header: "Ödeme Tarihi",
+    accessorKey: "paymentDate",
     width: 120,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      formatDate(params.value),
+    cell: (value) => formatDate(value as string),
   },
   {
-    field: "otoPaymentAttempt",
-    headerName: "Son Deneme",
+    id: "otoPaymentAttempt",
+    header: "Son Deneme",
+    accessorKey: "otoPaymentAttempt",
     width: 120,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      formatDate(params.value),
+    cell: (value) => formatDate(value as string),
   },
   {
-    field: "dueDate",
-    headerName: "Vade",
+    id: "dueDate",
+    header: "Vade",
+    accessorKey: "dueDate",
     width: 110,
-    valueFormatter: (params: ValueFormatterParams<PaymentPlanItem>) =>
-      formatDate(params.value),
+    cell: (value) => formatDate(value as string),
   },
   {
-    field: "onlinePaymentError",
-    headerName: "Hata",
+    id: "onlinePaymentError",
+    header: "Hata",
+    accessorKey: "onlinePaymentError",
     width: 200,
-    cellClass: "text-red-500 text-xs",
+    cellClassName: "text-red-500 text-xs",
   },
 ];

@@ -1,16 +1,8 @@
-import { useCallback, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type GridReadyEvent,
-  type SelectionChangedEvent,
-  themeQuartz,
-} from "ag-grid-community";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Grid } from "@kerzz/grid";
+import type { GridColumnDef } from "@kerzz/grid";
 import { paymentPlanColumnDefs } from "./columnDefs";
 import type { PaymentPlanItem } from "../../types/automatedPayment.types";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface PaymentPlanGridProps {
   data: PaymentPlanItem[];
@@ -23,64 +15,65 @@ export function PaymentPlanGrid({
   loading,
   onSelectionChanged,
 }: PaymentPlanGridProps) {
-  const gridRef = useRef<AgGridReact<PaymentPlanItem>>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(400);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const defaultColDef = useMemo(
-    () => ({
-      resizable: true,
-      sortable: true,
-    }),
-    []
-  );
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  const onGridReady = useCallback(
-    (_params: GridReadyEvent<PaymentPlanItem>) => {
-      // Yatay scroll icin kolonlari serbest birak
-    },
-    []
-  );
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
 
-  const handleSelectionChanged = useCallback(
-    (event: SelectionChangedEvent<PaymentPlanItem>) => {
-      const selected = event.api.getSelectedRows();
-      onSelectionChanged(selected.length > 0 ? selected[0] : null);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleRowClick = useCallback(
+    (row: PaymentPlanItem) => {
+      setSelectedId((prev) => {
+        if (prev === row._id) {
+          onSelectionChanged(null);
+          return null;
+        }
+        onSelectionChanged(row);
+        return row._id;
+      });
     },
     [onSelectionChanged]
   );
 
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 40,
-    headerHeight: 44,
-  });
+  const columns: GridColumnDef<PaymentPlanItem>[] = paymentPlanColumnDefs.map(
+    (col) => ({
+      ...col,
+      cellClassName: (_value: unknown, row: PaymentPlanItem) => {
+        const original =
+          typeof col.cellClassName === "function"
+            ? col.cellClassName(_value, row)
+            : col.cellClassName || "";
+        return selectedId === row._id
+          ? `${original} bg-blue-50 dark:bg-blue-900/20`.trim()
+          : original;
+      },
+    })
+  );
 
   return (
-    <div className="h-full w-full flex-1">
-      <AgGridReact<PaymentPlanItem>
-        ref={gridRef}
-        theme={customTheme}
-        rowData={data}
-        columnDefs={paymentPlanColumnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onSelectionChanged={handleSelectionChanged}
+    <div ref={containerRef} className="h-full w-full flex-1">
+      <Grid<PaymentPlanItem>
+        data={data}
+        columns={columns}
+        locale="tr"
+        height={containerHeight}
         loading={loading}
-        rowSelection={{ mode: "singleRow" }}
-        suppressCellFocus={true}
-        animateRows={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => params.data._id}
-        rowBuffer={20}
-        suppressScrollOnNewData={true}
+        getRowId={(row) => row._id}
+        onRowClick={handleRowClick}
+        toolbar
+        stateKey="payment-plans"
       />
     </div>
   );

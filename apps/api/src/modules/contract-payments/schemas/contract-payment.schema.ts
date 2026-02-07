@@ -93,6 +93,21 @@ export class ContractPayment {
 
   @Prop()
   editUser: string;
+
+  @Prop()
+  companyId: string;
+
+  @Prop()
+  dueDate: Date;
+
+  @Prop()
+  onlinePaymentId: string;
+
+  @Prop()
+  onlinePaymentError: string;
+
+  @Prop()
+  otoPaymentAttempt: Date;
 }
 
 export const ContractPaymentSchema = SchemaFactory.createForClass(ContractPayment);

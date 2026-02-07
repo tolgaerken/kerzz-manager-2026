@@ -1,20 +1,13 @@
-import { useCallback, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type GridReadyEvent,
-  type SortChangedEvent,
-  themeQuartz
-} from "ag-grid-community";
-import { invoiceColumnDefs } from "./columnDefs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Grid } from "@kerzz/grid";
+import type { SortingState } from "@tanstack/react-table";
+import { createInvoiceColumnDefs } from "./columnDefs";
 import type { Invoice } from "../../types";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface InvoicesGridProps {
   data: Invoice[];
   loading: boolean;
+  autoPaymentCustomerIds: Set<string>;
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
   onRowDoubleClick?: (invoice: Invoice) => void;
 }
@@ -22,78 +15,68 @@ interface InvoicesGridProps {
 export function InvoicesGrid({
   data,
   loading,
+  autoPaymentCustomerIds,
   onSortChange,
   onRowDoubleClick
 }: InvoicesGridProps) {
-  const gridRef = useRef<AgGridReact<Invoice>>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(500);
 
-  const defaultColDef = useMemo(
-    () => ({
-      resizable: true,
-      sortable: true
-    }),
-    []
-  );
+  // Dinamik yükseklik hesaplama
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  const onGridReady = useCallback((params: GridReadyEvent<Invoice>) => {
-    params.api.sizeColumnsToFit();
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
-  const handleSortChanged = useCallback(
-    (event: SortChangedEvent<Invoice>) => {
-      const sortModel = event.api.getColumnState().find((col) => col.sort);
-      if (sortModel && sortModel.colId) {
-        onSortChange(sortModel.colId, sortModel.sort as "asc" | "desc");
+  // Sütun tanımları
+  const columns = useMemo(
+    () => createInvoiceColumnDefs(autoPaymentCustomerIds),
+    [autoPaymentCustomerIds]
+  );
+
+  // SortingState -> (sortField, sortOrder) dönüşümü
+  const handleSortChange = useCallback(
+    (sorting: SortingState) => {
+      if (sorting.length > 0) {
+        onSortChange(sorting[0].id, sorting[0].desc ? "desc" : "asc");
       }
     },
     [onSortChange]
   );
 
-  const handleRowDoubleClicked = useCallback(
-    (event: { data: Invoice | undefined }) => {
-      if (event.data && onRowDoubleClick) {
-        onRowDoubleClick(event.data);
-      }
+  // Row double click
+  const handleRowDoubleClick = useCallback(
+    (row: Invoice) => {
+      onRowDoubleClick?.(row);
     },
     [onRowDoubleClick]
   );
 
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 40,
-    headerHeight: 44
-  });
-
   return (
-    <div className="h-full w-full flex-1">
-      <AgGridReact<Invoice>
-        ref={gridRef}
-        theme={customTheme}
-        rowData={data}
-        columnDefs={invoiceColumnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onSortChanged={handleSortChanged}
-        onRowDoubleClicked={handleRowDoubleClicked}
+    <div ref={containerRef} className="h-full w-full flex-1">
+      <Grid<Invoice>
+        data={data}
+        columns={columns}
+        locale="tr"
+        height={containerHeight}
         loading={loading}
-        rowSelection={{ mode: "singleRow" }}
-        suppressCellFocus={true}
-        animateRows={false}
-        suppressMovableColumns={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => params.data._id}
-        rowBuffer={20}
-        suppressScrollOnNewData={true}
-        debounceVerticalScrollbar={true}
+        getRowId={(row) => row._id}
+        onRowDoubleClick={handleRowDoubleClick}
+        onSortChange={handleSortChange}
+        stripedRows
+        stateKey="invoices-grid"
+        toolbar={{
+          exportFileName: "faturalar"
+        }}
       />
     </div>
   );

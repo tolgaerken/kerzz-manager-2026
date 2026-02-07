@@ -6,7 +6,6 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, SortOrder, Types } from "mongoose";
-import { randomBytes } from "crypto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import {
   PaymentUserToken,
@@ -241,13 +240,22 @@ export class AutomatedPaymentsService {
 
     const src = sourcePayment as any;
 
-    // 5. Yeni odeme kaydi olustur
+    // 5. Odeme plani bilgisini al (varsa)
+    let paymentPlan: any = null;
+    if (dto.paymentPlanId) {
+      paymentPlan = await this.contractPaymentModel
+        .findOne({ _id: new Types.ObjectId(dto.paymentPlanId) })
+        .lean()
+        .exec();
+    }
+
+    // 6. Yeni odeme kaydi olustur
     const orderId = new Types.ObjectId().toString();
     const paymentAmount = this.roundNumber(dto.amount).toFixed(2);
     const description =
       dto.description || `Pay-TR(Otomatik) - ${src.brand || ""}`;
 
-    // 6. PayTR token uret
+    // 7. PayTR token uret
     const paytrToken = this.paytrService.generatePaymentToken({
       merchantId: vpos.merchantId,
       userIp: src.userIp || "127.0.0.1",
@@ -262,41 +270,53 @@ export class AutomatedPaymentsService {
       provisionPassword: vpos.provisionPassword,
     });
 
-    // 7. DB'ye kaydet
-    const linkId = randomBytes(16).toString("hex");
+    // 8. DB'ye kaydet (Smarty formatina uygun)
+    // Odeme planından invoiceNo bilgisini ekle
     await this.paymentLinkModel.create({
+      merchantId: vpos.merchantId,
+      userIp: src.userIp || "127.0.0.1",
       id: orderId,
-      linkId,
+      userId: "",
+      email: src.email || "",
+      name: src.name || "",
+      gsm: src.gsm || "",
+      paymentType: "card",
       amount: dto.amount,
-      canRecurring: false,
-      createDate: new Date(),
-      customerId: dto.customerId,
-      description,
-      installment: 0,
-      non3d: true,
+      paymentAmount,
+      currency: "TL",
+      non3d: "1",
       paytrToken,
-      status: "waiting",
-      statusCardSave: "none",
+      installmentCount: "0",
+      description,
       storeCard: "0",
       actionType: "recurring",
-      email: src.email || "",
-      companyId: src.companyId || "",
-      currency: "TL",
+      postUrl: "https://www.paytr.com/odeme",
+      status: "waiting",
+      statusMessage: "",
+      statusCardSave: "none",
+      lastEditDate: new Date(),
+      createDate: new Date(),
+      linkId: "",
+      customerId: dto.customerId,
       customerName: src.customerName || "",
       brand: src.brand || "",
       erpId: src.erpId || "",
-      gsm: src.gsm || "",
-      name: src.name || "",
-      userIp: src.userIp || "127.0.0.1",
+      companyId: src.companyId || "",
+      canRecurring: false,
       staffId: src.staffId || "",
       staffName: src.staffName || "",
-      merchantId: vpos.merchantId,
-    } as any);
+      cardType: "",
+      source: "io",
+      userToken: "",
+      invoiceNo: paymentPlan ? paymentPlan.invoiceNo || "" : "",
+      itemCode: "",
+      onlinePaymentId: paymentPlan ? paymentPlan.id || "" : "",
+    });
 
-    // 8. PayTR odeme formunu gonder
+    // 9. PayTR odeme formunu gonder
     const basket = [[description, paymentAmount, "1"]];
 
-    await this.paytrService.submitPaymentForm({
+    const paymentResult = await this.paytrService.submitPaymentForm({
       merchantId: vpos.merchantId,
       userIp: src.userIp || "127.0.0.1",
       merchantOid: orderId,
@@ -315,7 +335,7 @@ export class AutomatedPaymentsService {
       paytrToken,
     });
 
-    // 9. Odeme plani guncellemesi (varsa)
+    // 10. Odeme plani guncellemesi (varsa)
     if (dto.paymentPlanId) {
       await this.contractPaymentModel
         .updateOne(
@@ -330,11 +350,22 @@ export class AutomatedPaymentsService {
         .exec();
     }
 
+    // PayTR'den hata donduyseyse bunu response'a ekle
+    if (!paymentResult.success) {
+      return {
+        success: false,
+        paymentId: orderId,
+        amount: dto.amount,
+        message: paymentResult.errorMessage || "Ödeme işlemi başarısız oldu",
+        paymentError: paymentResult.errorMessage,
+      };
+    }
+
     return {
       success: true,
       paymentId: orderId,
       amount: dto.amount,
-      message: `${dto.amount} TL tahsilat baslatildi`,
+      message: `${dto.amount} TL tahsilat başlatıldı`,
     };
   }
 

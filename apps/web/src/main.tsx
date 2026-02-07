@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { router } from "./router";
 import { ThemeProvider } from "./theme";
 import "./i18n";
+import "@kerzz/grid/styles.css";
 import "./index.css";
 
 const queryClient = new QueryClient();

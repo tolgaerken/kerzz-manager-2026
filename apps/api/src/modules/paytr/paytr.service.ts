@@ -46,6 +46,11 @@ export interface GeneratePaymentTokenParams {
   provisionPassword: string;
 }
 
+export interface PayTRPaymentResult {
+  success: boolean;
+  errorMessage?: string;
+}
+
 export interface SubmitPaymentFormParams {
   merchantId: string;
   userIp: string;
@@ -245,7 +250,9 @@ export class PaytrService {
   /**
    * PayTR odeme formunu gonder (recurring odeme icin).
    */
-  async submitPaymentForm(params: SubmitPaymentFormParams): Promise<string> {
+  async submitPaymentForm(
+    params: SubmitPaymentFormParams
+  ): Promise<PayTRPaymentResult> {
     const formData = new URLSearchParams();
     formData.append("merchant_id", params.merchantId);
     formData.append("user_ip", params.userIp);
@@ -272,9 +279,38 @@ export class PaytrService {
       body: formData,
     });
 
-    const result = await response.text();
-    this.logger.log("PayTR odeme formu sonucu: " + result);
-    return result;
+    const html = await response.text();
+    this.logger.log("PayTR odeme formu sonucu: " + html);
+
+    return this.parsePaymentResult(html);
+  }
+
+  /**
+   * PayTR HTML yanitini parse ederek basari/hata durumunu dondur.
+   */
+  parsePaymentResult(html: string): PayTRPaymentResult {
+    // Hata formu kontrolu: action URL'de "errorPayment" veya "failPayment" iceriyorsa hata var
+    const isError =
+      html.includes("errorPayment") || html.includes("failPayment");
+
+    if (!isError) {
+      return { success: true };
+    }
+
+    // fail_message degerini cek: value="..." icindeki metni al
+    const failMessageMatch = html.match(
+      /name="fail_message"\s+value="([^"]*)"/
+    );
+    const failMessage = failMessageMatch
+      ? failMessageMatch[1]
+      : "Ödeme işlemi başarısız oldu";
+
+    this.logger.warn(`PayTR odeme hatasi: ${failMessage}`);
+
+    return {
+      success: false,
+      errorMessage: failMessage,
+    };
   }
 
   /**

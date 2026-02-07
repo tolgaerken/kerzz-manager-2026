@@ -1,16 +1,8 @@
-import { useCallback, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type GridReadyEvent,
-  type SelectionChangedEvent,
-  themeQuartz,
-} from "ag-grid-community";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Grid } from "@kerzz/grid";
+import type { GridColumnDef } from "@kerzz/grid";
 import { tokenColumnDefs } from "./columnDefs";
 import type { AutoPaymentTokenItem } from "../../types/automatedPayment.types";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface AutoPaymentTokensGridProps {
   data: AutoPaymentTokenItem[];
@@ -23,64 +15,69 @@ export function AutoPaymentTokensGrid({
   loading,
   onSelectionChanged,
 }: AutoPaymentTokensGridProps) {
-  const gridRef = useRef<AgGridReact<AutoPaymentTokenItem>>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(400);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const defaultColDef = useMemo(
-    () => ({
-      resizable: true,
-      sortable: true,
-    }),
-    []
-  );
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  const onGridReady = useCallback(
-    (params: GridReadyEvent<AutoPaymentTokenItem>) => {
-      params.api.sizeColumnsToFit();
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleRowClick = useCallback(
+    (row: AutoPaymentTokenItem) => {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(row._id)) {
+          next.delete(row._id);
+        } else {
+          next.add(row._id);
+        }
+        const selectedItems = data.filter((item) => next.has(item._id));
+        onSelectionChanged(selectedItems);
+        return next;
+      });
     },
-    []
+    [data, onSelectionChanged]
   );
 
-  const handleSelectionChanged = useCallback(
-    (event: SelectionChangedEvent<AutoPaymentTokenItem>) => {
-      const selectedRows = event.api.getSelectedRows();
-      onSelectionChanged(selectedRows);
-    },
-    [onSelectionChanged]
+  const columns: GridColumnDef<AutoPaymentTokenItem>[] = tokenColumnDefs.map(
+    (col) => ({
+      ...col,
+      cellClassName: (_value: unknown, row: AutoPaymentTokenItem) => {
+        const original =
+          typeof col.cellClassName === "function"
+            ? col.cellClassName(_value, row)
+            : col.cellClassName || "";
+        return selectedIds.has(row._id)
+          ? `${original} bg-blue-50 dark:bg-blue-900/20`.trim()
+          : original;
+      },
+    })
   );
-
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 40,
-    headerHeight: 44,
-  });
 
   return (
-    <div className="h-full w-full flex-1">
-      <AgGridReact<AutoPaymentTokenItem>
-        ref={gridRef}
-        theme={customTheme}
-        rowData={data}
-        columnDefs={tokenColumnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onSelectionChanged={handleSelectionChanged}
+    <div ref={containerRef} className="h-full w-full flex-1">
+      <Grid<AutoPaymentTokenItem>
+        data={data}
+        columns={columns}
+        locale="tr"
+        height={containerHeight}
         loading={loading}
-        rowSelection={{ mode: "multiRow", checkboxes: true }}
-        suppressCellFocus={true}
-        animateRows={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => params.data._id}
-        rowBuffer={20}
-        suppressScrollOnNewData={true}
+        getRowId={(row) => row._id}
+        onRowClick={handleRowClick}
+        stripedRows
+        toolbar
+        stateKey="auto-payment-tokens"
       />
     </div>
   );

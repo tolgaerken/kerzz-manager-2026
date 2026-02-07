@@ -1,4 +1,4 @@
-import type { ColDef, ValueFormatterParams } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { AutoPaymentTokenItem } from "../../types/automatedPayment.types";
 
 const formatDate = (dateStr: string | null | undefined): string => {
@@ -22,72 +22,85 @@ const formatCurrency = (value: number | null | undefined): string => {
   }).format(value);
 };
 
-export const tokenColumnDefs: ColDef<AutoPaymentTokenItem>[] = [
+export const tokenColumnDefs: GridColumnDef<AutoPaymentTokenItem>[] = [
   {
-    field: "companyId",
-    headerName: "Firma",
+    id: "companyId",
+    header: "Firma",
+    accessorKey: "companyId",
     width: 100,
     sortable: true,
-    filter: "agTextColumnFilter",
+    filter: { type: "dropdown", showCounts: true },
+    footer: { aggregate: "distinctCount", label: "Firma:" },
   },
   {
-    field: "createDate",
-    headerName: "Tarih",
+    id: "createDate",
+    header: "Tarih",
+    accessorKey: "createDate",
     width: 150,
     sortable: true,
-    valueFormatter: (params: ValueFormatterParams<AutoPaymentTokenItem>) =>
-      formatDate(params.value),
+    cell: (value) => formatDate(value as string),
   },
   {
-    field: "customerName",
-    headerName: "Müşteri",
-    flex: 1,
+    id: "customerName",
+    header: "Müşteri",
+    accessorKey: "customerName",
     minWidth: 180,
     sortable: true,
-    filter: "agTextColumnFilter",
+    filter: { type: "input" },
+    footer: { aggregate: "count", label: "Toplam:" },
   },
   {
-    field: "email",
-    headerName: "E-posta",
-    flex: 1,
+    id: "email",
+    header: "E-posta",
+    accessorKey: "email",
     minWidth: 180,
     sortable: true,
-    filter: "agTextColumnFilter",
+    filter: { type: "input" },
   },
   {
-    field: "customerId",
-    headerName: "Müşteri ID",
+    id: "customerId",
+    header: "Müşteri ID",
+    accessorKey: "customerId",
     width: 130,
     sortable: true,
-    filter: "agTextColumnFilter",
-    cellClass: "font-mono text-xs",
+    filter: { type: "input" },
+    cellClassName: "font-mono text-xs",
   },
   {
-    field: "erpId",
-    headerName: "ERP ID",
+    id: "erpId",
+    header: "ERP ID",
+    accessorKey: "erpId",
     width: 120,
     sortable: true,
-    filter: "agTextColumnFilter",
-    cellClass: "font-mono text-xs",
+    filter: { type: "input" },
+    cellClassName: "font-mono text-xs",
   },
   {
-    field: "balance",
-    headerName: "Bakiye",
+    id: "balance",
+    header: "Bakiye",
+    accessorKey: "balance",
     width: 140,
     sortable: true,
-    filter: "agNumberColumnFilter",
-    valueFormatter: (params: ValueFormatterParams<AutoPaymentTokenItem>) =>
-      formatCurrency(params.value),
-    cellClass: (params) => {
-      const val = params.value as number;
-      if (val > 0) return "text-red-600 font-semibold";
-      if (val < 0) return "text-green-600 font-semibold";
-      return "";
+    filter: {
+      type: "input",
+      conditions: ["equals", "greaterThan", "lessThan", "between"],
+    },
+    cell: (value) => formatCurrency(value as number),
+    cellClassName: (_value: unknown, row: AutoPaymentTokenItem) => {
+      const val = row.balance;
+      if (val > 0) return "font-mono text-red-600 font-semibold";
+      if (val < 0) return "font-mono text-green-600 font-semibold";
+      return "font-mono";
+    },
+    footer: {
+      aggregate: "sum",
+      format: (v) => formatCurrency(v),
     },
   },
   {
-    field: "source",
-    headerName: "Kaynak",
+    id: "source",
+    header: "Kaynak",
+    accessorKey: "source",
     width: 80,
     sortable: true,
   },

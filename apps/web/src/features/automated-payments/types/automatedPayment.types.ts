@@ -43,6 +43,7 @@ export interface CollectPaymentResponse {
   paymentId: string;
   amount: number;
   message: string;
+  paymentError?: string;
 }
 
 export interface CardItem {

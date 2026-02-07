@@ -1,0 +1,61 @@
+export interface GridLocale {
+  // Filter labels
+  filterPlaceholder: string;
+  filterContains: string;
+  filterEquals: string;
+  filterStartsWith: string;
+  filterEndsWith: string;
+  filterNotContains: string;
+  filterGreaterThan: string;
+  filterLessThan: string;
+  filterBetween: string;
+  filterNotEqual: string;
+  filterBefore: string;
+  filterAfter: string;
+  filterToday: string;
+  filterThisWeek: string;
+  filterClear: string;
+  filterSelectAll: string;
+  filterDeselectAll: string;
+  filterShowBlanks: string;
+  filterSearchPlaceholder: string;
+  filterOk: string;
+  filterCancel: string;
+  filterClose: string;
+  /** Comma-separated month names (January,...,December) */
+  filterMonths: string;
+
+  // Sort labels
+  sortAscending: string;
+  sortDescending: string;
+  sortClear: string;
+
+  // Column management
+  columnVisibility: string;
+  columnShowAll: string;
+  columnHideAll: string;
+
+  // Footer labels
+  footerSum: string;
+  footerAvg: string;
+  footerCount: string;
+  footerMin: string;
+  footerMax: string;
+  footerDistinctCount: string;
+
+  // Toolbar
+  toolbarExportExcel: string;
+  toolbarExportPdf: string;
+  toolbarColumns: string;
+
+  // General
+  noData: string;
+  loading: string;
+  items: string;
+  of: string;
+  and: string;
+}
+
+export type LocaleKey = keyof GridLocale;
+
+export type SupportedLocale = 'tr' | 'en';

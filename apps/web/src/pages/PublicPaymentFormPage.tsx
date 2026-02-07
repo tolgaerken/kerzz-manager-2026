@@ -87,7 +87,7 @@ export function PublicPaymentFormPage() {
           </div>
 
           <div className="px-6 py-4 space-y-4">
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <span className="text-[var(--color-foreground-muted)]">Firma</span>
               <span className="text-[var(--color-foreground)] font-medium">
                 {paymentInfo.customerName}

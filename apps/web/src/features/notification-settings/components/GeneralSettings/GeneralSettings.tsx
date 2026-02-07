@@ -17,6 +17,14 @@ export function GeneralSettings() {
     cronEnabled: true,
   });
 
+  // Ham string değerlerini ayrı tutuyoruz ki kullanıcı serbestçe yazabilsin
+  const [draftInputs, setDraftInputs] = useState({
+    invoiceDueReminderDays: "0",
+    invoiceOverdueDays: "3, 5, 10",
+    invoiceLookbackDays: "90",
+    contractExpiryDays: "30, 15, 7",
+  });
+
   useEffect(() => {
     if (settings) {
       setFormData({
@@ -29,23 +37,45 @@ export function GeneralSettings() {
         cronTime: settings.cronTime,
         cronEnabled: settings.cronEnabled,
       });
+      setDraftInputs({
+        invoiceDueReminderDays: settings.invoiceDueReminderDays.join(", "),
+        invoiceOverdueDays: settings.invoiceOverdueDays.join(", "),
+        invoiceLookbackDays: String(settings.invoiceLookbackDays ?? 90),
+        contractExpiryDays: settings.contractExpiryDays.join(", "),
+      });
     }
   }, [settings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Submit öncesi draft değerlerini son kez parse et
+    commitDaysField("invoiceDueReminderDays");
+    commitDaysField("invoiceOverdueDays");
+    commitDaysField("contractExpiryDays");
+    commitLookbackField();
     await updateMutation.mutateAsync(formData);
   };
 
-  const handleDaysChange = (
-    field: "invoiceDueReminderDays" | "invoiceOverdueDays" | "contractExpiryDays",
-    value: string
-  ) => {
-    const days = value
+  const parseDays = (value: string): number[] =>
+    value
       .split(",")
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n));
-    setFormData((prev) => ({ ...prev, [field]: days }));
+
+  const commitDaysField = (
+    field: "invoiceDueReminderDays" | "invoiceOverdueDays" | "contractExpiryDays"
+  ) => {
+    const days = parseDays(draftInputs[field]);
+    if (days.length > 0) {
+      setFormData((prev) => ({ ...prev, [field]: days }));
+    }
+  };
+
+  const commitLookbackField = () => {
+    const val = parseInt(draftInputs.invoiceLookbackDays, 10);
+    if (!isNaN(val) && val >= 1) {
+      setFormData((prev) => ({ ...prev, invoiceLookbackDays: val }));
+    }
   };
 
   if (isLoading) {
@@ -167,10 +197,11 @@ export function GeneralSettings() {
           </label>
           <input
             type="text"
-            value={formData.invoiceDueReminderDays.join(", ")}
+            value={draftInputs.invoiceDueReminderDays}
             onChange={(e) =>
-              handleDaysChange("invoiceDueReminderDays", e.target.value)
+              setDraftInputs((prev) => ({ ...prev, invoiceDueReminderDays: e.target.value }))
             }
+            onBlur={() => commitDaysField("invoiceDueReminderDays")}
             placeholder="0"
             className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
           />
@@ -182,10 +213,11 @@ export function GeneralSettings() {
           </label>
           <input
             type="text"
-            value={formData.invoiceOverdueDays.join(", ")}
+            value={draftInputs.invoiceOverdueDays}
             onChange={(e) =>
-              handleDaysChange("invoiceOverdueDays", e.target.value)
+              setDraftInputs((prev) => ({ ...prev, invoiceOverdueDays: e.target.value }))
             }
+            onBlur={() => commitDaysField("invoiceOverdueDays")}
             placeholder="3, 5, 10"
             className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
           />
@@ -202,13 +234,11 @@ export function GeneralSettings() {
             type="number"
             min={1}
             max={365}
-            value={formData.invoiceLookbackDays}
-            onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              if (!isNaN(val) && val >= 1) {
-                setFormData((prev) => ({ ...prev, invoiceLookbackDays: val }));
-              }
-            }}
+            value={draftInputs.invoiceLookbackDays}
+            onChange={(e) =>
+              setDraftInputs((prev) => ({ ...prev, invoiceLookbackDays: e.target.value }))
+            }
+            onBlur={() => commitLookbackField()}
             placeholder="90"
             className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
           />
@@ -230,10 +260,11 @@ export function GeneralSettings() {
           </label>
           <input
             type="text"
-            value={formData.contractExpiryDays.join(", ")}
+            value={draftInputs.contractExpiryDays}
             onChange={(e) =>
-              handleDaysChange("contractExpiryDays", e.target.value)
+              setDraftInputs((prev) => ({ ...prev, contractExpiryDays: e.target.value }))
             }
+            onBlur={() => commitDaysField("contractExpiryDays")}
             placeholder="30, 15, 7"
             className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
           />

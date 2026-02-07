@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
+import { Document, Schema as MongooseSchema, Types } from "mongoose";
 
 export type PaymentLinkDocument = PaymentLink & Document;
 
@@ -7,7 +7,7 @@ export type PaymentLinkDocument = PaymentLink & Document;
 export class PaymentLink {
   _id: Types.ObjectId;
 
-  @Prop({ required: true, index: true })
+  @Prop({ default: "", index: true })
   linkId: string;
 
   @Prop({ default: "" })
@@ -55,8 +55,8 @@ export class PaymentLink {
   @Prop({ default: "" })
   cardType: string;
 
-  @Prop({ default: false })
-  non3d: boolean;
+  @Prop({ type: MongooseSchema.Types.Mixed, default: false })
+  non3d: boolean | string;
 
   @Prop({ default: "" })
   invoiceNo: string;
@@ -81,6 +81,53 @@ export class PaymentLink {
 
   @Prop({ default: "" })
   id: string;
+
+  // --- Smarty uyumu icin eklenen alanlar ---
+
+  @Prop({ default: "" })
+  userIp: string;
+
+  @Prop({ default: "" })
+  userId: string;
+
+  @Prop({ default: "card" })
+  paymentType: string;
+
+  @Prop({ default: "" })
+  paymentAmount: string;
+
+  @Prop({ default: "TL" })
+  currency: string;
+
+  @Prop({ default: "0" })
+  installmentCount: string;
+
+  @Prop({ default: "" })
+  description: string;
+
+  @Prop({ default: "0" })
+  storeCard: string;
+
+  @Prop({ default: "link" })
+  actionType: string;
+
+  @Prop({ default: "" })
+  postUrl: string;
+
+  @Prop({ default: "none" })
+  statusCardSave: string;
+
+  @Prop({ default: "io" })
+  source: string;
+
+  @Prop({ default: "" })
+  userToken: string;
+
+  @Prop({ default: "" })
+  itemCode: string;
+
+  @Prop({ default: "" })
+  onlinePaymentId: string;
 }
 
 export const PaymentLinkSchema = SchemaFactory.createForClass(PaymentLink);
@@ -88,4 +135,7 @@ export const PaymentLinkSchema = SchemaFactory.createForClass(PaymentLink);
 PaymentLinkSchema.index({ createDate: -1 });
 PaymentLinkSchema.index({ customerId: 1 });
 PaymentLinkSchema.index({ status: 1 });
-PaymentLinkSchema.index({ linkId: 1 }, { unique: true });
+PaymentLinkSchema.index(
+  { linkId: 1 },
+  { unique: true, partialFilterExpression: { linkId: { $ne: "" } } }
+);

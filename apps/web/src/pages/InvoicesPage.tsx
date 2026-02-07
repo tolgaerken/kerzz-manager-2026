@@ -1,13 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { RefreshCw, FileSpreadsheet } from "lucide-react";
+import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import {
   InvoicesGrid,
   InvoicesFilters,
-  InvoicesPagination,
   InvoiceFormModal,
   useInvoices,
-  useUpdateInvoice,
-  INVOICES_CONSTANTS
+  useUpdateInvoice
 } from "../features/invoices";
 import type {
   Invoice,
@@ -60,7 +59,7 @@ export function InvoicesPage() {
   
   const [queryParams, setQueryParams] = useState<InvoiceQueryParams>({
     page: 1,
-    limit: INVOICES_CONSTANTS.DEFAULT_PAGE_SIZE,
+    limit: 100000,
     search: "",
     invoiceType: "",
     sortField: "invoiceDate",
@@ -76,6 +75,13 @@ export function InvoicesPage() {
   // Queries & Mutations
   const { data, isLoading, error, refetch } = useInvoices(queryParams);
   const updateMutation = useUpdateInvoice();
+  const { data: tokensData } = useAutoPaymentTokens({});
+
+  // Otomatik ödeme talimatı kayıtlı müşteri ID'leri
+  const autoPaymentCustomerIds = useMemo(() => {
+    if (!tokensData?.data) return new Set<string>();
+    return new Set(tokensData.data.map((t) => t.customerId));
+  }, [tokensData]);
 
   // Handlers
   const handleSearchChange = useCallback((search: string) => {
@@ -118,14 +124,6 @@ export function InvoicesPage() {
       endDate: "",
       page: 1
     }));
-  }, []);
-
-  const handlePageChange = useCallback((page: number) => {
-    setQueryParams((prev) => ({ ...prev, page }));
-  }, []);
-
-  const handleLimitChange = useCallback((limit: number) => {
-    setQueryParams((prev) => ({ ...prev, limit, page: 1 }));
   }, []);
 
   const handleSortChange = useCallback(
@@ -246,19 +244,11 @@ export function InvoicesPage() {
         <InvoicesGrid
           data={data?.data || []}
           loading={isLoading}
+          autoPaymentCustomerIds={autoPaymentCustomerIds}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
         />
       </div>
-
-      {/* Pagination */}
-      {data?.pagination && (
-        <InvoicesPagination
-          pagination={data.pagination}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
-      )}
 
       {/* Form Modal */}
       <InvoiceFormModal

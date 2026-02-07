@@ -68,6 +68,7 @@ export class InvoiceNotificationCron {
         companyId: "VERI",
         invoiceNo: invoice.invoiceNumber || "",
         staffName: "Kerzz Bildirim Cron",
+        canRecurring: true,
       });
 
       return result.url;

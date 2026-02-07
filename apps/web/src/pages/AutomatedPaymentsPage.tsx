@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { RefreshCw, Trash2, X, AlertTriangle, CheckCircle } from "lucide-react";
 import {
   AutoPaymentTokensGrid,
   PaymentPlanGrid,
@@ -51,6 +51,19 @@ export function AutomatedPaymentsPage() {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [customLoading, setCustomLoading] = useState(false);
 
+  // ── Payment result notification ──
+  const [paymentNotification, setPaymentNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  // Bildirimi 8 saniye sonra otomatik kapat
+  useEffect(() => {
+    if (!paymentNotification) return;
+    const timer = setTimeout(() => setPaymentNotification(null), 8000);
+    return () => clearTimeout(timer);
+  }, [paymentNotification]);
+
   // ── Handlers ──
   const handleSearchChange = useCallback((search: string) => {
     setQueryParams((prev) => ({ ...prev, search }));
@@ -88,13 +101,27 @@ export function AutomatedPaymentsPage() {
     if (!selectedCustomer || !selectedPlan) return;
     setItemLoading(true);
     try {
-      await collectMutation.mutateAsync({
+      const result = await collectMutation.mutateAsync({
         customerId: selectedCustomer.customerId,
         amount: selectedPlan.invoiceTotal,
         mode: "item",
         paymentPlanId: selectedPlan._id,
-        description: `Fatura tahsilatı: ${selectedPlan.invoiceNo}`,
       });
+      if (!result.success) {
+        setPaymentNotification({
+          type: "error",
+          message: result.paymentError || result.message,
+        });
+      } else {
+        setPaymentNotification({
+          type: "success",
+          message: result.message,
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Tahsilat sırasında hata oluştu";
+      setPaymentNotification({ type: "error", message: errorMessage });
     } finally {
       setItemLoading(false);
     }
@@ -111,12 +138,26 @@ export function AutomatedPaymentsPage() {
 
     setBalanceLoading(true);
     try {
-      await collectMutation.mutateAsync({
+      const result = await collectMutation.mutateAsync({
         customerId: selectedCustomer.customerId,
         amount: erpBalance,
         mode: "balance",
-        description: "Cari bakiye tahsilatı",
       });
+      if (!result.success) {
+        setPaymentNotification({
+          type: "error",
+          message: result.paymentError || result.message,
+        });
+      } else {
+        setPaymentNotification({
+          type: "success",
+          message: result.message,
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Tahsilat sırasında hata oluştu";
+      setPaymentNotification({ type: "error", message: errorMessage });
     } finally {
       setBalanceLoading(false);
     }
@@ -128,12 +169,26 @@ export function AutomatedPaymentsPage() {
       if (!selectedCustomer || amount <= 0) return;
       setCustomLoading(true);
       try {
-        await collectMutation.mutateAsync({
+        const result = await collectMutation.mutateAsync({
           customerId: selectedCustomer.customerId,
           amount,
           mode: "custom",
-          description: `Özel tahsilat: ${amount} TL`,
         });
+        if (!result.success) {
+          setPaymentNotification({
+            type: "error",
+            message: result.paymentError || result.message,
+          });
+        } else {
+          setPaymentNotification({
+            type: "success",
+            message: result.message,
+          });
+        }
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Tahsilat sırasında hata oluştu";
+        setPaymentNotification({ type: "error", message: errorMessage });
       } finally {
         setCustomLoading(false);
       }
@@ -187,6 +242,47 @@ export function AutomatedPaymentsPage() {
           )}
         </div>
       </div>
+
+      {/* Payment Notification */}
+      {paymentNotification && (
+        <div
+          className="flex items-center gap-3 px-6 py-3 border-b border-[var(--color-border)] text-sm"
+          style={{
+            backgroundColor:
+              paymentNotification.type === "error"
+                ? "color-mix(in oklch, var(--color-error) 12%, var(--color-surface))"
+                : "color-mix(in oklch, var(--color-success) 12%, var(--color-surface))",
+            color:
+              paymentNotification.type === "error"
+                ? "var(--color-error-foreground)"
+                : "var(--color-success-foreground)",
+            borderColor:
+              paymentNotification.type === "error"
+                ? "color-mix(in oklch, var(--color-error) 30%, var(--color-border))"
+                : "color-mix(in oklch, var(--color-success) 30%, var(--color-border))",
+          }}
+        >
+          {paymentNotification.type === "error" ? (
+            <AlertTriangle
+              className="w-4 h-4 flex-shrink-0"
+              style={{ color: "var(--color-error)" }}
+            />
+          ) : (
+            <CheckCircle
+              className="w-4 h-4 flex-shrink-0"
+              style={{ color: "var(--color-success)" }}
+            />
+          )}
+          <span className="flex-1 font-medium">{paymentNotification.message}</span>
+          <button
+            type="button"
+            onClick={() => setPaymentNotification(null)}
+            className="p-1 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
+          >
+            <X className="w-4 h-4 text-[var(--color-muted-foreground)]" />
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="px-6 py-3 border-b border-[var(--color-border)]">
