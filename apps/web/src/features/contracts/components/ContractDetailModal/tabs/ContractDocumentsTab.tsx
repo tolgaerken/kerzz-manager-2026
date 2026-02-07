@@ -1,6 +1,4 @@
 import { useState, useCallback } from "react";
-import { FileText } from "lucide-react";
-import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractDocuments } from "../../../hooks/useContractDetail";
 import {
   useCreateContractDocument,
@@ -8,7 +6,7 @@ import {
   useDeleteContractDocument
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractDocument } from "../../../types";
-import { EditableGrid, DetailGridToolbar } from "../shared";
+import { EditableGrid } from "../shared";
 import { contractDocumentsColumns } from "../columnDefs";
 
 interface ContractDocumentsTabProps {
@@ -54,14 +52,15 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
     }
   }, [selectedRow, deleteMutation]);
 
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ContractDocument>) => {
-      if (event.data?.id) {
-        const { _id, id, contractId: cId, ...updateData } = event.data;
+  const handleCellValueChange = useCallback(
+    (row: ContractDocument, columnId: string, newValue: unknown) => {
+      if (row?.id) {
+        const { _id, id, contractId: cId, ...updateData } = row;
         updateMutation.mutate({
-          id: event.data.id,
+          id: row.id,
           data: {
             ...updateData,
+            [columnId]: newValue,
             editDate: new Date().toISOString()
           }
         });
@@ -70,8 +69,8 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
     [updateMutation]
   );
 
-  const handleSelectionChanged = useCallback(
-    (row: ContractDocument | null) => {
+  const handleRowClick = useCallback(
+    (row: ContractDocument) => {
       setSelectedRow(row);
     },
     []
@@ -79,44 +78,21 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
 
   const documents = data?.data || [];
 
-  if (!isLoading && documents.length === 0 && !createMutation.isPending) {
-    return (
-      <div className="flex flex-col h-full">
-        <DetailGridToolbar
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-          canDelete={false}
-          loading={isProcessing}
-          addLabel="Döküman Ekle"
-        />
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-12">
-          <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Bu kontrata ait döküman bulunmuyor.</p>
-          <p className="text-sm mt-1">Yeni döküman eklemek için "Döküman Ekle" butonuna tıklayın.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <DetailGridToolbar
+      <EditableGrid<ContractDocument>
+        data={documents}
+        columns={contractDocumentsColumns}
+        loading={isLoading}
+        getRowId={(row) => row.id || row._id}
+        onCellValueChange={handleCellValueChange}
+        onRowClick={handleRowClick}
         onAdd={handleAdd}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
-        loading={isProcessing}
+        processing={isProcessing}
         addLabel="Döküman Ekle"
       />
-      <div className="flex-1 min-h-0">
-        <EditableGrid<ContractDocument>
-          data={documents}
-          columnDefs={contractDocumentsColumns}
-          loading={isLoading}
-          getRowId={(row) => row.id || row._id}
-          onCellValueChanged={handleCellValueChanged}
-          onSelectionChanged={handleSelectionChanged}
-        />
-      </div>
     </div>
   );
 }

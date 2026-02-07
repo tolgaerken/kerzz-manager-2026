@@ -30,6 +30,7 @@ export function GridFooter<TData>({
         <FooterCell
           key={col.id}
           width={getColumnWidth(col.id, col.width ?? 150)}
+          minWidth={col.minWidth}
           align={col.align}
           result={aggregation.get(col.id)}
         />

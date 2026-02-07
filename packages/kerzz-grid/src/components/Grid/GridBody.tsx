@@ -22,6 +22,12 @@ interface GridBodyProps<TData> {
   getRowId?: (row: TData, index: number) => string;
   /** Callback when selection is toggled */
   onSelectionToggle?: (rowId: string, shiftKey: boolean) => void;
+  // Editing props
+  isEditing?: (rowIndex: number, columnId: string) => boolean;
+  onStartEditing?: (rowIndex: number, columnId: string) => void;
+  onSaveEdit?: (newValue: unknown) => void;
+  onCancelEdit?: () => void;
+  context?: Record<string, unknown>;
 }
 
 export function GridBody<TData>({
@@ -39,6 +45,11 @@ export function GridBody<TData>({
   isRowSelected,
   getRowId,
   onSelectionToggle,
+  isEditing,
+  onStartEditing,
+  onSaveEdit,
+  onCancelEdit,
+  context,
 }: GridBodyProps<TData>) {
   return (
     <div className="kz-grid-body" ref={scrollContainerRef}>
@@ -70,6 +81,11 @@ export function GridBody<TData>({
               showSelectionCheckbox={showSelectionCheckbox}
               isSelected={isSelected}
               onSelectionToggle={(shiftKey) => onSelectionToggle?.(rowId, shiftKey)}
+              isEditing={isEditing}
+              onStartEditing={onStartEditing}
+              onSaveEdit={onSaveEdit}
+              onCancelEdit={onCancelEdit}
+              context={context}
             />
           );
         })}

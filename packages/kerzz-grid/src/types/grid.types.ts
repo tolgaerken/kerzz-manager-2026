@@ -10,8 +10,8 @@ export interface GridProps<TData = unknown> {
   data: TData[];
   /** Column definitions */
   columns: GridColumnDef<TData>[];
-  /** Grid height in pixels */
-  height?: number;
+  /** Grid height — number (px) or CSS string like '100%' */
+  height?: number | string;
   /** Grid width (default: '100%') */
   width?: string | number;
   /** Locale identifier */
@@ -50,6 +50,12 @@ export interface GridProps<TData = unknown> {
   defaultSelectedIds?: string[];
   /** Fired when selection changes */
   onSelectionChange?: (selectedIds: string[]) => void;
+
+  // Editing
+  /** External context data passed to cell editors and custom renderers */
+  context?: Record<string, unknown>;
+  /** Fired when a cell value changes via inline editing */
+  onCellValueChange?: (row: TData, columnId: string, newValue: unknown, oldValue: unknown) => void;
 
   // Events
   /** Fired when a row is clicked */

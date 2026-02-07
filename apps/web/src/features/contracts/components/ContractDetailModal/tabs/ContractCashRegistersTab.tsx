@@ -1,6 +1,4 @@
 import { useState, useCallback, useMemo } from "react";
-import { CreditCard } from "lucide-react";
-import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractCashRegisters } from "../../../hooks/useContractDetail";
 import {
   useCreateContractCashRegister,
@@ -10,7 +8,7 @@ import {
 import { useActiveEftPosModels } from "../../../hooks/useEftPosModels";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractCashRegister } from "../../../types";
-import { EditableGrid, DetailGridToolbar } from "../shared";
+import { EditableGrid } from "../shared";
 import { contractCashRegistersColumns } from "../columnDefs";
 
 interface ContractCashRegistersTabProps {
@@ -37,7 +35,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
 
   // Lisansları grid için hazırla
   const licenses = useMemo(() => {
-    const result = licensesData?.data
+    return licensesData?.data
       ?.filter((lic) => lic.id != null)
       .map((lic) => ({
         _id: lic._id,
@@ -45,7 +43,6 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
         brandName: lic.brandName,
         SearchItem: lic.SearchItem || lic.brandName
       })) || [];
-    return result;
   }, [licensesData]);
 
   // EftPos modellerini grid için hazırla
@@ -113,25 +110,23 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     }
   }, [selectedRow, deleteMutation]);
 
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ContractCashRegister>) => {
-      if (event.data?.id) {
-        const { _id, id, contractId: cId, ...updateData } = event.data;
+  const handleCellValueChange = useCallback(
+    (row: ContractCashRegister, columnId: string, newValue: unknown) => {
+      if (row?.id) {
+        const { _id, id, contractId: cId, ...updateData } = row;
 
-        // Eğer licanceId değiştiyse ve brand zaten güncellenmemişse
-        // (LicenseAutocompleteEditor'dan onLicenseSelect çağrılır, bu durumda brand zaten güncellenir)
-        // Ancak direkt licanceId değişikliği için de brand'ı güncelle
-        if (event.column.getColId() === "licanceId" && event.newValue) {
-          const selectedLicense = licenses.find((l) => l.id === event.newValue);
+        if (columnId === "licanceId" && newValue) {
+          const selectedLicense = licenses.find((l) => l.id === newValue);
           if (selectedLicense) {
             updateData.brand = selectedLicense.brandName;
           }
         }
 
         updateMutation.mutate({
-          id: event.data.id,
+          id: row.id,
           data: {
             ...updateData,
+            [columnId]: newValue,
             editDate: new Date().toISOString()
           }
         });
@@ -140,8 +135,8 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     [updateMutation, licenses]
   );
 
-  const handleSelectionChanged = useCallback(
-    (row: ContractCashRegister | null) => {
+  const handleRowClick = useCallback(
+    (row: ContractCashRegister) => {
       setSelectedRow(row);
     },
     []
@@ -149,45 +144,22 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
 
   const cashRegisters = data?.data || [];
 
-  if (!isLoading && cashRegisters.length === 0 && !createMutation.isPending) {
-    return (
-      <div className="flex flex-col h-full">
-        <DetailGridToolbar
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-          canDelete={false}
-          loading={isProcessing}
-          addLabel="Yazarkasa Ekle"
-        />
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-12">
-          <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Bu kontrata ait yazarkasa kaydı bulunmuyor.</p>
-          <p className="text-sm mt-1">Yeni yazarkasa eklemek için "Yazarkasa Ekle" butonuna tıklayın.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <DetailGridToolbar
+      <EditableGrid<ContractCashRegister>
+        data={cashRegisters}
+        columns={contractCashRegistersColumns}
+        loading={isLoading}
+        getRowId={(row) => row.id || row._id}
+        onCellValueChange={handleCellValueChange}
+        onRowClick={handleRowClick}
         onAdd={handleAdd}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
-        loading={isProcessing}
+        processing={isProcessing}
         addLabel="Yazarkasa Ekle"
+        context={gridContext}
       />
-      <div className="flex-1 min-h-0">
-        <EditableGrid<ContractCashRegister>
-          data={cashRegisters}
-          columnDefs={contractCashRegistersColumns}
-          loading={isLoading}
-          getRowId={(row) => row.id || row._id}
-          onCellValueChanged={handleCellValueChanged}
-          onSelectionChanged={handleSelectionChanged}
-          context={gridContext}
-        />
-      </div>
     </div>
   );
 }

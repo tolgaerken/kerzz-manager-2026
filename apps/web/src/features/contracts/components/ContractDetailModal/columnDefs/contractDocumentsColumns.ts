@@ -1,57 +1,74 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractDocument } from "../../../types";
 
-export const contractDocumentsColumns: ColDef<ContractDocument>[] = [
+export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
   {
-    field: "filename",
-    headerName: "Dosya Adı",
-    flex: 2,
-    minWidth: 150
+    id: "filename",
+    accessorKey: "filename",
+    header: "Dosya Adı",
+    width: 200,
+    minWidth: 150,
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "description",
-    headerName: "Açıklama",
-    flex: 2,
-    minWidth: 180
+    id: "description",
+    accessorKey: "description",
+    header: "Açıklama",
+    width: 220,
+    minWidth: 180,
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "type",
-    headerName: "Tip",
-    flex: 1,
-    minWidth: 100
-  },
-  {
-    field: "documentVersion",
-    headerName: "Versiyon",
-    flex: 0.5,
-    minWidth: 80
-  },
-  {
-    field: "documentDate",
-    headerName: "Belge Tarihi",
-    flex: 1,
+    id: "type",
+    accessorKey: "type",
+    header: "Tip",
+    width: 130,
     minWidth: 100,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    editable: true,
+    cellEditor: { type: "text" }
+  },
+  {
+    id: "documentVersion",
+    accessorKey: "documentVersion",
+    header: "Versiyon",
+    width: 90,
+    minWidth: 80,
+    editable: true,
+    cellEditor: { type: "text" }
+  },
+  {
+    id: "documentDate",
+    accessorKey: "documentDate",
+    header: "Belge Tarihi",
+    width: 120,
+    minWidth: 100,
+    editable: true,
+    cellEditor: { type: "text" },
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   },
   {
-    field: "userId",
-    headerName: "Yükleyen",
-    flex: 1,
+    id: "userId",
+    accessorKey: "userId",
+    header: "Yükleyen",
+    width: 120,
     minWidth: 100,
     editable: false
   },
   {
-    field: "editDate",
-    headerName: "Düzenleme",
-    flex: 1,
+    id: "editDate",
+    accessorKey: "editDate",
+    header: "Düzenleme",
+    width: 120,
     minWidth: 100,
     editable: false,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   }
 ];

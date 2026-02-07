@@ -1,86 +1,99 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractVersion } from "../../../types";
 
-const currencyOptions = ["tl", "usd", "eur"];
+const currencyOptions = [
+  { id: "tl", name: "TL" },
+  { id: "usd", name: "USD" },
+  { id: "eur", name: "EUR" }
+];
 
-export const contractVersionsColumns: ColDef<ContractVersion>[] = [
+export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
   {
-    field: "brand",
-    headerName: "Marka",
-    flex: 1,
-    minWidth: 120
+    id: "brand",
+    accessorKey: "brand",
+    header: "Marka",
+    width: 150,
+    minWidth: 120,
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "type",
-    headerName: "Tip",
-    flex: 1,
-    minWidth: 100
-  },
-  {
-    field: "price",
-    headerName: "Fiyat",
-    flex: 1,
+    id: "type",
+    accessorKey: "type",
+    header: "Tip",
+    width: 130,
     minWidth: 100,
-    type: "numericColumn",
-    valueFormatter: (params) => {
-      if (params.value == null) return "";
+    editable: true,
+    cellEditor: { type: "text" }
+  },
+  {
+    id: "price",
+    accessorKey: "price",
+    header: "Fiyat",
+    width: 120,
+    minWidth: 100,
+    align: "right",
+    editable: true,
+    cellEditor: { type: "number" },
+    valueFormatter: (value) => {
+      if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      }).format(params.value);
+      }).format(value as number);
     }
   },
   {
-    field: "currency",
-    headerName: "Döviz",
-    flex: 0.5,
+    id: "currency",
+    accessorKey: "currency",
+    header: "Döviz",
+    width: 90,
     minWidth: 80,
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: currencyOptions
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: currencyOptions
     },
-    valueFormatter: (params) => params.value?.toUpperCase() || ""
+    valueFormatter: (value) => String(value ?? "").toUpperCase()
   },
   {
-    field: "enabled",
-    headerName: "Aktif",
-    flex: 0.5,
+    id: "enabled",
+    accessorKey: "enabled",
+    header: "Aktif",
+    width: 90,
     minWidth: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "expired",
-    headerName: "Süresi Doldu",
-    flex: 0.5,
+    id: "expired",
+    accessorKey: "expired",
+    header: "Süresi Doldu",
+    width: 110,
     minWidth: 100,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "editUser",
-    headerName: "Düzenleyen",
-    flex: 1,
+    id: "editUser",
+    accessorKey: "editUser",
+    header: "Düzenleyen",
+    width: 120,
     minWidth: 100,
     editable: false
   },
   {
-    field: "editDate",
-    headerName: "Düzenleme",
-    flex: 1,
+    id: "editDate",
+    accessorKey: "editDate",
+    header: "Düzenleme",
+    width: 120,
     minWidth: 100,
     editable: false,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   }
 ];

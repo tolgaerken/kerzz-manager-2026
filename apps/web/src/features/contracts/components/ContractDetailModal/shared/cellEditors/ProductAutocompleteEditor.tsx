@@ -8,31 +8,25 @@ import {
 import { Search, X } from "lucide-react";
 import type { CellEditorProps } from "@kerzz/grid";
 
-interface License {
+export interface ProductOption {
   _id: string;
   id: string;
-  brandName: string;
-  SearchItem: string;
+  name: string;
+  friendlyName: string;
+  nameWithCode: string;
 }
 
 /**
- * Kerzz-grid compatible autocomplete editor for license selection.
- * Expects context.licenses and context.onLicenseSelect to be provided.
+ * Kerzz-grid compatible autocomplete editor for SaaS product selection.
+ * Expects context.products to be provided.
  */
-export function LicenseAutocompleteEditor<TData>({
+export function ProductAutocompleteEditor<TData>({
   value,
-  row,
   onSave,
   onCancel,
   context
 }: CellEditorProps<TData>) {
-  const licenses = (context?.licenses as License[]) || [];
-  const onLicenseSelect = context?.onLicenseSelect as
-    | ((rowId: string, license: { id: string; brandName: string } | null) => void)
-    | undefined;
-
-  // row'dan id almak için
-  const rowId = (row as Record<string, unknown>)?.id as string ?? "";
+  const products = (context?.products as ProductOption[]) || [];
 
   const initialValue = value != null ? String(value) : "";
   const [searchText, setSearchText] = useState("");
@@ -40,7 +34,7 @@ export function LicenseAutocompleteEditor<TData>({
   const [isOpen, setIsOpen] = useState(true);
   const [highlightedIndex, setHighlightedIndex] = useState(() => {
     if (initialValue) {
-      const idx = licenses.findIndex((l) => l.id === initialValue);
+      const idx = products.findIndex((p) => p.id === initialValue);
       return idx >= 0 ? idx : 0;
     }
     return 0;
@@ -48,17 +42,18 @@ export function LicenseAutocompleteEditor<TData>({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Filtrelenmiş lisanslar
-  const filteredLicenses = useMemo(() => {
-    if (!searchText) return licenses;
+  // Filtrelenmiş ürünler
+  const filteredProducts = useMemo(() => {
+    if (!searchText) return products;
     const lowerSearch = searchText.toLowerCase();
-    return licenses.filter(
-      (lic) =>
-        lic.brandName?.toLowerCase().includes(lowerSearch) ||
-        lic.SearchItem?.toLowerCase().includes(lowerSearch) ||
-        lic.id?.toLowerCase().includes(lowerSearch)
+    return products.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(lowerSearch) ||
+        p.friendlyName?.toLowerCase().includes(lowerSearch) ||
+        p.nameWithCode?.toLowerCase().includes(lowerSearch) ||
+        p.id?.toLowerCase().includes(lowerSearch)
     );
-  }, [licenses, searchText]);
+  }, [products, searchText]);
 
   // Input'a focus
   useEffect(() => {
@@ -68,32 +63,26 @@ export function LicenseAutocompleteEditor<TData>({
 
   // Scroll to highlighted item
   useEffect(() => {
-    if (listRef.current && filteredLicenses.length > 0) {
+    if (listRef.current && filteredProducts.length > 0) {
       const item = listRef.current.children[highlightedIndex] as HTMLElement;
       item?.scrollIntoView({ block: "nearest" });
     }
-  }, [highlightedIndex, filteredLicenses.length]);
+  }, [highlightedIndex, filteredProducts.length]);
 
   const handleSelect = useCallback(
-    (license: License) => {
-      setSelectedId(license.id);
-      if (onLicenseSelect) {
-        onLicenseSelect(rowId, license);
-      }
+    (product: ProductOption) => {
+      setSelectedId(product.id);
       setIsOpen(false);
-      onSave(license.id);
+      onSave(product.id);
     },
-    [onLicenseSelect, rowId, onSave]
+    [onSave]
   );
 
   const handleClear = useCallback(() => {
     setSelectedId("");
     setSearchText("");
-    if (onLicenseSelect) {
-      onLicenseSelect(rowId, null);
-    }
     onSave("");
-  }, [onLicenseSelect, rowId, onSave]);
+  }, [onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -101,7 +90,7 @@ export function LicenseAutocompleteEditor<TData>({
         case "ArrowDown":
           e.preventDefault();
           setHighlightedIndex((prev) =>
-            Math.min(prev + 1, filteredLicenses.length - 1)
+            Math.min(prev + 1, filteredProducts.length - 1)
           );
           break;
         case "ArrowUp":
@@ -110,8 +99,8 @@ export function LicenseAutocompleteEditor<TData>({
           break;
         case "Enter":
           e.preventDefault();
-          if (filteredLicenses[highlightedIndex]) {
-            handleSelect(filteredLicenses[highlightedIndex]);
+          if (filteredProducts[highlightedIndex]) {
+            handleSelect(filteredProducts[highlightedIndex]);
           }
           break;
         case "Escape":
@@ -119,19 +108,19 @@ export function LicenseAutocompleteEditor<TData>({
           onCancel();
           break;
         case "Tab":
-          if (filteredLicenses[highlightedIndex]) {
-            handleSelect(filteredLicenses[highlightedIndex]);
+          if (filteredProducts[highlightedIndex]) {
+            handleSelect(filteredProducts[highlightedIndex]);
           }
           break;
       }
     },
-    [filteredLicenses, highlightedIndex, handleSelect, onCancel]
+    [filteredProducts, highlightedIndex, handleSelect, onCancel]
   );
 
-  // Mevcut seçili lisansı bul
-  const selectedLicense = useMemo(
-    () => licenses.find((l) => String(l.id) === String(selectedId)),
-    [licenses, selectedId]
+  // Mevcut seçili ürünü bul
+  const selectedProduct = useMemo(
+    () => products.find((p) => String(p.id) === String(selectedId)),
+    [products, selectedId]
   );
 
   return (
@@ -148,7 +137,7 @@ export function LicenseAutocompleteEditor<TData>({
             setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={selectedLicense?.SearchItem || "Lisans ara..."}
+          placeholder={selectedProduct?.nameWithCode || selectedProduct?.friendlyName || selectedProduct?.name || "Ürün ara..."}
           className="flex-1 min-w-0 outline-none bg-transparent text-sm"
         />
         {(selectedId || searchText) && (
@@ -162,32 +151,32 @@ export function LicenseAutocompleteEditor<TData>({
         )}
       </div>
 
-      {isOpen && filteredLicenses.length > 0 && (
+      {isOpen && filteredProducts.length > 0 && (
         <div
           ref={listRef}
           className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-border rounded shadow-lg"
         >
-          {filteredLicenses.map((license, index) => (
+          {filteredProducts.map((product, index) => (
             <div
-              key={license.id}
+              key={product.id}
               onMouseDown={(e) => {
                 e.preventDefault();
-                handleSelect(license);
+                handleSelect(product);
               }}
               onMouseEnter={() => setHighlightedIndex(index)}
               className={`px-3 py-2 cursor-pointer text-sm truncate ${
                 index === highlightedIndex
                   ? "bg-primary/10 text-primary"
                   : "hover:bg-muted"
-              } ${license.id === selectedId ? "font-medium" : ""}`}
+              } ${product.id === selectedId ? "font-medium" : ""}`}
             >
-              {license.SearchItem || license.brandName}
+              {product.nameWithCode || product.friendlyName || product.name}
             </div>
           ))}
         </div>
       )}
 
-      {isOpen && searchText && filteredLicenses.length === 0 && (
+      {isOpen && searchText && filteredProducts.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 px-3 py-2 bg-white border border-border rounded shadow-lg text-sm text-muted-foreground">
           Sonuç bulunamadı
         </div>

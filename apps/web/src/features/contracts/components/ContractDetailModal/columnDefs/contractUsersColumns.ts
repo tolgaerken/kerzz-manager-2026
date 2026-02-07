@@ -1,55 +1,67 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractUser } from "../../../types";
 
 export const roleOptions = [
-  { value: "account", label: "Muhasebe" },
-  { value: "it", label: "Bilişim" },
-  { value: "management", label: "Yönetim" },
-  { value: "other", label: "Diğer" }
+  { id: "account", name: "Muhasebe" },
+  { id: "it", name: "Bilişim" },
+  { id: "management", name: "Yönetim" },
+  { id: "other", name: "Diğer" }
 ];
 
-export const contractUsersColumns: ColDef<ContractUser>[] = [
+export const contractUsersColumns: GridColumnDef<ContractUser>[] = [
   {
-    field: "name",
-    headerName: "Ad Soyad",
-    flex: 2,
-    minWidth: 150
+    id: "name",
+    accessorKey: "name",
+    header: "Ad Soyad",
+    width: 200,
+    minWidth: 150,
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "email",
-    headerName: "E-posta",
-    flex: 2,
-    minWidth: 180
+    id: "email",
+    accessorKey: "email",
+    header: "E-posta",
+    width: 220,
+    minWidth: 180,
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "gsm",
-    headerName: "Telefon",
-    flex: 1,
-    minWidth: 120
-  },
-  {
-    field: "role",
-    headerName: "Rol",
-    flex: 1,
+    id: "gsm",
+    accessorKey: "gsm",
+    header: "Telefon",
+    width: 140,
     minWidth: 120,
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: roleOptions.map((r) => r.value)
+    editable: true,
+    cellEditor: { type: "text" }
+  },
+  {
+    id: "role",
+    accessorKey: "role",
+    header: "Rol",
+    width: 140,
+    minWidth: 120,
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: roleOptions
     },
-    valueFormatter: (params) => {
-      const role = roleOptions.find((r) => r.value === params.value);
-      return role?.label || params.value || "";
+    valueFormatter: (value) => {
+      const role = roleOptions.find((r) => r.id === value);
+      return role?.name || String(value ?? "");
     }
   },
   {
-    field: "editDate",
-    headerName: "Düzenleme",
-    flex: 1,
+    id: "editDate",
+    accessorKey: "editDate",
+    header: "Düzenleme",
+    width: 120,
     minWidth: 120,
     editable: false,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   }
 ];

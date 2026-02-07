@@ -1,94 +1,101 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractItem } from "../../../types";
 import { CURRENCY_OPTIONS } from "../../../constants";
-import { SelectCellEditor } from "../shared/cellEditors/SelectCellEditor";
 
-export const contractItemsColumns: ColDef<ContractItem>[] = [
+export const contractItemsColumns: GridColumnDef<ContractItem>[] = [
   {
-    field: "enabled",
-    headerName: "Aktif",
+    id: "enabled",
+    accessorKey: "enabled",
+    header: "Aktif",
     width: 70,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "✓" : "✗",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "✓" : "✗")
   },
   {
-    field: "itemId",
-    headerName: "Ürün",
+    id: "itemId",
+    accessorKey: "itemId",
+    header: "Ürün",
     width: 120,
-    flex: 1
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "description",
-    headerName: "Açıklama",
-    flex: 2,
-    minWidth: 150
+    id: "description",
+    accessorKey: "description",
+    header: "Açıklama",
+    width: 200,
+    minWidth: 150,
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "qty",
-    headerName: "Adet",
+    id: "qty",
+    accessorKey: "qty",
+    header: "Adet",
     width: 70,
-    type: "numericColumn"
+    align: "right",
+    editable: true,
+    cellEditor: { type: "number" }
   },
   {
-    field: "price",
-    headerName: "Fiyat",
+    id: "price",
+    accessorKey: "price",
+    header: "Fiyat",
     width: 100,
-    type: "numericColumn",
-    valueFormatter: (params) => {
-      if (params.value == null) return "";
+    align: "right",
+    editable: true,
+    cellEditor: { type: "number" },
+    valueFormatter: (value) => {
+      if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      }).format(params.value);
+      }).format(value as number);
     }
   },
   {
-    field: "yearly",
-    headerName: "Yıllık",
+    id: "yearly",
+    accessorKey: "yearly",
+    header: "Yıllık",
     width: 70,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "currency",
-    headerName: "Döviz",
+    id: "currency",
+    accessorKey: "currency",
+    header: "Döviz",
     width: 80,
-    cellEditor: SelectCellEditor,
-    cellEditorParams: {
-      options: CURRENCY_OPTIONS
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: [...CURRENCY_OPTIONS]
     },
-    valueFormatter: (params) => {
-      const found = CURRENCY_OPTIONS.find((c) => c.id === params.value);
-      return found?.name || params.value?.toUpperCase() || "";
+    valueFormatter: (value) => {
+      const found = CURRENCY_OPTIONS.find((c) => c.id === value);
+      return found?.name || String(value ?? "").toUpperCase();
     }
   },
   {
-    field: "qtyDynamic",
-    headerName: "D.Adet",
+    id: "qtyDynamic",
+    accessorKey: "qtyDynamic",
+    header: "D.Adet",
     width: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "editDate",
-    headerName: "Düzenleme",
+    id: "editDate",
+    accessorKey: "editDate",
+    header: "Düzenleme",
     width: 100,
     editable: false,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   }
 ];

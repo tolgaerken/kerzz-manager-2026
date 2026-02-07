@@ -1,130 +1,102 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type ColDef,
-  type GridReadyEvent,
-  type CellValueChangedEvent,
-  type SelectionChangedEvent,
-  themeQuartz
-} from "ag-grid-community";
-import { Loader2 } from "lucide-react";
-
-// Register AG Grid modules
-ModuleRegistry.registerModules([AllCommunityModule]);
+import { useMemo } from "react";
+import { Grid, type GridColumnDef, type ToolbarButtonConfig, type ToolbarConfig } from "@kerzz/grid";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 interface EditableGridProps<T> {
   data: T[];
-  columnDefs: ColDef<T>[];
+  columns: GridColumnDef<T>[];
   loading?: boolean;
   getRowId: (data: T) => string;
-  onCellValueChanged?: (params: CellValueChangedEvent<T>) => void;
-  onSelectionChanged?: (selectedRow: T | null) => void;
+  onCellValueChange?: (row: T, columnId: string, newValue: unknown, oldValue: unknown) => void;
+  onRowClick?: (row: T) => void;
   context?: Record<string, unknown>;
-  height?: string;
+  height?: number | string;
+  /** Toolbar: ekle butonu callback */
+  onAdd?: () => void;
+  /** Toolbar: sil butonu callback */
+  onDelete?: () => void;
+  /** Sil butonu aktif mi */
+  canDelete?: boolean;
+  /** İşlem devam ediyor mu (butonları disable eder) */
+  processing?: boolean;
+  /** Ekle buton etiketi */
+  addLabel?: string;
+  /** Sil buton etiketi */
+  deleteLabel?: string;
 }
 
 export function EditableGrid<T>({
   data,
-  columnDefs,
+  columns,
   loading = false,
   getRowId,
-  onCellValueChanged,
-  onSelectionChanged,
+  onCellValueChange,
+  onRowClick,
   context,
-  height = "100%"
+  height,
+  onAdd,
+  onDelete,
+  canDelete = false,
+  processing = false,
+  addLabel = "Ekle",
+  deleteLabel = "Sil"
 }: EditableGridProps<T>) {
-  const gridRef = useRef<AgGridReact<T>>(null);
+  // Toolbar config with custom add/delete buttons
+  const toolbarConfig = useMemo<ToolbarConfig<T>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [];
 
-  const defaultColDef = useMemo<ColDef<T>>(
-    () => ({
-      editable: true,
-      resizable: true,
-      sortable: true,
-      flex: 1,
-      minWidth: 100
-    }),
-    []
-  );
-
-  const onGridReady = useCallback((params: GridReadyEvent<T>) => {
-    params.api.sizeColumnsToFit();
-  }, []);
-
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<T>) => {
-      if (onCellValueChanged) {
-        onCellValueChanged(event);
-      }
-    },
-    [onCellValueChanged]
-  );
-
-  const handleSelectionChanged = useCallback(
-    (event: SelectionChangedEvent<T>) => {
-      if (onSelectionChanged) {
-        const selectedRows = event.api.getSelectedRows();
-        onSelectionChanged(selectedRows.length > 0 ? selectedRows[0] : null);
-      }
-    },
-    [onSelectionChanged]
-  );
-
-  // Context değiştiğinde hücreleri refresh et
-  useEffect(() => {
-    if (gridRef.current?.api && context) {
-      gridRef.current.api.refreshCells({ force: true });
+    if (onAdd) {
+      customButtons.push({
+        id: "add",
+        label: addLabel,
+        icon: processing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />,
+        onClick: onAdd,
+        disabled: processing,
+        variant: "primary"
+      });
     }
-  }, [context]);
 
-  // Custom theme
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 36,
-    headerHeight: 40
-  });
+    if (onDelete) {
+      customButtons.push({
+        id: "delete",
+        label: deleteLabel,
+        icon: processing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />,
+        onClick: onDelete,
+        disabled: !canDelete || processing,
+        variant: "danger"
+      });
+    }
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      customButtons
+    };
+  }, [onAdd, onDelete, canDelete, processing, addLabel, deleteLabel]);
 
   if (loading) {
     return (
-      <div
-        className="flex items-center justify-center bg-surface h-full w-full"
-        style={height !== "100%" ? { height } : undefined}
-      >
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-surface">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full" style={height !== "100%" ? { height } : undefined}>
-      <AgGridReact<T>
-        ref={gridRef}
-        theme={customTheme}
-        rowData={data}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
+    <div className="flex-1 min-h-0">
+      <Grid<T>
+        data={data}
+        columns={columns}
+        getRowId={getRowId}
+        onCellValueChange={onCellValueChange}
+        onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}
         context={context}
-        onGridReady={onGridReady}
-        onCellValueChanged={handleCellValueChanged}
-        onSelectionChanged={handleSelectionChanged}
-        rowSelection={{ mode: "singleRow" }}
-        suppressCellFocus={false}
-        animateRows={false}
-        suppressMovableColumns={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => getRowId(params.data)}
-        stopEditingWhenCellsLoseFocus={true}
-        singleClickEdit={false}
+        height="100%"
+        locale="tr"
+        toolbar={toolbarConfig}
+        selectionMode="single"
       />
     </div>
   );

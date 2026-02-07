@@ -1,109 +1,122 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractPayment } from "../../../types";
 
-export const contractPaymentsColumns: ColDef<ContractPayment>[] = [
+export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
   {
-    field: "invoiceNo",
-    headerName: "Fatura No",
-    flex: 1,
-    minWidth: 120
-  },
-  {
-    field: "invoiceDate",
-    headerName: "Fatura Tarihi",
-    flex: 1,
-    minWidth: 100,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
-    }
-  },
-  {
-    field: "invoiceTotal",
-    headerName: "Fatura Tutarı",
-    flex: 1,
+    id: "invoiceNo",
+    accessorKey: "invoiceNo",
+    header: "Fatura No",
+    width: 140,
     minWidth: 120,
-    type: "numericColumn",
-    valueFormatter: (params) => {
-      if (params.value == null) return "";
-      return new Intl.NumberFormat("tr-TR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(params.value);
+    editable: true,
+    cellEditor: { type: "text" }
+  },
+  {
+    id: "invoiceDate",
+    accessorKey: "invoiceDate",
+    header: "Fatura Tarihi",
+    width: 120,
+    minWidth: 100,
+    editable: true,
+    cellEditor: { type: "text" },
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   },
   {
-    field: "total",
-    headerName: "Ödenen",
-    flex: 1,
-    minWidth: 100,
-    type: "numericColumn",
-    valueFormatter: (params) => {
-      if (params.value == null) return "";
+    id: "invoiceTotal",
+    accessorKey: "invoiceTotal",
+    header: "Fatura Tutarı",
+    width: 130,
+    minWidth: 120,
+    align: "right",
+    editable: true,
+    cellEditor: { type: "number" },
+    valueFormatter: (value) => {
+      if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      }).format(params.value);
+      }).format(value as number);
     }
   },
   {
-    field: "balance",
-    headerName: "Bakiye",
-    flex: 1,
+    id: "total",
+    accessorKey: "total",
+    header: "Ödenen",
+    width: 120,
     minWidth: 100,
-    type: "numericColumn",
+    align: "right",
+    editable: true,
+    cellEditor: { type: "number" },
+    valueFormatter: (value) => {
+      if (value == null) return "";
+      return new Intl.NumberFormat("tr-TR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value as number);
+    }
+  },
+  {
+    id: "balance",
+    accessorKey: "balance",
+    header: "Bakiye",
+    width: 120,
+    minWidth: 100,
+    align: "right",
     editable: false,
-    valueFormatter: (params) => {
-      if (params.value == null) return "";
+    valueFormatter: (value) => {
+      if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      }).format(params.value);
+      }).format(value as number);
     }
   },
   {
-    field: "paid",
-    headerName: "Ödendi",
-    flex: 0.5,
+    id: "paid",
+    accessorKey: "paid",
+    header: "Ödendi",
+    width: 90,
     minWidth: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "paymentDate",
-    headerName: "Ödeme Tarihi",
-    flex: 1,
+    id: "paymentDate",
+    accessorKey: "paymentDate",
+    header: "Ödeme Tarihi",
+    width: 120,
     minWidth: 100,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    editable: true,
+    cellEditor: { type: "text" },
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   },
   {
-    field: "yearly",
-    headerName: "Yıllık",
-    flex: 0.5,
+    id: "yearly",
+    accessorKey: "yearly",
+    header: "Yıllık",
+    width: 90,
     minWidth: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "editDate",
-    headerName: "Düzenleme",
-    flex: 1,
+    id: "editDate",
+    accessorKey: "editDate",
+    header: "Düzenleme",
+    width: 120,
     minWidth: 100,
     editable: false,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   }
 ];

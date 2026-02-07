@@ -109,6 +109,6 @@ export class ContractSupportsService {
   private generateId(): string {
     const uuid = crypto.randomUUID();
     const suffix = Math.random().toString(16).substring(2, 6);
-    return `${uuid}!?@${suffix}`;
+    return `${uuid}-${suffix}`;
   }
 }

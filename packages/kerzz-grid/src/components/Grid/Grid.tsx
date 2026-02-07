@@ -5,6 +5,7 @@ import type { ToolbarConfig } from '../../types/toolbar.types';
 import type { GridColumnDef } from '../../types/column.types';
 import { useGridInstance } from '../../core/useGridInstance';
 import { useRowSelection } from '../../core/useRowSelection';
+import { useGridEditing } from '../../core/useGridEditing';
 import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { themeToCssVars } from '../../utils/memoize';
@@ -37,6 +38,9 @@ function GridInner<TData>(
     defaultSelectedIds,
     onSelectionChange,
     getRowId,
+    // Editing props
+    context,
+    onCellValueChange,
   } = props;
 
   const locale = useLocale();
@@ -76,6 +80,13 @@ function GridInner<TData>(
     selectedIds: controlledSelectedIds,
     defaultSelectedIds,
     onSelectionChange,
+  });
+
+  // Editing state
+  const editing = useGridEditing({
+    columns: grid.orderedColumns as GridColumnDef<TData>[],
+    data: grid.filteredData,
+    onCellValueChange,
   });
 
   // Toggle select all handler
@@ -306,6 +317,11 @@ function GridInner<TData>(
           isRowSelected={selection.isSelected}
           getRowId={(row, index) => resolveRowId(row, index)}
           onSelectionToggle={selection.toggleRow}
+          isEditing={editing.isEditing}
+          onStartEditing={editing.startEditing}
+          onSaveEdit={editing.saveValue}
+          onCancelEdit={editing.stopEditing}
+          context={context}
         />
       ) : (
         <div className="kz-grid-no-data">

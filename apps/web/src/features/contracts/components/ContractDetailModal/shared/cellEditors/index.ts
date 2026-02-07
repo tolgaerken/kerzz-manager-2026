@@ -1,2 +1,2 @@
-export * from "./LicenseAutocompleteEditor";
-export * from "./SelectCellEditor";
+export { LicenseAutocompleteEditor } from "./LicenseAutocompleteEditor";
+export { ProductAutocompleteEditor } from "./ProductAutocompleteEditor";

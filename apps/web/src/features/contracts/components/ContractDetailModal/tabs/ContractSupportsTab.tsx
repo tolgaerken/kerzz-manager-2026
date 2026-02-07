@@ -1,6 +1,4 @@
 import { useState, useCallback, useMemo } from "react";
-import { HeartHandshake } from "lucide-react";
-import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractSupports } from "../../../hooks/useContractDetail";
 import {
   useCreateContractSupport,
@@ -9,7 +7,7 @@ import {
 } from "../../../hooks/useContractDetailMutations";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractSupport } from "../../../types";
-import { EditableGrid, DetailGridToolbar } from "../shared";
+import { EditableGrid } from "../shared";
 import { contractSupportsColumns } from "../columnDefs";
 
 interface ContractSupportsTabProps {
@@ -98,23 +96,23 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ContractSupport>) => {
-      if (event.data?.id) {
-        const { _id, id, contractId: cId, ...updateData } = event.data;
+  const handleCellValueChange = useCallback(
+    (row: ContractSupport, columnId: string, newValue: unknown) => {
+      if (row?.id) {
+        const { _id, id, contractId: cId, ...updateData } = row;
 
-        // licanceId değiştiğinde brand'ı da güncelle
-        if (event.column.getColId() === "licanceId" && event.newValue) {
-          const selectedLicense = licenses.find((l) => l.id === event.newValue);
+        if (columnId === "licanceId" && newValue) {
+          const selectedLicense = licenses.find((l) => l.id === newValue);
           if (selectedLicense) {
             updateData.brand = selectedLicense.brandName;
           }
         }
 
         updateMutation.mutate({
-          id: event.data.id,
+          id: row.id,
           data: {
             ...updateData,
+            [columnId]: newValue,
             editDate: new Date().toISOString()
           }
         });
@@ -123,8 +121,8 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     [updateMutation, licenses]
   );
 
-  const handleSelectionChanged = useCallback(
-    (row: ContractSupport | null) => {
+  const handleRowClick = useCallback(
+    (row: ContractSupport) => {
       setSelectedRow(row);
     },
     []
@@ -132,45 +130,22 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
 
   const supports = data?.data || [];
 
-  if (!isLoading && supports.length === 0 && !createMutation.isPending) {
-    return (
-      <div className="flex flex-col h-full">
-        <DetailGridToolbar
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-          canDelete={false}
-          loading={isProcessing}
-          addLabel="Destek Ekle"
-        />
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-12">
-          <HeartHandshake className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Bu kontrata ait destek kaydı bulunmuyor.</p>
-          <p className="text-sm mt-1">Yeni destek eklemek için "Destek Ekle" butonuna tıklayın.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <DetailGridToolbar
+      <EditableGrid<ContractSupport>
+        data={supports}
+        columns={contractSupportsColumns}
+        loading={isLoading}
+        getRowId={(row) => row.id || row._id}
+        onCellValueChange={handleCellValueChange}
+        onRowClick={handleRowClick}
         onAdd={handleAdd}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
-        loading={isProcessing}
+        processing={isProcessing}
         addLabel="Destek Ekle"
+        context={gridContext}
       />
-      <div className="flex-1 min-h-0">
-        <EditableGrid<ContractSupport>
-          data={supports}
-          columnDefs={contractSupportsColumns}
-          loading={isLoading}
-          getRowId={(row) => row.id || row._id}
-          onCellValueChanged={handleCellValueChanged}
-          onSelectionChanged={handleSelectionChanged}
-          context={gridContext}
-        />
-      </div>
     </div>
   );
 }

@@ -196,10 +196,12 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
     onSortChange?.(next);
   };
 
-  // Total row width
+  // Total row width (accounts for minWidth overriding width)
   const totalWidth = useMemo(() => {
     return orderedColumns.reduce((sum, col) => {
-      return sum + columnResize.getColumnWidth(col.id, col.width ?? 150);
+      const w = columnResize.getColumnWidth(col.id, col.width ?? 150);
+      const min = col.minWidth ?? 50;
+      return sum + Math.max(w, min);
     }, 0);
   }, [orderedColumns, columnResize]);
 

@@ -1,5 +1,6 @@
 import type { ColumnFilterConfig } from './filter.types';
 import type { FooterConfig } from './footer.types';
+import type { CellEditorConfig } from './editing.types';
 
 export interface GridColumnDef<TData = unknown> {
   /** Unique column identifier */
@@ -11,7 +12,7 @@ export interface GridColumnDef<TData = unknown> {
   /** Custom accessor function */
   accessorFn?: (row: TData) => unknown;
   /** Custom cell renderer */
-  cell?: (value: unknown, row: TData) => React.ReactNode;
+  cell?: (value: unknown, row: TData, context?: Record<string, unknown>) => React.ReactNode;
   /** Column width in pixels */
   width?: number;
   /** Minimum column width */
@@ -42,4 +43,13 @@ export interface GridColumnDef<TData = unknown> {
   cellClassName?: string | ((value: unknown, row: TData) => string);
   /** Custom CSS class for header */
   headerClassName?: string;
+
+  // ── Editing ──
+
+  /** Whether this column's cells are editable. Default: false */
+  editable?: boolean | ((row: TData) => boolean);
+  /** Cell editor configuration */
+  cellEditor?: CellEditorConfig<TData>;
+  /** Format the raw value for display (used instead of cell when no custom renderer needed) */
+  valueFormatter?: (value: unknown, row: TData) => string;
 }

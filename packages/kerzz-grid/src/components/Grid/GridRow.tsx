@@ -18,6 +18,17 @@ interface GridRowProps<TData> {
   isSelected?: boolean;
   /** Callback when selection is toggled */
   onSelectionToggle?: (shiftKey: boolean) => void;
+  // Editing props
+  /** Check if a cell is being edited */
+  isEditing?: (rowIndex: number, columnId: string) => boolean;
+  /** Start editing a cell */
+  onStartEditing?: (rowIndex: number, columnId: string) => void;
+  /** Save edited value */
+  onSaveEdit?: (newValue: unknown) => void;
+  /** Cancel editing */
+  onCancelEdit?: () => void;
+  /** External context for editors */
+  context?: Record<string, unknown>;
 }
 
 function GridRowInner<TData>({
@@ -32,11 +43,21 @@ function GridRowInner<TData>({
   showSelectionCheckbox,
   isSelected,
   onSelectionToggle,
+  isEditing,
+  onStartEditing,
+  onSaveEdit,
+  onCancelEdit,
+  context,
 }: GridRowProps<TData>) {
+  const hasEditingCell = isEditing
+    ? columns.some((col) => isEditing(rowIndex, col.id))
+    : false;
+
   const classNames = [
     'kz-grid-row',
     isStriped && 'kz-grid-row--striped',
     isSelected && 'kz-grid-row--selected',
+    hasEditingCell && 'kz-grid-row--editing',
   ]
     .filter(Boolean)
     .join(' ');
@@ -64,8 +85,14 @@ function GridRowInner<TData>({
             key={col.id}
             column={col}
             row={row}
+            rowIndex={rowIndex}
             width={getColumnWidth(col.id, col.width ?? 150)}
             value={value}
+            isEditing={isEditing?.(rowIndex, col.id)}
+            onStartEditing={onStartEditing}
+            onSave={onSaveEdit}
+            onCancel={onCancelEdit}
+            context={context}
           />
         );
       })}

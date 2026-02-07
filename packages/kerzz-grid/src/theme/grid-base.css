@@ -401,6 +401,7 @@
   width: 100%;
   min-height: var(--kz-row-height);
   border-bottom: var(--kz-border-width) solid var(--kz-border);
+  background: var(--kz-row-bg);
   transition: background 0.1s;
 }
 
@@ -414,6 +415,12 @@
 
 .kz-grid-row--selected {
   background: var(--kz-row-selected);
+}
+
+/* Row containing an editing cell needs higher z-index so dropdowns render above other rows */
+.kz-grid-row--editing,
+.kz-grid-row:has(.kz-grid-cell--editing) {
+  z-index: 10;
 }
 
 /* ---- Cells ---- */
@@ -1016,5 +1023,84 @@
 }
 
 .kz-grid-row--striped.kz-grid-row--selected .kz-selection-cell {
+  background: var(--kz-row-selected);
+}
+
+/* ---- Editing ---- */
+.kz-grid-cell--editable {
+  cursor: pointer;
+}
+
+.kz-grid-cell--editing {
+  padding: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 20;
+  background: var(--kz-bg);
+}
+
+/* Common editor styles */
+.kz-editor {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--kz-text);
+  background: var(--kz-bg);
+}
+
+.kz-editor--text,
+.kz-editor--number {
+  padding: var(--kz-cell-padding-y) var(--kz-cell-padding-x);
+  min-height: var(--kz-row-height);
+  box-shadow: inset 0 0 0 2px var(--kz-primary);
+  border-radius: 0;
+}
+
+.kz-editor--text:focus,
+.kz-editor--number:focus {
+  outline: none;
+}
+
+/* Select editor */
+.kz-editor--select {
+  position: relative;
+  outline: none;
+  background: var(--kz-bg);
+}
+
+.kz-editor__dropdown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--kz-bg);
+  border: var(--kz-border-width) solid var(--kz-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.kz-editor__dropdown-item {
+  padding: 6px var(--kz-cell-padding-x);
+  cursor: pointer;
+  background: var(--kz-bg);
+  transition: background 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kz-editor__dropdown-item--highlighted {
+  background: var(--kz-row-hover);
+}
+
+.kz-editor__dropdown-item--selected {
+  font-weight: 600;
+  color: var(--kz-primary);
   background: var(--kz-row-selected);
 }

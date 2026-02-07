@@ -1,6 +1,4 @@
 import { useState, useCallback } from "react";
-import { Users } from "lucide-react";
-import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractUsers } from "../../../hooks/useContractDetail";
 import {
   useCreateContractUser,
@@ -8,7 +6,7 @@ import {
   useDeleteContractUser
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractUser } from "../../../types";
-import { EditableGrid, DetailGridToolbar } from "../shared";
+import { EditableGrid } from "../shared";
 import { contractUsersColumns } from "../columnDefs";
 
 interface ContractUsersTabProps {
@@ -48,14 +46,15 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ContractUser>) => {
-      if (event.data?.id) {
-        const { _id, id, contractId: cId, ...updateData } = event.data;
+  const handleCellValueChange = useCallback(
+    (row: ContractUser, columnId: string, newValue: unknown) => {
+      if (row?.id) {
+        const { _id, id, contractId: cId, ...updateData } = row;
         updateMutation.mutate({
-          id: event.data.id,
+          id: row.id,
           data: {
             ...updateData,
+            [columnId]: newValue,
             editDate: new Date().toISOString()
           }
         });
@@ -64,8 +63,8 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
     [updateMutation]
   );
 
-  const handleSelectionChanged = useCallback(
-    (row: ContractUser | null) => {
+  const handleRowClick = useCallback(
+    (row: ContractUser) => {
       setSelectedRow(row);
     },
     []
@@ -73,44 +72,21 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
 
   const users = data?.data || [];
 
-  if (!isLoading && users.length === 0 && !createMutation.isPending) {
-    return (
-      <div className="flex flex-col h-full">
-        <DetailGridToolbar
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-          canDelete={false}
-          loading={isProcessing}
-          addLabel="Kullanıcı Ekle"
-        />
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-12">
-          <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Bu kontrata ait kullanıcı bulunmuyor.</p>
-          <p className="text-sm mt-1">Yeni kullanıcı eklemek için "Kullanıcı Ekle" butonuna tıklayın.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <DetailGridToolbar
+      <EditableGrid<ContractUser>
+        data={users}
+        columns={contractUsersColumns}
+        loading={isLoading}
+        getRowId={(row) => row.id || row._id}
+        onCellValueChange={handleCellValueChange}
+        onRowClick={handleRowClick}
         onAdd={handleAdd}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
-        loading={isProcessing}
+        processing={isProcessing}
         addLabel="Kullanıcı Ekle"
       />
-      <div className="flex-1 min-h-0">
-        <EditableGrid<ContractUser>
-          data={users}
-          columnDefs={contractUsersColumns}
-          loading={isLoading}
-          getRowId={(row) => row.id || row._id}
-          onCellValueChanged={handleCellValueChanged}
-          onSelectionChanged={handleSelectionChanged}
-        />
-      </div>
     </div>
   );
 }

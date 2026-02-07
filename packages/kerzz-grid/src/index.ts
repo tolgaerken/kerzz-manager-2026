@@ -25,6 +25,13 @@ export { useGridFilter } from './core/useGridFilter';
 export { useStateStore } from './core/useStateStore';
 export { useFooterAggregation } from './core/useFooterAggregation';
 export { useRowSelection } from './core/useRowSelection';
+export { useGridEditing } from './core/useGridEditing';
+
+// Built-in Editors
+export { TextEditor } from './components/Editors/TextEditor';
+export { NumberEditor } from './components/Editors/NumberEditor';
+export { SelectEditor } from './components/Editors/SelectEditor';
+export { BooleanEditor } from './components/Editors/BooleanEditor';
 
 // Column Visibility Panel
 export { ColumnVisibilityPanel } from './components/ColumnManager/ColumnVisibilityPanel';
@@ -85,6 +92,13 @@ export type {
   UseRowSelectionProps,
   UseRowSelectionReturn,
 } from './types/selection.types';
+export type {
+  CellEditorType,
+  CellEditorConfig,
+  CellEditorProps,
+  SelectEditorOption,
+  EditingState,
+} from './types/editing.types';
 
 // CSS import helper
 import './theme/grid-base.css';

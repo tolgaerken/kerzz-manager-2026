@@ -1,164 +1,163 @@
-import type { ColDef, ICellEditorParams } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractCashRegister } from "../../../types";
 import { CASH_REGISTER_TYPES, CURRENCY_OPTIONS } from "../../../constants";
 import { LicenseAutocompleteEditor } from "../shared/cellEditors/LicenseAutocompleteEditor";
-import { SelectCellEditor } from "../shared/cellEditors/SelectCellEditor";
 
-// Context'ten gelen veri tipleri
-interface GridContext {
-  licenses: Array<{ id: string; brandName: string; SearchItem: string }>;
-  eftPosModels: Array<{ id: string; name: string }>;
-  onLicenseSelect?: (rowId: string, license: { id: string; brandName: string } | null) => void;
+interface License {
+  id: string;
+  brandName: string;
+  SearchItem: string;
 }
 
-export const contractCashRegistersColumns: ColDef<ContractCashRegister>[] = [
+interface EftPosModel {
+  id: string;
+  name: string;
+}
+
+export const contractCashRegistersColumns: GridColumnDef<ContractCashRegister>[] = [
   {
-    field: "enabled",
-    headerName: "Aktif",
+    id: "enabled",
+    accessorKey: "enabled",
+    header: "Aktif",
     width: 70,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "✓" : "✗",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "✓" : "✗")
   },
   {
-    field: "type",
-    headerName: "Tür",
+    id: "type",
+    accessorKey: "type",
+    header: "Tür",
     width: 90,
-    cellEditor: SelectCellEditor,
-    cellEditorParams: {
-      options: CASH_REGISTER_TYPES
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: [...CASH_REGISTER_TYPES]
     },
-    valueFormatter: (params) => {
-      const found = CASH_REGISTER_TYPES.find((t) => t.id === params.value);
-      return found?.name || params.value || "";
+    valueFormatter: (value) => {
+      const found = CASH_REGISTER_TYPES.find((t) => t.id === value);
+      return found?.name || String(value ?? "");
     }
   },
   {
-    field: "model",
-    headerName: "Model",
+    id: "model",
+    accessorKey: "model",
+    header: "Model",
     width: 150,
-    cellEditor: SelectCellEditor,
-    cellEditorParams: (params: ICellEditorParams<ContractCashRegister>) => {
-      const context = params.context as GridContext;
-      return {
-        options: context?.eftPosModels || []
-      };
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: (_row, context) => {
+        return (context?.eftPosModels as EftPosModel[]) || [];
+      }
     },
-    valueFormatter: (params) => {
-      const context = params.context as GridContext;
-      const found = context?.eftPosModels?.find((m) => m.id === params.value);
-      return found?.name || params.value || "";
+    cell: (value, _row, context) => {
+      const models = ((context as Record<string, unknown>)?.eftPosModels as EftPosModel[]) || [];
+      const found = models.find((m) => m.id === value);
+      return found?.name || String(value ?? "");
     }
   },
   {
-    field: "legalId",
-    headerName: "Sicil No",
+    id: "legalId",
+    accessorKey: "legalId",
+    header: "Sicil No",
     width: 120,
-    flex: 1
+    editable: true,
+    cellEditor: { type: "text" }
   },
   {
-    field: "licanceId",
-    headerName: "Lisans",
+    id: "licanceId",
+    accessorKey: "licanceId",
+    header: "Lisans",
     width: 280,
-    flex: 2,
-    cellEditor: LicenseAutocompleteEditor,
-    cellEditorParams: (params: ICellEditorParams<ContractCashRegister>) => {
-      const context = params.context as GridContext;
-      return {
-        licenses: context?.licenses || [],
-        onLicenseSelect: (license: { id: string; brandName: string } | null) => {
-          if (context?.onLicenseSelect && params.data?.id) {
-            context.onLicenseSelect(params.data.id, license);
-          }
-        }
-      };
+    editable: true,
+    cellEditor: {
+      type: "custom",
+      customEditor: LicenseAutocompleteEditor
     },
-    cellRenderer: (params: { value: string; context: GridContext }) => {
-      if (!params.value) return "";
-      const valueStr = String(params.value);
-      const licenses = params.context?.licenses || [];
+    cell: (value, _row, context) => {
+      if (!value) return "";
+      const valueStr = String(value);
+      const licenses = ((context as Record<string, unknown>)?.licenses as License[]) || [];
       const found = licenses.find((l) => l.id === valueStr);
-      return found?.SearchItem || found?.brandName || params.value;
+      return found?.SearchItem || found?.brandName || String(value);
     }
   },
   {
-    field: "price",
-    headerName: "Fiyat",
+    id: "price",
+    accessorKey: "price",
+    header: "Fiyat",
     width: 100,
-    type: "numericColumn",
-    valueFormatter: (params) => {
-      if (params.value == null) return "";
+    align: "right",
+    editable: true,
+    cellEditor: { type: "number" },
+    valueFormatter: (value) => {
+      if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      }).format(params.value);
+      }).format(value as number);
     }
   },
   {
-    field: "currency",
-    headerName: "Döviz",
+    id: "currency",
+    accessorKey: "currency",
+    header: "Döviz",
     width: 80,
-    cellEditor: SelectCellEditor,
-    cellEditorParams: {
-      options: CURRENCY_OPTIONS
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: [...CURRENCY_OPTIONS]
     },
-    valueFormatter: (params) => {
-      const found = CURRENCY_OPTIONS.find((c) => c.id === params.value);
-      return found?.name || params.value?.toUpperCase() || "";
+    valueFormatter: (value) => {
+      const found = CURRENCY_OPTIONS.find((c) => c.id === value);
+      return found?.name || String(value ?? "").toUpperCase();
     }
   },
   {
-    field: "yearly",
-    headerName: "Yıllık",
+    id: "yearly",
+    accessorKey: "yearly",
+    header: "Yıllık",
     width: 70,
     editable: false,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "Evet" : "Hayır"
+    cell: (value) => (value ? "Evet" : "Hayır")
   },
   {
-    field: "eftPosActive",
-    headerName: "EPA",
+    id: "eftPosActive",
+    accessorKey: "eftPosActive",
+    header: "EPA",
     width: 70,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "✓" : "✗",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "✓" : "✗")
   },
   {
-    field: "expired",
-    headerName: "Expired",
+    id: "expired",
+    accessorKey: "expired",
+    header: "Expired",
     width: 80,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "✓" : "✗",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "✓" : "✗")
   },
   {
-    field: "folioClose",
-    headerName: "FC",
+    id: "folioClose",
+    accessorKey: "folioClose",
+    header: "FC",
     width: 60,
-    cellRenderer: (params: { value: boolean }) =>
-      params.value ? "✓" : "✗",
-    cellEditor: "agSelectCellEditor",
-    cellEditorParams: {
-      values: [true, false]
-    }
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "✓" : "✗")
   },
   {
-    field: "editDate",
-    headerName: "Düzenleme",
+    id: "editDate",
+    accessorKey: "editDate",
+    header: "Düzenleme",
     width: 100,
     editable: false,
-    valueFormatter: (params) => {
-      if (!params.value) return "";
-      return new Date(params.value).toLocaleDateString("tr-TR");
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
     }
   }
 ];

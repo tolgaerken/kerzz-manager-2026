@@ -1,6 +1,4 @@
 import { useState, useCallback } from "react";
-import { Receipt } from "lucide-react";
-import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractPayments } from "../../../hooks/useContractDetail";
 import {
   useCreateContractPayment,
@@ -8,7 +6,7 @@ import {
   useDeleteContractPayment
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractPayment } from "../../../types";
-import { EditableGrid, DetailGridToolbar } from "../shared";
+import { EditableGrid } from "../shared";
 import { contractPaymentsColumns } from "../columnDefs";
 
 interface ContractPaymentsTabProps {
@@ -66,14 +64,15 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ContractPayment>) => {
-      if (event.data?.id) {
-        const { _id, id, contractId: cId, ...updateData } = event.data;
+  const handleCellValueChange = useCallback(
+    (row: ContractPayment, columnId: string, newValue: unknown) => {
+      if (row?.id) {
+        const { _id, id, contractId: cId, ...updateData } = row;
         updateMutation.mutate({
-          id: event.data.id,
+          id: row.id,
           data: {
             ...updateData,
+            [columnId]: newValue,
             editDate: new Date().toISOString()
           }
         });
@@ -82,8 +81,8 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     [updateMutation]
   );
 
-  const handleSelectionChanged = useCallback(
-    (row: ContractPayment | null) => {
+  const handleRowClick = useCallback(
+    (row: ContractPayment) => {
       setSelectedRow(row);
     },
     []
@@ -91,44 +90,21 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
 
   const payments = data?.data || [];
 
-  if (!isLoading && payments.length === 0 && !createMutation.isPending) {
-    return (
-      <div className="flex flex-col h-full">
-        <DetailGridToolbar
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-          canDelete={false}
-          loading={isProcessing}
-          addLabel="Ödeme Ekle"
-        />
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-12">
-          <Receipt className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Bu kontrata ait ödeme kaydı bulunmuyor.</p>
-          <p className="text-sm mt-1">Yeni ödeme eklemek için "Ödeme Ekle" butonuna tıklayın.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <DetailGridToolbar
+      <EditableGrid<ContractPayment>
+        data={payments}
+        columns={contractPaymentsColumns}
+        loading={isLoading}
+        getRowId={(row) => row.id || row._id}
+        onCellValueChange={handleCellValueChange}
+        onRowClick={handleRowClick}
         onAdd={handleAdd}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
-        loading={isProcessing}
+        processing={isProcessing}
         addLabel="Ödeme Ekle"
       />
-      <div className="flex-1 min-h-0">
-        <EditableGrid<ContractPayment>
-          data={payments}
-          columnDefs={contractPaymentsColumns}
-          loading={isLoading}
-          getRowId={(row) => row.id || row._id}
-          onCellValueChanged={handleCellValueChanged}
-          onSelectionChanged={handleSelectionChanged}
-        />
-      </div>
     </div>
   );
 }

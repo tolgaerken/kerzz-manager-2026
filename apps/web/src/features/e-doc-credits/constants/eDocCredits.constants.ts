@@ -3,10 +3,10 @@ export const E_DOC_CREDITS_CONSTANTS = {
   ENDPOINTS: {
     LIST: "/e-doc-credits",
     CREATE: "/e-doc-credits",
-    UPDATE: (id: string) => `/e-doc-credits/${id}`,
-    DELETE: (id: string) => `/e-doc-credits/${id}`,
-    GET_ONE: (id: string) => `/e-doc-credits/${id}`,
-    CREATE_INVOICE: (id: string) => `/e-doc-credits/${id}/create-invoice`,
+    UPDATE: (id: string) => `/e-doc-credits/${encodeURIComponent(id)}`,
+    DELETE: (id: string) => `/e-doc-credits/${encodeURIComponent(id)}`,
+    GET_ONE: (id: string) => `/e-doc-credits/${encodeURIComponent(id)}`,
+    CREATE_INVOICE: (id: string) => `/e-doc-credits/${encodeURIComponent(id)}/create-invoice`,
   },
 };
 

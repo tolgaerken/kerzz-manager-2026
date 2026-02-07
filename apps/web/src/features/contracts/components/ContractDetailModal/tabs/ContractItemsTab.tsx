@@ -1,6 +1,4 @@
 import { useState, useCallback } from "react";
-import { Package } from "lucide-react";
-import type { CellValueChangedEvent } from "ag-grid-community";
 import { useContractItems } from "../../../hooks/useContractDetail";
 import {
   useCreateContractItem,
@@ -8,7 +6,7 @@ import {
   useDeleteContractItem
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractItem } from "../../../types";
-import { EditableGrid, DetailGridToolbar } from "../shared";
+import { EditableGrid } from "../shared";
 import { contractItemsColumns } from "../columnDefs";
 
 interface ContractItemsTabProps {
@@ -55,14 +53,15 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
-  const handleCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ContractItem>) => {
-      if (event.data?.id) {
-        const { _id, id, contractId: cId, ...updateData } = event.data;
+  const handleCellValueChange = useCallback(
+    (row: ContractItem, columnId: string, newValue: unknown) => {
+      if (row?.id) {
+        const { _id, id, contractId: cId, ...updateData } = row;
         updateMutation.mutate({
-          id: event.data.id,
+          id: row.id,
           data: {
             ...updateData,
+            [columnId]: newValue,
             editDate: new Date().toISOString()
           }
         });
@@ -71,8 +70,8 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     [updateMutation]
   );
 
-  const handleSelectionChanged = useCallback(
-    (row: ContractItem | null) => {
+  const handleRowClick = useCallback(
+    (row: ContractItem) => {
       setSelectedRow(row);
     },
     []
@@ -80,44 +79,21 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
 
   const items = data?.data || [];
 
-  if (!isLoading && items.length === 0 && !createMutation.isPending) {
-    return (
-      <div className="flex flex-col h-full">
-        <DetailGridToolbar
-          onAdd={handleAdd}
-          onDelete={handleDelete}
-          canDelete={false}
-          loading={isProcessing}
-          addLabel="Kalem Ekle"
-        />
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-12">
-          <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Bu kontrata ait diğer kalem bulunmuyor.</p>
-          <p className="text-sm mt-1">Yeni kalem eklemek için "Kalem Ekle" butonuna tıklayın.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <DetailGridToolbar
+      <EditableGrid<ContractItem>
+        data={items}
+        columns={contractItemsColumns}
+        loading={isLoading}
+        getRowId={(row) => row.id || row._id}
+        onCellValueChange={handleCellValueChange}
+        onRowClick={handleRowClick}
         onAdd={handleAdd}
         onDelete={handleDelete}
         canDelete={!!selectedRow}
-        loading={isProcessing}
+        processing={isProcessing}
         addLabel="Kalem Ekle"
       />
-      <div className="flex-1 min-h-0">
-        <EditableGrid<ContractItem>
-          data={items}
-          columnDefs={contractItemsColumns}
-          loading={isLoading}
-          getRowId={(row) => row.id || row._id}
-          onCellValueChanged={handleCellValueChanged}
-          onSelectionChanged={handleSelectionChanged}
-        />
-      </div>
     </div>
   );
 }

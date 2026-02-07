@@ -45,7 +45,7 @@ export async function updateContractUser(
   id: string,
   data: Partial<Omit<ContractUser, "_id" | "id">>
 ): Promise<ContractUser> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -54,7 +54,7 @@ export async function updateContractUser(
 }
 
 export async function deleteContractUser(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -87,7 +87,7 @@ export async function updateContractSupport(
   id: string,
   data: Partial<Omit<ContractSupport, "_id" | "id">>
 ): Promise<ContractSupport> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -96,7 +96,7 @@ export async function updateContractSupport(
 }
 
 export async function deleteContractSupport(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -129,7 +129,7 @@ export async function updateContractSaas(
   id: string,
   data: Partial<Omit<ContractSaas, "_id" | "id">>
 ): Promise<ContractSaas> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -138,7 +138,7 @@ export async function updateContractSaas(
 }
 
 export async function deleteContractSaas(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -171,7 +171,7 @@ export async function updateContractCashRegister(
   id: string,
   data: Partial<Omit<ContractCashRegister, "_id" | "id">>
 ): Promise<ContractCashRegister> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -180,7 +180,7 @@ export async function updateContractCashRegister(
 }
 
 export async function deleteContractCashRegister(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -213,7 +213,7 @@ export async function updateContractVersion(
   id: string,
   data: Partial<Omit<ContractVersion, "_id" | "id">>
 ): Promise<ContractVersion> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -222,7 +222,7 @@ export async function updateContractVersion(
 }
 
 export async function deleteContractVersion(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -255,7 +255,7 @@ export async function updateContractItem(
   id: string,
   data: Partial<Omit<ContractItem, "_id" | "id">>
 ): Promise<ContractItem> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -264,7 +264,7 @@ export async function updateContractItem(
 }
 
 export async function deleteContractItem(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -297,7 +297,7 @@ export async function updateContractDocument(
   id: string,
   data: Partial<Omit<ContractDocument, "_id" | "id">>
 ): Promise<ContractDocument> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -306,7 +306,7 @@ export async function updateContractDocument(
 }
 
 export async function deleteContractDocument(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
@@ -339,7 +339,7 @@ export async function updateContractPayment(
   id: string,
   data: Partial<Omit<ContractPayment, "_id" | "id">>
 ): Promise<ContractPayment> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -348,7 +348,7 @@ export async function updateContractPayment(
 }
 
 export async function deleteContractPayment(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!response.ok) {
