@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Trash2, X, AlertTriangle, CheckCircle } from "lucide-react";
 import {
   AutoPaymentTokensGrid,
@@ -9,7 +10,9 @@ import {
   usePaymentPlans,
   useCollectPayment,
   useDeleteToken,
+  autoPaymentKeys,
 } from "../features/automated-payments";
+import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
 import type {
   AutoPaymentTokenItem,
   AutoPaymentQueryParams,
@@ -38,9 +41,35 @@ export function AutomatedPaymentsPage() {
   const selectedErpId = selectedCustomer?.erpId || null;
 
   // ── Queries ──
+  const queryClient = useQueryClient();
   const { data, isLoading, refetch } = useAutoPaymentTokens(queryParams);
   const { data: paymentPlans, isLoading: plansLoading } =
     usePaymentPlans(selectedErpId);
+
+  // ── MongoDB Change Stream ──
+  useMongoChangeStream("contract-payments", (event) => {
+    const doc = event.fullDocument;
+    const fields = event.updatedFields;
+
+    console.log(
+      `[AutomatedPayments] Change event: op=${event.operationType}, docId=${event.documentId}, docCompanyId=${doc?.companyId ?? "?"}, selectedErpId=${selectedErpId ?? "yok"}`
+    );
+
+    // Secili musteri ile ilgili bir degisiklik varsa planları yenile
+    if (
+      selectedErpId &&
+      (doc?.companyId === selectedErpId ||
+        fields?.onlinePaymentId !== undefined ||
+        fields?.paid !== undefined)
+    ) {
+      console.log(
+        `[AutomatedPayments] Odeme planlari yenileniyor (erpId=${selectedErpId})`
+      );
+      queryClient.invalidateQueries({
+        queryKey: autoPaymentKeys.plan(selectedErpId),
+      });
+    }
+  });
 
   // ── Mutations ──
   const collectMutation = useCollectPayment();

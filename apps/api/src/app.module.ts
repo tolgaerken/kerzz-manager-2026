@@ -32,6 +32,8 @@ import { NotificationQueueModule } from "./modules/notification-queue";
 import { CronJobsModule } from "./modules/cron-jobs";
 import { PaytrModule } from "./modules/paytr";
 import { AutomatedPaymentsModule } from "./modules/automated-payments";
+// MongoDB WebSocket Module
+import { MongoWsModule } from "./modules/mongo-ws";
 // Company & ERP Modules
 import { CompaniesModule } from "./modules/companies";
 import { ErpModule } from "./modules/erp";
@@ -62,6 +64,8 @@ import { ErpModule } from "./modules/erp";
     PaymentsModule,
     PaytrModule,
     AutomatedPaymentsModule,
+    // MongoDB WebSocket Module (Global)
+    MongoWsModule,
     // Log & Notification Modules
     LogsModule,
     NotificationsModule,

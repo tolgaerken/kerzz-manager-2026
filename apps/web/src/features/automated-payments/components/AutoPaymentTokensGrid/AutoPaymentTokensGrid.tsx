@@ -35,19 +35,17 @@ export function AutoPaymentTokensGrid({
 
   const handleRowClick = useCallback(
     (row: AutoPaymentTokenItem) => {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(row._id)) {
-          next.delete(row._id);
-        } else {
-          next.add(row._id);
-        }
-        const selectedItems = data.filter((item) => next.has(item._id));
-        onSelectionChanged(selectedItems);
-        return next;
-      });
+      const newSet = new Set(selectedIds);
+      if (newSet.has(row._id)) {
+        newSet.delete(row._id);
+      } else {
+        newSet.add(row._id);
+      }
+      setSelectedIds(newSet);
+      const selectedItems = data.filter((item) => newSet.has(item._id));
+      onSelectionChanged(selectedItems);
     },
-    [data, onSelectionChanged]
+    [data, onSelectionChanged, selectedIds]
   );
 
   const columns: GridColumnDef<AutoPaymentTokenItem>[] = tokenColumnDefs.map(

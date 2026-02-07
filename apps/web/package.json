@@ -20,6 +20,7 @@
     "react": "latest",
     "react-dom": "latest",
     "react-i18next": "latest",
+    "socket.io-client": "^4.8.3",
     "zustand": "latest"
   },
   "devDependencies": {
