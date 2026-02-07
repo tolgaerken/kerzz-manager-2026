@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useContractVersions } from "../../../hooks/useContractDetail";
 import {
   useCreateContractVersion,
@@ -6,7 +8,6 @@ import {
   useDeleteContractVersion
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractVersion } from "../../../types";
-import { EditableGrid } from "../shared";
 import { contractVersionsColumns } from "../columnDefs";
 
 interface ContractVersionsTabProps {
@@ -27,7 +28,7 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
     deleteMutation.isPending;
 
   const createEmptyRow = useCallback((): ContractVersion => ({
-    id: "",
+    id: crypto.randomUUID(),
     _id: "",
     contractId,
     brand: "",
@@ -42,9 +43,9 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
     editUser: ""
   }), [contractId]);
 
-  const handleSaveNewRows = useCallback((rows: ContractVersion[]) => {
+  const handleNewRowSave = useCallback((rows: ContractVersion[]) => {
     rows.forEach((row) => {
-      const { _id, id, ...data } = row;
+      const { id, _id, ...data } = row;
       createMutation.mutate(data);
     });
   }, [createMutation]);
@@ -80,23 +81,48 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
     []
   );
 
+  const toolbarConfig = useMemo<ToolbarConfig<ContractVersion>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedRow || isProcessing,
+        variant: "danger"
+      }
+    ];
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      showAddRow: true,
+      customButtons
+    };
+  }, [handleDelete, selectedRow, isProcessing]);
+
   const versions = data?.data || [];
 
   return (
     <div className="flex flex-col h-full">
-      <EditableGrid<ContractVersion>
-        data={versions}
-        columns={contractVersionsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
-        createEmptyRow={createEmptyRow}
-        onSaveNewRows={handleSaveNewRows}
-        onDelete={handleDelete}
-        canDelete={!!selectedRow}
-        processing={isProcessing}
-      />
+      <div className="flex-1 min-h-0">
+        <Grid<ContractVersion>
+          data={versions}
+          columns={contractVersionsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChange={handleCellValueChange}
+          onRowClick={handleRowClick}
+          createEmptyRow={createEmptyRow}
+          onNewRowSave={handleNewRowSave}
+          height="100%"
+          locale="tr"
+          toolbar={toolbarConfig}
+          selectionMode="single"
+        />
+      </div>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export interface LicenseResponseDto {
 }
 
 export interface PaginatedLicensesResponseDto {
-  data: LicenseResponseDto[];
+  data: (LicenseResponseDto | Record<string, unknown>)[];
   pagination: {
     page: number;
     limit: number;

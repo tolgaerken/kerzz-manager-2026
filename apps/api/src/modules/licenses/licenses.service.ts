@@ -8,6 +8,7 @@ import {
   LicenseResponseDto,
   LicenseCountsDto
 } from "./dto/license-response.dto";
+import { LicenseMinimalResponseDto } from "./dto/license-minimal-response.dto";
 import { CreateLicenseDto } from "./dto/create-license.dto";
 import { UpdateLicenseDto } from "./dto/update-license.dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
@@ -34,10 +35,19 @@ export class LicensesService {
       haveContract,
       customerId,
       sortField = "licenseId",
-      sortOrder = "desc"
+      sortOrder = "desc",
+      fields: rawFields
     } = query;
 
-    const skip = (page - 1) * limit;
+    // Aggregation pipeline number gerektirir, query string'den string gelebilir
+    const numericPage = Number(page);
+    const numericLimit = Number(limit);
+    const skip = (numericPage - 1) * numericLimit;
+
+    // fields parametresini güvenli şekilde parse et
+    // DTO Transform çalışmasa bile burada garanti altına alıyoruz
+    const fields = this.parseFields(rawFields);
+    const isMinimalQuery = fields.length > 0;
 
     // Build filter query
     let filter: Record<string, unknown> = {};
@@ -102,30 +112,64 @@ export class LicensesService {
     const sort: Record<string, SortOrder> = {};
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
-    // Execute queries in parallel
+    // Minimal query: Mongoose'un id virtual çakışmasını bypass etmek için
+    // aggregation pipeline kullanıyoruz. Bu projection'ı doğrudan MongoDB'ye gönderir.
+    if (isMinimalQuery) {
+      const projectionStage: Record<string, 1> = { _id: 1 };
+      for (const field of fields) {
+        projectionStage[field] = 1;
+      }
+
+      const pipeline: Record<string, unknown>[] = [
+        { $match: filter },
+        { $sort: sort },
+        { $skip: skip },
+        { $limit: numericLimit },
+        { $project: projectionStage }
+      ];
+
+      const [data, total] = await Promise.all([
+        this.licenseModel.aggregate(pipeline).exec(),
+        this.licenseModel.countDocuments(filter).exec()
+      ]);
+
+      const totalPages = Math.ceil(total / numericLimit);
+
+      return {
+        data: data.map((doc) => this.mapToMinimalResponseDto(doc)),
+        pagination: {
+          page: numericPage,
+          limit: numericLimit,
+          total,
+          totalPages
+        }
+      };
+    }
+
+    // Full query: Tüm alanlar + haveContract hesaplaması
     const [data, total, counts] = await Promise.all([
       this.licenseModel
         .find(filter)
         .sort(sort)
         .skip(skip)
-        .limit(limit)
+        .limit(numericLimit)
         .lean()
         .exec(),
       this.licenseModel.countDocuments(filter).exec(),
       this.getCounts()
     ]);
 
+    const totalPages = Math.ceil(total / numericLimit);
+
     // Tüm lisans ID'lerini topla ve aktif contract kontrolü yap
     const licenseIds = data.map((doc) => doc.licenseId.toString());
     const activeLicenseIds = await this.contractsService.getActiveLicenseIds(licenseIds);
 
-    const totalPages = Math.ceil(total / limit);
-
     return {
       data: data.map((doc) => this.mapToResponseDto(doc, activeLicenseIds.has(doc.licenseId.toString()))),
       pagination: {
-        page,
-        limit,
+        page: numericPage,
+        limit: numericLimit,
         total,
         totalPages
       },
@@ -285,6 +329,22 @@ export class LicensesService {
         belediye,
         unv
       }
+    };
+  }
+
+  private parseFields(fields: unknown): string[] {
+    if (!fields) return [];
+    if (typeof fields === "string") return fields.split(",").filter(Boolean);
+    if (Array.isArray(fields)) return fields.filter((f) => typeof f === "string");
+    return [];
+  }
+
+  private mapToMinimalResponseDto(license: Record<string, unknown>): LicenseMinimalResponseDto {
+    return {
+      _id: String(license._id),
+      id: license.id as string,
+      brandName: license.brandName as string | undefined,
+      SearchItem: this.transformSearchItem(license.SearchItem as string)
     };
   }
 

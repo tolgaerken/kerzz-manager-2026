@@ -104,6 +104,7 @@ export interface LicenseQueryParams {
   customerId?: string;
   sortField?: string;
   sortOrder?: "asc" | "desc";
+  fields?: string[];
 }
 
 // Sayfa bilgisi

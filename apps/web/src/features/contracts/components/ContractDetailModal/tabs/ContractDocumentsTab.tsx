@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useContractDocuments } from "../../../hooks/useContractDetail";
 import {
   useCreateContractDocument,
@@ -6,7 +8,6 @@ import {
   useDeleteContractDocument
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractDocument } from "../../../types";
-import { EditableGrid } from "../shared";
 import { contractDocumentsColumns } from "../columnDefs";
 
 interface ContractDocumentsTabProps {
@@ -27,7 +28,7 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
     deleteMutation.isPending;
 
   const createEmptyRow = useCallback((): ContractDocument => ({
-    id: "",
+    id: crypto.randomUUID(),
     _id: "",
     contractId,
     description: "",
@@ -44,9 +45,9 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
     editUser: ""
   }), [contractId]);
 
-  const handleSaveNewRows = useCallback((rows: ContractDocument[]) => {
+  const handleNewRowSave = useCallback((rows: ContractDocument[]) => {
     rows.forEach((row) => {
-      const { _id, id, ...data } = row;
+      const { id, _id, ...data } = row;
       createMutation.mutate(data);
     });
   }, [createMutation]);
@@ -82,23 +83,48 @@ export function ContractDocumentsTab({ contractId }: ContractDocumentsTabProps) 
     []
   );
 
+  const toolbarConfig = useMemo<ToolbarConfig<ContractDocument>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedRow || isProcessing,
+        variant: "danger"
+      }
+    ];
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      showAddRow: true,
+      customButtons
+    };
+  }, [handleDelete, selectedRow, isProcessing]);
+
   const documents = data?.data || [];
 
   return (
     <div className="flex flex-col h-full">
-      <EditableGrid<ContractDocument>
-        data={documents}
-        columns={contractDocumentsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
-        createEmptyRow={createEmptyRow}
-        onSaveNewRows={handleSaveNewRows}
-        onDelete={handleDelete}
-        canDelete={!!selectedRow}
-        processing={isProcessing}
-      />
+      <div className="flex-1 min-h-0">
+        <Grid<ContractDocument>
+          data={documents}
+          columns={contractDocumentsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChange={handleCellValueChange}
+          onRowClick={handleRowClick}
+          createEmptyRow={createEmptyRow}
+          onNewRowSave={handleNewRowSave}
+          height="100%"
+          locale="tr"
+          toolbar={toolbarConfig}
+          selectionMode="single"
+        />
+      </div>
     </div>
   );
 }

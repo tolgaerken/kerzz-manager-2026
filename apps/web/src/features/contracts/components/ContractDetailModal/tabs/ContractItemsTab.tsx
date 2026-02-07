@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useContractItems } from "../../../hooks/useContractDetail";
 import {
   useCreateContractItem,
@@ -6,7 +8,6 @@ import {
   useDeleteContractItem
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractItem } from "../../../types";
-import { EditableGrid } from "../shared";
 import { contractItemsColumns } from "../columnDefs";
 
 interface ContractItemsTabProps {
@@ -27,7 +28,7 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     deleteMutation.isPending;
 
   const createEmptyRow = useCallback((): ContractItem => ({
-    id: "",
+    id: crypto.randomUUID(),
     _id: "",
     contractId,
     itemId: "",
@@ -45,9 +46,9 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     editUser: ""
   }), [contractId]);
 
-  const handleSaveNewRows = useCallback((rows: ContractItem[]) => {
+  const handleNewRowSave = useCallback((rows: ContractItem[]) => {
     rows.forEach((row) => {
-      const { _id, id, ...data } = row;
+      const { id, _id, ...data } = row;
       createMutation.mutate(data);
     });
   }, [createMutation]);
@@ -83,23 +84,48 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     []
   );
 
+  const toolbarConfig = useMemo<ToolbarConfig<ContractItem>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedRow || isProcessing,
+        variant: "danger"
+      }
+    ];
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      showAddRow: true,
+      customButtons
+    };
+  }, [handleDelete, selectedRow, isProcessing]);
+
   const items = data?.data || [];
 
   return (
     <div className="flex flex-col h-full">
-      <EditableGrid<ContractItem>
-        data={items}
-        columns={contractItemsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
-        createEmptyRow={createEmptyRow}
-        onSaveNewRows={handleSaveNewRows}
-        onDelete={handleDelete}
-        canDelete={!!selectedRow}
-        processing={isProcessing}
-      />
+      <div className="flex-1 min-h-0">
+        <Grid<ContractItem>
+          data={items}
+          columns={contractItemsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChange={handleCellValueChange}
+          onRowClick={handleRowClick}
+          createEmptyRow={createEmptyRow}
+          onNewRowSave={handleNewRowSave}
+          height="100%"
+          locale="tr"
+          toolbar={toolbarConfig}
+          selectionMode="single"
+        />
+      </div>
     </div>
   );
 }

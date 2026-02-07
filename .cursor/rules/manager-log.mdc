@@ -1,0 +1,69 @@
+---
+description: Manager Log ve Manager Notification modül tanımları - diğer log/bildirim sistemleri ile karışmaması için terminoloji rehberi
+globs: "**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# Manager Log ve Manager Notification Terminolojisi
+
+Projede birden fazla log ve bildirim sistemi vardır. "manager-log" veya "manager-notification" ifadesi kullanıldığında aşağıdaki sistemler kastedilir.
+
+## manager-log (İş Mantığı Logları)
+
+Müşterilere, kontratlara veya lisanslara ait iş logları (mesajlar, mention, referans, hatırlatma) sistemidir.
+
+**Diğer log sistemleri ile KARIŞTIRILMAMALIDIR:**
+- `system-logs/` → Audit trail / CRUD logları (farklı sistem)
+- `notification-dispatch/` → Email/SMS gönderim logları (farklı sistem)
+
+### Dosya Konumları
+
+**Backend:**
+- Modül: `apps/api/src/modules/manager-log/`
+- Sınıflar: `ManagerLogModule`, `ManagerLogService`, `ManagerLogController`
+- Schema: `ManagerLog` (koleksiyon: `manager-logs`)
+- API Route: `GET/POST /manager-logs`, `PATCH /manager-logs/:id/reminder/complete`
+
+**Frontend:**
+- Feature: `apps/web/src/features/manager-log/`
+- Bileşenler: `LogPanel`, `LogInput`, `LogMessageList`, `LogMessageItem`
+- Hooks: `useManagerLogs`, `useManagerLog`, `useCreateManagerLog`
+- Store: `useLogPanelStore` (Zustand)
+- Query Keys: `managerLogKeys` (`["manager-logs"]`)
+
+---
+
+## manager-notification (Uygulama İçi Bildirimler)
+
+Log mention'larından otomatik oluşan uygulama içi bildirimlerdir (zil ikonu ile gösterilir).
+
+**Diğer bildirim sistemleri ile KARIŞTIRILMAMALIDIR:**
+- `notification-templates/` → Email/SMS şablonları (farklı sistem)
+- `notification-dispatch/` → Email/SMS gönderim servisi (farklı sistem)
+- `notification-queue/` → Fatura/kontrat bildirim kuyruğu (farklı sistem)
+- `notification-settings/` → Bildirim ayarları (farklı sistem)
+
+### Dosya Konumları
+
+**Backend:**
+- Modül: `apps/api/src/modules/manager-notification/`
+- Sınıflar: `ManagerNotificationModule`, `ManagerNotificationService`, `ManagerNotificationController`
+- Schema: `ManagerNotification` (koleksiyon: `manager-notifications`)
+- API Route: `GET /manager-notifications`, `PATCH /manager-notifications/:id/read`, `PATCH /manager-notifications/read-all`
+
+**Frontend:**
+- Feature: `apps/web/src/features/manager-notification/`
+- Bileşenler: `NotificationBell`, `NotificationDropdown`, `NotificationItem`
+- Hooks: `useManagerNotifications`, `useManagerNotificationUnreadCount`, `useMarkManagerNotificationAsRead`
+- Query Keys: `managerNotificationKeys` (`["manager-notifications"]`)
+
+---
+
+## İlişki
+
+`manager-log` oluşturulurken mention varsa otomatik olarak `manager-notification` kaydı oluşturulur. Bu ilişki `ManagerLogService.createMentionNotifications()` metodunda yönetilir.
+
+```
+ManagerLogModule --forwardRef--> ManagerNotificationModule
+ManagerLogService --inject--> ManagerNotificationService
+```

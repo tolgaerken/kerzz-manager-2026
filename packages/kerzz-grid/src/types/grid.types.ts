@@ -71,8 +71,25 @@ export interface GridProps<TData = unknown> {
   /** Fired when column visibility changes */
   onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
 
-  /** Fired when the add-row button is clicked in the toolbar (edit mode) */
+  /** Fired when the add-row button is clicked in the toolbar (edit mode).
+   *  Used when createEmptyRow is NOT provided (legacy immediate-add mode). */
   onRowAdd?: () => void;
+
+  /** Factory function that creates an empty row object.
+   *  When provided, the grid manages pending new rows internally:
+   *  - Clicking "+" creates a pending row shown in the grid but not committed.
+   *  - Clicking "Save" commits pending rows via onNewRowSave.
+   *  - Clicking "Cancel" discards pending rows. */
+  createEmptyRow?: () => TData;
+
+  /** Fired when Save is clicked and there are pending new rows.
+   *  Receives the array of pending new rows (with any cell edits applied). */
+  onNewRowSave?: (rows: TData[]) => void;
+
+  /** Fired when a cell value changes in a pending new row.
+   *  Use this to update related columns (e.g. moduleId -> name).
+   *  Should return the updated row. If not provided, defaults to { ...row, [columnId]: newValue }. */
+  onPendingCellChange?: (row: TData, columnId: string, newValue: unknown) => TData;
 
   /** Fired after all pending changes are committed (Save button clicked) */
   onEditSave?: () => void;

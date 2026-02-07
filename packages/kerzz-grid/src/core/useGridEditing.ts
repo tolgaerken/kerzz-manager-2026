@@ -9,6 +9,15 @@ export interface UseGridEditingProps<TData> {
   onRowAdd?: () => void;
   onEditSave?: () => void;
   onEditCancel?: () => void;
+
+  // Deferred new row props
+  createEmptyRow?: () => TData;
+  onNewRowSave?: (rows: TData[]) => void;
+  onPendingCellChange?: (row: TData, columnId: string, newValue: unknown) => TData;
+  pendingNewRows: TData[];
+  setPendingNewRows: React.Dispatch<React.SetStateAction<TData[]>>;
+  pendingRowIdSet: Set<string>;
+  getRowId?: (row: TData) => string;
 }
 
 export interface UseGridEditingReturn {
@@ -47,6 +56,13 @@ export function useGridEditing<TData>({
   onRowAdd,
   onEditSave,
   onEditCancel,
+  createEmptyRow,
+  onNewRowSave,
+  onPendingCellChange,
+  pendingNewRows,
+  setPendingNewRows,
+  pendingRowIdSet,
+  getRowId,
 }: UseGridEditingProps<TData>): UseGridEditingReturn {
   const [editingCell, setEditingCell] = useState<EditingState | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -63,7 +79,36 @@ export function useGridEditing<TData>({
   // Track previous data length to detect new rows
   const prevDataLengthRef = useRef(data.length);
 
-  const hasPendingChanges = pendingChanges.size > 0;
+  // Keep a ref to pendingNewRows for saveAllChanges to read latest
+  const pendingNewRowsRef = useRef<TData[]>(pendingNewRows);
+  pendingNewRowsRef.current = pendingNewRows;
+
+  const hasPendingChanges = pendingChanges.size > 0 || pendingNewRows.length > 0;
+
+  /** Check if a row (by its data object) is a pending new row */
+  const isPendingRow = useCallback(
+    (row: TData): boolean => {
+      if (!getRowId || pendingRowIdSet.size === 0) return false;
+      return pendingRowIdSet.has(getRowId(row));
+    },
+    [getRowId, pendingRowIdSet],
+  );
+
+  /** Update a pending row's cell value. Uses onPendingCellChange if provided. */
+  const updatePendingRowCell = useCallback(
+    (row: TData, columnId: string, newValue: unknown) => {
+      const updatedRow = onPendingCellChange
+        ? onPendingCellChange(row, columnId, newValue)
+        : { ...row, [columnId]: newValue } as TData;
+
+      if (!getRowId) return;
+      const rowId = getRowId(row);
+      setPendingNewRows((prev) =>
+        prev.map((r) => (getRowId(r) === rowId ? updatedRow : r)),
+      );
+    },
+    [onPendingCellChange, getRowId, setPendingNewRows],
+  );
 
   const startEditing = useCallback(
     (rowIndex: number, columnId: string) => {
@@ -100,6 +145,13 @@ export function useGridEditing<TData>({
         return;
       }
 
+      // Check if this is a pending new row
+      if (isPendingRow(row)) {
+        updatePendingRowCell(row, col.accessorKey ?? col.id, newValue);
+        setEditingCell(null);
+        return;
+      }
+
       // Get old value from original data
       const oldValue = col.accessorFn
         ? col.accessorFn(row)
@@ -116,7 +168,7 @@ export function useGridEditing<TData>({
 
       setEditingCell(null);
     },
-    [editingCell, data, columns],
+    [editingCell, data, columns, isPendingRow, updatePendingRowCell],
   );
 
   /**
@@ -154,17 +206,22 @@ export function useGridEditing<TData>({
         return;
       }
 
-      // Save the current value to pending changes
-      const oldValue = col.accessorFn
-        ? col.accessorFn(row)
-        : (row as Record<string, unknown>)[col.accessorKey ?? col.id];
+      // Check if this is a pending new row
+      if (isPendingRow(row)) {
+        updatePendingRowCell(row, col.accessorKey ?? col.id, newValue);
+      } else {
+        // Save the current value to pending changes
+        const oldValue = col.accessorFn
+          ? col.accessorFn(row)
+          : (row as Record<string, unknown>)[col.accessorKey ?? col.id];
 
-      if (oldValue !== newValue) {
-        const key = `${rowIndex}-${columnId}`;
-        const next = new Map(pendingRef.current);
-        next.set(key, { rowIndex, columnId, newValue, oldValue, row });
-        pendingRef.current = next;
-        setPendingChanges(next);
+        if (oldValue !== newValue) {
+          const key = `${rowIndex}-${columnId}`;
+          const next = new Map(pendingRef.current);
+          next.set(key, { rowIndex, columnId, newValue, oldValue, row });
+          pendingRef.current = next;
+          setPendingChanges(next);
+        }
       }
 
       // Find the current column index
@@ -190,19 +247,29 @@ export function useGridEditing<TData>({
       // No more editable cells, just close editor
       setEditingCell(null);
     },
-    [editingCell, data, columns, findNextEditableColumnIndex],
+    [editingCell, data, columns, findNextEditableColumnIndex, isPendingRow, updatePendingRowCell],
   );
 
   /**
-   * Request adding a new row. Emits onRowAdd so the parent adds the row,
-   * then auto-starts editing the first editable cell of the new row.
+   * Request adding a new row.
+   * - If createEmptyRow is provided: creates a pending row internally (deferred save).
+   * - Otherwise: emits onRowAdd so the parent adds the row immediately (legacy mode).
+   * Auto-starts editing the first editable cell of the new row.
    */
   const requestAddRow = useCallback(() => {
+    if (createEmptyRow) {
+      const newRow = createEmptyRow();
+      setPendingNewRows((prev) => [...prev, newRow]);
+      setEditMode(true);
+      pendingEditAfterAdd.current = true;
+      return;
+    }
+
     if (!onRowAdd) return;
     setEditMode(true);
     pendingEditAfterAdd.current = true;
     onRowAdd();
-  }, [onRowAdd]);
+  }, [createEmptyRow, setPendingNewRows, onRowAdd]);
 
   // Watch for data length changes and auto-edit new row if requested
   useEffect(() => {
@@ -226,26 +293,38 @@ export function useGridEditing<TData>({
       });
     }
 
+    // Commit pending new rows
+    const currentPendingRows = pendingNewRowsRef.current;
+    if (currentPendingRows.length > 0 && onNewRowSave) {
+      onNewRowSave(currentPendingRows);
+    }
+
+    // Clear pending new rows
+    setPendingNewRows([]);
+
     const empty = new Map<string, PendingChange<TData>>();
     pendingRef.current = empty;
     setPendingChanges(empty);
     setEditingCell(null);
     setEditMode(false);
 
-    // Notify parent that save completed (e.g. for pending new rows)
+    // Notify parent that save completed
     onEditSave?.();
-  }, [onCellValueChange, onEditSave]);
+  }, [onCellValueChange, onNewRowSave, setPendingNewRows, onEditSave]);
 
   const cancelAllChanges = useCallback(() => {
+    // Discard pending new rows
+    setPendingNewRows([]);
+
     const empty = new Map<string, PendingChange<TData>>();
     pendingRef.current = empty;
     setPendingChanges(empty);
     setEditingCell(null);
     setEditMode(false);
 
-    // Notify parent that cancel completed (e.g. to discard pending new rows)
+    // Notify parent that cancel completed
     onEditCancel?.();
-  }, [onEditCancel]);
+  }, [setPendingNewRows, onEditCancel]);
 
   const hasPendingChange = useCallback(
     (rowIndex: number, columnId: string): boolean => {

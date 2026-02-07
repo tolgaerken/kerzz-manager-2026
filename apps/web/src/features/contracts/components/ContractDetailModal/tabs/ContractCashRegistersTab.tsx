@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useContractCashRegisters } from "../../../hooks/useContractDetail";
 import {
   useCreateContractCashRegister,
@@ -8,7 +10,6 @@ import {
 import { useActiveEftPosModels } from "../../../hooks/useEftPosModels";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractCashRegister } from "../../../types";
-import { EditableGrid } from "../shared";
 import { contractCashRegistersColumns } from "../columnDefs";
 
 interface ContractCashRegistersTabProps {
@@ -20,7 +21,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
 
   // Data hooks
   const { data, isLoading } = useContractCashRegisters(contractId);
-  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc" });
+  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc", fields: ["id", "brandName", "SearchItem"] });
   const { data: eftPosModelsData } = useActiveEftPosModels();
 
   // Mutation hooks
@@ -82,7 +83,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
   );
 
   const createEmptyRow = useCallback((): ContractCashRegister => ({
-    id: "",
+    id: crypto.randomUUID(),
     _id: "",
     contractId,
     brand: "",
@@ -102,12 +103,26 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     editUser: ""
   }), [contractId]);
 
-  const handleSaveNewRows = useCallback((rows: ContractCashRegister[]) => {
+  const handleNewRowSave = useCallback((rows: ContractCashRegister[]) => {
     rows.forEach((row) => {
-      const { _id, id, ...data } = row;
+      const { id, _id, ...data } = row;
       createMutation.mutate(data);
     });
   }, [createMutation]);
+
+  const handlePendingCellChange = useCallback(
+    (row: ContractCashRegister, columnId: string, newValue: unknown): ContractCashRegister => {
+      const updated = { ...row, [columnId]: newValue };
+      if (columnId === "licanceId" && newValue) {
+        const selectedLicense = licenses.find((l) => l.id === newValue);
+        if (selectedLicense) {
+          updated.brand = selectedLicense.brandName;
+        }
+      }
+      return updated;
+    },
+    [licenses]
+  );
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -148,24 +163,50 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     []
   );
 
+  const toolbarConfig = useMemo<ToolbarConfig<ContractCashRegister>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedRow || isProcessing,
+        variant: "danger"
+      }
+    ];
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      showAddRow: true,
+      customButtons
+    };
+  }, [handleDelete, selectedRow, isProcessing]);
+
   const cashRegisters = data?.data || [];
 
   return (
     <div className="flex flex-col h-full">
-      <EditableGrid<ContractCashRegister>
-        data={cashRegisters}
-        columns={contractCashRegistersColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
-        createEmptyRow={createEmptyRow}
-        onSaveNewRows={handleSaveNewRows}
-        onDelete={handleDelete}
-        canDelete={!!selectedRow}
-        processing={isProcessing}
-        context={gridContext}
-      />
+      <div className="flex-1 min-h-0">
+        <Grid<ContractCashRegister>
+          data={cashRegisters}
+          columns={contractCashRegistersColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChange={handleCellValueChange}
+          onRowClick={handleRowClick}
+          createEmptyRow={createEmptyRow}
+          onNewRowSave={handleNewRowSave}
+          onPendingCellChange={handlePendingCellChange}
+          context={gridContext}
+          height="100%"
+          locale="tr"
+          toolbar={toolbarConfig}
+          selectionMode="single"
+        />
+      </div>
     </div>
   );
 }

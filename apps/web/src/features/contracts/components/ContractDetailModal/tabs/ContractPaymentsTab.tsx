@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useContractPayments } from "../../../hooks/useContractDetail";
 import {
   useCreateContractPayment,
@@ -6,7 +8,6 @@ import {
   useDeleteContractPayment
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractPayment } from "../../../types";
-import { EditableGrid } from "../shared";
 import { contractPaymentsColumns } from "../columnDefs";
 
 interface ContractPaymentsTabProps {
@@ -27,7 +28,7 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     deleteMutation.isPending;
 
   const createEmptyRow = useCallback((): ContractPayment => ({
-    id: "",
+    id: crypto.randomUUID(),
     _id: "",
     contractId,
     company: "",
@@ -56,9 +57,9 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     editUser: ""
   }), [contractId]);
 
-  const handleSaveNewRows = useCallback((rows: ContractPayment[]) => {
+  const handleNewRowSave = useCallback((rows: ContractPayment[]) => {
     rows.forEach((row) => {
-      const { _id, id, ...data } = row;
+      const { id, _id, ...data } = row;
       createMutation.mutate(data);
     });
   }, [createMutation]);
@@ -94,23 +95,48 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     []
   );
 
+  const toolbarConfig = useMemo<ToolbarConfig<ContractPayment>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedRow || isProcessing,
+        variant: "danger"
+      }
+    ];
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      showAddRow: true,
+      customButtons
+    };
+  }, [handleDelete, selectedRow, isProcessing]);
+
   const payments = data?.data || [];
 
   return (
     <div className="flex flex-col h-full">
-      <EditableGrid<ContractPayment>
-        data={payments}
-        columns={contractPaymentsColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
-        createEmptyRow={createEmptyRow}
-        onSaveNewRows={handleSaveNewRows}
-        onDelete={handleDelete}
-        canDelete={!!selectedRow}
-        processing={isProcessing}
-      />
+      <div className="flex-1 min-h-0">
+        <Grid<ContractPayment>
+          data={payments}
+          columns={contractPaymentsColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChange={handleCellValueChange}
+          onRowClick={handleRowClick}
+          createEmptyRow={createEmptyRow}
+          onNewRowSave={handleNewRowSave}
+          height="100%"
+          locale="tr"
+          toolbar={toolbarConfig}
+          selectionMode="single"
+        />
+      </div>
     </div>
   );
 }

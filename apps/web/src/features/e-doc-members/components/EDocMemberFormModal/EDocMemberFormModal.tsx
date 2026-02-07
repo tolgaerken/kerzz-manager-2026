@@ -45,7 +45,7 @@ export function EDocMemberFormModal({
   );
 
   const { data: companies = [] } = useCompanies();
-  const { data: licensesData } = useLicenses({ limit: 500 });
+  const { data: licensesData } = useLicenses({ limit: 500, fields: ["id", "brandName"] });
   const licenses = licensesData?.data ?? [];
 
   useEffect(() => {

@@ -32,6 +32,7 @@ function buildQueryString(params: LicenseQueryParams): string {
   if (params.customerId) searchParams.set("customerId", params.customerId);
   if (params.sortField) searchParams.set("sortField", params.sortField);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+  if (params.fields && params.fields.length > 0) searchParams.set("fields", params.fields.join(","));
 
   return searchParams.toString();
 }

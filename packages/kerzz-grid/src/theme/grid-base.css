@@ -466,6 +466,20 @@
   background: color-mix(in srgb, var(--kz-warning) 20%, var(--kz-row-bg));
 }
 
+/* Pending new row — not yet saved */
+.kz-grid-row.kz-grid-row--pending-new {
+  background: color-mix(in srgb, var(--kz-success, #22c55e) 8%, var(--kz-row-bg));
+  border-left: 3px solid var(--kz-success, #22c55e);
+}
+
+.kz-grid-row.kz-grid-row--pending-new.kz-grid-row--striped {
+  background: color-mix(in srgb, var(--kz-success, #22c55e) 12%, var(--kz-row-bg));
+}
+
+.kz-grid-row.kz-grid-row--pending-new:hover {
+  background: color-mix(in srgb, var(--kz-success, #22c55e) 18%, var(--kz-row-bg));
+}
+
 /* ---- Cells ---- */
 .kz-grid-cell {
   display: flex;

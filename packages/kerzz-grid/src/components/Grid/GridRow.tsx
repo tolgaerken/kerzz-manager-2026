@@ -38,6 +38,8 @@ interface GridRowProps<TData> {
   onSaveAndMoveNext?: (newValue: unknown, direction: NavigationDirection) => void;
   /** External context for editors */
   context?: Record<string, unknown>;
+  /** Whether this row is a pending new row (not yet saved) */
+  isPendingNewRow?: boolean;
 }
 
 function GridRowInner<TData>({
@@ -61,6 +63,7 @@ function GridRowInner<TData>({
   onCancelEdit,
   onSaveAndMoveNext,
   context,
+  isPendingNewRow,
 }: GridRowProps<TData>) {
   const hasEditingCell = isEditing
     ? columns.some((col) => isEditing(rowIndex, col.id))
@@ -76,6 +79,7 @@ function GridRowInner<TData>({
     isSelected && 'kz-grid-row--selected',
     hasEditingCell && 'kz-grid-row--editing',
     hasPendingRow && 'kz-grid-row--changed',
+    isPendingNewRow && 'kz-grid-row--pending-new',
   ]
     .filter(Boolean)
     .join(' ');

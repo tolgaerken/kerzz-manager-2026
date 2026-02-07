@@ -24,7 +24,7 @@ import {
   ContractDocumentsTab,
   ContractPaymentsTab
 } from "./tabs";
-import { useLogPanelStore } from "../../../logs/store/logPanelStore";
+import { useLogPanelStore } from "../../../manager-log/store/logPanelStore";
 
 interface ContractDetailModalProps {
   isOpen: boolean;

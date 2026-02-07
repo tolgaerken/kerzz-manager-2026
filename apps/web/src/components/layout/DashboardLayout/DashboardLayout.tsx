@@ -1,7 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { Sidebar } from "../Sidebar";
 import { Header } from "../Header";
-import { LogPanel } from "../../../features/logs";
+import { LogPanel } from "../../../features/manager-log";
 
 export function DashboardLayout() {
   return (

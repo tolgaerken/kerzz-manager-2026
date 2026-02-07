@@ -2,7 +2,7 @@ import { LogOut, User } from "lucide-react";
 import { useAuth } from "../../../features/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeToggle } from "../../ui";
-import { NotificationBell } from "../../../features/logs";
+import { NotificationBell } from "../../../features/manager-notification";
 import { ExchangeRateDisplay } from "../../../features/exchange-rates";
 
 export function Header() {

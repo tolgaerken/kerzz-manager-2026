@@ -20,8 +20,8 @@ import { ContractPaymentsModule } from "./modules/contract-payments";
 import { ContractInvoicesModule } from "./modules/contract-invoices";
 import { InvoicesModule } from "./modules/invoices";
 import { PaymentsModule } from "./modules/payments";
-import { LogsModule } from "./modules/logs";
-import { NotificationsModule } from "./modules/notifications";
+import { ManagerLogModule } from "./modules/manager-log";
+import { ManagerNotificationModule } from "./modules/manager-notification";
 import { SystemLogsModule, AuditLogInterceptor } from "./modules/system-logs";
 // Notification System Modules
 import { EmailModule } from "./modules/email";
@@ -80,9 +80,9 @@ import { BankTransactionsModule } from "./modules/bank-transactions";
     EInvoicePricesModule,
     // MongoDB WebSocket Module (Global)
     MongoWsModule,
-    // Log & Notification Modules
-    LogsModule,
-    NotificationsModule,
+    // Manager Log & Notification Modules
+    ManagerLogModule,
+    ManagerNotificationModule,
     // System Logs Module (Global)
     SystemLogsModule,
     // Notification System Modules

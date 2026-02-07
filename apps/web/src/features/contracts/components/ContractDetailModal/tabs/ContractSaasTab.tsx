@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useContractSaas } from "../../../hooks/useContractDetail";
 import {
   useCreateContractSaas,
@@ -8,7 +10,6 @@ import {
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import { useSoftwareProducts } from "../../../../software-products";
 import type { ContractSaas } from "../../../types";
-import { EditableGrid } from "../shared";
 import { contractSaasColumns } from "../columnDefs";
 
 interface ContractSaasTabProps {
@@ -20,7 +21,7 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
 
   // Data hooks
   const { data, isLoading } = useContractSaas(contractId);
-  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc" });
+  const { data: licensesData } = useLicenses({ limit: 10000, sortField: "licenseId", sortOrder: "asc", fields: ["id", "brandName", "SearchItem"] });
   const { data: productsData } = useSoftwareProducts({ limit: 10000, isSaas: true, sortField: "name", sortOrder: "asc" });
 
   // Mutation hooks
@@ -84,7 +85,7 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
   );
 
   const createEmptyRow = useCallback((): ContractSaas => ({
-    id: "",
+    id: crypto.randomUUID(),
     _id: "",
     contractId,
     brand: "",
@@ -104,12 +105,29 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     editUser: ""
   }), [contractId]);
 
-  const handleSaveNewRows = useCallback((rows: ContractSaas[]) => {
+  const handleNewRowSave = useCallback((rows: ContractSaas[]) => {
     rows.forEach((row) => {
-      const { _id, id, ...data } = row;
+      const { id, _id, ...data } = row;
       createMutation.mutate(data);
     });
   }, [createMutation]);
+
+  const handlePendingCellChange = useCallback(
+    (row: ContractSaas, columnId: string, newValue: unknown): ContractSaas => {
+      const updated = { ...row, [columnId]: newValue };
+      if (columnId === "licanceId" && newValue) {
+        const selectedLicense = licenses.find((l) => l.id === newValue);
+        if (selectedLicense) {
+          updated.brand = selectedLicense.brandName;
+        }
+      }
+      const price = columnId === "price" ? (newValue as number) : updated.price;
+      const qty = columnId === "qty" ? (newValue as number) : updated.qty;
+      updated.total = price * qty;
+      return updated;
+    },
+    [licenses]
+  );
 
   const handleDelete = useCallback(() => {
     if (selectedRow?.id) {
@@ -154,24 +172,50 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     []
   );
 
+  const toolbarConfig = useMemo<ToolbarConfig<ContractSaas>>(() => {
+    const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedRow || isProcessing,
+        variant: "danger"
+      }
+    ];
+
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: false,
+      showColumnVisibility: true,
+      showAddRow: true,
+      customButtons
+    };
+  }, [handleDelete, selectedRow, isProcessing]);
+
   const saasList = data?.data || [];
 
   return (
     <div className="flex flex-col h-full">
-      <EditableGrid<ContractSaas>
-        data={saasList}
-        columns={contractSaasColumns}
-        loading={isLoading}
-        getRowId={(row) => row.id || row._id}
-        onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
-        createEmptyRow={createEmptyRow}
-        onSaveNewRows={handleSaveNewRows}
-        onDelete={handleDelete}
-        canDelete={!!selectedRow}
-        processing={isProcessing}
-        context={gridContext}
-      />
+      <div className="flex-1 min-h-0">
+        <Grid<ContractSaas>
+          data={saasList}
+          columns={contractSaasColumns}
+          loading={isLoading}
+          getRowId={(row) => row.id || row._id}
+          onCellValueChange={handleCellValueChange}
+          onRowClick={handleRowClick}
+          createEmptyRow={createEmptyRow}
+          onNewRowSave={handleNewRowSave}
+          onPendingCellChange={handlePendingCellChange}
+          context={gridContext}
+          height="100%"
+          locale="tr"
+          toolbar={toolbarConfig}
+          selectionMode="single"
+        />
+      </div>
     </div>
   );
 }

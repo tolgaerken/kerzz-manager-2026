@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, Package, Layers, Building2, Phone, Mail, MapPin, User } from "lucide-react";
-import type { License, CreateLicenseInput, UpdateLicenseInput, LicenseType, CompanyType } from "../../types";
+import type { License, CreateLicenseInput, UpdateLicenseInput, LicenseItem, LicenseType, CompanyType } from "../../types";
 import { LICENSE_TYPES, COMPANY_TYPES, LICENSE_CATEGORIES } from "../../constants/licenses.constants";
+import { LicenseModulesTab } from "../LicenseModulesTab";
+import { LicenseSaasTab } from "../LicenseSaasTab";
 
 interface LicenseFormModalProps {
   isOpen: boolean;
@@ -149,6 +151,16 @@ export function LicenseFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Lisans modülleri değişiklik handler'ı
+  const handleLicenseItemsChange = useCallback((items: LicenseItem[]) => {
+    setFormData((prev) => ({ ...prev, licenseItems: items }));
+  }, []);
+
+  // SaaS öğeleri değişiklik handler'ı
+  const handleSaasItemsChange = useCallback((items: LicenseItem[]) => {
+    setFormData((prev) => ({ ...prev, saasItems: items }));
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -233,7 +245,7 @@ export function LicenseFormModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className={`flex-1 ${activeTab === "info" ? "overflow-y-auto px-6 py-4" : "overflow-hidden px-6 py-4"}`}>
             {/* Lisans Bilgileri Tab */}
             {activeTab === "info" && (
               <div className="space-y-6">
@@ -515,24 +527,18 @@ export function LicenseFormModal({
 
             {/* Modüller Tab */}
             {activeTab === "modules" && (
-              <div className="space-y-4">
-                <div className="text-center py-8 text-[var(--color-foreground-muted)]">
-                  <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Lisans modülleri bu sekmede yönetilecek.</p>
-                  <p className="text-sm">Mevcut modül sayısı: {formData.licenseItems?.length || 0}</p>
-                </div>
-              </div>
+              <LicenseModulesTab
+                items={formData.licenseItems || []}
+                onItemsChange={handleLicenseItemsChange}
+              />
             )}
 
             {/* SaaS Tab */}
             {activeTab === "saas" && (
-              <div className="space-y-4">
-                <div className="text-center py-8 text-[var(--color-foreground-muted)]">
-                  <Layers className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>SaaS kiralamalar bu sekmede yönetilecek.</p>
-                  <p className="text-sm">Mevcut SaaS sayısı: {formData.saasItems?.length || 0}</p>
-                </div>
-              </div>
+              <LicenseSaasTab
+                items={formData.saasItems || []}
+                onItemsChange={handleSaasItemsChange}
+              />
             )}
           </div>
 

@@ -44,10 +44,34 @@ function GridInner<TData>(
     onRowAdd,
     onEditSave,
     onEditCancel,
+    // Deferred new row props
+    createEmptyRow,
+    onNewRowSave,
+    onPendingCellChange,
   } = props;
 
   const locale = useLocale();
-  const grid = useGridInstance(props);
+
+  // --- Pending new rows state (managed here so merged data feeds useGridInstance) ---
+  const [pendingNewRows, setPendingNewRows] = useState<TData[]>([]);
+
+  const displayData = useMemo(
+    () => (createEmptyRow ? [...props.data, ...pendingNewRows] : props.data),
+    [props.data, pendingNewRows, createEmptyRow],
+  );
+
+  const pendingRowIdSet = useMemo(() => {
+    if (!getRowId || pendingNewRows.length === 0) return new Set<string>();
+    return new Set(pendingNewRows.map((r) => getRowId(r)));
+  }, [pendingNewRows, getRowId]);
+
+  // Pass merged displayData to useGridInstance instead of original data
+  const gridInstanceProps = useMemo(
+    () => (createEmptyRow ? { ...props, data: displayData } : props),
+    [props, createEmptyRow, displayData],
+  );
+  const grid = useGridInstance(gridInstanceProps);
+
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
   const colBtnRef = useRef<HTMLButtonElement>(null);
   const headerWrapperRef = useRef<HTMLDivElement>(null);
@@ -93,6 +117,13 @@ function GridInner<TData>(
     onRowAdd,
     onEditSave,
     onEditCancel,
+    createEmptyRow,
+    onNewRowSave,
+    onPendingCellChange,
+    pendingNewRows,
+    setPendingNewRows,
+    pendingRowIdSet,
+    getRowId,
   });
 
   // Toggle select all handler
@@ -235,7 +266,7 @@ function GridInner<TData>(
           editMode={editing.editMode}
           onSaveAll={editing.saveAllChanges}
           onCancelAll={editing.cancelAllChanges}
-          onAddRow={onRowAdd ? editing.requestAddRow : undefined}
+          onAddRow={(onRowAdd || createEmptyRow) ? editing.requestAddRow : undefined}
         />
       )}
 
@@ -342,6 +373,8 @@ function GridInner<TData>(
           onCancelEdit={editing.stopEditing}
           onSaveAndMoveNext={editing.saveAndMoveNext}
           context={context}
+          pendingRowIdSet={pendingRowIdSet}
+          getRowIdFn={getRowId}
         />
       ) : (
         <div className="kz-grid-no-data">

@@ -37,6 +37,10 @@ interface GridBodyProps<TData> {
   /** Save value and navigate to next editable cell */
   onSaveAndMoveNext?: (newValue: unknown, direction: NavigationDirection) => void;
   context?: Record<string, unknown>;
+  /** Set of pending new row IDs */
+  pendingRowIdSet?: Set<string>;
+  /** Function to get row ID from row data */
+  getRowIdFn?: (row: TData) => string;
 }
 
 export function GridBody<TData>({
@@ -63,6 +67,8 @@ export function GridBody<TData>({
   onCancelEdit,
   onSaveAndMoveNext,
   context,
+  pendingRowIdSet,
+  getRowIdFn,
 }: GridBodyProps<TData>) {
   return (
     <div className="kz-grid-body" ref={scrollContainerRef}>
@@ -76,6 +82,7 @@ export function GridBody<TData>({
 
           const rowId = getRowId ? getRowId(row, virtualRow.index) : String(virtualRow.index);
           const isSelected = isRowSelected?.(rowId) ?? false;
+          const isPendingNew = !!(pendingRowIdSet && pendingRowIdSet.size > 0 && getRowIdFn && pendingRowIdSet.has(getRowIdFn(row)));
 
           return (
             <GridRow
@@ -103,6 +110,7 @@ export function GridBody<TData>({
               onCancelEdit={onCancelEdit}
               onSaveAndMoveNext={onSaveAndMoveNext}
               context={context}
+              isPendingNewRow={isPendingNew}
             />
           );
         })}
