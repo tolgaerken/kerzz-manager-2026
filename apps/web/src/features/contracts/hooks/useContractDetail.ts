@@ -18,35 +18,35 @@ export function useContractUsers(contractId: string | undefined) {
   });
 }
 
-export function useContractSupports(contractId: string | undefined) {
+export function useContractSupports(contractId?: string, fetchAll = false) {
   return useQuery({
-    queryKey: ["contract-supports", contractId],
-    queryFn: () => fetchContractSupports(contractId!),
-    enabled: !!contractId
+    queryKey: ["contract-supports", contractId ?? "all"],
+    queryFn: () => fetchContractSupports(contractId),
+    enabled: !!contractId || fetchAll
   });
 }
 
-export function useContractSaas(contractId: string | undefined) {
+export function useContractSaas(contractId?: string, fetchAll = false) {
   return useQuery({
-    queryKey: ["contract-saas", contractId],
-    queryFn: () => fetchContractSaas(contractId!),
-    enabled: !!contractId
+    queryKey: ["contract-saas", contractId ?? "all"],
+    queryFn: () => fetchContractSaas(contractId),
+    enabled: !!contractId || fetchAll
   });
 }
 
-export function useContractCashRegisters(contractId: string | undefined) {
+export function useContractCashRegisters(contractId?: string, fetchAll = false) {
   return useQuery({
-    queryKey: ["contract-cash-registers", contractId],
-    queryFn: () => fetchContractCashRegisters(contractId!),
-    enabled: !!contractId
+    queryKey: ["contract-cash-registers", contractId ?? "all"],
+    queryFn: () => fetchContractCashRegisters(contractId),
+    enabled: !!contractId || fetchAll
   });
 }
 
-export function useContractVersions(contractId: string | undefined) {
+export function useContractVersions(contractId?: string, fetchAll = false) {
   return useQuery({
-    queryKey: ["contract-versions", contractId],
-    queryFn: () => fetchContractVersions(contractId!),
-    enabled: !!contractId
+    queryKey: ["contract-versions", contractId ?? "all"],
+    queryFn: () => fetchContractVersions(contractId),
+    enabled: !!contractId || fetchAll
   });
 }
 
@@ -58,11 +58,11 @@ export function useContractItems(contractId: string | undefined) {
   });
 }
 
-export function useContractDocuments(contractId: string | undefined) {
+export function useContractDocuments(contractId?: string, fetchAll = false) {
   return useQuery({
-    queryKey: ["contract-documents", contractId],
-    queryFn: () => fetchContractDocuments(contractId!),
-    enabled: !!contractId
+    queryKey: ["contract-documents", contractId ?? "all"],
+    queryFn: () => fetchContractDocuments(contractId),
+    enabled: !!contractId || fetchAll
   });
 }
 

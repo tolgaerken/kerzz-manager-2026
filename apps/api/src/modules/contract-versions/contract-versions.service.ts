@@ -21,7 +21,10 @@ export class ContractVersionsService {
   async findAll(query: ContractVersionQueryDto): Promise<ContractVersionsListResponseDto> {
     const { contractId, enabled } = query;
 
-    const filter: Record<string, unknown> = { contractId };
+    const filter: Record<string, unknown> = {};
+    if (contractId) {
+      filter.contractId = contractId;
+    }
     if (enabled !== undefined) {
       filter.enabled = enabled;
     }

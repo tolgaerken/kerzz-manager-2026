@@ -21,7 +21,10 @@ export class ContractDocumentsService {
   async findAll(query: ContractDocumentQueryDto): Promise<ContractDocumentsListResponseDto> {
     const { contractId, type } = query;
 
-    const filter: Record<string, unknown> = { contractId };
+    const filter: Record<string, unknown> = {};
+    if (contractId) {
+      filter.contractId = contractId;
+    }
     if (type) {
       filter.type = type;
     }

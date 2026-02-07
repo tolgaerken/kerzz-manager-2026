@@ -15,8 +15,14 @@ import { BankTransactionsPage } from "./pages/BankTransactionsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { EDocCreditsPage } from "./pages/EDocCreditsPage";
+import { EDocMembersPage } from "./pages/EDocMembersPage";
 import { EInvoicePricesPage } from "./pages/EInvoicePricesPage";
 import { ContractInvoicesPage } from "./pages/ContractInvoicesPage";
+import { ContractCashRegistersPage } from "./pages/ContractCashRegistersPage";
+import { ContractSupportsPage } from "./pages/ContractSupportsPage";
+import { ContractVersionsPage } from "./pages/ContractVersionsPage";
+import { ContractSaasPage } from "./pages/ContractSaasPage";
+import { ContractDocumentsPage } from "./pages/ContractDocumentsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
@@ -144,11 +150,53 @@ const contractInvoicesRoute = createRoute({
   component: ContractInvoicesPage,
 });
 
+// Contract Cash Registers page
+const contractCashRegistersRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/cash-registers",
+  component: ContractCashRegistersPage,
+});
+
+// Contract Supports page
+const contractSupportsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/supports",
+  component: ContractSupportsPage,
+});
+
+// Contract Versions page
+const contractVersionsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/versions",
+  component: ContractVersionsPage,
+});
+
+// Contract SaaS page
+const contractSaasRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/saas",
+  component: ContractSaasPage,
+});
+
+// Contract Documents page
+const contractDocumentsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/documents",
+  component: ContractDocumentsPage,
+});
+
 // E-Document Credits page
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/e-documents/credits",
   component: EDocCreditsPage,
+});
+
+// E-Document Members page
+const eDocMembersRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/e-documents/members",
+  component: EDocMembersPage,
 });
 
 // E-Invoice Prices page
@@ -211,6 +259,11 @@ const routeTree = rootRoute.addChildren([
   dashboardLayoutRoute.addChildren([
     dashboardRoute,
     contractsRoute,
+    contractCashRegistersRoute,
+    contractSupportsRoute,
+    contractVersionsRoute,
+    contractSaasRoute,
+    contractDocumentsRoute,
     customersRoute,
     licensesRoute,
     hardwareProductsRoute,
@@ -223,6 +276,7 @@ const routeTree = rootRoute.addChildren([
     automatedPaymentsRoute,
     bankTransactionsRoute,
     eDocCreditsRoute,
+    eDocMembersRoute,
     eInvoicePricesRoute,
     systemLogsRoute,
     notificationSettingsRoute,

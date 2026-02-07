@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Grid, type GridColumnDef, type ToolbarButtonConfig, type ToolbarConfig } from "@kerzz/grid";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
 interface EditableGridProps<T> {
   data: T[];
@@ -11,7 +11,7 @@ interface EditableGridProps<T> {
   onRowClick?: (row: T) => void;
   context?: Record<string, unknown>;
   height?: number | string;
-  /** Toolbar: ekle butonu callback */
+  /** Toolbar: ekle butonu callback -- yeni satır ekler, otomatik edit moda geçer */
   onAdd?: () => void;
   /** Toolbar: sil butonu callback */
   onDelete?: () => void;
@@ -41,20 +41,9 @@ export function EditableGrid<T>({
   addLabel = "Ekle",
   deleteLabel = "Sil"
 }: EditableGridProps<T>) {
-  // Toolbar config with custom add/delete buttons
+  // Toolbar config with custom delete button (add is handled by Grid's onRowAdd)
   const toolbarConfig = useMemo<ToolbarConfig<T>>(() => {
     const customButtons: ToolbarButtonConfig[] = [];
-
-    if (onAdd) {
-      customButtons.push({
-        id: "add",
-        label: addLabel,
-        icon: processing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />,
-        onClick: onAdd,
-        disabled: processing,
-        variant: "primary"
-      });
-    }
 
     if (onDelete) {
       customButtons.push({
@@ -72,9 +61,10 @@ export function EditableGrid<T>({
       showExcelExport: true,
       showPdfExport: false,
       showColumnVisibility: true,
+      showAddRow: !!onAdd,
       customButtons
     };
-  }, [onAdd, onDelete, canDelete, processing, addLabel, deleteLabel]);
+  }, [onAdd, onDelete, canDelete, processing, deleteLabel]);
 
   if (loading) {
     return (
@@ -92,6 +82,7 @@ export function EditableGrid<T>({
         getRowId={getRowId}
         onCellValueChange={onCellValueChange}
         onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}
+        onRowAdd={onAdd}
         context={context}
         height="100%"
         locale="tr"

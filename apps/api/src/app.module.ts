@@ -34,6 +34,7 @@ import { CronJobsModule } from "./modules/cron-jobs";
 import { PaytrModule } from "./modules/paytr";
 import { AutomatedPaymentsModule } from "./modules/automated-payments";
 import { EDocCreditsModule } from "./modules/e-doc-credits";
+import { EDocMembersModule } from "./modules/e-doc-members";
 import { EInvoicePricesModule } from "./modules/e-invoice-prices";
 // MongoDB WebSocket Module
 import { MongoWsModule } from "./modules/mongo-ws";
@@ -75,6 +76,7 @@ import { BankTransactionsModule } from "./modules/bank-transactions";
     AutomatedPaymentsModule,
     // E-Document Modules
     EDocCreditsModule,
+    EDocMembersModule,
     EInvoicePricesModule,
     // MongoDB WebSocket Module (Global)
     MongoWsModule,

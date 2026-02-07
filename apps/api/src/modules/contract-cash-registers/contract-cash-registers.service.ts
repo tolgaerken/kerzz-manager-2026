@@ -21,7 +21,10 @@ export class ContractCashRegistersService {
   async findAll(query: ContractCashRegisterQueryDto): Promise<ContractCashRegistersListResponseDto> {
     const { contractId, enabled, type } = query;
 
-    const filter: Record<string, unknown> = { contractId };
+    const filter: Record<string, unknown> = {};
+    if (contractId) {
+      filter.contractId = contractId;
+    }
     if (enabled !== undefined) {
       filter.enabled = enabled;
     }

@@ -25,6 +25,11 @@ export const sidebarMenuItems: MenuItemProps[] = [
     subItems: [
       { label: "Kontratları Göster", path: "/contracts" },
       { label: "Sözleşme Faturaları", path: "/contract-invoices" },
+      { label: "Yazarkasalar", path: "/contracts/cash-registers" },
+      { label: "Destekler", path: "/contracts/supports" },
+      { label: "Versiyonlar", path: "/contracts/versions" },
+      { label: "SaaS", path: "/contracts/saas" },
+      { label: "Dökümanlar", path: "/contracts/documents" },
     ],
   },
   {
@@ -69,6 +74,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: FileCheck,
     label: "E-Belge",
     subItems: [
+      { label: "Üye Yönetimi", path: "/e-documents/members" },
       { label: "Kontör Yüklemeleri", path: "/e-documents/credits" },
       { label: "Fiyat Tanımları", path: "/e-documents/invoice-prices" },
     ],

@@ -120,6 +120,138 @@ const columns = [
 
 Kaydedilen state: kolon genislikleri, kolon sirasi, kolon gorunurlugu, siralama, filtreler.
 
+## Satir Ekleme (Inline Row Adding)
+
+Grid edit modundayken toolbar'da "+" butonu gorunur. Bu buton ile yeni satir ekleme akisi baslatilir.
+
+### Nasil Calisir
+
+1. Kullanici herhangi bir hucreye cift tiklayarak edit moduna girer (veya programatik olarak)
+2. Toolbar'da "+" (Satir Ekle) butonu gorunur hale gelir
+3. Butona tiklandiginda `onRowAdd` callback'i tetiklenir
+4. Parent bilesen yeni satiri `data` dizisine ekler
+5. Grid otomatik olarak yeni satirin ilk editable hucresini edit moduna gecirir ve focus verir
+6. **Tab** veya **Enter** tuslari ile siradaki editable hucreye gecilir
+7. Satirdaki tum editable hucreler tamamlandiginda sonraki satirin ilk editable hucresine gecilir
+
+### Klavye Navigasyonu
+
+| Tus | Davranis |
+|-----|----------|
+| `Tab` | Mevcut hucreyi kaydeder, ayni satirda sonraki editable hucreye gecer. Satir biterse sonraki satira gecer. |
+| `Enter` | `Tab` ile ayni davranis -- kaydeder ve sonraki editable hucreye gecer. |
+| `Escape` | Duzenlemeyi iptal eder, hucreyi kapatir. |
+
+### Ornek Kullanim
+
+```tsx
+import { Grid } from '@kerzz/grid';
+import type { GridColumnDef } from '@kerzz/grid';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+}
+
+const columns: GridColumnDef<Product>[] = [
+  {
+    id: 'name',
+    header: 'Urun Adi',
+    accessorKey: 'name',
+    width: 200,
+    editable: true,
+    cellEditor: { type: 'text' },
+  },
+  {
+    id: 'price',
+    header: 'Fiyat',
+    accessorKey: 'price',
+    width: 120,
+    align: 'right',
+    editable: true,
+    cellEditor: { type: 'number' },
+  },
+  {
+    id: 'category',
+    header: 'Kategori',
+    accessorKey: 'category',
+    width: 150,
+    editable: true,
+    cellEditor: {
+      type: 'select',
+      options: [
+        { id: 'food', name: 'Yiyecek' },
+        { id: 'drink', name: 'Icecek' },
+      ],
+    },
+  },
+];
+
+function App() {
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const handleRowAdd = () => {
+    // Yeni bos satir olustur
+    const newProduct: Product = {
+      id: crypto.randomUUID(),
+      name: '',
+      price: 0,
+      category: '',
+    };
+    setProducts((prev) => [...prev, newProduct]);
+  };
+
+  const handleCellChange = (
+    row: Product,
+    columnId: string,
+    newValue: unknown,
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === row.id ? { ...p, [columnId]: newValue } : p,
+      ),
+    );
+  };
+
+  return (
+    <Grid<Product>
+      data={products}
+      columns={columns}
+      height={400}
+      locale="tr"
+      onRowAdd={handleRowAdd}
+      onCellValueChange={handleCellChange}
+    />
+  );
+}
+```
+
+### Toolbar Yapilandirmasi
+
+`showAddRow` secenegi ile "+" butonu kontrol edilebilir:
+
+```tsx
+<Grid
+  toolbar={{ showAddRow: false }}  // "+" butonunu gizle
+  ...
+/>
+```
+
+Varsayilan olarak `showAddRow` aciktir (`true`). Buton sadece edit modu aktifken ve `onRowAdd` callback'i verildiginde gorunur.
+
+### Programatik Satir Ekleme (GridRef)
+
+`GridRef` uzerinden de satir ekleme tetiklenebilir:
+
+```tsx
+const gridRef = useRef<GridRef>(null);
+
+// ...
+gridRef.current?.addRow(); // onRowAdd callback'ini tetikler
+```
+
 ## API
 
 ### Grid Props
@@ -141,6 +273,8 @@ Kaydedilen state: kolon genislikleri, kolon sirasi, kolon gorunurlugu, siralama,
 | `onRowDoubleClick` | `(row, index) => void` | - | Cift tiklama |
 | `onSortChange` | `(sorting) => void` | - | Siralama degisimi |
 | `onFilterChange` | `(filters) => void` | - | Filtre degisimi |
+| `onRowAdd` | `() => void` | - | Satir ekleme butonuna tiklandiginda tetiklenir |
+| `onCellValueChange` | `(row, columnId, newValue, oldValue) => void` | - | Hucre degeri degistiginde tetiklenir |
 
 ### GridColumnDef
 
@@ -159,6 +293,8 @@ Kaydedilen state: kolon genislikleri, kolon sirasi, kolon gorunurlugu, siralama,
 | `footer` | `FooterConfig` | Footer aggregation |
 | `align` | `'left' \| 'center' \| 'right'` | Metin hizalama |
 | `cell` | `(value, row) => ReactNode` | Ozel hucre render |
+| `editable` | `boolean \| (row) => boolean` | Hucre duzenlenebilir mi |
+| `cellEditor` | `CellEditorConfig` | Editor yapilandirmasi (text, number, select, boolean, custom) |
 
 ## Gelistirme
 

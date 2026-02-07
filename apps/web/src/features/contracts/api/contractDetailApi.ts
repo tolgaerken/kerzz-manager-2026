@@ -65,9 +65,10 @@ export async function deleteContractUser(id: string): Promise<void> {
 
 // Contract Supports API
 export async function fetchContractSupports(
-  contractId: string
+  contractId?: string
 ): Promise<ContractDetailListResponse<ContractSupport>> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}?contractId=${encodeURIComponent(contractId)}`;
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}${params}`;
   const response = await fetch(url);
   return handleResponse(response);
 }
@@ -107,9 +108,10 @@ export async function deleteContractSupport(id: string): Promise<void> {
 
 // Contract Saas API
 export async function fetchContractSaas(
-  contractId: string
+  contractId?: string
 ): Promise<ContractDetailListResponse<ContractSaas>> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}?contractId=${encodeURIComponent(contractId)}`;
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}${params}`;
   const response = await fetch(url);
   return handleResponse(response);
 }
@@ -149,9 +151,10 @@ export async function deleteContractSaas(id: string): Promise<void> {
 
 // Contract Cash Registers API
 export async function fetchContractCashRegisters(
-  contractId: string
+  contractId?: string
 ): Promise<ContractDetailListResponse<ContractCashRegister>> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}?contractId=${encodeURIComponent(contractId)}`;
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}${params}`;
   const response = await fetch(url);
   return handleResponse(response);
 }
@@ -191,9 +194,10 @@ export async function deleteContractCashRegister(id: string): Promise<void> {
 
 // Contract Versions API
 export async function fetchContractVersions(
-  contractId: string
+  contractId?: string
 ): Promise<ContractDetailListResponse<ContractVersion>> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}?contractId=${encodeURIComponent(contractId)}`;
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}${params}`;
   const response = await fetch(url);
   return handleResponse(response);
 }
@@ -275,9 +279,10 @@ export async function deleteContractItem(id: string): Promise<void> {
 
 // Contract Documents API
 export async function fetchContractDocuments(
-  contractId: string
+  contractId?: string
 ): Promise<ContractDetailListResponse<ContractDocument>> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}?contractId=${encodeURIComponent(contractId)}`;
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}${params}`;
   const response = await fetch(url);
   return handleResponse(response);
 }

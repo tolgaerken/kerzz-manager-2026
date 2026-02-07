@@ -1,8 +1,9 @@
 import { IsOptional, IsString, IsNumber, IsBoolean } from "class-validator";
 
 export class ContractSaasQueryDto {
+  @IsOptional()
   @IsString()
-  contractId: string;
+  contractId?: string;
 
   @IsOptional()
   @IsBoolean()

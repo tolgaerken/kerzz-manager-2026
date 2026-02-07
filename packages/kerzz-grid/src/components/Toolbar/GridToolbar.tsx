@@ -29,7 +29,7 @@ interface GridToolbarProps<TData> {
   onSaveAll?: () => void;
   /** Discard all pending changes */
   onCancelAll?: () => void;
-  /** Add a new row (only shown when editMode is true and showAddRow is not false) */
+  /** Add a new row (always visible when provided and showAddRow is not false) */
   onAddRow?: () => void;
 }
 
@@ -114,17 +114,22 @@ export function GridToolbar<TData>({
           />
         ))}
 
-        {/* Edit mode: Add Row, Save & Cancel buttons */}
-        {editMode && (
+        {/* Add Row button: always visible when onAddRow is provided */}
+        {showAddRow && onAddRow && (
           <>
             {(hasCustomButtons || showSearch) && <ToolbarSeparator />}
-            {showAddRow && onAddRow && (
-              <ToolbarButton
-                label={locale.toolbarAddRow}
-                icon={<AddRowIcon />}
-                onClick={onAddRow}
-              />
-            )}
+            <ToolbarButton
+              label={locale.toolbarAddRow}
+              icon={<AddRowIcon />}
+              onClick={onAddRow}
+            />
+          </>
+        )}
+
+        {/* Edit mode: Save & Cancel buttons */}
+        {editMode && (
+          <>
+            {!(showAddRow && onAddRow) && (hasCustomButtons || showSearch) && <ToolbarSeparator />}
             <ToolbarButton
               label={locale.toolbarSave}
               icon={<SaveIcon />}
