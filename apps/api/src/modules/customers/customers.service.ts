@@ -42,6 +42,7 @@ export class CustomersService {
         $or: [
           { name: { $regex: search, $options: "i" } },
           { companyName: { $regex: search, $options: "i" } },
+          { erpId: { $regex: search, $options: "i" } },
           { taxNo: { $regex: search, $options: "i" } },
           { city: { $regex: search, $options: "i" } },
           { phone: { $regex: search, $options: "i" } },
@@ -90,6 +91,23 @@ export class CustomersService {
     return this.mapToResponseDto(customer);
   }
 
+  /**
+   * Müşteriyi _id, id veya erpId alanına göre bulur
+   */
+  async findByAnyId(identifier: string): Promise<CustomerResponseDto> {
+    let customer = await this.customerModel.findById(identifier).lean().exec().catch(() => null);
+    if (!customer) {
+      customer = await this.customerModel.findOne({ erpId: identifier }).lean().exec();
+    }
+    if (!customer) {
+      customer = await this.customerModel.findOne({ id: identifier }).lean().exec();
+    }
+    if (!customer) {
+      throw new NotFoundException(`Müşteri bulunamadı: ${identifier}`);
+    }
+    return this.mapToResponseDto(customer);
+  }
+
   async create(createDto: CreateCustomerDto): Promise<CustomerResponseDto> {
     const customer = new this.customerModel(createDto);
     const saved = await customer.save();
@@ -118,6 +136,8 @@ export class CustomersService {
   private mapToResponseDto(customer: Customer): CustomerResponseDto {
     return {
       _id: customer._id.toString(),
+      id: customer.id || "",
+      erpId: customer.erpId || "",
       taxNo: customer.taxNo || "",
       name: customer.name || "",
       companyName: customer.companyName || "",
@@ -126,6 +146,7 @@ export class CustomersService {
       district: customer.district || "",
       phone: customer.phone || "",
       email: customer.email || "",
+      taxOffice: customer.taxOffice || "",
       enabled: customer.enabled ?? true,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt

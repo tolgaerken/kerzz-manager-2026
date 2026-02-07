@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, FileSpreadsheet } from "lucide-react";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import {
@@ -6,7 +7,8 @@ import {
   InvoicesFilters,
   InvoiceFormModal,
   useInvoices,
-  useUpdateInvoice
+  useUpdateInvoice,
+  invoicesKeys
 } from "../features/invoices";
 import type {
   Invoice,
@@ -73,9 +75,15 @@ export function InvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   // Queries & Mutations
-  const { data, isLoading, error, refetch } = useInvoices(queryParams);
+  const queryClient = useQueryClient();
+  const { data, isLoading, isRefetching, error } = useInvoices(queryParams);
   const updateMutation = useUpdateInvoice();
   const { data: tokensData } = useAutoPaymentTokens({});
+
+  // Refresh handler
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
+  }, [queryClient]);
 
   // Otomatik ödeme talimatı kayıtlı müşteri ID'leri
   const autoPaymentCustomerIds = useMemo(() => {
@@ -201,12 +209,12 @@ export function InvoicesPage() {
             Excel
           </button>
           <button
-            onClick={() => refetch()}
-            disabled={isLoading}
+            onClick={handleRefresh}
+            disabled={isLoading || isRefetching}
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
             title="Yenile"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading || isRefetching ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>

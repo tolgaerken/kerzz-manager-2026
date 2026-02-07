@@ -1,5 +1,7 @@
 export interface Customer {
   _id: string;
+  id: string;
+  erpId: string;
   taxNo: string;
   name: string;
   companyName: string;

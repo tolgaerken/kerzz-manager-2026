@@ -1,14 +1,18 @@
-import { Search, Calendar, CalendarDays, Archive, Clock, Filter } from "lucide-react";
+import { Calendar, CalendarDays, Archive, Clock } from "lucide-react";
 import type { ContractFlow, ContractCounts } from "../../types";
+
+interface PeriodCounts {
+  yearly: number;
+  monthly: number;
+}
 
 interface ContractsFiltersProps {
   activeFlow: ContractFlow;
   yearlyFilter: boolean | undefined;
-  searchValue: string;
   counts: ContractCounts | undefined;
+  periodCounts: PeriodCounts;
   onFlowChange: (flow: ContractFlow) => void;
   onYearlyChange: (yearly: boolean | undefined) => void;
-  onSearchChange: (search: string) => void;
 }
 
 interface FilterButtonProps {
@@ -46,13 +50,13 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${variantClasses[variant]}`}
+      className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${variantClasses[variant]}`}
     >
       {icon}
       <span>{label}</span>
       {count !== undefined && (
         <span
-          className={`rounded-full px-2 py-0.5 text-xs ${
+          className={`rounded-full px-1.5 py-0.5 text-[10px] ${
             active ? "bg-white/20" : "bg-surface"
           }`}
         >
@@ -66,87 +70,60 @@ function FilterButton({
 export function ContractsFilters({
   activeFlow,
   yearlyFilter,
-  searchValue,
   counts,
+  periodCounts,
   onFlowChange,
-  onYearlyChange,
-  onSearchChange
+  onYearlyChange
 }: ContractsFiltersProps) {
   return (
-    <div className="space-y-4">
-      {/* Search and Flow Filters Row */}
-      <div className="flex flex-wrap items-center gap-4">
-        {/* Search Input */}
-        <div className="relative min-w-[240px] flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <input
-            type="text"
-            placeholder="Marka veya firma ara..."
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-lg border border-border-subtle bg-surface-elevated py-2.5 pl-10 pr-4 text-sm text-foreground placeholder-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-
-        {/* Flow Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterButton
-            active={activeFlow === "all"}
-            onClick={() => onFlowChange("all")}
-            icon={<Filter className="h-4 w-4" />}
-            label="Tümü"
-            count={counts ? counts.active + counts.archive + counts.future : undefined}
-          />
-          <FilterButton
-            active={activeFlow === "active"}
-            onClick={() => onFlowChange("active")}
-            icon={<Clock className="h-4 w-4" />}
-            label="Aktif"
-            count={counts?.active}
-            variant="success"
-          />
-          <FilterButton
-            active={activeFlow === "future"}
-            onClick={() => onFlowChange("future")}
-            icon={<Calendar className="h-4 w-4" />}
-            label="Gelecek"
-            count={counts?.future}
-            variant="warning"
-          />
-          <FilterButton
-            active={activeFlow === "archive"}
-            onClick={() => onFlowChange("archive")}
-            icon={<Archive className="h-4 w-4" />}
-            label="Arşiv"
-            count={counts?.archive}
-            variant="muted"
-          />
-        </div>
+    <div className="flex flex-wrap items-center gap-4">
+      {/* Flow Filters */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <FilterButton
+          active={activeFlow === "active"}
+          onClick={() => onFlowChange("active")}
+          icon={<Clock className="h-3.5 w-3.5" />}
+          label="Aktif"
+          count={counts?.active}
+          variant="success"
+        />
+        <FilterButton
+          active={activeFlow === "future"}
+          onClick={() => onFlowChange("future")}
+          icon={<Calendar className="h-3.5 w-3.5" />}
+          label="Gelecek"
+          count={counts?.future}
+          variant="warning"
+        />
+        <FilterButton
+          active={activeFlow === "archive"}
+          onClick={() => onFlowChange("archive")}
+          icon={<Archive className="h-3.5 w-3.5" />}
+          label="Arşiv"
+          count={counts?.archive}
+          variant="muted"
+        />
       </div>
 
-      {/* Period Filters Row */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground mr-2">Periyot:</span>
-        <FilterButton
-          active={yearlyFilter === undefined}
-          onClick={() => onYearlyChange(undefined)}
-          icon={<CalendarDays className="h-4 w-4" />}
-          label="Tümü"
-          count={counts ? counts.yearly + counts.monthly : undefined}
-        />
+      {/* Divider */}
+      <div className="h-6 w-px bg-border-subtle" />
+
+      {/* Period Filters */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-foreground mr-1">Periyot:</span>
         <FilterButton
           active={yearlyFilter === true}
           onClick={() => onYearlyChange(true)}
-          icon={<Calendar className="h-4 w-4" />}
+          icon={<Calendar className="h-3.5 w-3.5" />}
           label="Yıllık"
-          count={counts?.yearly}
+          count={periodCounts.yearly}
         />
         <FilterButton
           active={yearlyFilter === false}
           onClick={() => onYearlyChange(false)}
-          icon={<CalendarDays className="h-4 w-4" />}
+          icon={<CalendarDays className="h-3.5 w-3.5" />}
           label="Aylık"
-          count={counts?.monthly}
+          count={periodCounts.monthly}
         />
       </div>
     </div>

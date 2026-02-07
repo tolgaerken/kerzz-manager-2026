@@ -51,15 +51,13 @@ export class ContractsService {
   ): Promise<PaginatedContractsResponseDto> {
     const {
       page = 1,
-      limit = 50,
+      limit,
       flow,
       yearly,
       search,
       sortField = "no",
       sortOrder = "desc"
     } = query;
-
-    const skip = (page - 1) * limit;
 
     // Build filter query
     let filter: Record<string, any> = {};
@@ -103,30 +101,33 @@ export class ContractsService {
     const sort: Record<string, SortOrder> = {};
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
+    // Build query - limit varsa pagination uygula, yoksa tüm verileri getir
+    let dataQuery = this.contractModel.find(filter).sort(sort);
+
+    if (limit) {
+      const skip = (page - 1) * limit;
+      dataQuery = dataQuery.skip(skip).limit(limit);
+    }
+
     // Execute queries in parallel
     const [data, total, counts] = await Promise.all([
-      this.contractModel
-        .find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .exec(),
+      dataQuery.lean().exec(),
       this.contractModel.countDocuments(filter).exec(),
       this.getCounts()
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    const effectiveLimit = limit || total;
+    const totalPages = effectiveLimit > 0 ? Math.ceil(total / effectiveLimit) : 1;
 
     return {
       data: data.map((doc) => this.mapToResponseDto(doc)),
       meta: {
         total,
         page,
-        limit,
+        limit: effectiveLimit,
         totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
+        hasNextPage: limit ? page < totalPages : false,
+        hasPrevPage: limit ? page > 1 : false
       },
       counts
     };

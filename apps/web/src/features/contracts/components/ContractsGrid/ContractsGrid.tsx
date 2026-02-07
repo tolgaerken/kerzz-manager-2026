@@ -1,121 +1,300 @@
-import { useCallback, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type GridReadyEvent,
-  type SortChangedEvent,
-  type SelectionChangedEvent,
-  themeQuartz
-} from "ag-grid-community";
-import { contractColumnDefs } from "./columnDefs";
+import { useCallback, useMemo } from "react";
+import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
+import type { SortingState } from "@tanstack/react-table";
 import type { Contract } from "../../types";
-
-// Register AG Grid modules
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface ContractsGridProps {
   data: Contract[];
   loading: boolean;
-  totalRows: number;
-  currentPage: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
+  yearlyFilter?: boolean;
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
   onRowDoubleClick?: (contract: Contract) => void;
   onRowSelect?: (contract: Contract | null) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
+  selectedIds?: string[];
+  toolbarButtons?: ToolbarButtonConfig[];
+}
+
+// Date formatter
+function formatDate(value: unknown): string {
+  if (!value) return "-";
+  const date = new Date(value as string);
+  return date.toLocaleDateString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+}
+
+// Currency formatter
+function formatCurrency(value: unknown): string {
+  if (value === null || value === undefined) return "-";
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    minimumFractionDigits: 2
+  }).format(value as number);
+}
+
+// Contract flow formatter
+function formatFlow(value: unknown): string {
+  const flowMap: Record<string, string> = {
+    active: "Aktif",
+    archive: "Arşiv",
+    future: "Gelecek"
+  };
+  return flowMap[value as string] || (value as string) || "-";
 }
 
 export function ContractsGrid({
   data,
   loading,
+  yearlyFilter,
   onSortChange,
   onRowDoubleClick,
-  onRowSelect
+  onRowSelect,
+  onSelectionChange,
+  selectedIds,
+  toolbarButtons
 }: ContractsGridProps) {
-  const gridRef = useRef<AgGridReact<Contract>>(null);
+  // Column definitions for kerzz-grid
+  const columns: GridColumnDef<Contract>[] = useMemo(
+    () => {
+      const baseColumns: GridColumnDef<Contract>[] = [
+        {
+          id: "no",
+          header: "No",
+          accessorKey: "no",
+          width: 90,
+          sortable: true,
+          resizable: true,
+          align: "center"
+        },
+        {
+          id: "brand",
+          header: "Marka",
+          accessorKey: "brand",
+          width: 200,
+          sortable: true,
+          resizable: true,
+          filter: { type: "input", conditions: ["contains", "startsWith", "equals"] }
+        },
+        {
+          id: "company",
+          header: "Firma",
+          accessorKey: "company",
+          width: 250,
+          sortable: true,
+          resizable: true,
+          filter: { type: "input", conditions: ["contains", "startsWith", "equals"] }
+        },
+        {
+          id: "description",
+          header: "Açıklama",
+          accessorKey: "description",
+          width: 150,
+          sortable: true,
+          resizable: true,
+          filter: { type: "input", conditions: ["contains"] }
+        },
+        {
+          id: "contractFlow",
+          header: "Durum",
+          accessorKey: "contractFlow",
+          width: 110,
+          sortable: true,
+          resizable: true,
+          filter: { type: "dropdown", showCounts: true },
+          cell: (value) => {
+            const flowColors: Record<string, string> = {
+              active: "#10b981",
+              archive: "#6b7280",
+              future: "#3b82f6"
+            };
+            const color = flowColors[value as string] ?? "#666";
+            return <span style={{ color, fontWeight: 500 }}>{formatFlow(value)}</span>;
+          }
+        },
+        {
+          id: "yearly",
+          header: "Periyot",
+          accessorKey: "yearly",
+          width: 100,
+          sortable: true,
+          resizable: true,
+          cell: (value) => (value ? "Yıllık" : "Aylık")
+        },
+        {
+          id: "startDate",
+          header: "Başlangıç",
+          accessorKey: "startDate",
+          width: 120,
+          sortable: true,
+          resizable: true,
+          cell: (value) => formatDate(value),
+          filter: { type: "dateTree" }
+        },
+        {
+          id: "endDate",
+          header: "Bitiş",
+          accessorKey: "endDate",
+          width: 120,
+          sortable: true,
+          resizable: true,
+          cell: (value) => formatDate(value),
+          filter: { type: "dateTree" }
+        }
+      ];
 
-  const defaultColDef = useMemo(
-    () => ({
-      resizable: true,
-      sortable: true
-    }),
-    []
+      // Yıllık Tutar kolonu - sadece yıllık filtre seçiliyken veya filtre yokken göster
+      if (yearlyFilter === true || yearlyFilter === undefined) {
+        baseColumns.push({
+          id: "yearlyTotal",
+          header: "Yıllık Tutar",
+          accessorKey: "yearlyTotal",
+          width: 140,
+          sortable: true,
+          resizable: true,
+          align: "right",
+          cell: (value) => formatCurrency(value),
+          filter: { type: "input", conditions: ["greaterThan", "lessThan", "between", "equals"] },
+          footer: {
+            aggregate: "sum",
+            format: (v) => formatCurrency(v)
+          }
+        });
+      }
+
+      // SaaS Tutar kolonu - her zaman göster
+      baseColumns.push({
+        id: "saasTotal",
+        header: "SaaS Tutar",
+        accessorKey: "saasTotal",
+        width: 140,
+        sortable: true,
+        resizable: true,
+        align: "right",
+        cell: (value) => formatCurrency(value),
+        filter: { type: "input", conditions: ["greaterThan", "lessThan", "between", "equals"] },
+        footer: {
+          aggregate: "sum",
+          format: (v) => formatCurrency(v)
+        }
+      });
+
+      // Aylık Tutar kolonu (total) - sadece aylık filtre seçiliyken veya filtre yokken göster
+      if (yearlyFilter === false || yearlyFilter === undefined) {
+        baseColumns.push({
+          id: "total",
+          header: "Aylık Tutar",
+          accessorKey: "total",
+          width: 150,
+          sortable: true,
+          resizable: true,
+          align: "right",
+          cell: (value) => formatCurrency(value),
+          filter: { type: "input", conditions: ["greaterThan", "lessThan", "between", "equals"] },
+          footer: {
+            aggregate: "sum",
+            format: (v) => formatCurrency(v)
+          }
+        });
+      }
+
+      // Diğer kolonlar
+      baseColumns.push(
+        {
+          id: "enabled",
+          header: "Aktif",
+          accessorKey: "enabled",
+          width: 80,
+          sortable: true,
+          resizable: true,
+          cell: (value) => (value ? "Evet" : "Hayır")
+        },
+        {
+          id: "blockedLicance",
+          header: "Lisans Engeli",
+          accessorKey: "blockedLicance",
+          width: 120,
+          sortable: true,
+          resizable: true,
+          cell: (value) => (value ? "Evet" : "Hayır")
+        },
+        {
+          id: "internalFirm",
+          header: "İç Firma",
+          accessorKey: "internalFirm",
+          width: 100,
+          sortable: true,
+          resizable: true,
+          filter: { type: "dropdown", showCounts: true }
+        }
+      );
+
+      return baseColumns;
+    },
+    [yearlyFilter]
   );
 
-  const onGridReady = useCallback((params: GridReadyEvent<Contract>) => {
-    params.api.sizeColumnsToFit();
-  }, []);
-
-  const handleSortChanged = useCallback(
-    (event: SortChangedEvent<Contract>) => {
-      const sortModel = event.api.getColumnState().find((col) => col.sort);
-      if (sortModel && sortModel.colId) {
-        onSortChange(sortModel.colId, sortModel.sort as "asc" | "desc");
+  // Handle sort change from kerzz-grid
+  const handleSortChange = useCallback(
+    (sorting: SortingState) => {
+      if (sorting.length > 0) {
+        const { id, desc } = sorting[0];
+        onSortChange(id, desc ? "desc" : "asc");
       }
     },
     [onSortChange]
   );
 
-  const handleRowDoubleClicked = useCallback(
-    (event: { data: Contract | undefined }) => {
-      if (event.data && onRowDoubleClick) {
-        onRowDoubleClick(event.data);
+  // Handle row double click
+  const handleRowDoubleClick = useCallback(
+    (row: Contract) => {
+      if (onRowDoubleClick) {
+        onRowDoubleClick(row);
       }
     },
     [onRowDoubleClick]
   );
 
-  const handleSelectionChanged = useCallback(
-    (event: SelectionChangedEvent<Contract>) => {
+  // Handle row click for selection
+  const handleRowClick = useCallback(
+    (row: Contract) => {
       if (onRowSelect) {
-        const selectedRows = event.api.getSelectedRows();
-        onRowSelect(selectedRows.length > 0 ? selectedRows[0] : null);
+        onRowSelect(row);
       }
     },
     [onRowSelect]
   );
 
-  // Custom theme based on quartz
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 40,
-    headerHeight: 44
-  });
+  // Toolbar configuration
+  const toolbarConfig: ToolbarConfig<Contract> = useMemo(
+    () => ({
+      customButtons: toolbarButtons,
+      exportFileName: "kontratlar"
+    }),
+    [toolbarButtons]
+  );
 
   return (
-    <div className="h-full w-full flex-1">
-      <AgGridReact<Contract>
-        ref={gridRef}
-        theme={customTheme}
-        rowData={data}
-        columnDefs={contractColumnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onSortChanged={handleSortChanged}
-        onRowDoubleClicked={handleRowDoubleClicked}
-        onSelectionChanged={handleSelectionChanged}
+    <div className="flex-1 min-h-0">
+      <Grid<Contract>
+        data={data}
+        columns={columns}
         loading={loading}
-        rowSelection={{ mode: "singleRow" }}
-        suppressCellFocus={true}
-        animateRows={false}
-        suppressMovableColumns={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => params.data._id}
-        // Virtual scroll optimizations
-        rowBuffer={20}
-        suppressScrollOnNewData={true}
-        debounceVerticalScrollbar={true}
+        height="100%"
+        locale="tr"
+        stripedRows
+        stateKey="contracts-grid"
+        getRowId={(row) => row._id}
+        onSortChange={handleSortChange}
+        onRowClick={handleRowClick}
+        onRowDoubleClick={handleRowDoubleClick}
+        selectionMode="multiple"
+        selectedIds={selectedIds}
+        onSelectionChange={onSelectionChange}
+        toolbar={toolbarConfig}
       />
     </div>
   );

@@ -1,5 +1,7 @@
 export class CustomerResponseDto {
   _id: string;
+  id: string;
+  erpId: string;
   taxNo: string;
   name: string;
   companyName: string;
@@ -8,6 +10,7 @@ export class CustomerResponseDto {
   district: string;
   phone: string;
   email: string;
+  taxOffice: string;
   enabled: boolean;
   createdAt: Date;
   updatedAt: Date;

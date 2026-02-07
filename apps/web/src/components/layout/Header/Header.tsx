@@ -3,6 +3,7 @@ import { useAuth } from "../../../features/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { ThemeToggle } from "../../ui";
 import { NotificationBell } from "../../../features/logs";
+import { ExchangeRateDisplay } from "../../../features/exchange-rates";
 
 export function Header() {
   const navigate = useNavigate();
@@ -15,7 +16,9 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-6">
-      <div />
+      <div className="flex items-center gap-4">
+        <ExchangeRateDisplay />
+      </div>
       
       <div className="flex items-center gap-4">
         <NotificationBell />

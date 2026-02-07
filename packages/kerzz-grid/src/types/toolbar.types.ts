@@ -16,6 +16,8 @@ export interface ToolbarButtonConfig {
 }
 
 export interface ToolbarConfig<TData = unknown> {
+  /** Show global search input (default: true) */
+  showSearch?: boolean;
   /** Show Excel/CSV export button (default: true) */
   showExcelExport?: boolean;
   /** Show PDF/Print export button (default: true) */

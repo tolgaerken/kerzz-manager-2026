@@ -14,6 +14,14 @@ interface GridBodyProps<TData> {
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   onRowClick?: (row: TData, index: number) => void;
   onRowDoubleClick?: (row: TData, index: number) => void;
+  /** Whether selection checkbox is shown */
+  showSelectionCheckbox?: boolean;
+  /** Function to check if a row is selected */
+  isRowSelected?: (rowId: string) => boolean;
+  /** Function to get row ID */
+  getRowId?: (row: TData, index: number) => string;
+  /** Callback when selection is toggled */
+  onSelectionToggle?: (rowId: string, shiftKey: boolean) => void;
 }
 
 export function GridBody<TData>({
@@ -27,6 +35,10 @@ export function GridBody<TData>({
   scrollContainerRef,
   onRowClick,
   onRowDoubleClick,
+  showSelectionCheckbox,
+  isRowSelected,
+  getRowId,
+  onSelectionToggle,
 }: GridBodyProps<TData>) {
   return (
     <div className="kz-grid-body" ref={scrollContainerRef}>
@@ -37,6 +49,9 @@ export function GridBody<TData>({
         {virtualRows.map((virtualRow) => {
           const row = data[virtualRow.index];
           if (!row) return null;
+
+          const rowId = getRowId ? getRowId(row, virtualRow.index) : String(virtualRow.index);
+          const isSelected = isRowSelected?.(rowId) ?? false;
 
           return (
             <GridRow
@@ -52,6 +67,9 @@ export function GridBody<TData>({
               }}
               onClick={onRowClick}
               onDoubleClick={onRowDoubleClick}
+              showSelectionCheckbox={showSelectionCheckbox}
+              isSelected={isSelected}
+              onSelectionToggle={(shiftKey) => onSelectionToggle?.(rowId, shiftKey)}
             />
           );
         })}

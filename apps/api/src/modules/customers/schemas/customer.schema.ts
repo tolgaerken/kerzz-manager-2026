@@ -10,6 +10,9 @@ export class Customer {
   @Prop({ type: String, index: true })
   id: string;
 
+  @Prop({ type: String, index: true })
+  erpId: string;
+
   @Prop({ type: String })
   taxNo: string;
 
@@ -33,6 +36,9 @@ export class Customer {
 
   @Prop({ type: String })
   email: string;
+
+  @Prop({ type: String, default: "" })
+  taxOffice: string;
 
   @Prop({ type: Boolean, default: true })
   enabled: boolean;

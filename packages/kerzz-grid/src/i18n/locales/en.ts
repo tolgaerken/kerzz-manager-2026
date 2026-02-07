@@ -48,6 +48,7 @@ export const en: GridLocale = {
   toolbarExportExcel: 'Excel',
   toolbarExportPdf: 'PDF',
   toolbarColumns: 'Columns',
+  toolbarSearchPlaceholder: 'Search...',
 
   // General
   noData: 'No data found',

@@ -47,6 +47,7 @@ export interface GridLocale {
   toolbarExportExcel: string;
   toolbarExportPdf: string;
   toolbarColumns: string;
+  toolbarSearchPlaceholder: string;
 
   // General
   noData: string;

@@ -13,6 +13,7 @@ import { PaymentsPage } from "./pages/PaymentsPage";
 import { AutomatedPaymentsPage } from "./pages/AutomatedPaymentsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
+import { EDocCreditsPage } from "./pages/EDocCreditsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
@@ -126,6 +127,13 @@ const automatedPaymentsRoute = createRoute({
   component: AutomatedPaymentsPage,
 });
 
+// E-Document Credits page
+const eDocCreditsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/e-documents/credits",
+  component: EDocCreditsPage,
+});
+
 // Public payment form (no auth)
 const publicPaymentFormRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -188,6 +196,7 @@ const routeTree = rootRoute.addChildren([
     invoicesRoute,
     paymentsRoute,
     automatedPaymentsRoute,
+    eDocCreditsRoute,
     systemLogsRoute,
     notificationSettingsRoute,
   ]),

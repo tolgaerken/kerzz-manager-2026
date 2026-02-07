@@ -1,101 +1,105 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { FileText, Plus, RefreshCw, AlertCircle } from "lucide-react";
+import { useState, useCallback, useMemo, useRef } from "react";
+import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2 } from "lucide-react";
+import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useContracts,
   useCreateContract,
+  useCheckContract,
+  useBatchCheckContracts,
   ContractsGrid,
   ContractsFilters,
-  ContractsPagination,
-  GridToolbar,
   ContractDetailModal,
   ContractFormModal,
-  CONTRACTS_CONSTANTS,
+  CheckContractResultModal,
+  BatchProgressModal,
+  FloatingProgressBar,
   type ContractFlow,
   type ContractQueryParams,
   type Contract,
-  type CreateContractInput
+  type CreateContractInput,
+  type CheckContractResult
 } from "../features/contracts";
-
-// Debounce hook for search
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 export function ContractsPage() {
   // Filter states
   const [flow, setFlow] = useState<ContractFlow>("active");
   const [yearly, setYearly] = useState<boolean | undefined>(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number>(CONTRACTS_CONSTANTS.DEFAULT_PAGE_SIZE);
   const [sortField, setSortField] = useState("no");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Detail modal states
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Form modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
-  // Debounce search
-  const debouncedSearch = useDebounce(searchInput, 400);
+  // Check contract modal state
+  const [isCheckResultOpen, setIsCheckResultOpen] = useState(false);
+  const [checkResult, setCheckResult] = useState<CheckContractResult | null>(null);
+  const beforeContractRef = useRef<Contract | null>(null);
 
-  // Build query params
+  // Build query params - no pagination, fetch all data for virtual scroll
+  // yearly filtresi frontend'de uygulanacak (periyot sayıları için)
   const queryParams: ContractQueryParams = useMemo(
     () => ({
-      page,
-      limit: pageSize,
       flow,
-      yearly,
-      search: debouncedSearch || undefined,
       sortField,
       sortOrder
     }),
-    [page, pageSize, flow, yearly, debouncedSearch, sortField, sortOrder]
+    [flow, sortField, sortOrder]
   );
 
   // Fetch contracts
-  const { data, isLoading, isError, error, refetch, isFetching } = useContracts(queryParams);
+  const { data: rawData, isLoading, isError, error, refetch, isFetching } = useContracts(queryParams);
+
+  // Frontend'de yearly filtreleme ve sayıları hesaplama
+  const { filteredData, periodCounts } = useMemo(() => {
+    if (!rawData?.data) {
+      return { filteredData: [], periodCounts: { yearly: 0, monthly: 0 } };
+    }
+
+    const allData = rawData.data;
+    const yearlyCount = allData.filter((c) => c.yearly).length;
+    const monthlyCount = allData.filter((c) => !c.yearly).length;
+
+    // yearly filtresi undefined ise tüm veriyi göster
+    const filtered = yearly === undefined 
+      ? allData 
+      : allData.filter((c) => c.yearly === yearly);
+
+    return {
+      filteredData: filtered,
+      periodCounts: { yearly: yearlyCount, monthly: monthlyCount }
+    };
+  }, [rawData?.data, yearly]);
+
+  // data objesini oluştur (eski yapıyla uyumlu)
+  const data = useMemo(() => {
+    if (!rawData) return undefined;
+    return {
+      ...rawData,
+      data: filteredData
+    };
+  }, [rawData, filteredData]);
 
   // Create contract mutation
   const createMutation = useCreateContract();
 
+  // Check contract mutation
+  const checkMutation = useCheckContract();
+
+  // Batch check contracts hook
+  const batchCheck = useBatchCheckContracts();
+
   // Handlers
   const handleFlowChange = useCallback((newFlow: ContractFlow) => {
     setFlow(newFlow);
-    setPage(1);
   }, []);
 
   const handleYearlyChange = useCallback((newYearly: boolean | undefined) => {
     setYearly(newYearly);
-    setPage(1);
-  }, []);
-
-  const handleSearchChange = useCallback((search: string) => {
-    setSearchInput(search);
-    setPage(1);
-  }, []);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-  }, []);
-
-  const handlePageSizeChange = useCallback((newPageSize: number) => {
-    setPageSize(newPageSize);
-    setPage(1);
   }, []);
 
   const handleSortChange = useCallback((field: string, order: "asc" | "desc") => {
@@ -111,6 +115,20 @@ export function ContractsPage() {
   const handleRowSelect = useCallback((contract: Contract | null) => {
     setSelectedContract(contract);
   }, []);
+
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
+    // Son seçilen kontratı selectedContract olarak ayarla
+    if (ids.length > 0 && data?.data) {
+      const lastSelectedId = ids[ids.length - 1];
+      const contract = data.data.find((c) => c._id === lastSelectedId);
+      if (contract) {
+        setSelectedContract(contract);
+      }
+    } else if (ids.length === 0) {
+      setSelectedContract(null);
+    }
+  }, [data?.data]);
 
   const handleInspect = useCallback(() => {
     if (selectedContract) {
@@ -141,51 +159,164 @@ export function ContractsPage() {
     [createMutation]
   );
 
-  return (
-    <div className="flex h-full flex-col gap-4">
-      {/* Page Header */}
-      <div className="flex flex-shrink-0 items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <FileText className="h-6 w-6 text-primary" />
-            </div>
-            Kontratlar
-          </h1>
-          <p className="mt-1 text-muted">
-            Tüm kontratlarınızı buradan görüntüleyebilir ve yönetebilirsiniz.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-elevated px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Yenile
-          </button>
-          <button
-            onClick={handleCreateClick}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-          >
-            <Plus className="h-4 w-4" />
-            Yeni Kontrat
-          </button>
-        </div>
-      </div>
+  const handleCheckContract = useCallback(() => {
+    if (!selectedContract) return;
 
-      {/* Filters */}
+    // Onceki kontrat durumunu kaydet
+    beforeContractRef.current = { ...selectedContract };
+
+    checkMutation.mutate(selectedContract.id, {
+      onSuccess: (result) => {
+        setCheckResult(result);
+        // Kontratin guncel halini almak icin listeyi yenile
+        refetch().then((res) => {
+          // Guncel kontrati bul ve selectedContract'i guncelle
+          const updatedContract = res.data?.data.find(
+            (c) => c.id === selectedContract.id
+          );
+          if (updatedContract) {
+            setSelectedContract(updatedContract);
+          }
+          setIsCheckResultOpen(true);
+        });
+      }
+    });
+  }, [selectedContract, checkMutation, refetch]);
+
+  const handleCheckResultClose = useCallback(() => {
+    setIsCheckResultOpen(false);
+    setCheckResult(null);
+    beforeContractRef.current = null;
+  }, []);
+
+  // Batch check handlers
+  const handleCheckMultipleContracts = useCallback(() => {
+    if (selectedIds.length === 0 || !data?.data) return;
+
+    const selectedContracts = data.data.filter((c) => selectedIds.includes(c._id));
+    if (selectedContracts.length > 0) {
+      batchCheck.startBatchCheck(selectedContracts);
+    }
+  }, [selectedIds, data?.data, batchCheck]);
+
+  const handleBatchMinimize = useCallback(() => {
+    batchCheck.minimizeBatchCheck();
+  }, [batchCheck]);
+
+  const handleBatchMaximize = useCallback(() => {
+    batchCheck.maximizeBatchCheck();
+  }, [batchCheck]);
+
+  const handleBatchPause = useCallback(() => {
+    batchCheck.pauseBatchCheck();
+  }, [batchCheck]);
+
+  const handleBatchResume = useCallback(() => {
+    batchCheck.resumeBatchCheck();
+  }, [batchCheck]);
+
+  const handleBatchCancel = useCallback(() => {
+    batchCheck.cancelBatchCheck();
+  }, [batchCheck]);
+
+  const handleBatchClose = useCallback(() => {
+    batchCheck.clearBatchCheck();
+    // Refresh data after batch completion
+    refetch();
+  }, [batchCheck, refetch]);
+
+  // Toolbar buttons for kerzz-grid
+  const toolbarButtons: ToolbarButtonConfig[] = useMemo(() => {
+    const hasSelection = selectedIds.length > 0 || selectedContract;
+    const isMultipleSelected = selectedIds.length > 1;
+    const isProcessing = checkMutation.isPending || batchCheck.progress?.status === "running";
+
+    const handleCheckClick = () => {
+      if (isMultipleSelected) {
+        handleCheckMultipleContracts();
+      } else {
+        handleCheckContract();
+      }
+    };
+
+    const getCheckButtonLabel = () => {
+      if (isProcessing) return "Hesaplanıyor...";
+      if (isMultipleSelected) return `Ödeme Planı Hesapla (${selectedIds.length})`;
+      return "Ödeme Planı Hesapla";
+    };
+
+    return [
+      {
+        id: "inspect",
+        label: "İncele",
+        icon: <Eye className="h-4 w-4" />,
+        onClick: handleInspect,
+        disabled: isLoading || !hasSelection || isMultipleSelected
+      },
+      {
+        id: "check-payment",
+        label: getCheckButtonLabel(),
+        icon: isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />,
+        onClick: handleCheckClick,
+        disabled: isLoading || !hasSelection || isProcessing
+      }
+    ];
+  }, [
+    selectedIds.length,
+    selectedContract,
+    checkMutation.isPending,
+    batchCheck.progress?.status,
+    isLoading,
+    handleInspect,
+    handleCheckContract,
+    handleCheckMultipleContracts
+  ]);
+
+  return (
+    <div className="flex h-full flex-col gap-3">
+      {/* Filters & Actions Container */}
       <div className="flex-shrink-0 rounded-lg border border-border bg-surface p-4">
-        <ContractsFilters
-          activeFlow={flow}
-          yearlyFilter={yearly}
-          searchValue={searchInput}
-          counts={data?.counts}
-          onFlowChange={handleFlowChange}
-          onYearlyChange={handleYearlyChange}
-          onSearchChange={handleSearchChange}
-        />
+        <div className="flex flex-col gap-4">
+          {/* Header Row - Title & Actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold text-foreground">Kontrat Yönetimi</h1>
+              {data?.data && (
+                <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {data.data.length} kontrat
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => refetch({ cancelRefetch: true })}
+                disabled={isFetching}
+                className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                Yenile
+              </button>
+              <button
+                onClick={handleCreateClick}
+                className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Yeni Kontrat
+              </button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <ContractsFilters
+            activeFlow={flow}
+            yearlyFilter={yearly}
+            counts={data?.counts}
+            periodCounts={periodCounts}
+            onFlowChange={handleFlowChange}
+            onYearlyChange={handleYearlyChange}
+          />
+        </div>
       </div>
 
       {/* Error State */}
@@ -209,37 +340,17 @@ export function ContractsPage() {
 
       {/* Grid Container - Flex grow to fill remaining space */}
       <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
-        {/* Toolbar */}
-        <GridToolbar
-          selectedContract={selectedContract}
-          onInspect={handleInspect}
-          disabled={isLoading}
-        />
-
         <ContractsGrid
           data={data?.data ?? []}
           loading={isLoading}
-          totalRows={data?.meta.total ?? 0}
-          currentPage={page}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
+          yearlyFilter={yearly}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
           onRowSelect={handleRowSelect}
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
+          toolbarButtons={toolbarButtons}
         />
-
-        {/* Pagination */}
-        {data?.meta && (
-          <div className="flex-shrink-0 border-t border-border bg-surface px-4 py-3">
-            <ContractsPagination
-              meta={data.meta}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-            />
-          </div>
-        )}
       </div>
 
       {/* Contract Detail Modal */}
@@ -258,6 +369,62 @@ export function ContractsPage() {
         onSubmit={handleFormSubmit}
         isLoading={createMutation.isPending}
       />
+
+      {/* Check Contract Result Modal */}
+      {selectedContract && checkResult && beforeContractRef.current && (
+        <CheckContractResultModal
+          isOpen={isCheckResultOpen}
+          onClose={handleCheckResultClose}
+          contract={selectedContract}
+          beforeContract={beforeContractRef.current}
+          result={checkResult}
+        />
+      )}
+
+      {/* Check Contract Error Notification */}
+      {checkMutation.isError && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-50 p-4 shadow-lg">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-red-800">Hesaplama hatası</p>
+            <p className="text-sm text-red-600">
+              {checkMutation.error instanceof Error
+                ? checkMutation.error.message
+                : "Ödeme planı hesaplanırken bir hata oluştu"}
+            </p>
+          </div>
+          <button
+            onClick={() => checkMutation.reset()}
+            className="ml-2 rounded-md p-1 text-red-600 hover:bg-red-100 transition-colors"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
+      {/* Batch Progress Modal (full screen) */}
+      {batchCheck.progress && !batchCheck.progress.isMinimized && (
+        <BatchProgressModal
+          progress={batchCheck.progress}
+          onMinimize={handleBatchMinimize}
+          onPause={handleBatchPause}
+          onResume={handleBatchResume}
+          onCancel={handleBatchCancel}
+          onClose={handleBatchClose}
+        />
+      )}
+
+      {/* Floating Progress Bar (minimized) */}
+      {batchCheck.progress && batchCheck.progress.isMinimized && (
+        <FloatingProgressBar
+          progress={batchCheck.progress}
+          onMaximize={handleBatchMaximize}
+          onPause={handleBatchPause}
+          onResume={handleBatchResume}
+          onCancel={handleBatchCancel}
+          onClose={handleBatchClose}
+        />
+      )}
     </div>
   );
 }

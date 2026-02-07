@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
 import { ConfigModule } from "./config";
-import { DatabaseModule, ContractDatabaseModule } from "./database";
+import { DatabaseModule, ContractDatabaseModule, HelpersDatabaseModule } from "./database";
 import { HealthModule } from "./modules/health/health.module";
 import { ContractsModule } from "./modules/contracts";
 import { CustomersModule } from "./modules/customers";
@@ -32,17 +32,22 @@ import { NotificationQueueModule } from "./modules/notification-queue";
 import { CronJobsModule } from "./modules/cron-jobs";
 import { PaytrModule } from "./modules/paytr";
 import { AutomatedPaymentsModule } from "./modules/automated-payments";
+import { EDocCreditsModule } from "./modules/e-doc-credits";
 // MongoDB WebSocket Module
 import { MongoWsModule } from "./modules/mongo-ws";
 // Company & ERP Modules
 import { CompaniesModule } from "./modules/companies";
 import { ErpModule } from "./modules/erp";
+// Utility Modules
+import { ExchangeRateModule } from "./modules/exchange-rate";
+import { ErpSettingsModule } from "./modules/erp-settings";
 
 @Module({
   imports: [
     ConfigModule,
     DatabaseModule,
     ContractDatabaseModule,
+    HelpersDatabaseModule,
     HealthModule,
     ContractsModule,
     CustomersModule,
@@ -64,6 +69,8 @@ import { ErpModule } from "./modules/erp";
     PaymentsModule,
     PaytrModule,
     AutomatedPaymentsModule,
+    // E-Document Modules
+    EDocCreditsModule,
     // MongoDB WebSocket Module (Global)
     MongoWsModule,
     // Log & Notification Modules
@@ -82,6 +89,9 @@ import { ErpModule } from "./modules/erp";
     // Company & ERP Modules
     CompaniesModule,
     ErpModule,
+    // Utility Modules
+    ExchangeRateModule,
+    ErpSettingsModule,
   ],
   providers: [
     {

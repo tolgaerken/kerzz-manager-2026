@@ -8,7 +8,8 @@ import {
   Package,
   Wallet,
   ScrollText,
-  Bell
+  Bell,
+  FileCheck
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -61,6 +62,13 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: Plug,
     label: "Entegratör",
     path: "/integrator",
+  },
+  {
+    icon: FileCheck,
+    label: "E-Belge",
+    subItems: [
+      { label: "Kontör Yüklemeleri", path: "/e-documents/credits" },
+    ],
   },
   {
     icon: ScrollText,

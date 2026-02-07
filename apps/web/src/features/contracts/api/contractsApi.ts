@@ -1,5 +1,5 @@
 import { CONTRACTS_CONSTANTS } from "../constants/contracts.constants";
-import type { ContractQueryParams, ContractsResponse, Contract, CreateContractInput } from "../types";
+import type { ContractQueryParams, ContractsResponse, Contract, CreateContractInput, CheckContractResult } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACTS_CONSTANTS;
 
@@ -67,4 +67,18 @@ export async function createContract(data: CreateContractInput): Promise<Contrac
   });
 
   return handleResponse<Contract>(response);
+}
+
+export async function checkContract(contractId: string): Promise<CheckContractResult> {
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/check/${encodeURIComponent(contractId)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }
+  });
+
+  return handleResponse<CheckContractResult>(response);
 }

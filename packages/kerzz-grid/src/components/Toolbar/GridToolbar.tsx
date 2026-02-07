@@ -3,6 +3,7 @@ import type { GridColumnDef } from '../../types/column.types';
 import type { ToolbarConfig, ToolbarButtonConfig } from '../../types/toolbar.types';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSeparator } from './ToolbarSeparator';
+import { ToolbarSearchInput } from './ToolbarSearchInput';
 import { ExcelIcon, PdfIcon, ColumnsIcon } from './ToolbarIcons';
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
 import { Portal } from '../Portal/Portal';
@@ -20,6 +21,8 @@ interface GridToolbarProps<TData> {
   onShowAll: (ids: string[]) => void;
   onHideAll: (ids: string[]) => void;
   cssVars: React.CSSProperties;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
 export function GridToolbar<TData>({
@@ -32,11 +35,14 @@ export function GridToolbar<TData>({
   onShowAll,
   onHideAll,
   cssVars,
+  searchTerm,
+  onSearchChange,
 }: GridToolbarProps<TData>) {
   const locale = useLocale();
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
   const colBtnRef = useRef<HTMLButtonElement>(null);
 
+  const showSearch = config.showSearch !== false;
   const showExcel = config.showExcelExport !== false;
   const showPdf = config.showPdfExport !== false;
   const showColumns = config.showColumnVisibility !== false;
@@ -79,8 +85,11 @@ export function GridToolbar<TData>({
 
   return (
     <div className="kz-toolbar">
-      {/* Left: Custom buttons */}
+      {/* Left: Search + Custom buttons */}
       <div className="kz-toolbar__left">
+        {showSearch && (
+          <ToolbarSearchInput value={searchTerm} onChange={onSearchChange} />
+        )}
         {customButtons.map((btn: ToolbarButtonConfig) => (
           <ToolbarButton
             key={btn.id}

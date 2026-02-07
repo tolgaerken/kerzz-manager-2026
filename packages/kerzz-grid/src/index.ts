@@ -24,6 +24,7 @@ export { useColumnVisibility } from './core/useColumnVisibility';
 export { useGridFilter } from './core/useGridFilter';
 export { useStateStore } from './core/useStateStore';
 export { useFooterAggregation } from './core/useFooterAggregation';
+export { useRowSelection } from './core/useRowSelection';
 
 // Column Visibility Panel
 export { ColumnVisibilityPanel } from './components/ColumnManager/ColumnVisibilityPanel';
@@ -77,6 +78,13 @@ export type {
   ToolbarConfig,
   ToolbarButtonConfig,
 } from './types/toolbar.types';
+export type {
+  SelectionMode,
+  SelectionState,
+  SelectionConfig,
+  UseRowSelectionProps,
+  UseRowSelectionReturn,
+} from './types/selection.types';
 
 // CSS import helper
 import './theme/grid-base.css';

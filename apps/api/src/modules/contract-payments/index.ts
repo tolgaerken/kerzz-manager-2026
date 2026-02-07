@@ -1,3 +1,7 @@
 export * from "./contract-payments.module";
 export * from "./contract-payments.service";
 export * from "./dto";
+export * from "./services/payment-plan.service";
+export * from "./services/invoice-calculator.service";
+export * from "./services/plan-generator.service";
+export * from "./interfaces/payment-plan.interfaces";

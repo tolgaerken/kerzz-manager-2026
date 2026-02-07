@@ -246,3 +246,31 @@ export interface ContractDetailListResponse<T> {
   data: T[];
   total: number;
 }
+
+// ─── Check Contract (Odeme Plani Hesaplama) Tipleri ─────────────
+
+export interface InvoiceRow {
+  id: string;
+  itemId: string;
+  description: string;
+  qty: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface InvoiceSummary {
+  id: string;
+  total: number;
+  rows: InvoiceRow[];
+}
+
+export interface PaymentPlanResult {
+  total: number;
+  length: number;
+}
+
+export interface CheckContractResult {
+  plans: ContractPayment[];
+  invoiceSummary: InvoiceSummary;
+  result: PaymentPlanResult;
+}

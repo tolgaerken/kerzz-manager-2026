@@ -9,6 +9,7 @@ import {
   Body
 } from "@nestjs/common";
 import { ContractPaymentsService } from "./contract-payments.service";
+import { PaymentPlanService } from "./services/payment-plan.service";
 import {
   ContractPaymentQueryDto,
   CreateContractPaymentDto,
@@ -17,7 +18,46 @@ import {
 
 @Controller("contract-payments")
 export class ContractPaymentsController {
-  constructor(private readonly contractPaymentsService: ContractPaymentsService) {}
+  constructor(
+    private readonly contractPaymentsService: ContractPaymentsService,
+    private readonly paymentPlanService: PaymentPlanService,
+  ) {}
+
+  // ─── Payment Plan Endpoint'leri (spesifik route'lar once tanimlanmali) ───
+
+  /**
+   * Tum aktif kontratlari kontrol eder ve planlarini olusturur.
+   */
+  @Post("check-all")
+  async checkAllContracts() {
+    return this.paymentPlanService.checkAllContracts();
+  }
+
+  /**
+   * Tek kontrat icin odeme plani olusturur / gunceller.
+   */
+  @Post("check/:contractId")
+  async checkContract(@Param("contractId") contractId: string) {
+    return this.paymentPlanService.checkContractById(contractId);
+  }
+
+  /**
+   * Kontrat icin odeme plani ve fatura ozetini onizler (readonly).
+   */
+  @Get("preview/:contractId")
+  async previewPlans(@Param("contractId") contractId: string) {
+    return this.paymentPlanService.previewPlans(contractId);
+  }
+
+  /**
+   * Kontrat icin aylik ucret hesaplar (readonly).
+   */
+  @Get("monthly-fee/:contractId")
+  async calculateMonthlyFee(@Param("contractId") contractId: string) {
+    return this.paymentPlanService.calculateMonthlyFee(contractId);
+  }
+
+  // ─── CRUD Endpoint'leri ───────────────────────────────────────────
 
   @Get()
   async findAll(@Query() query: ContractPaymentQueryDto) {

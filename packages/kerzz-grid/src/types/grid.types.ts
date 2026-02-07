@@ -2,6 +2,7 @@ import type { GridColumnDef } from './column.types';
 import type { FilterState } from './filter.types';
 import type { GridTheme } from './theme.types';
 import type { ToolbarConfig } from './toolbar.types';
+import type { SelectionMode } from './selection.types';
 import type { SortingState } from '@tanstack/react-table';
 
 export interface GridProps<TData = unknown> {
@@ -35,8 +36,20 @@ export interface GridProps<TData = unknown> {
   stripedRows?: boolean;
   /** Show grid borders */
   bordered?: boolean;
-  /** Toolbar configuration. Pass true for defaults, or config object for customization */
+  /** Toolbar configuration. Pass true for defaults, false to hide, or config object for customization. Default: true */
   toolbar?: boolean | ToolbarConfig<TData>;
+
+  // Selection
+  /** Selection mode: 'none' | 'single' | 'multiple' (default: 'none') */
+  selectionMode?: SelectionMode;
+  /** Show selection checkbox column (default: true when selectionMode is not 'none') */
+  selectionCheckbox?: boolean;
+  /** Currently selected row IDs (controlled mode) */
+  selectedIds?: string[];
+  /** Default selected row IDs (uncontrolled mode) */
+  defaultSelectedIds?: string[];
+  /** Fired when selection changes */
+  onSelectionChange?: (selectedIds: string[]) => void;
 
   // Events
   /** Fired when a row is clicked */
@@ -73,4 +86,10 @@ export interface GridRef {
   getState: () => GridState;
   /** Scroll to a specific row index */
   scrollToRow: (index: number) => void;
+  /** Get selected row IDs */
+  getSelectedIds: () => string[];
+  /** Select all rows */
+  selectAll: () => void;
+  /** Deselect all rows */
+  deselectAll: () => void;
 }

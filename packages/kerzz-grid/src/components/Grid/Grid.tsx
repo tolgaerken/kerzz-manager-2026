@@ -4,6 +4,7 @@ import type { ActiveFilter } from '../../types/filter.types';
 import type { ToolbarConfig } from '../../types/toolbar.types';
 import type { GridColumnDef } from '../../types/column.types';
 import { useGridInstance } from '../../core/useGridInstance';
+import { useRowSelection } from '../../core/useRowSelection';
 import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { themeToCssVars } from '../../utils/memoize';
@@ -25,10 +26,17 @@ function GridInner<TData>(
     width = '100%',
     loading = false,
     stripedRows = false,
-    toolbar,
+    toolbar = true,
     onRowClick,
     onRowDoubleClick,
     columns,
+    // Selection props
+    selectionMode = 'none',
+    selectionCheckbox,
+    selectedIds: controlledSelectedIds,
+    defaultSelectedIds,
+    onSelectionChange,
+    getRowId,
   } = props;
 
   const locale = useLocale();
@@ -37,6 +45,47 @@ function GridInner<TData>(
   const colBtnRef = useRef<HTMLButtonElement>(null);
   const headerWrapperRef = useRef<HTMLDivElement>(null);
   const footerWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Default getRowId uses index
+  const resolveRowId = useCallback(
+    (row: TData, index: number) => {
+      if (getRowId) return getRowId(row);
+      return String(index);
+    },
+    [getRowId]
+  );
+
+  // Selection state
+  const showSelectionCheckbox = selectionMode !== 'none' && (selectionCheckbox ?? true);
+
+  // Create a stable getRowId function for selection
+  const selectionGetRowId = useCallback(
+    (row: TData) => {
+      if (getRowId) return getRowId(row);
+      // Fallback: use index from filteredData
+      const index = grid.filteredData.indexOf(row);
+      return String(index);
+    },
+    [getRowId, grid.filteredData]
+  );
+  
+  const selection = useRowSelection({
+    data: grid.filteredData,
+    getRowId: selectionGetRowId,
+    mode: selectionMode,
+    selectedIds: controlledSelectedIds,
+    defaultSelectedIds,
+    onSelectionChange,
+  });
+
+  // Toggle select all handler
+  const handleToggleSelectAll = useCallback(() => {
+    if (selection.isAllSelected) {
+      selection.deselectAll();
+    } else {
+      selection.selectAll();
+    }
+  }, [selection]);
 
   // Resolve toolbar config
   const toolbarConfig = useMemo<ToolbarConfig<TData> | null>(() => {
@@ -110,7 +159,10 @@ function GridInner<TData>(
     scrollToRow: (index: number) => {
       grid.rowVirtualizer.scrollToIndex(index, { align: 'center' });
     },
-  }), [grid]);
+    getSelectedIds: () => Array.from(selection.selectedIds),
+    selectAll: selection.selectAll,
+    deselectAll: selection.deselectAll,
+  }), [grid, selection]);
 
   // Convert theme to CSS vars
   const cssVars = useMemo(() => themeToCssVars(grid.theme), [grid.theme]);
@@ -155,6 +207,8 @@ function GridInner<TData>(
           onShowAll={grid.columnVisibility.showAllColumns}
           onHideAll={grid.columnVisibility.hideAllColumns}
           cssVars={cssVars}
+          searchTerm={grid.searchTerm}
+          onSearchChange={grid.setSearchTerm}
         />
       )}
 
@@ -228,6 +282,10 @@ function GridInner<TData>(
           onDragLeave={grid.columnDrag.handleDragLeave}
           onDrop={grid.columnDrag.handleDrop}
           onDragEnd={grid.columnDrag.handleDragEnd}
+          showSelectionCheckbox={showSelectionCheckbox}
+          isAllSelected={selection.isAllSelected}
+          isIndeterminate={selection.isIndeterminate}
+          onToggleSelectAll={handleToggleSelectAll}
         />
       </div>
 
@@ -244,6 +302,10 @@ function GridInner<TData>(
           scrollContainerRef={grid.scrollContainerRef}
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
+          showSelectionCheckbox={showSelectionCheckbox}
+          isRowSelected={selection.isSelected}
+          getRowId={(row, index) => resolveRowId(row, index)}
+          onSelectionToggle={selection.toggleRow}
         />
       ) : (
         <div className="kz-grid-no-data">
@@ -258,6 +320,7 @@ function GridInner<TData>(
           aggregation={grid.footerAggregation}
           getColumnWidth={grid.columnResize.getColumnWidth}
           totalWidth={grid.totalWidth}
+          showSelectionCheckbox={showSelectionCheckbox}
         />
       </div>
 

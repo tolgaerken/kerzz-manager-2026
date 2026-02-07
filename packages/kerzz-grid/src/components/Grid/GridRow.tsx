@@ -1,6 +1,7 @@
 import React from 'react';
 import type { GridColumnDef } from '../../types/column.types';
 import { GridCell } from './GridCell';
+import { SelectionCell } from '../Selection/SelectionCell';
 
 interface GridRowProps<TData> {
   row: TData;
@@ -11,6 +12,12 @@ interface GridRowProps<TData> {
   style: React.CSSProperties;
   onClick?: (row: TData, index: number) => void;
   onDoubleClick?: (row: TData, index: number) => void;
+  /** Whether selection checkbox is shown */
+  showSelectionCheckbox?: boolean;
+  /** Whether this row is selected */
+  isSelected?: boolean;
+  /** Callback when selection is toggled */
+  onSelectionToggle?: (shiftKey: boolean) => void;
 }
 
 function GridRowInner<TData>({
@@ -22,10 +29,14 @@ function GridRowInner<TData>({
   style,
   onClick,
   onDoubleClick,
+  showSelectionCheckbox,
+  isSelected,
+  onSelectionToggle,
 }: GridRowProps<TData>) {
   const classNames = [
     'kz-grid-row',
     isStriped && 'kz-grid-row--striped',
+    isSelected && 'kz-grid-row--selected',
   ]
     .filter(Boolean)
     .join(' ');
@@ -37,6 +48,12 @@ function GridRowInner<TData>({
       onClick={() => onClick?.(row, rowIndex)}
       onDoubleClick={() => onDoubleClick?.(row, rowIndex)}
     >
+      {showSelectionCheckbox && (
+        <SelectionCell
+          isSelected={isSelected ?? false}
+          onToggle={onSelectionToggle ?? (() => {})}
+        />
+      )}
       {columns.map((col) => {
         const value = col.accessorFn
           ? col.accessorFn(row)

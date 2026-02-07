@@ -3,6 +3,7 @@ import type { GridColumnDef } from '../types/column.types';
 import type { GridProps } from '../types/grid.types';
 import { useStateStore } from './useStateStore';
 import { useGridFilter } from './useGridFilter';
+import { useGlobalSearch } from './useGlobalSearch';
 import { useVirtualization } from './useVirtualization';
 import { useColumnResize } from './useColumnResize';
 import { useColumnDrag } from './useColumnDrag';
@@ -35,11 +36,18 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
     columns: columns as GridColumnDef[],
   });
 
-  // Sorting
-  const sortedData = useMemo(() => {
-    if (stateStore.state.sorting.length === 0) return data;
+  // Global search (first step - searches all columns)
+  const globalSearch = useGlobalSearch({
+    data,
+    columns: columns as GridColumnDef<TData>[],
+  });
 
-    const sortedArr = [...data];
+  // Sorting (applied after global search)
+  const sortedData = useMemo(() => {
+    const dataToSort = globalSearch.filteredData;
+    if (stateStore.state.sorting.length === 0) return dataToSort;
+
+    const sortedArr = [...dataToSort];
     const sorting = stateStore.state.sorting;
 
     sortedArr.sort((a, b) => {
@@ -68,9 +76,9 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
     });
 
     return sortedArr;
-  }, [data, stateStore.state.sorting, columns]);
+  }, [globalSearch.filteredData, stateStore.state.sorting, columns]);
 
-  // Filtering
+  // Column filtering (applied after sorting)
   const { filteredData, setFilter, removeFilter, clearAllFilters, hasActiveFilters } =
     useGridFilter({
       data: sortedData,
@@ -214,6 +222,12 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
     // Sorting
     sorting: stateStore.state.sorting,
     handleSort,
+
+    // Global search
+    searchTerm: globalSearch.searchTerm,
+    setSearchTerm: globalSearch.setSearchTerm,
+    clearSearch: globalSearch.clearSearch,
+    hasActiveSearch: globalSearch.hasActiveSearch,
 
     // Filtering
     filters: stateStore.state.filters,

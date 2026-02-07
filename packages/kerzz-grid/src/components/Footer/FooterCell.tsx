@@ -1,7 +1,5 @@
 import React from 'react';
 import type { FooterAggregateResult } from '../../types/footer.types';
-import { useLocale } from '../../i18n/useLocale';
-import { getAggregateLabel } from '../../utils/aggregation';
 
 interface FooterCellProps {
   width: number;
@@ -14,16 +12,14 @@ export const FooterCell = React.memo(function FooterCell({
   align,
   result,
 }: FooterCellProps) {
-  const locale = useLocale();
-
   const alignClass = align ? `kz-footer-cell--align-${align}` : '';
 
   if (!result) {
     return <div className={`kz-footer-cell ${alignClass}`.trim()} style={{ width }} />;
   }
 
-  const label =
-    result.label ?? getAggregateLabel(result.aggregate, locale as unknown as Record<string, string>);
+  // Label only shown if explicitly provided in footer config
+  const label = result.label;
 
   return (
     <div className={`kz-footer-cell ${alignClass}`.trim()} style={{ width }}>
