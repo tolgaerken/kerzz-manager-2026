@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
 import type { SortingState } from "@tanstack/react-table";
+import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { createInvoiceColumnDefs } from "./columnDefs";
 import type { Invoice } from "../../types";
 
@@ -12,6 +13,7 @@ interface InvoicesGridProps {
   onRowDoubleClick?: (invoice: Invoice) => void;
   selectedIds?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
+  customButtons?: ToolbarButtonConfig[];
 }
 
 export function InvoicesGrid({
@@ -21,7 +23,8 @@ export function InvoicesGrid({
   onSortChange,
   onRowDoubleClick,
   selectedIds,
-  onSelectionChange
+  onSelectionChange,
+  customButtons
 }: InvoicesGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(500);
@@ -82,7 +85,8 @@ export function InvoicesGrid({
         stripedRows
         stateKey="invoices-grid"
         toolbar={{
-          exportFileName: "faturalar"
+          exportFileName: "faturalar",
+          customButtons: customButtons ?? []
         }}
       />
     </div>

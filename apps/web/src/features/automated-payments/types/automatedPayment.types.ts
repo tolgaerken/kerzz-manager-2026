@@ -36,6 +36,7 @@ export interface CollectPaymentInput {
   description?: string;
   mode?: "item" | "balance" | "custom";
   paymentPlanId?: string;
+  invoiceNo?: string;
 }
 
 export interface CollectPaymentResponse {

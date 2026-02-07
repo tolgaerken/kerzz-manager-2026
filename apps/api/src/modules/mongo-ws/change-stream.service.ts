@@ -43,6 +43,7 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
     // Varsayilan collection'lari dinlemeye basla
     this.registerCollection("contract-payments");
     this.registerCollection("bank-transactions");
+    this.registerCollection("global-invoices");
   }
 
   onModuleDestroy() {

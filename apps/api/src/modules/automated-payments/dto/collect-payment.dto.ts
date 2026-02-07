@@ -33,4 +33,8 @@ export class CollectPaymentDto {
   @IsOptional()
   @IsString()
   paymentPlanId?: string;
+
+  @IsOptional()
+  @IsString()
+  invoiceNo?: string;
 }

@@ -1,7 +1,9 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, FileSpreadsheet } from "lucide-react";
+import { RefreshCw, FileSpreadsheet, CreditCard, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
+import { useCollectPayment } from "../features/automated-payments";
+import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
 import {
   InvoicesGrid,
   InvoicesFilters,
@@ -77,11 +79,41 @@ export function InvoicesPage() {
   // Selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // Tahsilat bildirim state
+  const [paymentNotification, setPaymentNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  // Tahsilat loading state
+  const [collectLoading, setCollectLoading] = useState(false);
+
+  // Bildirimi 8 saniye sonra otomatik kapat
+  useEffect(() => {
+    if (!paymentNotification) return;
+    const timer = setTimeout(() => setPaymentNotification(null), 8000);
+    return () => clearTimeout(timer);
+  }, [paymentNotification]);
+
   // Queries & Mutations
   const queryClient = useQueryClient();
   const { data, isLoading, isRefetching, error } = useInvoices(queryParams);
   const updateMutation = useUpdateInvoice();
   const { data: tokensData } = useAutoPaymentTokens({});
+  const collectMutation = useCollectPayment();
+
+  // MongoDB Change Stream - global-invoices degisikliklerini dinle
+  useMongoChangeStream("global-invoices", (event) => {
+    const fields = event.updatedFields;
+
+    // isPaid veya paymentSuccessDate degistiyse fatura listesini yenile
+    if (
+      fields?.isPaid !== undefined ||
+      fields?.paymentSuccessDate !== undefined
+    ) {
+      queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
+    }
+  });
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
@@ -198,6 +230,67 @@ export function InvoicesPage() {
     link.click();
   }, [data]);
 
+  // Secili faturayı bul
+  const selectedInvoiceForPayment = useMemo(() => {
+    if (selectedIds.length !== 1 || !data?.data) return null;
+    return data.data.find((inv) => inv._id === selectedIds[0]) ?? null;
+  }, [selectedIds, data]);
+
+  // Secili fatura icin otomatik odeme kaydi var mi?
+  const canCollect = useMemo(() => {
+    if (!selectedInvoiceForPayment) return false;
+    if (selectedInvoiceForPayment.isPaid) return false;
+    return autoPaymentCustomerIds.has(selectedInvoiceForPayment.customerId);
+  }, [selectedInvoiceForPayment, autoPaymentCustomerIds]);
+
+  // Tahsil et handler
+  const handleCollectPayment = useCallback(async () => {
+    if (!selectedInvoiceForPayment || !canCollect) return;
+    setCollectLoading(true);
+    try {
+      const result = await collectMutation.mutateAsync({
+        customerId: selectedInvoiceForPayment.customerId,
+        amount: selectedInvoiceForPayment.grandTotal,
+        mode: "custom",
+        invoiceNo: selectedInvoiceForPayment.invoiceNumber,
+      });
+      if (!result.success) {
+        setPaymentNotification({
+          type: "error",
+          message: result.paymentError || result.message,
+        });
+      } else {
+        setPaymentNotification({
+          type: "success",
+          message: result.message,
+        });
+        // Fatura listesini yenile
+        queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Tahsilat sırasında hata oluştu";
+      setPaymentNotification({ type: "error", message: errorMessage });
+    } finally {
+      setCollectLoading(false);
+    }
+  }, [selectedInvoiceForPayment, canCollect, collectMutation, queryClient]);
+
+  // Grid toolbar custom buttons
+  const toolbarCustomButtons = useMemo(
+    () => [
+      {
+        id: "collect-payment",
+        label: collectLoading ? "Tahsil Ediliyor..." : "Tahsil Et",
+        icon: <CreditCard className="w-4 h-4" />,
+        onClick: handleCollectPayment,
+        disabled: !canCollect || collectLoading,
+        variant: "primary" as const,
+      },
+    ],
+    [canCollect, collectLoading, handleCollectPayment]
+  );
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -225,6 +318,47 @@ export function InvoicesPage() {
           </button>
         </div>
       </div>
+
+      {/* Payment Notification */}
+      {paymentNotification && (
+        <div
+          className="flex items-center gap-3 px-6 py-3 border-b border-[var(--color-border)] text-sm"
+          style={{
+            backgroundColor:
+              paymentNotification.type === "error"
+                ? "color-mix(in oklch, var(--color-error) 12%, var(--color-surface))"
+                : "color-mix(in oklch, var(--color-success) 12%, var(--color-surface))",
+            color:
+              paymentNotification.type === "error"
+                ? "var(--color-error-foreground)"
+                : "var(--color-success-foreground)",
+            borderColor:
+              paymentNotification.type === "error"
+                ? "color-mix(in oklch, var(--color-error) 30%, var(--color-border))"
+                : "color-mix(in oklch, var(--color-success) 30%, var(--color-border))",
+          }}
+        >
+          {paymentNotification.type === "error" ? (
+            <AlertTriangle
+              className="w-4 h-4 flex-shrink-0"
+              style={{ color: "var(--color-error)" }}
+            />
+          ) : (
+            <CheckCircle
+              className="w-4 h-4 flex-shrink-0"
+              style={{ color: "var(--color-success)" }}
+            />
+          )}
+          <span className="flex-1 font-medium">{paymentNotification.message}</span>
+          <button
+            type="button"
+            onClick={() => setPaymentNotification(null)}
+            className="p-1 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
+          >
+            <X className="w-4 h-4 text-[var(--color-muted-foreground)]" />
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="px-6 py-4 border-b border-[var(--color-border)]">
@@ -264,6 +398,7 @@ export function InvoicesPage() {
           onRowDoubleClick={handleRowDoubleClick}
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}
+          customButtons={toolbarCustomButtons}
         />
       </div>
 

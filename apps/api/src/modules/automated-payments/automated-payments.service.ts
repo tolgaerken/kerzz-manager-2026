@@ -247,6 +247,11 @@ export class AutomatedPaymentsService {
         .findOne({ _id: new Types.ObjectId(dto.paymentPlanId) })
         .lean()
         .exec();
+    } else if (dto.invoiceNo) {
+      paymentPlan = await this.contractPaymentModel
+        .findOne({ invoiceNo: dto.invoiceNo })
+        .lean()
+        .exec();
     }
 
     // 6. Yeni odeme kaydi olustur
@@ -336,10 +341,13 @@ export class AutomatedPaymentsService {
     });
 
     // 10. Odeme plani guncellemesi (varsa)
-    if (dto.paymentPlanId) {
+    if (paymentPlan) {
+      const planFilterId = dto.paymentPlanId
+        ? new Types.ObjectId(dto.paymentPlanId)
+        : paymentPlan._id;
       await this.contractPaymentModel
         .updateOne(
-          { _id: new Types.ObjectId(dto.paymentPlanId) },
+          { _id: planFilterId },
           {
             $set: {
               onlinePaymentId: orderId,
