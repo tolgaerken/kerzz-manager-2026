@@ -82,7 +82,7 @@ export function HeaderCell<TData>({
   }, []);
 
   const handleFilterApply = useCallback(
-    (filter: ActiveDropdownFilter | ActiveInputFilter | ActiveDateTreeFilter) => {
+    (filter: ActiveFilter) => {
       onFilterApply(column.id, filter);
     },
     [column.id, onFilterApply],
@@ -107,7 +107,6 @@ export function HeaderCell<TData>({
     column.sortable !== false && 'kz-header-cell--sortable',
     isDragging && 'kz-header-cell--dragging',
     isDragOver && 'kz-header-cell--drag-over',
-    column.align && `kz-header-cell--align-${column.align}`,
     column.headerClassName,
   ]
     .filter(Boolean)

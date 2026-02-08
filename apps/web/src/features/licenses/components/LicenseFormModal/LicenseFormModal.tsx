@@ -5,8 +5,8 @@ import { LICENSE_TYPES, COMPANY_TYPES, LICENSE_CATEGORIES } from "../../constant
 import { LicenseModulesTab } from "../LicenseModulesTab";
 import { LicenseSaasTab } from "../LicenseSaasTab";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
-import { useCustomers } from "../../../customers";
-import type { Customer } from "../../../customers";
+import { useCustomerLookup } from "../../../lookup";
+import type { CustomerLookupItem } from "../../../lookup";
 import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
 import type { AddressData } from "../../../locations";
 
@@ -36,7 +36,7 @@ export function LicenseFormModal({
 }: LicenseFormModalProps) {
   const isEdit = !!license;
   const [activeTab, setActiveTab] = useState<TabId>("info");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerLookupItem | null>(null);
 
   const [formData, setFormData] = useState<CreateLicenseInput>({
     brandName: "",
@@ -60,10 +60,8 @@ export function LicenseFormModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Customer'ları çek (edit modda customer'ı bulmak için)
-  const { data: customersData } = useCustomers({
-    limit: 999999,
-  });
+  // Lookup cache'ten customer map'i al (edit modda customer'ı bulmak için)
+  const { customerMap } = useCustomerLookup();
 
   useEffect(() => {
     if (license) {
@@ -88,19 +86,11 @@ export function LicenseFormModal({
       });
       setActiveTab("info");
       
-      // Edit modda: customerId varsa customer'ı bul ve selectedCustomer'a set et
-      if (license.customerId && customersData?.data) {
+      // Edit modda: customerId varsa customer'ı cache'ten bul
+      if (license.customerId) {
         const trimmedId = license.customerId.toString().trim();
-        const customer = customersData.data.find(c => 
-          c._id === trimmedId || 
-          c.id === trimmedId || 
-          c.erpId === trimmedId
-        );
-        if (customer) {
-          setSelectedCustomer(customer);
-        } else {
-          setSelectedCustomer(null);
-        }
+        const customer = customerMap.get(trimmedId);
+        setSelectedCustomer(customer || null);
       } else {
         setSelectedCustomer(null);
       }
@@ -128,7 +118,7 @@ export function LicenseFormModal({
       setSelectedCustomer(null);
     }
     setErrors({});
-  }, [license, isOpen, customersData]);
+  }, [license, isOpen, customerMap]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

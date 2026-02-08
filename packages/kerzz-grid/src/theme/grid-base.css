@@ -1,59 +1,40 @@
 /* ============================
    @kerzz/grid - Base Styles
-   ============================
-   Global tema entegrasyonu:
-   --theme-* CSS değişkenleri (kerzz-manager global tema sistemi) varsa
-   otomatik olarak kullanılır. Yoksa fallback değerler devreye girer.
    ============================ */
 
 .kz-grid {
-  /* ---- Renkler (global tema ile entegre) ---- */
-  --kz-bg: var(--theme-background, #ffffff);
-  --kz-header-bg: var(--theme-surface-elevated, #f8fafc);
-  --kz-header-fg: var(--theme-foreground, #1e293b);
-  --kz-row-bg: var(--theme-surface, #ffffff);
-  --kz-row-alt-bg: var(--theme-surface-elevated, #f8fafc);
-  --kz-row-hover: var(--theme-surface-hover, #f1f5f9);
-  --kz-row-selected: color-mix(in srgb, var(--theme-primary, #3b82f6) 12%, var(--theme-surface, #ffffff));
-  --kz-border: var(--theme-border, #e2e8f0);
-  --kz-primary: var(--theme-primary, #3b82f6);
-  --kz-primary-hover: var(--theme-primary-hover, #2563eb);
-  --kz-text: var(--theme-foreground, #1e293b);
-  --kz-text-muted: var(--theme-muted-foreground, #64748b);
-  --kz-footer-bg: var(--theme-surface-elevated, #f1f5f9);
-  --kz-footer-fg: var(--theme-foreground, #334155);
-  --kz-scrollbar-thumb: color-mix(in srgb, var(--theme-foreground, #1e293b) 20%, var(--theme-background, #ffffff));
-  --kz-scrollbar-track: var(--theme-background, #f1f5f9);
-  --kz-filter-bg: var(--theme-surface, #ffffff);
-  --kz-filter-border: var(--theme-border, #e2e8f0);
-  --kz-filter-active: var(--theme-primary, #3b82f6);
-  --kz-resize-handle: var(--theme-muted, #94a3b8);
-  --kz-focus-ring: var(--theme-primary, #3b82f6);
-
-  /* ---- Semantic renkler ---- */
-  --kz-error: var(--theme-error, #ef4444);
-  --kz-error-foreground: var(--theme-error-foreground, #fca5a5);
-  --kz-warning: var(--theme-warning, #f59e0b);
-  --kz-warning-foreground: var(--theme-warning-foreground, #fffbeb);
-
-  /* ---- Tipografi ---- */
+  --kz-bg: #ffffff;
+  --kz-header-bg: #f8fafc;
+  --kz-header-fg: #1e293b;
+  --kz-row-bg: #ffffff;
+  --kz-row-alt-bg: #f8fafc;
+  --kz-row-hover: #f1f5f9;
+  --kz-row-selected: #dbeafe;
+  --kz-border: #e2e8f0;
+  --kz-primary: #3b82f6;
+  --kz-primary-hover: #2563eb;
+  --kz-text: #1e293b;
+  --kz-text-muted: #64748b;
+  --kz-footer-bg: #f1f5f9;
+  --kz-footer-fg: #334155;
+  --kz-scrollbar-thumb: #cbd5e1;
+  --kz-scrollbar-track: #f1f5f9;
+  --kz-filter-bg: #ffffff;
+  --kz-filter-border: #e2e8f0;
+  --kz-filter-active: #3b82f6;
+  --kz-resize-handle: #94a3b8;
+  --kz-focus-ring: #3b82f6;
   --kz-font-size: 13px;
   --kz-header-font-size: 13px;
   --kz-footer-font-size: 12px;
   --kz-filter-font-size: 12px;
-
-  /* ---- Spacing ---- */
   --kz-row-height: 36px;
   --kz-header-height: 42px;
   --kz-footer-height: 38px;
   --kz-cell-padding-x: 12px;
   --kz-cell-padding-y: 4px;
-
-  /* ---- Border ---- */
   --kz-border-radius: 6px;
   --kz-border-width: 1px;
-
-  /* ---- Font ---- */
   --kz-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
 
@@ -92,7 +73,7 @@
 }
 
 .kz-grid ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--kz-text) 35%, var(--kz-bg));
+  background: var(--kz-text-muted);
 }
 
 /* ---- Toolbar ---- */
@@ -160,13 +141,13 @@
 }
 
 .kz-toolbar__btn--danger {
-  color: var(--kz-error);
-  border-color: var(--kz-error-foreground);
+  color: #ef4444;
+  border-color: #fca5a5;
 }
 
 .kz-toolbar__btn--danger:hover {
-  background: color-mix(in srgb, var(--kz-error) 8%, var(--kz-bg));
-  border-color: var(--kz-error);
+  background: #fef2f2;
+  border-color: #ef4444;
 }
 
 .kz-toolbar__btn--disabled {
@@ -216,8 +197,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   color: var(--kz-text-muted);
   pointer-events: none;
 }
@@ -243,7 +224,7 @@
 
 .kz-toolbar-search__input:focus {
   border-color: var(--kz-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--kz-primary) 15%, transparent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .kz-toolbar-search__input::placeholder {
@@ -263,7 +244,6 @@
   color: var(--kz-text-muted);
   cursor: pointer;
   border-radius: 3px;
-  padding: 0;
   transition: all 0.15s;
 }
 
@@ -280,14 +260,8 @@
 /* ---- Header ---- */
 .kz-grid-header-wrapper {
   flex-shrink: 0;
-  overflow: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  overflow: hidden;
   border-bottom: var(--kz-border-width) solid var(--kz-border);
-}
-
-.kz-grid-header-wrapper::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
 }
 
 .kz-grid-header {
@@ -333,14 +307,6 @@
 
 .kz-header-cell--drag-over {
   border-left: 2px solid var(--kz-primary);
-}
-
-.kz-header-cell--align-center {
-  justify-content: center;
-}
-
-.kz-header-cell--align-right .kz-header-cell__label {
-  text-align: right;
 }
 
 .kz-header-cell__label {
@@ -420,8 +386,7 @@
   width: 100%;
   min-height: var(--kz-row-height);
   border-bottom: var(--kz-border-width) solid var(--kz-border);
-  background: var(--kz-row-bg);
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.1s;
 }
 
 .kz-grid-row:hover {
@@ -434,50 +399,6 @@
 
 .kz-grid-row--selected {
   background: var(--kz-row-selected);
-  box-shadow: inset 3px 0 0 0 var(--kz-primary);
-}
-
-.kz-grid-row--selected:hover {
-  background: color-mix(in srgb, var(--kz-primary) 18%, var(--kz-row-bg));
-}
-
-/* Row containing an editing cell — highlight entire row and raise z-index */
-.kz-grid-row.kz-grid-row--editing,
-.kz-grid-row:has(.kz-grid-cell--editing) {
-  z-index: 10;
-  background: color-mix(in srgb, var(--kz-primary) 8%, var(--kz-row-bg));
-}
-
-.kz-grid-row.kz-grid-row--editing:hover,
-.kz-grid-row:has(.kz-grid-cell--editing):hover {
-  background: color-mix(in srgb, var(--kz-primary) 14%, var(--kz-row-bg));
-}
-
-/* Row with pending changes in edit mode — doubled selector for specificity */
-.kz-grid-row.kz-grid-row--changed {
-  background: color-mix(in srgb, var(--kz-warning) 10%, var(--kz-row-bg));
-}
-
-.kz-grid-row.kz-grid-row--changed.kz-grid-row--striped {
-  background: color-mix(in srgb, var(--kz-warning) 15%, var(--kz-row-bg));
-}
-
-.kz-grid-row.kz-grid-row--changed:hover {
-  background: color-mix(in srgb, var(--kz-warning) 20%, var(--kz-row-bg));
-}
-
-/* Pending new row — not yet saved */
-.kz-grid-row.kz-grid-row--pending-new {
-  background: color-mix(in srgb, var(--kz-success, #22c55e) 8%, var(--kz-row-bg));
-  border-left: 3px solid var(--kz-success, #22c55e);
-}
-
-.kz-grid-row.kz-grid-row--pending-new.kz-grid-row--striped {
-  background: color-mix(in srgb, var(--kz-success, #22c55e) 12%, var(--kz-row-bg));
-}
-
-.kz-grid-row.kz-grid-row--pending-new:hover {
-  background: color-mix(in srgb, var(--kz-success, #22c55e) 18%, var(--kz-row-bg));
 }
 
 /* ---- Cells ---- */
@@ -512,14 +433,8 @@
 /* ---- Footer ---- */
 .kz-grid-footer-wrapper {
   flex-shrink: 0;
-  overflow: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  overflow: hidden;
   border-top: var(--kz-border-width) solid var(--kz-border);
-}
-
-.kz-grid-footer-wrapper::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
 }
 
 .kz-grid-footer {
@@ -546,14 +461,6 @@
 
 .kz-footer-cell:last-child {
   border-right: none;
-}
-
-.kz-footer-cell--align-center {
-  justify-content: center;
-}
-
-.kz-footer-cell--align-right {
-  justify-content: flex-end;
 }
 
 .kz-footer-cell__label {
@@ -607,8 +514,7 @@
   background: var(--kz-filter-bg);
   border: var(--kz-border-width) solid var(--kz-filter-border);
   border-radius: var(--kz-border-radius);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 10%, transparent),
-    0 1px 3px color-mix(in srgb, var(--kz-text) 6%, transparent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   font-size: var(--kz-filter-font-size);
   overflow: hidden;
 }
@@ -633,7 +539,7 @@
 
 .kz-filter-dropdown__search input:focus {
   border-color: var(--kz-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--kz-primary) 15%, transparent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .kz-filter-dropdown__actions {
@@ -738,8 +644,7 @@
   background: var(--kz-filter-bg);
   border: var(--kz-border-width) solid var(--kz-filter-border);
   border-radius: var(--kz-border-radius);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 10%, transparent),
-    0 1px 3px color-mix(in srgb, var(--kz-text) 6%, transparent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   font-size: var(--kz-filter-font-size);
   padding: 8px;
   display: flex;
@@ -778,7 +683,7 @@
 
 .kz-filter-input input:focus {
   border-color: var(--kz-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--kz-primary) 15%, transparent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .kz-filter-input__row {
@@ -825,8 +730,7 @@
   background: var(--kz-filter-bg);
   border: var(--kz-border-width) solid var(--kz-filter-border);
   border-radius: var(--kz-border-radius);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 10%, transparent),
-    0 1px 3px color-mix(in srgb, var(--kz-text) 6%, transparent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   font-size: var(--kz-filter-font-size);
   overflow: hidden;
 }
@@ -875,7 +779,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--kz-bg) 70%, transparent);
+  background: rgba(255, 255, 255, 0.7);
   z-index: 100;
 }
 
@@ -1021,271 +925,155 @@
   font-size: 14px;
 }
 
-/* ---- Selection Checkbox (Fixed/Sticky) ---- */
-.kz-selection-cell {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  justify-content: center;
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: var(--kz-row-bg);
-  border-right: var(--kz-border-width) solid var(--kz-border);
-}
-
-.kz-selection-header-cell {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  justify-content: center;
-  position: sticky;
-  left: 0;
-  z-index: 3;
-  background: var(--kz-header-bg);
-  border-right: var(--kz-border-width) solid var(--kz-border);
-}
-
-.kz-selection-footer-cell {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  position: sticky;
-  left: 0;
-  z-index: 2;
+/* ---- Active Filter Bar ---- */
+.kz-active-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
   background: var(--kz-footer-bg);
-  border-right: var(--kz-border-width) solid var(--kz-border);
-}
-
-.kz-selection-checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--kz-primary);
-  cursor: pointer;
-  margin: 0;
-}
-
-/* Selection cell background states */
-.kz-grid-row--selected .kz-selection-cell {
-  background: var(--kz-row-selected);
-}
-
-.kz-grid-row--selected:hover .kz-selection-cell {
-  background: color-mix(in srgb, var(--kz-primary) 18%, var(--kz-row-bg));
-}
-
-.kz-grid-row:hover .kz-selection-cell {
-  background: var(--kz-row-hover);
-}
-
-.kz-grid-row--striped .kz-selection-cell {
-  background: var(--kz-row-alt-bg);
-}
-
-.kz-grid-row--striped:hover .kz-selection-cell {
-  background: var(--kz-row-hover);
-}
-
-.kz-grid-row--striped.kz-grid-row--selected .kz-selection-cell {
-  background: var(--kz-row-selected);
-}
-
-.kz-grid-row--striped.kz-grid-row--selected:hover .kz-selection-cell {
-  background: color-mix(in srgb, var(--kz-primary) 18%, var(--kz-row-bg));
-}
-
-/* ---- Editing ---- */
-.kz-grid-cell--editable {
-  cursor: pointer;
-}
-
-.kz-grid-cell--editing {
-  padding: 0;
-  overflow: visible;
-  position: relative;
-  z-index: 20;
-  background: var(--kz-bg);
-}
-
-.kz-grid-cell.kz-grid-cell--changed {
-  background: color-mix(in srgb, var(--kz-warning) 15%, var(--kz-bg));
-}
-
-/* Common editor styles */
-.kz-editor {
-  width: 100%;
-  height: 100%;
-  border: none;
-  outline: none;
-  font-family: inherit;
-  font-size: inherit;
-  color: var(--kz-text);
-  background: var(--kz-bg);
-}
-
-.kz-editor--text,
-.kz-editor--number {
-  padding: var(--kz-cell-padding-y) var(--kz-cell-padding-x);
-  min-height: var(--kz-row-height);
-  box-shadow: inset 0 0 0 2px var(--kz-primary);
-  border-radius: 0;
-}
-
-.kz-editor--text:focus,
-.kz-editor--number:focus {
-  outline: none;
-}
-
-/* Select editor */
-.kz-editor--select {
-  position: relative;
-  outline: none;
-  width: 100%;
-  height: 100%;
-  background: var(--kz-bg);
-}
-
-.kz-editor__select-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  padding: var(--kz-cell-padding-y) var(--kz-cell-padding-x);
-  min-height: var(--kz-row-height);
-  background: var(--kz-bg);
-  color: var(--kz-text);
-  box-shadow: inset 0 0 0 2px var(--kz-primary);
-  cursor: pointer;
-}
-
-.kz-editor__select-trigger-label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.kz-editor__select-trigger-chevron {
-  width: 12px;
-  height: 12px;
+  border-top: var(--kz-border-width) solid var(--kz-border);
   flex-shrink: 0;
-  color: var(--kz-text-muted);
+  flex-wrap: wrap;
+  min-height: 36px;
 }
 
-/* Select dropdown opens below trigger */
-.kz-editor--select .kz-editor__dropdown {
-  top: 100%;
-  margin-top: 2px;
-}
-
-/* Autocomplete editor */
-.kz-editor--autocomplete {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background: var(--kz-bg);
-}
-
-.kz-editor__autocomplete-input-wrapper {
+.kz-active-filter-bar__label {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: var(--kz-cell-padding-y) var(--kz-cell-padding-x);
-  min-height: var(--kz-row-height);
-  background: var(--kz-bg);
-  box-shadow: inset 0 0 0 2px var(--kz-primary);
-  color: var(--kz-text);
+  font-size: var(--kz-footer-font-size);
+  font-weight: 600;
+  color: var(--kz-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.kz-editor__autocomplete-icon {
+.kz-active-filter-bar__label svg {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  color: color-mix(in srgb, var(--kz-text) 50%, transparent);
 }
 
-.kz-editor__autocomplete-input {
+.kz-active-filter-bar__chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
   flex: 1;
   min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
+}
+
+.kz-active-filter-bar__clear-all {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: var(--kz-border-width) solid var(--kz-border);
+  border-radius: 4px;
+  background: var(--kz-bg);
+  color: var(--kz-error);
+  font-size: 11px;
   font-family: inherit;
-  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kz-active-filter-bar__clear-all:hover {
+  background: color-mix(in srgb, var(--kz-error) 8%, var(--kz-bg));
+  border-color: var(--kz-error);
+}
+
+/* ---- Filter Chip ---- */
+.kz-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border: var(--kz-border-width) solid var(--kz-border);
+  border-radius: 4px;
+  background: var(--kz-bg);
+  font-size: 11px;
+  line-height: 1.3;
   color: var(--kz-text);
+  transition: all 0.15s;
+  max-width: 220px;
 }
 
-.kz-editor__autocomplete-input::placeholder {
-  color: color-mix(in srgb, var(--kz-text) 50%, transparent);
+.kz-filter-chip--disabled {
+  opacity: 0.5;
+  border-style: dashed;
 }
 
-.kz-editor__autocomplete-clear {
+.kz-filter-chip__toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
+  width: 18px;
+  height: 18px;
   border: none;
-  border-radius: 3px;
   background: transparent;
-  color: var(--kz-text);
   cursor: pointer;
+  padding: 0;
+  color: var(--kz-primary);
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: all 0.15s;
 }
 
-.kz-editor__autocomplete-clear:hover {
+.kz-filter-chip__toggle:hover {
   background: var(--kz-row-hover);
 }
 
-.kz-editor__dropdown {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: var(--kz-bg);
-  color: var(--kz-text);
-  border: var(--kz-border-width) solid var(--kz-border);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--kz-text) 15%, transparent),
-    0 2px 4px color-mix(in srgb, var(--kz-text) 8%, transparent);
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 100;
+.kz-filter-chip__toggle svg {
+  width: 12px;
+  height: 12px;
 }
 
-/* Dropdown positioned below input (for autocomplete editors) */
-.kz-editor--autocomplete .kz-editor__dropdown {
-  top: 100%;
-  margin-top: 2px;
+.kz-filter-chip--disabled .kz-filter-chip__toggle {
+  color: var(--kz-text-muted);
 }
 
-.kz-editor__dropdown--empty {
-  padding: 8px var(--kz-cell-padding-x);
-  color: color-mix(in srgb, var(--kz-text) 50%, transparent);
-  font-size: inherit;
-}
-
-.kz-editor__dropdown-item {
-  padding: 6px var(--kz-cell-padding-x);
-  cursor: pointer;
-  background: var(--kz-bg);
-  color: var(--kz-text);
-  transition: background 0.1s;
-  white-space: nowrap;
+.kz-filter-chip__label {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: inherit;
+  white-space: nowrap;
+  min-width: 0;
 }
 
-.kz-editor__dropdown-item--highlighted {
-  background: var(--kz-row-hover);
-}
-
-.kz-editor__dropdown-item--selected {
+.kz-filter-chip__column {
   font-weight: 600;
-  color: var(--kz-text);
-  background: color-mix(in srgb, var(--kz-primary) 15%, var(--kz-bg));
+  color: var(--kz-footer-fg);
 }
 
-.kz-editor__dropdown-item--selected.kz-editor__dropdown-item--highlighted {
-  background: color-mix(in srgb, var(--kz-primary) 25%, var(--kz-bg));
+.kz-filter-chip__value {
+  color: var(--kz-text-muted);
+}
+
+.kz-filter-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  color: var(--kz-text-muted);
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.kz-filter-chip__remove:hover {
+  color: var(--kz-error);
+  background: color-mix(in srgb, var(--kz-error) 10%, var(--kz-bg));
+}
+
+.kz-filter-chip__remove svg {
+  width: 10px;
+  height: 10px;
 }

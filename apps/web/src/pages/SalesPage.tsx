@@ -1,81 +1,176 @@
-import { ShoppingCart, TrendingUp, DollarSign, Users } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { CalendarDays, Plus, RefreshCw } from "lucide-react";
+import type { ToolbarButtonConfig } from "@kerzz/grid";
+import {
+  useSales,
+  useCreateSale,
+  useUpdateSale,
+} from "../features/sales/hooks/useSales";
+import { SalesGrid } from "../features/sales/components/SalesGrid/SalesGrid";
+import { SalesFilters } from "../features/sales/components/SalesFilters/SalesFilters";
+import { SaleFormModal } from "../features/sales/components/SaleFormModal/SaleFormModal";
+import { getMonthRange } from "../features/sales/utils/dateUtils";
+import type {
+  Sale,
+  SaleQueryParams,
+  CreateSaleInput,
+} from "../features/sales/types/sale.types";
+import { useCustomerLookup } from "../features/lookup";
 
 export function SalesPage() {
-  const salesStats = [
-    { label: "Toplam Satış", value: "₺125,430", icon: DollarSign, change: "+12.5%", positive: true },
-    { label: "Siparişler", value: "89", icon: ShoppingCart, change: "+8.2%", positive: true },
-    { label: "Müşteriler", value: "45", icon: Users, change: "+5.1%", positive: true },
-    { label: "Ortalama Sipariş", value: "₺1,409", icon: TrendingUp, change: "-2.3%", positive: false },
-  ];
+  const defaultRange = useMemo(() => getMonthRange(), []);
 
-  const recentSales = [
-    { id: 1, customer: "Müşteri A", product: "Ürün X", amount: "₺2,500", date: "Bugün" },
-    { id: 2, customer: "Müşteri B", product: "Ürün Y", amount: "₺1,850", date: "Dün" },
-    { id: 3, customer: "Müşteri C", product: "Ürün Z", amount: "₺3,200", date: "2 gün önce" },
-    { id: 4, customer: "Müşteri D", product: "Ürün X", amount: "₺950", date: "3 gün önce" },
+  // No pagination - fetch all data for virtual scroll
+  const [queryParams, setQueryParams] = useState<SaleQueryParams>({
+    sortField: "createdAt",
+    sortOrder: "desc",
+    startDate: defaultRange.startDate,
+    endDate: defaultRange.endDate,
+  });
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+
+  const { data, isLoading, refetch } = useSales(queryParams);
+  const createMutation = useCreateSale();
+  const updateMutation = useUpdateSale();
+  const { getCustomerName } = useCustomerLookup();
+
+  const enrichedSales = useMemo(() => {
+    if (!data?.data) return [];
+    return data.data.map((sale) => ({
+      ...sale,
+      customerName: getCustomerName(sale.customerId) !== "-"
+        ? getCustomerName(sale.customerId)
+        : sale.customerName || "-",
+    }));
+  }, [data, getCustomerName]);
+
+  const handleFilterChange = useCallback(
+    (filters: Partial<SaleQueryParams>) => {
+      setQueryParams((prev) => ({ ...prev, ...filters }));
+    },
+    []
+  );
+
+  const handleSortChange = useCallback(
+    (field: string, order: "asc" | "desc") => {
+      setQueryParams((prev) => ({
+        ...prev,
+        sortField: field,
+        sortOrder: order,
+      }));
+    },
+    []
+  );
+
+  const handleRowDoubleClick = useCallback((sale: Sale) => {
+    setEditingSale(sale);
+    setIsFormOpen(true);
+  }, []);
+
+  const handleCreate = useCallback(
+    async (input: CreateSaleInput) => {
+      await createMutation.mutateAsync(input);
+      setIsFormOpen(false);
+    },
+    [createMutation]
+  );
+
+  const handleUpdate = useCallback(
+    async (input: CreateSaleInput) => {
+      if (!editingSale) return;
+      await updateMutation.mutateAsync({
+        id: editingSale._id,
+        input,
+      });
+      setIsFormOpen(false);
+      setEditingSale(null);
+    },
+    [editingSale, updateMutation]
+  );
+
+  const toolbarButtons: ToolbarButtonConfig[] = [
+    {
+      id: "add",
+      label: "Yeni Satış",
+      icon: <Plus size={14} />,
+      onClick: () => {
+        setEditingSale(null);
+        setIsFormOpen(true);
+      },
+    },
+    {
+      id: "refresh",
+      label: "Yenile",
+      icon: <RefreshCw size={14} />,
+      onClick: () => refetch(),
+    },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Satış</h1>
-        <p className="mt-1 text-muted">
-          Satış performansınızı ve siparişlerinizi takip edin.
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {salesStats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-lg border border-border bg-surface p-6"
-          >
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-surface-elevated p-3">
-                <stat.icon className="h-5 w-5 text-muted" />
-              </div>
-              <span
-                className={`text-xs font-medium ${
-                  stat.positive ? "text-success" : "text-error"
-                }`}
-              >
-                {stat.change}
-              </span>
-            </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-sm text-muted">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Sales */}
-      <div className="rounded-lg border border-border bg-surface p-6">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">Son Satışlar</h2>
-        <div className="space-y-4">
-          {recentSales.map((sale) => (
-            <div
-              key={sale.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 p-4"
-            >
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-success/20 p-2">
-                  <ShoppingCart className="h-4 w-4 text-success" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{sale.customer}</p>
-                  <p className="text-sm text-muted">{sale.product}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-medium text-foreground">{sale.amount}</p>
-                <p className="text-sm text-muted">{sale.date}</p>
-              </div>
-            </div>
-          ))}
+    <div className="flex flex-col min-h-0 flex-1">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+            Satışlar
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-foreground-muted)]">
+            Satışlarınızı yönetin, onaylayın ve takip edin
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5">
+          <CalendarDays className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
+          <input
+            type="date"
+            value={queryParams.startDate ?? ""}
+            onChange={(e) =>
+              setQueryParams((prev) => ({ ...prev, startDate: e.target.value }))
+            }
+            className="bg-transparent text-xs font-medium text-[var(--color-foreground)] outline-none"
+          />
+          <span className="text-xs text-[var(--color-muted-foreground)]">—</span>
+          <input
+            type="date"
+            value={queryParams.endDate ?? ""}
+            onChange={(e) =>
+              setQueryParams((prev) => ({ ...prev, endDate: e.target.value }))
+            }
+            className="bg-transparent text-xs font-medium text-[var(--color-foreground)] outline-none"
+          />
         </div>
       </div>
+
+      <SalesFilters filters={queryParams} onFilterChange={handleFilterChange} />
+
+      <div className="flex-1 min-h-0 mt-4">
+        <SalesGrid
+          data={enrichedSales}
+          loading={isLoading}
+          onSortChange={handleSortChange}
+          onRowDoubleClick={handleRowDoubleClick}
+          toolbarButtons={toolbarButtons}
+        />
+      </div>
+
+      {data?.meta && (
+        <div className="flex items-center justify-between mt-3 px-1">
+          <span className="text-sm text-[var(--color-foreground-muted)]">
+            Toplam: {data.meta.total} kayıt
+          </span>
+        </div>
+      )}
+
+      <SaleFormModal
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingSale(null);
+        }}
+        editItem={editingSale}
+        onSubmit={editingSale ? handleUpdate : handleCreate}
+        loading={createMutation.isPending || updateMutation.isPending}
+      />
     </div>
   );
 }

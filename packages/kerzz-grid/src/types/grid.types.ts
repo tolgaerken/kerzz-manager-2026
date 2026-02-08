@@ -1,5 +1,5 @@
 import type { GridColumnDef } from './column.types';
-import type { FilterState } from './filter.types';
+import type { FilterState, DisabledFilterState } from './filter.types';
 import type { GridTheme } from './theme.types';
 import type { ToolbarConfig } from './toolbar.types';
 import type { SelectionMode } from './selection.types';
@@ -103,6 +103,7 @@ export interface GridState {
   columnVisibility: Record<string, boolean>;
   sorting: SortingState;
   filters: FilterState;
+  disabledFilters: DisabledFilterState;
   version: number;
 }
 

@@ -55,6 +55,14 @@ export interface GridLocale {
   toolbarCancel: string;
   toolbarAddRow: string;
 
+  // Active filter bar
+  activeFilters: string;
+  clearAllFilters: string;
+  filterEnabled: string;
+  filterDisabled: string;
+  filterSelected: string;
+  filterDaysSelected: string;
+
   // General
   noData: string;
   loading: string;

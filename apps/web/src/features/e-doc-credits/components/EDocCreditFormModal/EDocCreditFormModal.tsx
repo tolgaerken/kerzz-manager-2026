@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Modal } from "../../../../components/ui";
 import { CURRENCY_OPTIONS } from "../../constants/eDocCredits.constants";
 import type { EDocCreditItem, EDocCreditFormData } from "../../types/eDocCredit.types";
-import type { Customer } from "../../../customers";
+import type { CustomerLookupItem } from "../../../lookup";
 import { useCompanies } from "../../../companies";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
 
@@ -33,7 +33,7 @@ export function EDocCreditFormModal({
 }: EDocCreditFormModalProps) {
   const [formData, setFormData] = useState<EDocCreditFormData>(initialFormState);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerLookupItem | null>(null);
 
   // Firma listesini API'den çek
   const { data: companies = [] } = useCompanies();
@@ -61,14 +61,6 @@ export function EDocCreditFormModal({
             name: editItem.customerName || "",
             companyName: editItem.customerName || "",
             taxNo: "",
-            address: "",
-            city: "",
-            district: "",
-            phone: "",
-            email: "",
-            enabled: true,
-            createdAt: "",
-            updatedAt: "",
           });
         } else {
           setSelectedCustomer(null);
@@ -101,7 +93,7 @@ export function EDocCreditFormModal({
   }, [calculatedTotal, formData.currency]);
 
   const handleCustomerChange = useCallback(
-    (customer: Customer | null) => {
+    (customer: CustomerLookupItem | null) => {
       setSelectedCustomer(customer);
       if (customer) {
         setFormData((prev) => ({

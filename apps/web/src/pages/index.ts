@@ -5,5 +5,5 @@ export { ContractsPage } from "./ContractsPage";
 export { CustomersPage } from "./CustomersPage";
 export { HardwareProductsPage } from "./HardwareProductsPage";
 export { SoftwareProductsPage } from "./SoftwareProductsPage";
-export { SalesPage } from "./SalesPage";
+export { SalesDashboardPage } from "./SalesDashboardPage";
 export { IntegratorPage } from "./IntegratorPage";

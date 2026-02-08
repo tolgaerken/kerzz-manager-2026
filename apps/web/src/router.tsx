@@ -6,6 +6,9 @@ import { CustomersPage } from "./pages/CustomersPage";
 import { LicensesPage } from "./pages/LicensesPage";
 import { HardwareProductsPage } from "./pages/HardwareProductsPage";
 import { SoftwareProductsPage } from "./pages/SoftwareProductsPage";
+import { SalesDashboardPage } from "./pages/SalesDashboardPage";
+import { LeadsPage } from "./pages/LeadsPage";
+import { OffersPage } from "./pages/OffersPage";
 import { SalesPage } from "./pages/SalesPage";
 import { IntegratorPage } from "./pages/IntegratorPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
@@ -91,6 +94,27 @@ const licensesRoute = createRoute({
 const salesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sales",
+  component: SalesDashboardPage,
+});
+
+// Pipeline: Leads page
+const leadsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/leads",
+  component: LeadsPage,
+});
+
+// Pipeline: Offers page
+const offersRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/offers",
+  component: OffersPage,
+});
+
+// Pipeline: Sales page
+const pipelineSalesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/pipeline/sales",
   component: SalesPage,
 });
 
@@ -269,6 +293,9 @@ const routeTree = rootRoute.addChildren([
     hardwareProductsRoute,
     softwareProductsRoute,
     salesRoute,
+    leadsRoute,
+    offersRoute,
+    pipelineSalesRoute,
     integratorRoute,
     contractInvoicesRoute,
     invoicesRoute,

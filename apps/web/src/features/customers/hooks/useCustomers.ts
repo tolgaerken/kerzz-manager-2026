@@ -7,6 +7,7 @@ import {
   deleteCustomer
 } from "../api/customersApi";
 import { CUSTOMERS_CONSTANTS } from "../constants/customers.constants";
+import { LOOKUP_QUERY_KEYS } from "../../lookup";
 import type {
   CustomerQueryParams,
   CreateCustomerInput,
@@ -39,6 +40,7 @@ export function useCreateCustomer() {
     mutationFn: (input: CreateCustomerInput) => createCustomer(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOMERS] });
+      queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.CUSTOMERS] });
     }
   });
 }
@@ -51,6 +53,7 @@ export function useUpdateCustomer() {
       updateCustomer(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOMERS] });
+      queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.CUSTOMERS] });
     }
   });
 }
@@ -62,6 +65,7 @@ export function useDeleteCustomer() {
     mutationFn: (id: string) => deleteCustomer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOMERS] });
+      queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.CUSTOMERS] });
     }
   });
 }

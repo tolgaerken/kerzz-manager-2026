@@ -56,6 +56,14 @@ export const en: GridLocale = {
   toolbarCancel: 'Cancel',
   toolbarAddRow: 'Add Row',
 
+  // Active filter bar
+  activeFilters: 'Active Filters',
+  clearAllFilters: 'Clear All',
+  filterEnabled: 'Filter Enabled',
+  filterDisabled: 'Filter Disabled',
+  filterSelected: 'selected',
+  filterDaysSelected: 'days selected',
+
   // General
   noData: 'No data found',
   loading: 'Loading...',

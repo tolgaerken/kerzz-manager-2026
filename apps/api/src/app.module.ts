@@ -47,6 +47,13 @@ import { LocationsModule } from "./modules/locations";
 import { ExchangeRateModule } from "./modules/exchange-rate";
 import { ErpSettingsModule } from "./modules/erp-settings";
 import { BankTransactionsModule } from "./modules/bank-transactions";
+// Pipeline / CRM Modules
+import { PipelineItemsModule } from "./modules/pipeline-items";
+import { PipelineModule } from "./modules/pipeline";
+import { LeadsModule } from "./modules/leads";
+import { OffersModule } from "./modules/offers";
+import { SalesModule } from "./modules/sales";
+import { PipelineGatewayModule } from "./modules/pipeline-gateway";
 
 @Module({
   imports: [
@@ -105,6 +112,13 @@ import { BankTransactionsModule } from "./modules/bank-transactions";
     // Utility Modules
     ExchangeRateModule,
     ErpSettingsModule,
+    // Pipeline / CRM Modules
+    PipelineItemsModule,
+    PipelineModule,
+    LeadsModule,
+    OffersModule,
+    SalesModule,
+    PipelineGatewayModule,
   ],
   providers: [
     {

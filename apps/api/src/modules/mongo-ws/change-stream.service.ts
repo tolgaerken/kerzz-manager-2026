@@ -28,6 +28,8 @@ import type {
 export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ChangeStreamService.name);
   private readonly streams = new Map<string, ChangeStream>();
+  /** Collection bazinda yok sayilacak alanlar */
+  private readonly ignoredFieldsMap = new Map<string, Set<string>>();
 
   constructor(
     @InjectConnection(CONTRACT_DB_CONNECTION)
@@ -45,6 +47,10 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
     this.registerCollection("bank-transactions");
     this.registerCollection("global-invoices");
     this.registerCollection("online-payments");
+    this.registerCollection("customers");
+    this.registerCollection("licenses", {
+      ignoredFields: ["lastOnline", "lastIp", "lastVersion"]
+    });
   }
 
   onModuleDestroy() {
@@ -73,8 +79,13 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    // ignoredFields varsa kaydet
+    if (options?.ignoredFields?.length) {
+      this.ignoredFieldsMap.set(collectionName, new Set(options.ignoredFields));
+    }
+
     this.logger.log(
-      `Collection kayit ediliyor: ${collectionName} (pipeline: ${options?.pipeline ? "ozel" : "yok"}, fullDocument: ${options?.fullDocument ?? "updateLookup"})`
+      `Collection kayit ediliyor: ${collectionName} (pipeline: ${options?.pipeline ? "ozel" : "yok"}, fullDocument: ${options?.fullDocument ?? "updateLookup"}, ignoredFields: ${options?.ignoredFields?.join(", ") || "yok"})`
     );
     this.watchCollection(collectionName, options);
   }
@@ -147,6 +158,19 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `[${collectionName}] Guncellenen alanlar: ${Object.keys(updatedFields).join(", ")}`
       );
+
+      // ignoredFields kontrolu: sadece yok sayilan alanlar degistiyse event'i atla
+      const ignoredFields = this.ignoredFieldsMap.get(collectionName);
+      if (ignoredFields && operationType === "update") {
+        const changedKeys = Object.keys(updatedFields);
+        const allIgnored = changedKeys.every((key) => ignoredFields.has(key));
+        if (allIgnored) {
+          this.logger.debug(
+            `[${collectionName}] Sadece yok sayilan alanlar degisti (${changedKeys.join(", ")}), event atlanıyor`
+          );
+          return;
+        }
+      }
     }
 
     const event: MongoChangeEvent = {

@@ -1,0 +1,92 @@
+---
+description: Müşteri ve lisans lookup verileri cache'ten kullanılmalı, tekrar API çağrısı yapılmamalı
+globs: apps/web/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Lookup Cache Kullanım Kuralı
+
+Müşteri ve lisans verileri uygulama açılışında minimal alanlarla çekilip cache'te tutulur. Yeni sayfa veya bileşenlerde bu verilere ihtiyaç duyulduğunda **doğrudan API çağrısı yapılmamalı**, lookup hook'ları kullanılmalıdır.
+
+## Müşteri Verisi
+
+```typescript
+// ✅ DOĞRU - Lookup hook'u kullan
+import { useCustomerLookup } from "@/features/lookup";
+
+function MyComponent() {
+  const { customers, customerMap, getCustomerName, searchCustomers } = useCustomerLookup();
+
+  // İsim çözümleme
+  const name = getCustomerName(sale.customerId);
+
+  // Autocomplete / arama
+  const results = searchCustomers(searchTerm);
+}
+
+// ❌ YANLIŞ - Doğrudan API çağrısı yapma
+import { useCustomers } from "@/features/customers/hooks/useCustomers";
+const { data } = useCustomers({ limit: 99999 }); // Gereksiz ağ yükü!
+```
+
+## Lisans Verisi
+
+```typescript
+// ✅ DOĞRU - Lookup hook'u kullan
+import { useLicenseLookup } from "@/features/lookup";
+
+function MyComponent() {
+  const { licenses, licenseMap, searchLicenses } = useLicenseLookup();
+
+  // ID ile lisans bul
+  const license = licenseMap.get(licenseId);
+
+  // Arama
+  const results = searchLicenses(searchTerm);
+}
+
+// ❌ YANLIŞ - Sadece isim/id eşlemesi için tüm lisansları çekme
+import { useLicenses } from "@/features/licenses/hooks/useLicenses";
+const { data } = useLicenses({ limit: 99999, fields: ["id", "brandName"] });
+```
+
+## Cache'te Bulunan Alanlar
+
+- **Müşteri**: `_id`, `id`, `name`, `companyName`, `erpId`, `taxNo`
+- **Lisans**: `_id`, `id`, `brandName`, `SearchItem`, `customerId`, `customerName`
+
+## Ne Zaman Doğrudan API Kullanılır?
+
+- Tam CRUD işlemleri (oluşturma, güncelleme, silme) için mevcut hook'lar (`useCustomers`, `useLicenses`) kullanılmaya devam eder
+- Sayfalama, filtreleme ve sıralama ile listeleme yapan ana grid sayfaları (CustomersPage, LicensesPage) kendi hook'larını kullanır
+- Detaylı müşteri/lisans bilgisi gerektiğinde (`useCustomer(id)`, `useLicense(id)`) tekil hook kullanılır
+
+## Cache Güncelleme - MongoDB Change Stream
+
+Lookup cache'i MongoDB Change Stream ile otomatik güncellenir. `LookupProvider` içinde `useMongoChangeStream` hook'u `customers` ve `licenses` koleksiyonlarını dinler. DB'de bir değişiklik olduğunda cache otomatik invalidate edilir.
+
+```typescript
+// LookupProvider zaten bunu yapıyor - ekstra bir şey yapmana gerek yok:
+useMongoChangeStream("customers", () => {
+  queryClient.invalidateQueries({ queryKey: LOOKUP_QUERY_KEYS.CUSTOMERS });
+});
+useMongoChangeStream("licenses", () => {
+  queryClient.invalidateQueries({ queryKey: LOOKUP_QUERY_KEYS.LICENSES });
+});
+```
+
+## Mutation Sonrası Cache Güncelleme (Yedek)
+
+Change stream yedegi olarak, mutation hook'larında da lookup cache invalidate edilmelidir:
+
+```typescript
+import { LOOKUP_QUERY_KEYS } from "@/features/lookup";
+
+const mutation = useMutation({
+  mutationFn: createCustomer,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: LOOKUP_QUERY_KEYS.CUSTOMERS });
+    queryClient.invalidateQueries({ queryKey: ["customers"] }); // mevcut invalidation
+  },
+});
+```

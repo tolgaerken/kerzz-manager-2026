@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { router } from "./router";
 import { ThemeProvider } from "./theme";
 import { SocketProvider } from "./providers/SocketProvider";
+import { LookupProvider } from "./providers/LookupProvider";
 import "./i18n";
 import "@kerzz/grid/styles.css";
 import "./index.css";
@@ -22,9 +23,11 @@ ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <SocketProvider>
-        <ThemeProvider>
-          <RouterProvider router={router} />
-        </ThemeProvider>
+        <LookupProvider>
+          <ThemeProvider>
+            <RouterProvider router={router} />
+          </ThemeProvider>
+        </LookupProvider>
       </SocketProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

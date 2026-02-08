@@ -6,6 +6,7 @@ import {
   updateLicense,
   deleteLicense
 } from "../api/licensesApi";
+import { LOOKUP_QUERY_KEYS } from "../../lookup";
 import type {
   LicenseQueryParams,
   LicensesResponse,
@@ -51,6 +52,7 @@ export function useCreateLicense() {
     mutationFn: createLicense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: licensesKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.LICENSES] });
     }
   });
 }
@@ -64,6 +66,7 @@ export function useUpdateLicense() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: licensesKeys.lists() });
       queryClient.invalidateQueries({ queryKey: licensesKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.LICENSES] });
     }
   });
 }
@@ -76,6 +79,7 @@ export function useDeleteLicense() {
     mutationFn: deleteLicense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: licensesKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.LICENSES] });
     }
   });
 }

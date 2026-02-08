@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useCustomers } from "../../../customers";
-import type { Customer } from "../../../customers";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useCustomerLookup } from "../../../lookup";
+import type { CustomerLookupItem } from "../../../lookup";
 import { Search, X, ChevronDown } from "lucide-react";
 
 interface CustomerAutocompleteProps {
-  value: Customer | null;
-  onChange: (customer: Customer | null) => void;
+  value: CustomerLookupItem | null;
+  onChange: (customer: CustomerLookupItem | null) => void;
   error?: string;
   disabled?: boolean;
 }
@@ -17,26 +17,16 @@ export function CustomerAutocomplete({
   disabled = false,
 }: CustomerAutocompleteProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const { searchCustomers, isLoading } = useCustomerLookup();
 
-  const { data, isLoading } = useCustomers({
-    search: debouncedSearch || undefined,
-    limit: 20,
-    sortField: "companyName",
-    sortOrder: "asc",
-  });
-
-  const customers = data?.data ?? [];
+  const customers = useMemo(
+    () => searchCustomers(searchTerm, 20),
+    [searchCustomers, searchTerm]
+  );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -52,7 +42,7 @@ export function CustomerAutocomplete({
   }, []);
 
   const handleSelect = useCallback(
-    (customer: Customer) => {
+    (customer: CustomerLookupItem) => {
       onChange(customer);
       setSearchTerm("");
       setIsOpen(false);
@@ -72,7 +62,7 @@ export function CustomerAutocomplete({
     }
   }, [disabled]);
 
-  const getDisplayName = (customer: Customer): string => {
+  const getDisplayName = (customer: CustomerLookupItem): string => {
     return customer.companyName || customer.name || "";
   };
 
@@ -140,13 +130,13 @@ export function CustomerAutocomplete({
         <div className="absolute z-50 w-full mt-1 max-h-60 overflow-auto bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg">
           {isLoading && (
             <div className="px-4 py-3 text-sm text-[var(--color-muted-foreground)] text-center">
-              Aranıyor...
+              Yükleniyor...
             </div>
           )}
 
           {!isLoading && customers.length === 0 && (
             <div className="px-4 py-3 text-sm text-[var(--color-muted-foreground)] text-center">
-              {debouncedSearch
+              {searchTerm
                 ? "Müşteri bulunamadı"
                 : "Aramak için yazmaya başlayın"}
             </div>

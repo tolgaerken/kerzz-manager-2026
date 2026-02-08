@@ -4,14 +4,13 @@ import type { ActiveFilter } from '../../types/filter.types';
 import type { ToolbarConfig } from '../../types/toolbar.types';
 import type { GridColumnDef } from '../../types/column.types';
 import { useGridInstance } from '../../core/useGridInstance';
-import { useRowSelection } from '../../core/useRowSelection';
-import { useGridEditing } from '../../core/useGridEditing';
-import { ThemeProvider, useIsAutoTheme } from '../../theme/ThemeProvider';
+import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { themeToCssVars } from '../../utils/memoize';
 import { GridHeader } from './GridHeader';
 import { GridBody } from './GridBody';
 import { GridFooter } from './GridFooter';
+import { ActiveFilterBar } from '../Footer/ActiveFilterBar';
 import { GridToolbar } from '../Toolbar/GridToolbar';
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
 import { Portal } from '../Portal/Portal';
@@ -27,113 +26,18 @@ function GridInner<TData>(
     width = '100%',
     loading = false,
     stripedRows = false,
-    toolbar = true,
+    toolbar,
     onRowClick,
     onRowDoubleClick,
     columns,
-    // Selection props
-    selectionMode = 'none',
-    selectionCheckbox,
-    selectedIds: controlledSelectedIds,
-    defaultSelectedIds,
-    onSelectionChange,
-    getRowId,
-    // Editing props
-    context,
-    onCellValueChange,
-    onRowAdd,
-    onEditSave,
-    onEditCancel,
-    // Deferred new row props
-    createEmptyRow,
-    onNewRowSave,
-    onPendingCellChange,
   } = props;
 
   const locale = useLocale();
-
-  // --- Pending new rows state (managed here so merged data feeds useGridInstance) ---
-  const [pendingNewRows, setPendingNewRows] = useState<TData[]>([]);
-
-  const displayData = useMemo(
-    () => (createEmptyRow ? [...props.data, ...pendingNewRows] : props.data),
-    [props.data, pendingNewRows, createEmptyRow],
-  );
-
-  const pendingRowIdSet = useMemo(() => {
-    if (!getRowId || pendingNewRows.length === 0) return new Set<string>();
-    return new Set(pendingNewRows.map((r) => getRowId(r)));
-  }, [pendingNewRows, getRowId]);
-
-  // Pass merged displayData to useGridInstance instead of original data
-  const gridInstanceProps = useMemo(
-    () => (createEmptyRow ? { ...props, data: displayData } : props),
-    [props, createEmptyRow, displayData],
-  );
-  const grid = useGridInstance(gridInstanceProps);
-
+  const grid = useGridInstance(props);
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
   const colBtnRef = useRef<HTMLButtonElement>(null);
   const headerWrapperRef = useRef<HTMLDivElement>(null);
   const footerWrapperRef = useRef<HTMLDivElement>(null);
-
-  // Default getRowId uses index
-  const resolveRowId = useCallback(
-    (row: TData, index: number) => {
-      if (getRowId) return getRowId(row);
-      return String(index);
-    },
-    [getRowId]
-  );
-
-  // Selection state
-  const showSelectionCheckbox = selectionMode !== 'none' && (selectionCheckbox ?? true);
-
-  // Create a stable getRowId function for selection
-  const selectionGetRowId = useCallback(
-    (row: TData) => {
-      if (getRowId) return getRowId(row);
-      // Fallback: use index from filteredData
-      const index = grid.filteredData.indexOf(row);
-      return String(index);
-    },
-    [getRowId, grid.filteredData]
-  );
-  
-  const selection = useRowSelection({
-    data: grid.filteredData,
-    getRowId: selectionGetRowId,
-    mode: selectionMode,
-    selectedIds: controlledSelectedIds,
-    defaultSelectedIds,
-    onSelectionChange,
-  });
-
-  // Editing state
-  const editing = useGridEditing({
-    columns: grid.orderedColumns as GridColumnDef<TData>[],
-    data: grid.filteredData,
-    onCellValueChange,
-    onRowAdd,
-    onEditSave,
-    onEditCancel,
-    createEmptyRow,
-    onNewRowSave,
-    onPendingCellChange,
-    pendingNewRows,
-    setPendingNewRows,
-    pendingRowIdSet,
-    getRowId,
-  });
-
-  // Toggle select all handler
-  const handleToggleSelectAll = useCallback(() => {
-    if (selection.isAllSelected) {
-      selection.deselectAll();
-    } else {
-      selection.selectAll();
-    }
-  }, [selection]);
 
   // Resolve toolbar config
   const toolbarConfig = useMemo<ToolbarConfig<TData> | null>(() => {
@@ -150,52 +54,20 @@ function GridInner<TData>(
 
   useEffect(() => {
     const scrollEl = grid.scrollContainerRef.current;
-    const header = headerWrapperRef.current;
-    const footer = footerWrapperRef.current;
     if (!scrollEl) return;
 
-    // ---- Scrollbar width compensation ----
-    // Body has a vertical scrollbar that reduces its clientWidth.
-    // Header/footer don't. Adding marginRight to header/footer makes them
-    // the same width as the body's content area, so columns always align.
-    const syncScrollbarGap = () => {
-      const sbw = scrollEl.offsetWidth - scrollEl.clientWidth;
-      const margin = `${sbw}px`;
-      if (header) header.style.marginRight = margin;
-      if (footer) footer.style.marginRight = margin;
-    };
-
-    syncScrollbarGap();
-    const ro = new ResizeObserver(syncScrollbarGap);
-    ro.observe(scrollEl);
-
-    // ---- Horizontal scroll sync ----
-    const syncScroll = () => {
+    const handleScroll = () => {
       const sl = scrollEl.scrollLeft;
-      if (header) header.scrollLeft = sl;
-      if (footer) footer.scrollLeft = sl;
-    };
-
-    syncScroll();
-    scrollEl.addEventListener('scroll', syncScroll, { passive: true });
-
-    // ---- Redirect wheel on header/footer to body ----
-    const redirectWheel = (e: WheelEvent) => {
-      if (e.deltaX !== 0) {
-        e.preventDefault();
-        scrollEl.scrollLeft += e.deltaX;
+      if (headerWrapperRef.current) {
+        headerWrapperRef.current.scrollLeft = sl;
+      }
+      if (footerWrapperRef.current) {
+        footerWrapperRef.current.scrollLeft = sl;
       }
     };
 
-    header?.addEventListener('wheel', redirectWheel, { passive: false });
-    footer?.addEventListener('wheel', redirectWheel, { passive: false });
-
-    return () => {
-      ro.disconnect();
-      scrollEl.removeEventListener('scroll', syncScroll);
-      header?.removeEventListener('wheel', redirectWheel);
-      footer?.removeEventListener('wheel', redirectWheel);
-    };
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', handleScroll);
   }, [grid.scrollContainerRef, hasData]);
 
   // Expose imperative API
@@ -207,19 +79,14 @@ function GridInner<TData>(
     scrollToRow: (index: number) => {
       grid.rowVirtualizer.scrollToIndex(index, { align: 'center' });
     },
-    getSelectedIds: () => Array.from(selection.selectedIds),
-    selectAll: selection.selectAll,
-    deselectAll: selection.deselectAll,
-    addRow: editing.requestAddRow,
-  }), [grid, selection, editing.requestAddRow]);
+    getSelectedIds: () => [],
+    selectAll: () => {},
+    deselectAll: () => {},
+    addRow: () => {},
+  }), [grid]);
 
-  // Auto tema modunda inline CSS vars uygulanmaz — grid, global --theme-* değişkenlerini kullanır.
-  // Explicit theme prop verildiğinde ise inline CSS vars ile override yapılır.
-  const isAutoTheme = useIsAutoTheme();
-  const cssVars = useMemo(
-    () => (isAutoTheme ? {} : themeToCssVars(grid.theme)),
-    [grid.theme, isAutoTheme],
-  );
+  // Convert theme to CSS vars
+  const cssVars = useMemo(() => themeToCssVars(grid.theme), [grid.theme]);
 
   const gridStyle: React.CSSProperties = {
     ...cssVars,
@@ -263,10 +130,6 @@ function GridInner<TData>(
           cssVars={cssVars}
           searchTerm={grid.searchTerm}
           onSearchChange={grid.setSearchTerm}
-          editMode={editing.editMode}
-          onSaveAll={editing.saveAllChanges}
-          onCancelAll={editing.cancelAllChanges}
-          onAddRow={(onRowAdd || createEmptyRow) ? editing.requestAddRow : undefined}
         />
       )}
 
@@ -340,10 +203,6 @@ function GridInner<TData>(
           onDragLeave={grid.columnDrag.handleDragLeave}
           onDrop={grid.columnDrag.handleDrop}
           onDragEnd={grid.columnDrag.handleDragEnd}
-          showSelectionCheckbox={showSelectionCheckbox}
-          isAllSelected={selection.isAllSelected}
-          isIndeterminate={selection.isIndeterminate}
-          onToggleSelectAll={handleToggleSelectAll}
         />
       </div>
 
@@ -360,21 +219,6 @@ function GridInner<TData>(
           scrollContainerRef={grid.scrollContainerRef}
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
-          showSelectionCheckbox={showSelectionCheckbox}
-          isRowSelected={selection.isSelected}
-          getRowId={(row, index) => resolveRowId(row, index)}
-          onSelectionToggle={selection.toggleRow}
-          isEditing={editing.isEditing}
-          editMode={editing.editMode}
-          hasPendingChange={editing.hasPendingChange}
-          getPendingValue={editing.getPendingValue}
-          onStartEditing={editing.startEditing}
-          onSaveEdit={editing.saveValue}
-          onCancelEdit={editing.stopEditing}
-          onSaveAndMoveNext={editing.saveAndMoveNext}
-          context={context}
-          pendingRowIdSet={pendingRowIdSet}
-          getRowIdFn={getRowId}
         />
       ) : (
         <div className="kz-grid-no-data">
@@ -389,9 +233,21 @@ function GridInner<TData>(
           aggregation={grid.footerAggregation}
           getColumnWidth={grid.columnResize.getColumnWidth}
           totalWidth={grid.totalWidth}
-          showSelectionCheckbox={showSelectionCheckbox}
         />
       </div>
+
+      {/* Active Filter Bar */}
+      {grid.hasActiveFilters && (
+        <ActiveFilterBar
+          filters={grid.filters}
+          disabledFilters={grid.disabledFilters}
+          columns={columns as GridColumnDef<TData>[]}
+          locale={locale}
+          onToggleFilter={grid.toggleFilterEnabled}
+          onRemoveFilter={grid.removeFilter}
+          onClearAll={grid.clearAllFilters}
+        />
+      )}
 
       {/* Loading overlay */}
       {loading && (

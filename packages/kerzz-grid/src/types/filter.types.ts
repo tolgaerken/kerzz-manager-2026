@@ -77,6 +77,11 @@ export interface FilterState {
   [columnId: string]: ActiveFilter;
 }
 
+/** Tracks which filters are temporarily disabled (true = disabled) */
+export interface DisabledFilterState {
+  [columnId: string]: boolean;
+}
+
 export interface DropdownFilterValue {
   value: string;
   displayValue: string;

@@ -5,6 +5,7 @@ import type {
   FilterCondition,
   ActiveFilter,
 } from '../types/filter.types';
+import type { GridLocale } from '../types/locale.types';
 
 /**
  * Check if a cell value passes the active filter.
@@ -255,6 +256,61 @@ export function getColumnUniqueValues<TData>(
   }
 
   return result;
+}
+
+/**
+ * Get a human-readable summary of an active filter for display in filter chips.
+ */
+export function getFilterSummary(filter: ActiveFilter, locale: GridLocale): string {
+  switch (filter.type) {
+    case 'dropdown': {
+      const count = filter.selectedValues.size;
+      if (count === 1) {
+        return Array.from(filter.selectedValues)[0];
+      }
+      return `${count} ${locale.filterSelected}`;
+    }
+    case 'input': {
+      const conditionLabel = getConditionLabel(filter.condition, locale);
+      if (filter.condition === 'between' && filter.valueTo) {
+        return `${conditionLabel}: ${filter.value} - ${filter.valueTo}`;
+      }
+      if (filter.condition === 'blank' || filter.condition === 'notBlank') {
+        return conditionLabel;
+      }
+      return `${conditionLabel}: ${filter.value}`;
+    }
+    case 'dateTree': {
+      const count = filter.selectedDays.size;
+      if (count === 1) {
+        return Array.from(filter.selectedDays)[0];
+      }
+      return `${count} ${locale.filterDaysSelected}`;
+    }
+    default:
+      return '';
+  }
+}
+
+function getConditionLabel(condition: FilterCondition, locale: GridLocale): string {
+  const map: Record<string, string> = {
+    contains: locale.filterContains,
+    equals: locale.filterEquals,
+    startsWith: locale.filterStartsWith,
+    endsWith: locale.filterEndsWith,
+    notContains: locale.filterNotContains,
+    greaterThan: locale.filterGreaterThan,
+    lessThan: locale.filterLessThan,
+    between: locale.filterBetween,
+    notEqual: locale.filterNotEqual,
+    before: locale.filterBefore,
+    after: locale.filterAfter,
+    today: locale.filterToday,
+    thisWeek: locale.filterThisWeek,
+    blank: locale.filterBlank,
+    notBlank: locale.filterNotBlank,
+  };
+  return map[condition] ?? condition;
 }
 
 /**

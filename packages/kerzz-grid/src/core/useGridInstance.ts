@@ -79,16 +79,27 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
   }, [globalSearch.filteredData, stateStore.state.sorting, columns]);
 
   // Column filtering (applied after sorting)
-  const { filteredData, setFilter, removeFilter, clearAllFilters, hasActiveFilters } =
-    useGridFilter({
-      data: sortedData,
-      columns: columns as GridColumnDef<TData>[],
-      filters: stateStore.state.filters,
-      onFiltersChange: (filters) => {
-        stateStore.setFilters(filters);
-        onFilterChange?.(filters);
-      },
-    });
+  const {
+    filteredData,
+    setFilter,
+    removeFilter,
+    clearAllFilters,
+    hasActiveFilters,
+    disabledFilters,
+    toggleFilterEnabled,
+  } = useGridFilter({
+    data: sortedData,
+    columns: columns as GridColumnDef<TData>[],
+    filters: stateStore.state.filters,
+    disabledFilters: stateStore.state.disabledFilters ?? {},
+    onFiltersChange: (filters) => {
+      stateStore.setFilters(filters);
+      onFilterChange?.(filters);
+    },
+    onDisabledFiltersChange: (disabled) => {
+      stateStore.setDisabledFilters(disabled);
+    },
+  });
 
   // Ordered & visible columns
   const orderedColumns = useMemo(() => {
@@ -233,10 +244,12 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
 
     // Filtering
     filters: stateStore.state.filters,
+    disabledFilters,
     setFilter,
     removeFilter,
     clearAllFilters,
     hasActiveFilters,
+    toggleFilterEnabled,
 
     // Virtualization
     ...virtualization,

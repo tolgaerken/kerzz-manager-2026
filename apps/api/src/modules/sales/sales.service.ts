@@ -1,0 +1,369 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model, SortOrder } from "mongoose";
+import { Sale, SaleDocument } from "./schemas/sale.schema";
+import { CreateSaleDto } from "./dto/create-sale.dto";
+import { UpdateSaleDto } from "./dto/update-sale.dto";
+import { SaleQueryDto } from "./dto/sale-query.dto";
+import {
+  PaginatedSalesResponseDto,
+  SaleResponseDto,
+  SaleStatsDto,
+} from "./dto/sale-response.dto";
+import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import {
+  PipelineService,
+  PipelineCalculatorService,
+  PipelineCounterService,
+} from "../pipeline";
+import { OffersService } from "../offers";
+
+@Injectable()
+export class SalesService {
+  constructor(
+    @InjectModel(Sale.name, CONTRACT_DB_CONNECTION)
+    private saleModel: Model<SaleDocument>,
+    private pipelineService: PipelineService,
+    private calculatorService: PipelineCalculatorService,
+    private counterService: PipelineCounterService,
+    private offersService: OffersService
+  ) {}
+
+  async findAll(query: SaleQueryDto): Promise<PaginatedSalesResponseDto> {
+    const {
+      page = 1,
+      limit,
+      search,
+      status,
+      customerId,
+      sellerId,
+      sortField = "createdAt",
+      sortOrder = "desc",
+      startDate,
+      endDate,
+    } = query;
+
+    const filter: Record<string, any> = {};
+
+    if (status && status !== "all") filter.status = status;
+    if (customerId) filter.customerId = customerId;
+    if (sellerId) filter.sellerId = sellerId;
+
+    // Tarih aralığı filtresi (saleDate üzerinden)
+    if (startDate || endDate) {
+      filter.saleDate = {};
+      if (startDate) filter.saleDate.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.saleDate.$lte = end;
+      }
+    }
+
+    if (search) {
+      filter.$or = [
+        { customerName: { $regex: search, $options: "i" } },
+        { pipelineRef: { $regex: search, $options: "i" } },
+        { sellerName: { $regex: search, $options: "i" } },
+        { notes: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const sort: Record<string, SortOrder> = {};
+    sort[sortField] = sortOrder === "asc" ? 1 : -1;
+
+    // Build query - limit varsa pagination uygula, yoksa tüm verileri getir
+    let dataQuery = this.saleModel.find(filter).sort(sort);
+
+    if (limit) {
+      const skip = (page - 1) * limit;
+      dataQuery = dataQuery.skip(skip).limit(limit);
+    }
+
+    const [data, total] = await Promise.all([
+      dataQuery.lean().exec(),
+      this.saleModel.countDocuments(filter).exec(),
+    ]);
+
+    const effectiveLimit = limit || total;
+    const totalPages = effectiveLimit > 0 ? Math.ceil(total / effectiveLimit) : 1;
+
+    return {
+      data: data.map((doc) => this.mapToResponse(doc)),
+      meta: {
+        total,
+        page,
+        limit: effectiveLimit,
+        totalPages,
+        hasNextPage: limit ? page < totalPages : false,
+        hasPrevPage: limit ? page > 1 : false,
+      },
+    };
+  }
+
+  async findOne(id: string): Promise<SaleResponseDto> {
+    const sale = await this.saleModel.findById(id).lean().exec();
+    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+
+    const items = await this.pipelineService.getAllItems(id, "sale");
+
+    // Geriye uyumluluk: pipeline koleksiyonları boşsa gömülü array'lere fallback
+    return {
+      ...this.mapToResponse(sale),
+      products: items.products?.length ? items.products : ((sale as any).products || []),
+      licenses: items.licenses?.length ? items.licenses : ((sale as any).licenses || []),
+      rentals: items.rentals?.length ? items.rentals : ((sale as any).rentals || (sale as any).rentys || []),
+      payments: items.payments?.length ? items.payments : ((sale as any).payments || []),
+    };
+  }
+
+  async create(dto: CreateSaleDto): Promise<SaleResponseDto> {
+    const { products, licenses, rentals, payments, ...saleData } = dto;
+
+    // Otomatik no üret
+    const no = await this.counterService.generateSaleNo();
+
+    if (!saleData.pipelineRef) {
+      saleData.pipelineRef = await this.counterService.generateRef();
+    }
+
+    const sale = new this.saleModel({ ...saleData, no });
+    const saved = await sale.save();
+    const saleId = saved._id.toString();
+
+    if (products || licenses || rentals || payments) {
+      await this.pipelineService.syncItems(
+        saleId,
+        "sale",
+        saved.pipelineRef,
+        { products, licenses, rentals, payments }
+      );
+    }
+
+    return this.findOne(saleId);
+  }
+
+  async update(id: string, dto: UpdateSaleDto): Promise<SaleResponseDto> {
+    const { products, licenses, rentals, payments, ...saleData } = dto;
+
+    const sale = await this.saleModel
+      .findByIdAndUpdate(id, saleData, { new: true })
+      .lean()
+      .exec();
+
+    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+
+    if (
+      products !== undefined ||
+      licenses !== undefined ||
+      rentals !== undefined ||
+      payments !== undefined
+    ) {
+      await this.pipelineService.syncItems(id, "sale", sale.pipelineRef, {
+        products,
+        licenses,
+        rentals,
+        payments,
+      });
+    }
+
+    return this.findOne(id);
+  }
+
+  async remove(id: string): Promise<void> {
+    const sale = await this.saleModel.findById(id).exec();
+    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+
+    await this.pipelineService.deleteAllItems(id, "sale");
+    await this.saleModel.findByIdAndDelete(id).exec();
+  }
+
+  async calculate(id: string): Promise<any> {
+    const sale = await this.saleModel.findById(id).lean().exec();
+    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+
+    const totals = await this.calculatorService.calculateTotals(id, "sale");
+    await this.saleModel.findByIdAndUpdate(id, { totals }).exec();
+
+    return totals;
+  }
+
+  async approve(
+    id: string,
+    userId: string,
+    userName: string
+  ): Promise<SaleResponseDto> {
+    const sale = await this.saleModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approved: true,
+          approvedBy: userId,
+          approvedByName: userName,
+          approvedAt: new Date(),
+        },
+        { new: true }
+      )
+      .lean()
+      .exec();
+
+    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+    return this.mapToResponse(sale);
+  }
+
+  async getStats(): Promise<SaleStatsDto> {
+    const pipeline = await this.saleModel
+      .aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ])
+      .exec();
+
+    const stats: SaleStatsDto = {
+      total: 0,
+      pending: 0,
+      collectionWaiting: 0,
+      setupWaiting: 0,
+      trainingWaiting: 0,
+      active: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+
+    const statusMap: Record<string, keyof Omit<SaleStatsDto, "total">> = {
+      pending: "pending",
+      "collection-waiting": "collectionWaiting",
+      "setup-waiting": "setupWaiting",
+      "training-waiting": "trainingWaiting",
+      active: "active",
+      completed: "completed",
+      cancelled: "cancelled",
+    };
+
+    for (const item of pipeline) {
+      const key = statusMap[item._id];
+      if (key) {
+        stats[key] = item.count;
+      }
+      stats.total += item.count;
+    }
+
+    return stats;
+  }
+
+  /**
+   * Offer -> Sale dönüşümü
+   */
+  async convertFromOffer(
+    offerId: string,
+    userId: string,
+    userName: string,
+    extraData?: Partial<CreateSaleDto>
+  ): Promise<SaleResponseDto> {
+    const offer = await this.offersService.getForConversion(offerId);
+
+    // Otomatik no üret
+    const no = await this.counterService.generateSaleNo();
+
+    // Sale oluştur
+    const saleData: CreateSaleDto = {
+      pipelineRef: (offer as any).pipelineRef,
+      offerId: (offer as any)._id.toString(),
+      leadId: (offer as any).leadId,
+      customerId: (offer as any).customerId,
+      customerName: (offer as any).customerName,
+      sellerId: (offer as any).sellerId,
+      sellerName: (offer as any).sellerName,
+      usdRate: (offer as any).usdRate,
+      eurRate: (offer as any).eurRate,
+      internalFirm: (offer as any).internalFirm,
+      notes: (offer as any).offerNote || "",
+      ...extraData,
+    };
+
+    const sale = new this.saleModel({ ...saleData, no });
+    const saved = await sale.save();
+    const saleId = saved._id.toString();
+
+    // Alt koleksiyonları klonla
+    await this.pipelineService.cloneAllItems(
+      offerId,
+      "offer",
+      saleId,
+      "sale",
+      saved.pipelineRef
+    );
+
+    // Toplamları hesapla
+    const totals = await this.calculatorService.calculateTotals(
+      saleId,
+      "sale"
+    );
+    await this.saleModel.findByIdAndUpdate(saleId, { totals }).exec();
+
+    // Offer'ı converted yap
+    await this.offersService.markAsConverted(
+      offerId,
+      saleId,
+      userId,
+      userName
+    );
+
+    return this.findOne(saleId);
+  }
+
+  /**
+   * Offer->Sale dönüşümünü geri alır
+   */
+  async revertFromOffer(saleId: string): Promise<void> {
+    const sale = await this.saleModel.findById(saleId).lean().exec();
+    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${saleId}`);
+
+    if (!sale.offerId) {
+      throw new BadRequestException(
+        "Bu satış bir tekliften dönüştürülmemiş"
+      );
+    }
+
+    // Alt koleksiyonları sil
+    await this.pipelineService.deleteAllItems(saleId, "sale");
+
+    // Sale'i sil
+    await this.saleModel.findByIdAndDelete(saleId).exec();
+
+    // Offer'ın dönüşümünü geri al
+    await this.offersService.revertConversion(sale.offerId);
+  }
+
+  private mapToResponse(sale: any): SaleResponseDto {
+    return {
+      _id: sale._id.toString(),
+      no: sale.no || 0,
+      pipelineRef: sale.pipelineRef || "",
+      offerId: sale.offerId || "",
+      leadId: sale.leadId || "",
+      customerId: sale.customerId || "",
+      customerName: sale.customerName || "",
+      saleDate: sale.saleDate,
+      implementDate: sale.implementDate,
+      sellerId: sale.sellerId || "",
+      sellerName: sale.sellerName || "",
+      totals: sale.totals || {},
+      usdRate: sale.usdRate || 0,
+      eurRate: sale.eurRate || 0,
+      status: sale.status || "pending",
+      approved: sale.approved || false,
+      approvedBy: sale.approvedBy || "",
+      approvedByName: sale.approvedByName || "",
+      approvedAt: sale.approvedAt,
+      labels: sale.labels || [],
+      notes: sale.notes || "",
+      internalFirm: sale.internalFirm || "",
+      createdAt: sale.createdAt,
+      updatedAt: sale.updatedAt,
+    };
+  }
+}

@@ -5,9 +5,9 @@ import type {
   EDocMemberItem,
   EDocMemberFormData,
 } from "../../types/eDocMember.types";
-import type { Customer } from "../../../customers";
+import type { CustomerLookupItem } from "../../../lookup";
 import { useCompanies } from "../../../companies";
-import { useLicenses } from "../../../licenses";
+import { useLicenseLookup } from "../../../lookup";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
 
 interface EDocMemberFormModalProps {
@@ -40,13 +40,12 @@ export function EDocMemberFormModal({
   const [formData, setFormData] =
     useState<EDocMemberFormData>(initialFormState);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerLookupItem | null>(
     null,
   );
 
   const { data: companies = [] } = useCompanies();
-  const { data: licensesData } = useLicenses({ limit: 500, fields: ["id", "brandName"] });
-  const licenses = licensesData?.data ?? [];
+  const { licenses } = useLicenseLookup();
 
   useEffect(() => {
     if (isOpen) {
@@ -70,14 +69,6 @@ export function EDocMemberFormModal({
             name: editItem.customerName || "",
             companyName: editItem.customerName || "",
             taxNo: editItem.taxNumber || "",
-            address: "",
-            city: "",
-            district: "",
-            phone: "",
-            email: "",
-            enabled: true,
-            createdAt: "",
-            updatedAt: "",
           });
         } else {
           setSelectedCustomer(null);
@@ -90,7 +81,7 @@ export function EDocMemberFormModal({
     }
   }, [isOpen, editItem]);
 
-  const handleCustomerChange = useCallback((customer: Customer | null) => {
+  const handleCustomerChange = useCallback((customer: CustomerLookupItem | null) => {
     setSelectedCustomer(customer);
     if (customer) {
       setFormData((prev) => ({

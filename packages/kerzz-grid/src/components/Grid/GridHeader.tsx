@@ -3,7 +3,6 @@ import type { GridColumnDef } from '../../types/column.types';
 import type { ActiveFilter } from '../../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { HeaderCell } from '../HeaderCell/HeaderCell';
-import { SelectionHeaderCell } from '../Selection/SelectionHeaderCell';
 
 interface GridHeaderProps<TData> {
   columns: GridColumnDef<TData>[];
@@ -25,15 +24,6 @@ interface GridHeaderProps<TData> {
   onDragLeave: () => void;
   onDrop: (columnId: string, e: React.DragEvent) => void;
   onDragEnd: () => void;
-  // Selection
-  /** Whether selection checkbox is shown */
-  showSelectionCheckbox?: boolean;
-  /** Whether all rows are selected */
-  isAllSelected?: boolean;
-  /** Whether some (but not all) rows are selected */
-  isIndeterminate?: boolean;
-  /** Callback when select all is toggled */
-  onToggleSelectAll?: () => void;
 }
 
 export function GridHeader<TData>({
@@ -54,20 +44,9 @@ export function GridHeader<TData>({
   onDragLeave,
   onDrop,
   onDragEnd,
-  showSelectionCheckbox,
-  isAllSelected,
-  isIndeterminate,
-  onToggleSelectAll,
 }: GridHeaderProps<TData>) {
   return (
     <div className="kz-grid-header" style={{ minWidth: totalWidth }}>
-      {showSelectionCheckbox && (
-        <SelectionHeaderCell
-          isAllSelected={isAllSelected ?? false}
-          isIndeterminate={isIndeterminate ?? false}
-          onToggleAll={onToggleSelectAll ?? (() => {})}
-        />
-      )}
       {columns.map((col) => (
         <HeaderCell
           key={col.id}

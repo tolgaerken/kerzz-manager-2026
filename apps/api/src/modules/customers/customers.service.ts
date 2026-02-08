@@ -7,6 +7,7 @@ import {
   PaginatedCustomersResponseDto,
   CustomerResponseDto
 } from "./dto/customer-response.dto";
+import { CustomerMinimalResponseDto } from "./dto/customer-minimal-response.dto";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
 import { UpdateCustomerDto } from "./dto/update-customer.dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
@@ -23,16 +24,34 @@ export class CustomersService {
       page = 1,
       limit = 50,
       search,
+      type = "customer",
       sortField = "name",
-      sortOrder = "asc"
+      sortOrder = "asc",
+      fields: rawFields
     } = query;
 
-    const skip = (page - 1) * limit;
+    const numericPage = Number(page);
+    const numericLimit = Number(limit);
+    const skip = (numericPage - 1) * numericLimit;
 
-    // Base filter: taxNo must exist and not be null or empty
-    const baseFilter: Record<string, any> = {
-      taxNo: { $exists: true, $ne: null, $nin: ["", " "] }
-    };
+    // fields parametresini güvenli şekilde parse et
+    const fields = this.parseFields(rawFields);
+    const isMinimalQuery = fields.length > 0;
+
+    // Base filter: by default show only "customer" type (has taxNo)
+    const baseFilter: Record<string, any> = {};
+
+    if (type === "all") {
+      // Show all types
+    } else if (type === "prospect") {
+      baseFilter.type = "prospect";
+    } else {
+      // Default: show only real customers (type=customer or legacy records with taxNo)
+      baseFilter.$or = [
+        { type: "customer" },
+        { type: { $exists: false }, taxNo: { $exists: true, $ne: null, $nin: ["", " "] } }
+      ];
+    }
 
     let filter: Record<string, any> = { ...baseFilter };
 
@@ -56,29 +75,64 @@ export class CustomersService {
     const sort: Record<string, SortOrder> = {};
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
-    // Execute queries in parallel
+    // Minimal query: aggregation pipeline ile sadece istenen alanları döndür
+    if (isMinimalQuery) {
+      const projectionStage: Record<string, 1> = { _id: 1 };
+      for (const field of fields) {
+        projectionStage[field] = 1;
+      }
+
+      const pipeline: Record<string, unknown>[] = [
+        { $match: filter },
+        { $sort: sort },
+        { $skip: skip },
+        { $limit: numericLimit },
+        { $project: projectionStage }
+      ];
+
+      const [data, total] = await Promise.all([
+        this.customerModel.aggregate(pipeline).exec(),
+        this.customerModel.countDocuments(filter).exec()
+      ]);
+
+      const totalPages = Math.ceil(total / numericLimit);
+
+      return {
+        data: data.map((doc) => this.mapToMinimalResponseDto(doc)),
+        meta: {
+          total,
+          page: numericPage,
+          limit: numericLimit,
+          totalPages,
+          hasNextPage: numericPage < totalPages,
+          hasPrevPage: numericPage > 1
+        }
+      };
+    }
+
+    // Full query: Tüm alanları döndür
     const [data, total] = await Promise.all([
       this.customerModel
         .find(filter)
         .sort(sort)
         .skip(skip)
-        .limit(limit)
+        .limit(numericLimit)
         .lean()
         .exec(),
       this.customerModel.countDocuments(filter).exec()
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / numericLimit);
 
     return {
       data: data.map((doc) => this.mapToResponseDto(doc)),
       meta: {
         total,
-        page,
-        limit,
+        page: numericPage,
+        limit: numericLimit,
         totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
+        hasNextPage: numericPage < totalPages,
+        hasPrevPage: numericPage > 1
       }
     };
   }
@@ -133,10 +187,29 @@ export class CustomersService {
     }
   }
 
+  private parseFields(fields: unknown): string[] {
+    if (!fields) return [];
+    if (typeof fields === "string") return fields.split(",").filter(Boolean);
+    if (Array.isArray(fields)) return fields.filter((f) => typeof f === "string");
+    return [];
+  }
+
+  private mapToMinimalResponseDto(customer: Record<string, unknown>): CustomerMinimalResponseDto {
+    return {
+      _id: String(customer._id),
+      id: (customer.id as string) || "",
+      name: customer.name as string | undefined,
+      companyName: customer.companyName as string | undefined,
+      erpId: customer.erpId as string | undefined,
+      taxNo: customer.taxNo as string | undefined
+    };
+  }
+
   private mapToResponseDto(customer: Customer): CustomerResponseDto {
     const addr = customer.address || {} as any;
     return {
       _id: customer._id.toString(),
+      type: customer.type || "customer",
       id: customer.id || "",
       erpId: customer.erpId || "",
       taxNo: customer.taxNo || "",

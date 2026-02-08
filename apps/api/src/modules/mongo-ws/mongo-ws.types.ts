@@ -28,6 +28,13 @@ export interface WatchOptions {
   pipeline?: Record<string, unknown>[];
   /** Tam dokumani dahil et. Varsayilan: "updateLookup". */
   fullDocument?: "default" | "updateLookup";
+  /**
+   * Update operasyonlarinda yok sayilacak alanlar.
+   * Sadece bu alanlarin degistigi update'ler iletilmez.
+   * Ornek: ["lastOnline", "lastIp"] — sadece lastOnline ve/veya lastIp
+   * degisirse event yayinlanmaz.
+   */
+  ignoredFields?: string[];
 }
 
 /** Client tarafindan gonderilen subscribe/unsubscribe mesaji. */

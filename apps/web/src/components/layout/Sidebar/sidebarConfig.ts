@@ -10,6 +10,7 @@ import {
   ScrollText,
   Bell,
   FileCheck,
+  TrendingUp,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -64,6 +65,15 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: ShoppingCart,
     label: "Satış",
     path: "/sales",
+  },
+  {
+    icon: TrendingUp,
+    label: "Satış Yönetimi",
+    subItems: [
+      { label: "Potansiyeller", path: "/leads" },
+      { label: "Teklifler", path: "/offers" },
+      { label: "Satışlar", path: "/pipeline/sales" },
+    ],
   },
   {
     icon: Plug,

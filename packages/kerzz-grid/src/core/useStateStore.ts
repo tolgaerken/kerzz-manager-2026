@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { GridState } from '../types/grid.types';
 import type { GridColumnDef } from '../types/column.types';
-import type { FilterState } from '../types/filter.types';
+import type { FilterState, DisabledFilterState } from '../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { StateManager } from '../state/StateManager';
 
@@ -19,6 +19,7 @@ interface UseStateStoreReturn {
   setColumnVisibility: (visibility: Record<string, boolean>) => void;
   setSorting: (sorting: SortingState) => void;
   setFilters: (filters: FilterState) => void;
+  setDisabledFilters: (disabledFilters: DisabledFilterState) => void;
   resetState: () => void;
 }
 
@@ -48,7 +49,11 @@ export function useStateStore({
       const manager = new StateManager(stateKey, stateStorage);
       managerRef.current = manager;
       const stored = manager.load();
-      if (stored) return stored;
+      if (stored) {
+        // Ensure disabledFilters exists for backward compat
+        if (!stored.disabledFilters) stored.disabledFilters = {};
+        return stored;
+      }
     }
     return createDefaultState();
   });
@@ -135,6 +140,17 @@ export function useStateStore({
     [persist],
   );
 
+  const setDisabledFilters = useCallback(
+    (disabledFilters: DisabledFilterState) => {
+      setState((prev) => {
+        const next = { ...prev, disabledFilters };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
   const resetState = useCallback(() => {
     managerRef.current?.remove();
     const defaults = createDefaultState();
@@ -149,6 +165,7 @@ export function useStateStore({
     setColumnVisibility,
     setSorting,
     setFilters,
+    setDisabledFilters,
     resetState,
   };
 }

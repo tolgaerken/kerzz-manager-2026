@@ -4,7 +4,9 @@ import {
   IsBoolean,
   IsNotEmpty,
   IsNumber,
+  IsIn,
   ValidateNested,
+  ValidateIf,
 } from "class-validator";
 import { Type } from "class-transformer";
 
@@ -47,6 +49,12 @@ export class CustomerAddressInputDto {
 }
 
 export class CreateCustomerDto {
+  @IsOptional()
+  @IsString()
+  @IsIn(["prospect", "customer"])
+  type?: string = "customer";
+
+  @ValidateIf((o) => o.type !== "prospect")
   @IsString()
   @IsNotEmpty({ message: "Vergi numarası zorunludur" })
   taxNo: string;
@@ -71,6 +79,10 @@ export class CreateCustomerDto {
   @IsString()
   @IsOptional()
   email?: string;
+
+  @IsString()
+  @IsOptional()
+  taxOffice?: string;
 
   @IsBoolean()
   @IsOptional()

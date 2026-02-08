@@ -56,6 +56,14 @@ export const tr: GridLocale = {
   toolbarCancel: 'İptal',
   toolbarAddRow: 'Satır Ekle',
 
+  // Active filter bar
+  activeFilters: 'Aktif Filtreler',
+  clearAllFilters: 'Tümünü Temizle',
+  filterEnabled: 'Filtre Aktif',
+  filterDisabled: 'Filtre Devre Dışı',
+  filterSelected: 'seçili',
+  filterDaysSelected: 'gün seçili',
+
   // General
   noData: 'Veri bulunamadı',
   loading: 'Yükleniyor...',

@@ -51,8 +51,12 @@ export class StateManager {
   }
 
   private migrate(state: GridState): GridState {
-    // Future migration logic - for now just update version
-    return { ...state, version: CURRENT_VERSION };
+    // Ensure disabledFilters exists for older persisted states
+    const migrated = { ...state, version: CURRENT_VERSION };
+    if (!migrated.disabledFilters) {
+      migrated.disabledFilters = {};
+    }
+    return migrated;
   }
 
   static createDefault(): GridState {
@@ -62,6 +66,7 @@ export class StateManager {
       columnVisibility: {},
       sorting: [],
       filters: {},
+      disabledFilters: {},
       version: CURRENT_VERSION,
     };
   }

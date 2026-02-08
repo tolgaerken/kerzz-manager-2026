@@ -1,13 +1,15 @@
 import { useMemo, useCallback } from 'react';
 import type { GridColumnDef } from '../types/column.types';
-import type { ActiveFilter, FilterState } from '../types/filter.types';
+import type { ActiveFilter, FilterState, DisabledFilterState } from '../types/filter.types';
 import { matchesFilter } from '../utils/filterHelpers';
 
 interface UseGridFilterOptions<TData> {
   data: TData[];
   columns: GridColumnDef<TData>[];
   filters: FilterState;
+  disabledFilters: DisabledFilterState;
   onFiltersChange: (filters: FilterState) => void;
+  onDisabledFiltersChange: (disabledFilters: DisabledFilterState) => void;
 }
 
 interface UseGridFilterReturn<TData> {
@@ -17,13 +19,17 @@ interface UseGridFilterReturn<TData> {
   clearAllFilters: () => void;
   hasActiveFilters: boolean;
   activeFilterCount: number;
+  disabledFilters: DisabledFilterState;
+  toggleFilterEnabled: (columnId: string) => void;
 }
 
 export function useGridFilter<TData>({
   data,
   columns,
   filters,
+  disabledFilters,
   onFiltersChange,
+  onDisabledFiltersChange,
 }: UseGridFilterOptions<TData>): UseGridFilterReturn<TData> {
   const columnAccessors = useMemo(() => {
     const map = new Map<
@@ -45,6 +51,9 @@ export function useGridFilter<TData>({
 
     return data.filter((row) => {
       for (const [columnId, filter] of filterEntries) {
+        // Skip disabled filters
+        if (disabledFilters[columnId]) continue;
+
         const accessor = columnAccessors.get(columnId);
         if (!accessor) continue;
 
@@ -58,7 +67,7 @@ export function useGridFilter<TData>({
       }
       return true;
     });
-  }, [data, filters, columnAccessors]);
+  }, [data, filters, disabledFilters, columnAccessors]);
 
   const setFilter = useCallback(
     (columnId: string, filter: ActiveFilter) => {
@@ -69,16 +78,37 @@ export function useGridFilter<TData>({
 
   const removeFilter = useCallback(
     (columnId: string) => {
-      const next = { ...filters };
-      delete next[columnId];
-      onFiltersChange(next);
+      const nextFilters = { ...filters };
+      delete nextFilters[columnId];
+      onFiltersChange(nextFilters);
+
+      // Also remove from disabled filters
+      if (disabledFilters[columnId]) {
+        const nextDisabled = { ...disabledFilters };
+        delete nextDisabled[columnId];
+        onDisabledFiltersChange(nextDisabled);
+      }
     },
-    [filters, onFiltersChange],
+    [filters, disabledFilters, onFiltersChange, onDisabledFiltersChange],
   );
 
   const clearAllFilters = useCallback(() => {
     onFiltersChange({});
-  }, [onFiltersChange]);
+    onDisabledFiltersChange({});
+  }, [onFiltersChange, onDisabledFiltersChange]);
+
+  const toggleFilterEnabled = useCallback(
+    (columnId: string) => {
+      const next = { ...disabledFilters };
+      if (next[columnId]) {
+        delete next[columnId];
+      } else {
+        next[columnId] = true;
+      }
+      onDisabledFiltersChange(next);
+    },
+    [disabledFilters, onDisabledFiltersChange],
+  );
 
   const activeFilterCount = Object.keys(filters).length;
 
@@ -89,5 +119,7 @@ export function useGridFilter<TData>({
     clearAllFilters,
     hasActiveFilters: activeFilterCount > 0,
     activeFilterCount,
+    disabledFilters,
+    toggleFilterEnabled,
   };
 }

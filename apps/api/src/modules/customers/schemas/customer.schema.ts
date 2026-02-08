@@ -37,6 +37,9 @@ export class CustomerAddress {
 export class Customer {
   _id: Types.ObjectId;
 
+  @Prop({ type: String, default: "customer", index: true })
+  type: string; // "prospect" | "customer"
+
   @Prop({ type: String, index: true })
   id: string;
 

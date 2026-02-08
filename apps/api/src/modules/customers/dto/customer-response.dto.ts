@@ -12,6 +12,7 @@ export class CustomerAddressDto {
 
 export class CustomerResponseDto {
   _id: string;
+  type: string;
   id: string;
   erpId: string;
   taxNo: string;

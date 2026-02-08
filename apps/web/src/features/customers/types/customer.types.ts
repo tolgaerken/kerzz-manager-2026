@@ -1,7 +1,10 @@
 import type { AddressData } from "../../locations/types";
 
+export type CustomerType = "prospect" | "customer";
+
 export interface Customer {
   _id: string;
+  type: CustomerType;
   id: string;
   erpId: string;
   taxNo: string;
@@ -10,6 +13,7 @@ export interface Customer {
   address: AddressData;
   phone: string;
   email: string;
+  taxOffice: string;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -19,6 +23,7 @@ export interface CustomerQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  type?: CustomerType | "all";
   sortField?: string;
   sortOrder?: "asc" | "desc";
 }
@@ -38,21 +43,25 @@ export interface CustomersResponse {
 }
 
 export interface CreateCustomerInput {
-  taxNo: string;
-  name?: string;
-  companyName?: string;
-  address?: AddressData;
-  phone?: string;
-  email?: string;
-  enabled?: boolean;
-}
-
-export interface UpdateCustomerInput {
+  type?: CustomerType;
   taxNo?: string;
   name?: string;
   companyName?: string;
   address?: AddressData;
   phone?: string;
   email?: string;
+  taxOffice?: string;
+  enabled?: boolean;
+}
+
+export interface UpdateCustomerInput {
+  type?: CustomerType;
+  taxNo?: string;
+  name?: string;
+  companyName?: string;
+  address?: AddressData;
+  phone?: string;
+  email?: string;
+  taxOffice?: string;
   enabled?: boolean;
 }

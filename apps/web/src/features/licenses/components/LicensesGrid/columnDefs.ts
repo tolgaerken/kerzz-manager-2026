@@ -1,6 +1,6 @@
 import type { GridColumnDef } from "@kerzz/grid";
 import type { License } from "../../types";
-import type { Customer } from "../../../customers";
+import type { CustomerLookupItem } from "../../../lookup";
 import { getTypeName, getCompanyTypeName, getCategoryName } from "../../constants/licenses.constants";
 
 /** Tarih formatlama */
@@ -30,7 +30,7 @@ const getOnlineStatusClass = (lastOnline: string | null): string => {
   return "text-red-500";
 };
 
-export const createLicenseColumnDefs = (customerMap: Map<string, Customer>): GridColumnDef<License>[] => [
+export const createLicenseColumnDefs = (customerMap: Map<string, CustomerLookupItem>): GridColumnDef<License>[] => [
   {
     id: "licenseId",
     header: "ID",
