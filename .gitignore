@@ -30,3 +30,6 @@ pnpm-debug.log*
 
 # Cache
 .cache/
+
+# PNPM Store
+.pnpm-store/
