@@ -10,7 +10,7 @@ import { FilterDateTree } from '../Filter/FilterDateTree';
 import { Portal } from '../Portal/Portal';
 import { usePopoverPosition } from '../../core/usePopoverPosition';
 import { useGridTheme } from '../../theme/ThemeProvider';
-import { themeToCssVars } from '../../utils/memoize';
+import { themeToCssVars } from '../../utils/themeUtils';
 
 interface HeaderCellProps<TData> {
   column: GridColumnDef<TData>;
@@ -32,7 +32,7 @@ interface HeaderCellProps<TData> {
   onDragEnd: () => void;
 }
 
-export function HeaderCell<TData>({
+function HeaderCellInner<TData>({
   column,
   width,
   sorting,
@@ -239,3 +239,5 @@ export function HeaderCell<TData>({
     </div>
   );
 }
+
+export const HeaderCell = React.memo(HeaderCellInner) as typeof HeaderCellInner;

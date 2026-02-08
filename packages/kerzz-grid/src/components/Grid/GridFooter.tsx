@@ -13,7 +13,7 @@ interface GridFooterProps<TData> {
   showSelectionCheckbox?: boolean;
 }
 
-export function GridFooter<TData>({
+function GridFooterInner<TData>({
   columns,
   aggregation,
   getColumnWidth,
@@ -38,3 +38,5 @@ export function GridFooter<TData>({
     </div>
   );
 }
+
+export const GridFooter = React.memo(GridFooterInner) as typeof GridFooterInner;

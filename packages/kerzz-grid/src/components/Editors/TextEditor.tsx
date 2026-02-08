@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { CellEditorProps } from '../../types/editing.types';
 
-export function TextEditor<TData>({ value, onSave, onCancel, onSaveAndMoveNext }: CellEditorProps<TData>) {
+function TextEditorInner<TData>({ value, onSave, onCancel, onSaveAndMoveNext }: CellEditorProps<TData>) {
   const [text, setText] = useState(value != null ? String(value) : '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,3 +50,5 @@ export function TextEditor<TData>({ value, onSave, onCancel, onSaveAndMoveNext }
     />
   );
 }
+
+export const TextEditor = React.memo(TextEditorInner) as typeof TextEditorInner;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
 import type { NavigationDirection } from '../../types/editing.types';
 import { GridCell } from './GridCell';
@@ -17,8 +17,10 @@ interface GridRowProps<TData> {
   showSelectionCheckbox?: boolean;
   /** Whether this row is selected */
   isSelected?: boolean;
+  /** Row ID for selection toggle */
+  rowId?: string;
   /** Callback when selection is toggled */
-  onSelectionToggle?: (shiftKey: boolean) => void;
+  onSelectionToggle?: (rowId: string, shiftKey: boolean) => void;
   // Editing props
   /** Check if a cell is being edited */
   isEditing?: (rowIndex: number, columnId: string) => boolean;
@@ -42,6 +44,8 @@ interface GridRowProps<TData> {
   isPendingNewRow?: boolean;
 }
 
+const NOOP_TOGGLE = () => {};
+
 function GridRowInner<TData>({
   row,
   rowIndex,
@@ -53,6 +57,7 @@ function GridRowInner<TData>({
   onDoubleClick,
   showSelectionCheckbox,
   isSelected,
+  rowId,
   onSelectionToggle,
   isEditing,
   editMode,
@@ -65,13 +70,32 @@ function GridRowInner<TData>({
   context,
   isPendingNewRow,
 }: GridRowProps<TData>) {
-  const hasEditingCell = isEditing
-    ? columns.some((col) => isEditing(rowIndex, col.id))
-    : false;
+  const hasEditingCell = useMemo(
+    () => (isEditing ? columns.some((col) => isEditing(rowIndex, col.id)) : false),
+    [isEditing, columns, rowIndex],
+  );
 
-  const hasPendingRow = hasPendingChange
-    ? columns.some((col) => hasPendingChange(rowIndex, col.id))
-    : false;
+  const hasPendingRow = useMemo(
+    () => (hasPendingChange ? columns.some((col) => hasPendingChange(rowIndex, col.id)) : false),
+    [hasPendingChange, columns, rowIndex],
+  );
+
+  const handleClick = useCallback(() => {
+    onClick?.(row, rowIndex);
+  }, [onClick, row, rowIndex]);
+
+  const handleDoubleClick = useCallback(() => {
+    onDoubleClick?.(row, rowIndex);
+  }, [onDoubleClick, row, rowIndex]);
+
+  const handleSelectionToggle = useCallback(
+    (shiftKey: boolean) => {
+      if (rowId && onSelectionToggle) {
+        onSelectionToggle(rowId, shiftKey);
+      }
+    },
+    [rowId, onSelectionToggle],
+  );
 
   const classNames = [
     'kz-grid-row',
@@ -88,13 +112,13 @@ function GridRowInner<TData>({
     <div
       className={classNames}
       style={style}
-      onClick={() => onClick?.(row, rowIndex)}
-      onDoubleClick={() => onDoubleClick?.(row, rowIndex)}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     >
       {showSelectionCheckbox && (
         <SelectionCell
           isSelected={isSelected ?? false}
-          onToggle={onSelectionToggle ?? (() => {})}
+          onToggle={onSelectionToggle ? handleSelectionToggle : NOOP_TOGGLE}
         />
       )}
       {columns.map((col) => {

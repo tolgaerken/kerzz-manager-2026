@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { EditingState, PendingChange, NavigationDirection } from '../types/editing.types';
 import type { GridColumnDef } from '../types/column.types';
+import { useCellNavigation } from './useCellNavigation';
 
 export interface UseGridEditingProps<TData> {
   columns: GridColumnDef<TData>[];
@@ -83,7 +84,12 @@ export function useGridEditing<TData>({
   const pendingNewRowsRef = useRef<TData[]>(pendingNewRows);
   pendingNewRowsRef.current = pendingNewRows;
 
-  const hasPendingChanges = pendingChanges.size > 0 || pendingNewRows.length > 0;
+  const { findNextEditableColumnIndex, findNextEditableCell } = useCellNavigation(columns, data);
+
+  const hasPendingChanges = useMemo(
+    () => pendingChanges.size > 0 || pendingNewRows.length > 0,
+    [pendingChanges.size, pendingNewRows.length],
+  );
 
   /** Check if a row (by its data object) is a pending new row */
   const isPendingRow = useCallback(
@@ -169,25 +175,6 @@ export function useGridEditing<TData>({
   );
 
   /**
-   * Find the next editable column index after the given column index in the columns array.
-   * Returns -1 if none found.
-   */
-  const findNextEditableColumnIndex = useCallback(
-    (startColIdx: number, rowIndex: number): number => {
-      const row = data[rowIndex];
-      if (!row) return -1;
-      for (let i = startColIdx; i < columns.length; i++) {
-        const col = columns[i];
-        const isEditable =
-          typeof col.editable === 'function' ? col.editable(row) : col.editable === true;
-        if (isEditable && col.cellEditor) return i;
-      }
-      return -1;
-    },
-    [columns, data],
-  );
-
-  /**
    * Save the current cell value and navigate to the next editable cell.
    * Tab/Enter: move to next editable cell in the same row, then wrap to next row.
    */
@@ -218,30 +205,17 @@ export function useGridEditing<TData>({
         }
       }
 
-      // Find the current column index
+      // Find the current column index and navigate to next editable cell
       const currentColIdx = columns.findIndex((c) => c.id === columnId);
+      const nextCell = findNextEditableCell(currentColIdx, rowIndex);
 
-      // Try next editable cell in the same row
-      const nextColIdx = findNextEditableColumnIndex(currentColIdx + 1, rowIndex);
-      if (nextColIdx !== -1) {
-        setEditingCell({ rowIndex, columnId: columns[nextColIdx].id });
-        return;
+      if (nextCell) {
+        setEditingCell(nextCell);
+      } else {
+        setEditingCell(null);
       }
-
-      // Try first editable cell in the next row
-      const nextRowIndex = rowIndex + 1;
-      if (nextRowIndex < data.length) {
-        const firstColIdx = findNextEditableColumnIndex(0, nextRowIndex);
-        if (firstColIdx !== -1) {
-          setEditingCell({ rowIndex: nextRowIndex, columnId: columns[firstColIdx].id });
-          return;
-        }
-      }
-
-      // No more editable cells, just close editor
-      setEditingCell(null);
     },
-    [editingCell, data, columns, findNextEditableColumnIndex, isPendingRow, updatePendingRowCell, onCellValueChange],
+    [editingCell, data, columns, findNextEditableCell, isPendingRow, updatePendingRowCell, onCellValueChange],
   );
 
   /**
@@ -277,6 +251,11 @@ export function useGridEditing<TData>({
     }
     prevDataLengthRef.current = data.length;
   }, [data.length, columns, findNextEditableColumnIndex]);
+
+  // Sync pendingRef on pendingChanges updates
+  useEffect(() => {
+    pendingRef.current = pendingChanges;
+  }, [pendingChanges]);
 
   const saveAllChanges = useCallback(() => {
     // Read from ref to get the absolute latest (including batched updates)

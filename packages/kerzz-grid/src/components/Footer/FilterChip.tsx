@@ -13,7 +13,7 @@ interface FilterChipProps {
   onRemove: (columnId: string) => void;
 }
 
-export function FilterChip({
+export const FilterChip = React.memo(function FilterChip({
   columnId,
   columnHeader,
   filter,
@@ -102,4 +102,4 @@ export function FilterChip({
       </button>
     </div>
   );
-}
+});

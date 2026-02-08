@@ -110,14 +110,15 @@ export function useGridFilter<TData>({
     [disabledFilters, onDisabledFiltersChange],
   );
 
-  const activeFilterCount = Object.keys(filters).length;
+  const activeFilterCount = useMemo(() => Object.keys(filters).length, [filters]);
+  const hasActiveFilters = useMemo(() => activeFilterCount > 0, [activeFilterCount]);
 
   return {
     filteredData,
     setFilter,
     removeFilter,
     clearAllFilters,
-    hasActiveFilters: activeFilterCount > 0,
+    hasActiveFilters,
     activeFilterCount,
     disabledFilters,
     toggleFilterEnabled,

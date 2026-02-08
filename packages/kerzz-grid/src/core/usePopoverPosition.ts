@@ -25,6 +25,7 @@ export function usePopoverPosition(
   const triggerRef = useRef<HTMLElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState<PopoverPosition>({ top: 0, left: 0 });
+  const rafRef = useRef<number | null>(null);
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
@@ -62,18 +63,31 @@ export function usePopoverPosition(
     setPosition({ top, left });
   }, [align, offsetY]);
 
+  // Throttled version for scroll/resize events (RAF-based)
+  const throttledUpdatePosition = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      updatePosition();
+    });
+  }, [updatePosition]);
+
   useLayoutEffect(() => {
     if (isOpen) {
       updatePosition();
-      // Recalculate on scroll/resize
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
+      // Recalculate on scroll/resize (throttled with RAF)
+      window.addEventListener('scroll', throttledUpdatePosition, true);
+      window.addEventListener('resize', throttledUpdatePosition);
       return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', throttledUpdatePosition, true);
+        window.removeEventListener('resize', throttledUpdatePosition);
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
       };
     }
-  }, [isOpen, updatePosition]);
+  }, [isOpen, updatePosition, throttledUpdatePosition]);
 
   return { triggerRef, popoverRef, position };
 }

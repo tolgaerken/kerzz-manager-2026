@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 
 interface SelectionCellProps {
   /** Whether the row is selected */
@@ -13,20 +13,22 @@ interface SelectionCellProps {
  * Selection checkbox cell for grid rows
  * Positioned as sticky on the left side
  */
-export function SelectionCell({
+export const SelectionCell = React.memo(function SelectionCell({
   isSelected,
   onToggle,
   rowHeight,
 }: SelectionCellProps) {
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggle(e.shiftKey);
-  };
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggle(e.shiftKey);
+    },
+    [onToggle],
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Prevent double-firing with click handler
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
-  };
+  }, []);
 
   return (
     <div
@@ -43,4 +45,4 @@ export function SelectionCell({
       />
     </div>
   );
-}
+});

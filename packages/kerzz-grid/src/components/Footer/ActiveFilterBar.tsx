@@ -14,7 +14,7 @@ interface ActiveFilterBarProps<TData> {
   onClearAll: () => void;
 }
 
-export function ActiveFilterBar<TData>({
+function ActiveFilterBarInner<TData>({
   filters,
   disabledFilters,
   columns,
@@ -71,3 +71,5 @@ export function ActiveFilterBar<TData>({
     </div>
   );
 }
+
+export const ActiveFilterBar = React.memo(ActiveFilterBarInner) as typeof ActiveFilterBarInner;

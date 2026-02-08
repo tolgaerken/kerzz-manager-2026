@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 interface UseColumnVisibilityOptions {
   columnVisibility: Record<string, boolean>;
@@ -50,9 +50,10 @@ export function useColumnVisibility({
     [columnVisibility, onColumnVisibilityChange],
   );
 
-  const visibleColumnCount = Object.values(columnVisibility).filter(
-    (v) => v !== false,
-  ).length;
+  const visibleColumnCount = useMemo(
+    () => Object.values(columnVisibility).filter((v) => v !== false).length,
+    [columnVisibility],
+  );
 
   return {
     isColumnVisible,

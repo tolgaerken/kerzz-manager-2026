@@ -12,9 +12,17 @@ export function useFooterAggregation<TData>({
   data,
   columns,
 }: UseFooterAggregationOptions<TData>): Map<string, FooterAggregateResult> {
+  // Pre-filter columns with footer config to avoid unnecessary work
+  const columnsWithFooter = useMemo(
+    () => columns.filter((c) => c.footer),
+    [columns],
+  );
+
   return useMemo(() => {
     const results = new Map<string, FooterAggregateResult>();
-    const columnsWithFooter = columns.filter((c) => c.footer);
+
+    // Early return if no footer columns or no data
+    if (columnsWithFooter.length === 0 || data.length === 0) return results;
 
     for (const col of columnsWithFooter) {
       if (!col.footer) continue;
@@ -32,5 +40,5 @@ export function useFooterAggregation<TData>({
     }
 
     return results;
-  }, [data, columns]);
+  }, [data, columnsWithFooter]);
 }

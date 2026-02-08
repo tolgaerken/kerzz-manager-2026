@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { CellEditorProps } from '../../types/editing.types';
 
-export function NumberEditor<TData>({ value, onSave, onCancel, onSaveAndMoveNext }: CellEditorProps<TData>) {
+function NumberEditorInner<TData>({ value, onSave, onCancel, onSaveAndMoveNext }: CellEditorProps<TData>) {
   const [text, setText] = useState(value != null ? String(value) : '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,3 +60,5 @@ export function NumberEditor<TData>({ value, onSave, onCancel, onSaveAndMoveNext
     />
   );
 }
+
+export const NumberEditor = React.memo(NumberEditorInner) as typeof NumberEditorInner;

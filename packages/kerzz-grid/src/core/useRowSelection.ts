@@ -28,6 +28,13 @@ export function useRowSelection<TData>({
   // Last selected row ID for shift+click range selection
   const lastSelectedIdRef = useRef<string | null>(null);
 
+  // Memoized index map for O(1) lookups during shift+click range selection
+  const rowIdIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    data.forEach((row, index) => map.set(getRowId(row), index));
+    return map;
+  }, [data, getRowId]);
+
   // Use controlled or internal state
   const selectedIds = useMemo(() => {
     if (isControlled) {
@@ -81,13 +88,12 @@ export function useRowSelection<TData>({
       } else if (mode === 'multiple') {
         // Multiple selection mode
         if (shiftKey && lastSelectedIdRef.current) {
-          // Shift+click: select range
+          // Shift+click: select range using memoized index map
           const lastId = lastSelectedIdRef.current;
-          const allIds = data.map(getRowId);
-          const lastIdx = allIds.indexOf(lastId);
-          const currentIdx = allIds.indexOf(rowId);
+          const lastIdx = rowIdIndexMap.get(lastId);
+          const currentIdx = rowIdIndexMap.get(rowId);
 
-          if (lastIdx !== -1 && currentIdx !== -1) {
+          if (lastIdx !== undefined && currentIdx !== undefined) {
             const [start, end] =
               lastIdx < currentIdx
                 ? [lastIdx, currentIdx]
@@ -95,7 +101,7 @@ export function useRowSelection<TData>({
 
             // Add all rows in range to selection
             for (let i = start; i <= end; i++) {
-              newSelectedIds.add(allIds[i]);
+              newSelectedIds.add(getRowId(data[i]));
             }
           }
         } else {
@@ -111,7 +117,7 @@ export function useRowSelection<TData>({
 
       updateSelection(newSelectedIds);
     },
-    [mode, selectedIds, data, getRowId, updateSelection]
+    [mode, selectedIds, data, getRowId, rowIdIndexMap, updateSelection]
   );
 
   // Select all rows
@@ -130,11 +136,17 @@ export function useRowSelection<TData>({
     updateSelection(newSelectedIds);
   }, [updateSelection]);
 
-  // Calculate derived state
+  // Calculate derived state (memoized)
   const totalCount = data.length;
   const selectedCount = selectedIds.size;
-  const isAllSelected = totalCount > 0 && selectedCount === totalCount;
-  const isIndeterminate = selectedCount > 0 && selectedCount < totalCount;
+  const isAllSelected = useMemo(
+    () => totalCount > 0 && selectedCount === totalCount,
+    [totalCount, selectedCount],
+  );
+  const isIndeterminate = useMemo(
+    () => selectedCount > 0 && selectedCount < totalCount,
+    [selectedCount, totalCount],
+  );
 
   return {
     selectedIds,

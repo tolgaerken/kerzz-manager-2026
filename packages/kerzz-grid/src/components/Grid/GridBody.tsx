@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { GridColumnDef } from '../../types/column.types';
 import type { NavigationDirection } from '../../types/editing.types';
@@ -43,7 +43,7 @@ interface GridBodyProps<TData> {
   getRowIdFn?: (row: TData) => string;
 }
 
-export function GridBody<TData>({
+function GridBodyInner<TData>({
   data,
   columns,
   virtualRows,
@@ -70,6 +70,13 @@ export function GridBody<TData>({
   pendingRowIdSet,
   getRowIdFn,
 }: GridBodyProps<TData>) {
+  const handleSelectionToggle = useCallback(
+    (rowId: string, shiftKey: boolean) => {
+      onSelectionToggle?.(rowId, shiftKey);
+    },
+    [onSelectionToggle],
+  );
+
   return (
     <div className="kz-grid-body" ref={scrollContainerRef}>
       <div
@@ -100,7 +107,8 @@ export function GridBody<TData>({
               onDoubleClick={onRowDoubleClick}
               showSelectionCheckbox={showSelectionCheckbox}
               isSelected={isSelected}
-              onSelectionToggle={(shiftKey) => onSelectionToggle?.(rowId, shiftKey)}
+              rowId={rowId}
+              onSelectionToggle={handleSelectionToggle}
               isEditing={isEditing}
               editMode={editMode}
               hasPendingChange={hasPendingChange}
@@ -118,3 +126,5 @@ export function GridBody<TData>({
     </div>
   );
 }
+
+export const GridBody = React.memo(GridBodyInner) as typeof GridBodyInner;

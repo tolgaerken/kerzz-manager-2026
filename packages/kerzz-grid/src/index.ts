@@ -24,6 +24,7 @@ export { useColumnVisibility } from './core/useColumnVisibility';
 export { useGridFilter } from './core/useGridFilter';
 export { useStateStore } from './core/useStateStore';
 export { useFooterAggregation } from './core/useFooterAggregation';
+export { useCellNavigation } from './core/useCellNavigation';
 
 // Column Visibility Panel
 export { ColumnVisibilityPanel } from './components/ColumnManager/ColumnVisibilityPanel';
@@ -74,6 +75,20 @@ export type {
   FooterAggregateResult,
   AggregateType,
 } from './types/footer.types';
+export type {
+  CellEditorConfig,
+  CellEditorProps,
+  SelectEditorOption,
+  EditingState,
+  PendingChange,
+  NavigationDirection,
+} from './types/editing.types';
+export type {
+  SelectionMode,
+  SelectionConfig,
+  UseRowSelectionProps,
+  UseRowSelectionReturn,
+} from './types/selection.types';
 export type { StorageAdapter } from './state/adapters/types';
 export type {
   ToolbarConfig,

@@ -10,11 +10,11 @@ interface SelectionFooterCellProps {
  * Maintains alignment with header and body selection cells
  * Positioned as sticky on the left side
  */
-export function SelectionFooterCell({ footerHeight }: SelectionFooterCellProps) {
+export const SelectionFooterCell = React.memo(function SelectionFooterCell({ footerHeight }: SelectionFooterCellProps) {
   return (
     <div
       className="kz-footer-cell kz-selection-footer-cell"
       style={{ height: footerHeight }}
     />
   );
-}
+});

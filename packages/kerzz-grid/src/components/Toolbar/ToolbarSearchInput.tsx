@@ -6,7 +6,7 @@ interface ToolbarSearchInputProps {
   onChange: (value: string) => void;
 }
 
-export function ToolbarSearchInput({ value, onChange }: ToolbarSearchInputProps) {
+export const ToolbarSearchInput = React.memo(function ToolbarSearchInput({ value, onChange }: ToolbarSearchInputProps) {
   const locale = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -57,9 +57,9 @@ export function ToolbarSearchInput({ value, onChange }: ToolbarSearchInputProps)
       )}
     </div>
   );
-}
+});
 
-function SearchIcon() {
+const SearchIcon = React.memo(function SearchIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -71,9 +71,9 @@ function SearchIcon() {
       />
     </svg>
   );
-}
+});
 
-function ClearIcon() {
+const ClearIcon = React.memo(function ClearIcon() {
   return (
     <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -85,4 +85,4 @@ function ClearIcon() {
       />
     </svg>
   );
-}
+});

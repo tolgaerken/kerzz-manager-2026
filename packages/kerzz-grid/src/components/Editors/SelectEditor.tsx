@@ -7,13 +7,13 @@ interface SelectEditorInternalProps<TData> extends CellEditorProps<TData> {
   onSaveAndMoveNext?: CellEditorProps<TData>['onSaveAndMoveNext'];
 }
 
-export function SelectEditor<TData>({
+function SelectEditorInner<TData>({
   value,
   options,
   onSave,
   onCancel,
   onSaveAndMoveNext,
-}: SelectEditorInternalProps<TData>) {
+}: SelectEditorInternalProps<TData>): React.ReactElement {
   const currentValue = value != null ? String(value) : '';
   const [highlightedIndex, setHighlightedIndex] = useState(() =>
     Math.max(options.findIndex((o) => o.id === currentValue), 0),
@@ -136,3 +136,5 @@ export function SelectEditor<TData>({
     </div>
   );
 }
+
+export const SelectEditor = React.memo(SelectEditorInner) as typeof SelectEditorInner;

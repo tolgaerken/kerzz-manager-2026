@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import type { GridColumnDef } from '../types/column.types';
 import type { GridProps } from '../types/grid.types';
 import { useStateStore } from './useStateStore';
@@ -42,6 +42,12 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     columns: columns as GridColumnDef<TData>[],
   });
 
+  // Column lookup map for O(1) access during sorting
+  const columnMap = useMemo(
+    () => new Map(columns.map((c) => [c.id, c])),
+    [columns],
+  );
+
   // Sorting (applied after global search)
   const sortedData = useMemo(() => {
     const dataToSort = globalSearch.filteredData;
@@ -52,7 +58,7 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
 
     sortedArr.sort((a, b) => {
       for (const sort of sorting) {
-        const col = columns.find((c) => c.id === sort.id);
+        const col = columnMap.get(sort.id);
         if (!col) continue;
 
         const aVal = col.accessorFn
@@ -76,7 +82,23 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     });
 
     return sortedArr;
-  }, [globalSearch.filteredData, stateStore.state.sorting, columns]);
+  }, [globalSearch.filteredData, stateStore.state.sorting, columnMap]);
+
+  // Memoized callbacks for filter hook
+  const handleFiltersChange = useCallback(
+    (filters: import('../types/filter.types').FilterState) => {
+      stateStore.setFilters(filters);
+      onFilterChange?.(filters);
+    },
+    [stateStore.setFilters, onFilterChange],
+  );
+
+  const handleDisabledFiltersChange = useCallback(
+    (disabled: import('../types/filter.types').DisabledFilterState) => {
+      stateStore.setDisabledFilters(disabled);
+    },
+    [stateStore.setDisabledFilters],
+  );
 
   // Column filtering (applied after sorting)
   const {
@@ -92,13 +114,8 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     columns: columns as GridColumnDef<TData>[],
     filters: stateStore.state.filters,
     disabledFilters: stateStore.state.disabledFilters ?? {},
-    onFiltersChange: (filters) => {
-      stateStore.setFilters(filters);
-      onFilterChange?.(filters);
-    },
-    onDisabledFiltersChange: (disabled) => {
-      stateStore.setDisabledFilters(disabled);
-    },
+    onFiltersChange: handleFiltersChange,
+    onDisabledFiltersChange: handleDisabledFiltersChange,
   });
 
   const normalizedColumnOrder = useMemo(() => {
@@ -165,30 +182,46 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     overscan,
   });
 
+  // Memoized callbacks for column hooks
+  const handleColumnWidthChange = useCallback(
+    (columnId: string, width: number) => {
+      stateStore.setColumnWidth(columnId, width);
+    },
+    [stateStore.setColumnWidth],
+  );
+
+  const handleColumnOrderChange = useCallback(
+    (order: string[]) => {
+      stateStore.setColumnOrder(order);
+      onColumnOrderChange?.(order);
+    },
+    [stateStore.setColumnOrder, onColumnOrderChange],
+  );
+
+  const handleColumnVisibilityChange = useCallback(
+    (visibility: Record<string, boolean>) => {
+      stateStore.setColumnVisibility(visibility);
+      onColumnVisibilityChange?.(visibility);
+    },
+    [stateStore.setColumnVisibility, onColumnVisibilityChange],
+  );
+
   // Column resize
   const columnResize = useColumnResize({
     columnWidths: stateStore.state.columnWidths,
-    onColumnWidthChange: (columnId, width) => {
-      stateStore.setColumnWidth(columnId, width);
-    },
+    onColumnWidthChange: handleColumnWidthChange,
   });
 
   // Column drag
   const columnDrag = useColumnDrag({
     columnOrder: normalizedColumnOrder,
-    onColumnOrderChange: (order) => {
-      stateStore.setColumnOrder(order);
-      onColumnOrderChange?.(order);
-    },
+    onColumnOrderChange: handleColumnOrderChange,
   });
 
   // Column visibility
   const columnVisibility = useColumnVisibility({
     columnVisibility: stateStore.state.columnVisibility,
-    onColumnVisibilityChange: (visibility) => {
-      stateStore.setColumnVisibility(visibility);
-      onColumnVisibilityChange?.(visibility);
-    },
+    onColumnVisibilityChange: handleColumnVisibilityChange,
   });
 
   // Footer aggregation (on filtered data)
@@ -198,22 +231,25 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
   });
 
   // Sorting handler
-  const handleSort = (columnId: string) => {
-    const current = stateStore.state.sorting;
-    let next: SortingState;
+  const handleSort = useCallback(
+    (columnId: string) => {
+      const current = stateStore.state.sorting;
+      let next: SortingState;
 
-    const existing = current.find((s) => s.id === columnId);
-    if (!existing) {
-      next = [{ id: columnId, desc: false }];
-    } else if (!existing.desc) {
-      next = [{ id: columnId, desc: true }];
-    } else {
-      next = [];
-    }
+      const existing = current.find((s) => s.id === columnId);
+      if (!existing) {
+        next = [{ id: columnId, desc: false }];
+      } else if (!existing.desc) {
+        next = [{ id: columnId, desc: true }];
+      } else {
+        next = [];
+      }
 
-    stateStore.setSorting(next);
-    onSortChange?.(next);
-  };
+      stateStore.setSorting(next);
+      onSortChange?.(next);
+    },
+    [stateStore.state.sorting, stateStore.setSorting, onSortChange],
+  );
 
   // Total row width (accounts for minWidth overriding width)
   const totalWidth = useMemo(() => {

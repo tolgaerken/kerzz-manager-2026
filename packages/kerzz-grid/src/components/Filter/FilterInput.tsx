@@ -22,7 +22,7 @@ const defaultConditions: FilterCondition[] = [
   'notBlank',
 ];
 
-export function FilterInput({
+function FilterInputInner({
   filterConfig,
   activeFilter,
   onApply,
@@ -150,3 +150,5 @@ export function FilterInput({
     </div>
   );
 }
+
+export const FilterInput = React.memo(FilterInputInner);

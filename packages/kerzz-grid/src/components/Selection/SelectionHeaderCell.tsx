@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 interface SelectionHeaderCellProps {
   /** Whether all rows are selected */
@@ -16,7 +16,7 @@ interface SelectionHeaderCellProps {
  * Shows "select all" checkbox with indeterminate state support
  * Positioned as sticky on the left side
  */
-export function SelectionHeaderCell({
+export const SelectionHeaderCell = React.memo(function SelectionHeaderCell({
   isAllSelected,
   isIndeterminate,
   onToggleAll,
@@ -24,21 +24,23 @@ export function SelectionHeaderCell({
 }: SelectionHeaderCellProps) {
   const checkboxRef = useRef<HTMLInputElement>(null);
 
-  // Handle indeterminate state (can't be set via attribute)
   useEffect(() => {
     if (checkboxRef.current) {
       checkboxRef.current.indeterminate = isIndeterminate;
     }
   }, [isIndeterminate]);
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleAll();
-  };
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggleAll();
+    },
+    [onToggleAll],
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
-  };
+  }, []);
 
   return (
     <div
@@ -56,4 +58,4 @@ export function SelectionHeaderCell({
       />
     </div>
   );
-}
+});

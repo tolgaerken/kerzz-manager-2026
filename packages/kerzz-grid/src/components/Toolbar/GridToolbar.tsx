@@ -33,7 +33,7 @@ interface GridToolbarProps<TData> {
   onAddRow?: () => void;
 }
 
-export function GridToolbar<TData>({
+function GridToolbarInner<TData>({
   config,
   data,
   columns,
@@ -210,3 +210,5 @@ export function GridToolbar<TData>({
     </div>
   );
 }
+
+export const GridToolbar = React.memo(GridToolbarInner) as typeof GridToolbarInner;

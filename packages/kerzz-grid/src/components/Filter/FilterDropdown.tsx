@@ -15,7 +15,7 @@ interface FilterDropdownProps<TData> {
   onClose: () => void;
 }
 
-export function FilterDropdown<TData>({
+function FilterDropdownInner<TData>({
   column,
   data,
   filterConfig,
@@ -217,3 +217,5 @@ export function FilterDropdown<TData>({
     </div>
   );
 }
+
+export const FilterDropdown = React.memo(FilterDropdownInner) as typeof FilterDropdownInner;

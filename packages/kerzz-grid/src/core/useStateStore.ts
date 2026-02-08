@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useReducer } from 'react';
 import type { GridState } from '../types/grid.types';
 import type { GridColumnDef } from '../types/column.types';
 import type { FilterState, DisabledFilterState } from '../types/filter.types';
@@ -23,6 +23,46 @@ interface UseStateStoreReturn {
   resetState: () => void;
 }
 
+// --- Reducer ---
+
+type StateAction =
+  | { type: 'SET_COLUMN_WIDTHS'; widths: Record<string, number> }
+  | { type: 'SET_COLUMN_WIDTH'; columnId: string; width: number }
+  | { type: 'SET_COLUMN_ORDER'; order: string[] }
+  | { type: 'SET_COLUMN_VISIBILITY'; visibility: Record<string, boolean> }
+  | { type: 'SET_SORTING'; sorting: SortingState }
+  | { type: 'SET_FILTERS'; filters: FilterState }
+  | { type: 'SET_DISABLED_FILTERS'; disabledFilters: DisabledFilterState }
+  | { type: 'RESET'; defaultState: GridState };
+
+function stateReducer(state: GridState, action: StateAction): GridState {
+  switch (action.type) {
+    case 'SET_COLUMN_WIDTHS':
+      return { ...state, columnWidths: action.widths };
+    case 'SET_COLUMN_WIDTH':
+      return {
+        ...state,
+        columnWidths: { ...state.columnWidths, [action.columnId]: action.width },
+      };
+    case 'SET_COLUMN_ORDER':
+      return { ...state, columnOrder: action.order };
+    case 'SET_COLUMN_VISIBILITY':
+      return { ...state, columnVisibility: action.visibility };
+    case 'SET_SORTING':
+      return { ...state, sorting: action.sorting };
+    case 'SET_FILTERS':
+      return { ...state, filters: action.filters };
+    case 'SET_DISABLED_FILTERS':
+      return { ...state, disabledFilters: action.disabledFilters };
+    case 'RESET':
+      return action.defaultState;
+    default:
+      return state;
+  }
+}
+
+// --- Hook ---
+
 export function useStateStore({
   stateKey,
   stateStorage = 'localStorage',
@@ -44,7 +84,7 @@ export function useStateStore({
     return defaults;
   }, [columns]);
 
-  const [state, setState] = useState<GridState>(() => {
+  const [state, dispatch] = useReducer(stateReducer, undefined, () => {
     if (stateKey && stateStorage !== 'none') {
       const manager = new StateManager(stateKey, stateStorage);
       managerRef.current = manager;
@@ -64,97 +104,63 @@ export function useStateStore({
     }
   }, [stateKey, stateStorage]);
 
-  const persist = useCallback(
-    (next: GridState) => {
-      managerRef.current?.save(next);
+  // Persist state changes
+  useEffect(() => {
+    managerRef.current?.save(state);
+  }, [state]);
+
+  const setColumnWidths = useCallback(
+    (widths: Record<string, number>) => {
+      dispatch({ type: 'SET_COLUMN_WIDTHS', widths });
     },
     [],
   );
 
-  const setColumnWidths = useCallback(
-    (widths: Record<string, number>) => {
-      setState((prev) => {
-        const next = { ...prev, columnWidths: widths };
-        persist(next);
-        return next;
-      });
-    },
-    [persist],
-  );
-
   const setColumnWidth = useCallback(
     (columnId: string, width: number) => {
-      setState((prev) => {
-        const next = {
-          ...prev,
-          columnWidths: { ...prev.columnWidths, [columnId]: width },
-        };
-        persist(next);
-        return next;
-      });
+      dispatch({ type: 'SET_COLUMN_WIDTH', columnId, width });
     },
-    [persist],
+    [],
   );
 
   const setColumnOrder = useCallback(
     (order: string[]) => {
-      setState((prev) => {
-        const next = { ...prev, columnOrder: order };
-        persist(next);
-        return next;
-      });
+      dispatch({ type: 'SET_COLUMN_ORDER', order });
     },
-    [persist],
+    [],
   );
 
   const setColumnVisibility = useCallback(
     (visibility: Record<string, boolean>) => {
-      setState((prev) => {
-        const next = { ...prev, columnVisibility: visibility };
-        persist(next);
-        return next;
-      });
+      dispatch({ type: 'SET_COLUMN_VISIBILITY', visibility });
     },
-    [persist],
+    [],
   );
 
   const setSorting = useCallback(
     (sorting: SortingState) => {
-      setState((prev) => {
-        const next = { ...prev, sorting };
-        persist(next);
-        return next;
-      });
+      dispatch({ type: 'SET_SORTING', sorting });
     },
-    [persist],
+    [],
   );
 
   const setFilters = useCallback(
     (filters: FilterState) => {
-      setState((prev) => {
-        const next = { ...prev, filters };
-        persist(next);
-        return next;
-      });
+      dispatch({ type: 'SET_FILTERS', filters });
     },
-    [persist],
+    [],
   );
 
   const setDisabledFilters = useCallback(
     (disabledFilters: DisabledFilterState) => {
-      setState((prev) => {
-        const next = { ...prev, disabledFilters };
-        persist(next);
-        return next;
-      });
+      dispatch({ type: 'SET_DISABLED_FILTERS', disabledFilters });
     },
-    [persist],
+    [],
   );
 
   const resetState = useCallback(() => {
     managerRef.current?.remove();
-    const defaults = createDefaultState();
-    setState(defaults);
+    dispatch({ type: 'RESET', defaultState: createDefaultState() });
   }, [createDefaultState]);
 
   return {

@@ -26,7 +26,7 @@ interface GridHeaderProps<TData> {
   onDragEnd: () => void;
 }
 
-export function GridHeader<TData>({
+function GridHeaderInner<TData>({
   columns,
   filterData,
   sorting,
@@ -71,3 +71,5 @@ export function GridHeader<TData>({
     </div>
   );
 }
+
+export const GridHeader = React.memo(GridHeaderInner) as typeof GridHeaderInner;

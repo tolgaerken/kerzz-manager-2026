@@ -7,7 +7,7 @@ import { useGridInstance } from '../../core/useGridInstance';
 import { useGridEditing } from '../../core/useGridEditing';
 import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
-import { themeToCssVars } from '../../utils/memoize';
+import { themeToCssVars } from '../../utils/themeUtils';
 import { GridHeader } from './GridHeader';
 import { GridBody } from './GridBody';
 import { GridFooter } from './GridFooter';
@@ -134,13 +134,19 @@ function GridInner<TData>(
     width,
   };
 
-  const handleFilterApply = (columnId: string, filter: ActiveFilter) => {
-    grid.setFilter(columnId, filter);
-  };
+  const handleFilterApply = useCallback(
+    (columnId: string, filter: ActiveFilter) => {
+      grid.setFilter(columnId, filter);
+    },
+    [grid.setFilter],
+  );
 
-  const handleFilterClear = (columnId: string) => {
-    grid.removeFilter(columnId);
-  };
+  const handleFilterClear = useCallback(
+    (columnId: string) => {
+      grid.removeFilter(columnId);
+    },
+    [grid.removeFilter],
+  );
 
   // Calculate column panel position from button (for non-toolbar mode)
   const getColPanelPos = useCallback(() => {

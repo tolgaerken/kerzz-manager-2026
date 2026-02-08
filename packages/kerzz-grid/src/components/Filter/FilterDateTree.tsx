@@ -15,7 +15,7 @@ interface FilterDateTreeProps<TData> {
   onClose: () => void;
 }
 
-export function FilterDateTree<TData>({
+function FilterDateTreeInner<TData>({
   column,
   data,
   filterConfig,
@@ -305,3 +305,5 @@ export function FilterDateTree<TData>({
     </div>
   );
 }
+
+export const FilterDateTree = React.memo(FilterDateTreeInner) as typeof FilterDateTreeInner;
