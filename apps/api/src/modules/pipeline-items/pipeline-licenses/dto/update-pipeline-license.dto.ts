@@ -20,6 +20,10 @@ export class UpdatePipelineLicenseDto {
 
   @IsString()
   @IsOptional()
+  productId?: string;
+
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @IsString()

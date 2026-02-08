@@ -71,10 +71,6 @@ export interface GridProps<TData = unknown> {
   /** Fired when column visibility changes */
   onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
 
-  /** Fired when the add-row button is clicked in the toolbar (edit mode).
-   *  Used when createEmptyRow is NOT provided (legacy immediate-add mode). */
-  onRowAdd?: () => void;
-
   /** Factory function that creates an empty row object.
    *  When provided, the grid manages pending new rows internally:
    *  - Clicking "+" creates a pending row shown in the grid but not committed.
@@ -86,8 +82,8 @@ export interface GridProps<TData = unknown> {
    *  Receives the array of pending new rows (with any cell edits applied). */
   onNewRowSave?: (rows: TData[]) => void;
 
-  /** Fired when a cell value changes in a pending new row.
-   *  Use this to update related columns (e.g. moduleId -> name).
+  /** Fired when a cell value changes in a pending or modified row.
+   *  Use this to update related/computed columns (e.g. qty change -> totalPrice recalc).
    *  Should return the updated row. If not provided, defaults to { ...row, [columnId]: newValue }. */
   onPendingCellChange?: (row: TData, columnId: string, newValue: unknown) => TData;
 
@@ -124,6 +120,6 @@ export interface GridRef {
   selectAll: () => void;
   /** Deselect all rows */
   deselectAll: () => void;
-  /** Trigger add-row flow (emits onRowAdd and auto-edits the new row) */
+  /** Trigger add-row flow (requires createEmptyRow to be provided) */
   addRow: () => void;
 }

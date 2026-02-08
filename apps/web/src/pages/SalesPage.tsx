@@ -46,6 +46,10 @@ export function SalesPage() {
     }));
   }, [data, getCustomerName]);
 
+  const totalAmount = useMemo(() => {
+    return enrichedSales.reduce((sum, sale) => sum + (sale.grandTotal || 0), 0);
+  }, [enrichedSales]);
+
   const handleFilterChange = useCallback(
     (filters: Partial<SaleQueryParams>) => {
       setQueryParams((prev) => ({ ...prev, ...filters }));
@@ -157,6 +161,14 @@ export function SalesPage() {
         <div className="flex items-center justify-between mt-3 px-1">
           <span className="text-sm text-[var(--color-foreground-muted)]">
             Toplam: {data.meta.total} kayıt
+          </span>
+          <span className="text-sm font-semibold text-[var(--color-foreground)]">
+            Genel Toplam:{" "}
+            {new Intl.NumberFormat("tr-TR", {
+              style: "currency",
+              currency: "TRY",
+              minimumFractionDigits: 2,
+            }).format(totalAmount)}
           </span>
         </div>
       )}

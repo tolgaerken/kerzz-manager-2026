@@ -31,8 +31,8 @@ export function PaymentItemsTable({
     [items, onItemsChange],
   );
 
-  const handleAdd = useCallback(() => {
-    const newPayment: PaymentItem = {
+  const createEmptyRow = useCallback(
+    (): PaymentItem => ({
       _id: generateTempId(),
       amount: 0,
       currency: "tl",
@@ -41,9 +41,16 @@ export function PaymentItemsTable({
       description: "",
       isPaid: false,
       invoiceNo: "",
-    };
-    onItemsChange([...items, newPayment]);
-  }, [items, onItemsChange]);
+    }),
+    [],
+  );
+
+  const handleNewRowsSave = useCallback(
+    (newRows: PaymentItem[]) => {
+      onItemsChange([...items, ...newRows]);
+    },
+    [items, onItemsChange],
+  );
 
   const handleDelete = useCallback(() => {
     if (!selectedId) return;
@@ -88,7 +95,8 @@ export function PaymentItemsTable({
           getRowId={(row) => row._id || ""}
           onCellValueChange={handleCellValueChange}
           onRowClick={handleRowClick}
-          onRowAdd={readOnly ? undefined : handleAdd}
+          createEmptyRow={readOnly ? undefined : createEmptyRow}
+          onNewRowSave={handleNewRowsSave}
           height="100%"
           locale="tr"
           toolbar={toolbarConfig}

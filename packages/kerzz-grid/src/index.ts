@@ -80,7 +80,6 @@ export type {
   CellEditorProps,
   SelectEditorOption,
   EditingState,
-  PendingChange,
   NavigationDirection,
 } from './types/editing.types';
 export type {

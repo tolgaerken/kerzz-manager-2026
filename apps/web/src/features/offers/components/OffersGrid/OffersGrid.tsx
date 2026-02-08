@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
-import type { GridColumnDef, ToolbarButtonConfig } from "@kerzz/grid";
+import type { GridColumnDef, ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
 import { offerColumnDefs } from "./columnDefs";
 import type { Offer } from "../../types/offer.types";
 
@@ -55,6 +55,13 @@ export function OffersGrid({
     [onRowDoubleClick],
   );
 
+  const toolbarConfig: ToolbarConfig<Offer> = useMemo(
+    () => ({
+      customButtons: toolbarButtons,
+    }),
+    [toolbarButtons],
+  );
+
   const columns: GridColumnDef<Offer>[] = offerColumnDefs.map((col) => ({
     ...col,
     cellClassName: (_value: unknown, row: Offer) => {
@@ -86,8 +93,7 @@ export function OffersGrid({
           }
         }}
         stripedRows
-        toolbar
-        toolbarButtons={toolbarButtons}
+        toolbar={toolbarConfig}
         stateKey="offers"
       />
     </div>

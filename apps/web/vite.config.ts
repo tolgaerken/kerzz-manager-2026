@@ -9,6 +9,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Dev modda kerzz-grid'i doğrudan source'dan oku (build gerekmez)
+      "@kerzz/grid/styles.css": path.resolve(__dirname, "../../packages/kerzz-grid/src/theme/grid-base.css"),
+      "@kerzz/grid": path.resolve(__dirname, "../../packages/kerzz-grid/src/index.ts"),
       // Monorepo paketlerinin aynı React instance'ını kullanmasını sağla
       react: path.resolve(__dirname, "../../node_modules/react"),
       "react-dom": path.resolve(__dirname, "../../node_modules/react-dom"),
@@ -18,7 +21,7 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "@kerzz/grid"],
+    include: ["react", "react-dom"],
     exclude: [],
   },
 });

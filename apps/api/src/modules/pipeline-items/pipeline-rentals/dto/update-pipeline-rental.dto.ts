@@ -20,6 +20,10 @@ export class UpdatePipelineRentalDto {
 
   @IsString()
   @IsOptional()
+  productId?: string;
+
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @IsString()
@@ -65,6 +69,10 @@ export class UpdatePipelineRentalDto {
   @IsNumber()
   @IsOptional()
   rentPeriod?: number;
+
+  @IsNumber()
+  @IsOptional()
+  invoicePeriod?: number;
 
   @IsNumber()
   @IsOptional()

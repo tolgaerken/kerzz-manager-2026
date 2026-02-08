@@ -33,7 +33,6 @@ function GridInner<TData>(
     columns,
     getRowId,
     onCellValueChange,
-    onRowAdd,
     onEditSave,
     onEditCancel,
     createEmptyRow,
@@ -63,9 +62,7 @@ function GridInner<TData>(
     columns: grid.orderedColumns as GridColumnDef<TData>[],
     data: displayData,
     onCellValueChange,
-    onRowAdd,
     onEditSave,
-    onEditCancel,
     createEmptyRow,
     onNewRowSave,
     onPendingCellChange,
@@ -78,6 +75,12 @@ function GridInner<TData>(
   const colBtnRef = useRef<HTMLButtonElement>(null);
   const headerWrapperRef = useRef<HTMLDivElement>(null);
   const footerWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Wrap cancelAllChanges to also notify parent
+  const handleCancelAll = useCallback(() => {
+    editing.cancelAllChanges();
+    onEditCancel?.();
+  }, [editing.cancelAllChanges, onEditCancel]);
 
   // Resolve toolbar config
   const toolbarConfig = useMemo<ToolbarConfig<TData> | null>(() => {
@@ -178,8 +181,8 @@ function GridInner<TData>(
           onSearchChange={grid.setSearchTerm}
           editMode={editing.editMode}
           onSaveAll={editing.saveAllChanges}
-          onCancelAll={editing.cancelAllChanges}
-          onAddRow={createEmptyRow || onRowAdd ? editing.requestAddRow : undefined}
+          onCancelAll={handleCancelAll}
+          onAddRow={createEmptyRow ? editing.requestAddRow : undefined}
         />
       )}
 

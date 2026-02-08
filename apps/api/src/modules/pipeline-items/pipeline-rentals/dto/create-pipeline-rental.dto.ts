@@ -34,6 +34,10 @@ export class CreatePipelineRentalDto {
 
   @IsString()
   @IsOptional()
+  productId?: string;
+
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @IsString()
@@ -79,6 +83,10 @@ export class CreatePipelineRentalDto {
   @IsNumber()
   @IsOptional()
   rentPeriod?: number;
+
+  @IsNumber()
+  @IsOptional()
+  invoicePeriod?: number;
 
   @IsNumber()
   @IsOptional()

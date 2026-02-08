@@ -5,6 +5,9 @@ import type { PipelineProduct } from "../../types/pipeline.types";
 import { recalculateItem, generateTempId } from "../../utils/lineItemCalculations";
 import { productItemsColumns } from "../../columnDefs/productItemsColumns";
 import { CatalogSelectModal, type CatalogItem } from "../CatalogSelectModal/CatalogSelectModal";
+import { useHardwareProducts } from "../../../hardware-products";
+import type { HardwareProduct } from "../../../hardware-products";
+import type { PipelineProductOption } from "../cellEditors/PipelineProductAutocompleteEditor";
 
 type ProductItem = Partial<PipelineProduct>;
 
@@ -23,20 +26,54 @@ export function ProductItemsTable({
 }: ProductItemsTableProps) {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data: productsData } = useHardwareProducts({
+    saleActive: true,
+    limit: 10000,
+    sortField: "name",
+    sortOrder: "asc",
+  });
+
+  const products = useMemo<PipelineProductOption[]>(() => {
+    return (productsData?.data ?? []).map(mapHardwareProductOption);
+  }, [productsData?.data]);
+
+  const getProductName = useCallback(
+    (productId: string) => {
+      const found = products.find((p) => p.id === productId);
+      return found?.nameWithCode || found?.friendlyName || found?.name || "";
+    },
+    [products],
+  );
+
+  const getProductIdByCatalog = useCallback(
+    (catalogId: string) => {
+      const found = products.find((p) => p._id === catalogId);
+      return found?.id || "";
+    },
+    [products],
+  );
 
   const handleCellValueChange = useCallback(
     (row: ProductItem, columnId: string, newValue: unknown) => {
       onItemsChange(
         items.map((item) => {
           if (item._id !== row._id) return item;
-          const updated = { ...item, [columnId]: newValue };
+          const nextName =
+            columnId === "productId" && typeof newValue === "string"
+              ? getProductName(newValue)
+              : item.name;
+          const updated = {
+            ...item,
+            [columnId]: newValue,
+            ...(columnId === "productId" ? { name: nextName } : {}),
+          };
           return RECALC_FIELDS.has(columnId)
             ? recalculateItem(updated as any)
             : updated;
         }),
       );
     },
-    [items, onItemsChange],
+    [items, onItemsChange, getProductName],
   );
 
   const handleCatalogSelect = useCallback(
@@ -46,6 +83,7 @@ export function ProductItemsTable({
           _id: generateTempId(),
           catalogId: cat.catalogId,
           erpId: cat.erpId,
+          productId: getProductIdByCatalog(cat.catalogId),
           name: cat.name,
           description: cat.description,
           qty: 1,
@@ -60,27 +98,54 @@ export function ProductItemsTable({
       );
       onItemsChange([...items, ...newItems]);
     },
+    [items, onItemsChange, getProductIdByCatalog],
+  );
+
+  const createEmptyRow = useCallback(
+    (): ProductItem =>
+      recalculateItem({
+        _id: generateTempId(),
+        catalogId: "",
+        erpId: "",
+        productId: "",
+        name: "",
+        description: "",
+        qty: 1,
+        unit: "",
+        purchasePrice: 0,
+        salePrice: 0,
+        price: 0,
+        currency: "tl",
+        vatRate: 0,
+        discountRate: 0,
+      } as any),
+    [],
+  );
+
+  const handleNewRowsSave = useCallback(
+    (newRows: ProductItem[]) => {
+      onItemsChange([...items, ...newRows]);
+    },
     [items, onItemsChange],
   );
 
-  const handleAdd = useCallback(() => {
-    const newItem: ProductItem = recalculateItem({
-      _id: generateTempId(),
-      catalogId: "",
-      erpId: "",
-      name: "",
-      description: "",
-      qty: 1,
-      unit: "",
-      purchasePrice: 0,
-      salePrice: 0,
-      price: 0,
-      currency: "tl",
-      vatRate: 0,
-      discountRate: 0,
-    } as any);
-    onItemsChange([...items, newItem]);
-  }, [items, onItemsChange]);
+  const handlePendingCellChange = useCallback(
+    (row: ProductItem, columnId: string, newValue: unknown): ProductItem => {
+      const nextName =
+        columnId === "productId" && typeof newValue === "string"
+          ? getProductName(newValue)
+          : row.name;
+      const updated = {
+        ...row,
+        [columnId]: newValue,
+        ...(columnId === "productId" ? { name: nextName } : {}),
+      };
+      return RECALC_FIELDS.has(columnId)
+        ? (recalculateItem(updated as any) as ProductItem)
+        : updated;
+    },
+    [getProductName],
+  );
 
   const handleDelete = useCallback(() => {
     if (!selectedId) return;
@@ -134,7 +199,10 @@ export function ProductItemsTable({
           getRowId={(row) => row._id || ""}
           onCellValueChange={handleCellValueChange}
           onRowClick={handleRowClick}
-          onRowAdd={readOnly ? undefined : handleAdd}
+          createEmptyRow={readOnly ? undefined : createEmptyRow}
+          onNewRowSave={handleNewRowsSave}
+          onPendingCellChange={handlePendingCellChange}
+          context={{ products }}
           height="100%"
           locale="tr"
           toolbar={toolbarConfig}
@@ -150,4 +218,14 @@ export function ProductItemsTable({
       />
     </div>
   );
+}
+
+function mapHardwareProductOption(product: HardwareProduct): PipelineProductOption {
+  return {
+    _id: product._id,
+    id: product.id,
+    name: product.name || "",
+    friendlyName: product.friendlyName || "",
+    nameWithCode: "",
+  };
 }

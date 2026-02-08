@@ -1,6 +1,10 @@
 import type { GridColumnDef } from "@kerzz/grid";
 import type { PipelineRental } from "../types/pipeline.types";
 import { PIPELINE_CONSTANTS } from "../constants/pipeline.constants";
+import {
+  PipelineProductAutocompleteEditor,
+  type PipelineProductOption,
+} from "../components/cellEditors/PipelineProductAutocompleteEditor";
 
 const CURRENCY_OPTIONS = [...PIPELINE_CONSTANTS.CURRENCIES];
 const BILLING_PERIOD_OPTIONS = [...PIPELINE_CONSTANTS.BILLING_PERIOD_OPTIONS];
@@ -15,13 +19,33 @@ const currencyFormatter = (value: unknown) => {
 
 export const rentalItemsColumns: GridColumnDef<Partial<PipelineRental>>[] = [
   {
-    id: "name",
-    accessorKey: "name",
+    id: "productId",
+    accessorKey: "productId",
     header: "Ürün",
-    width: 180,
+    width: 220,
     minWidth: 140,
     editable: true,
-    cellEditor: { type: "text" },
+    cellEditor: {
+      type: "custom",
+      customEditor: PipelineProductAutocompleteEditor,
+    },
+    cell: (value, _row, context) => {
+      if (!value) return "";
+      const valueStr = String(value);
+      const products =
+        ((context as Record<string, unknown>)?.products as PipelineProductOption[]) ||
+        [];
+      const found = products.find((p) => p.id === valueStr);
+      return found?.nameWithCode || found?.friendlyName || found?.name || valueStr;
+    },
+  },
+  {
+    id: "name",
+    accessorKey: "name",
+    header: "Ad",
+    width: 180,
+    minWidth: 140,
+    editable: false,
   },
   {
     id: "pid",
@@ -34,7 +58,24 @@ export const rentalItemsColumns: GridColumnDef<Partial<PipelineRental>>[] = [
   {
     id: "rentPeriod",
     accessorKey: "rentPeriod",
-    header: "Fatura Periodu",
+    header: "Sözleşme Periyodu",
+    width: 130,
+    editable: true,
+    cellEditor: {
+      type: "select",
+      options: BILLING_PERIOD_OPTIONS,
+    },
+    valueFormatter: (value) => {
+      const found = BILLING_PERIOD_OPTIONS.find(
+        (option) => String(option.id) === String(value),
+      );
+      return found?.name || String(value ?? "");
+    },
+  },
+  {
+    id: "invoicePeriod",
+    accessorKey: "invoicePeriod",
+    header: "Fatura Periyodu",
     width: 130,
     editable: true,
     cellEditor: {

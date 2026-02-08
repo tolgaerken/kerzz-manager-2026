@@ -16,6 +16,10 @@ export class UpdatePipelineProductDto {
 
   @IsString()
   @IsOptional()
+  productId?: string;
+
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @IsString()

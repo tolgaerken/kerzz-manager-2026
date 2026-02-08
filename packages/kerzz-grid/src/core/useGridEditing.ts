@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import type { EditingState, PendingChange, NavigationDirection } from '../types/editing.types';
+import { flushSync } from 'react-dom';
+import type { EditingState, NavigationDirection } from '../types/editing.types';
 import type { GridColumnDef } from '../types/column.types';
 import { useCellNavigation } from './useCellNavigation';
 
@@ -7,9 +8,7 @@ export interface UseGridEditingProps<TData> {
   columns: GridColumnDef<TData>[];
   data: TData[];
   onCellValueChange?: (row: TData, columnId: string, newValue: unknown, oldValue: unknown) => void;
-  onRowAdd?: () => void;
   onEditSave?: () => void;
-  onEditCancel?: () => void;
 
   // Deferred new row props
   createEmptyRow?: () => TData;
@@ -46,7 +45,7 @@ export interface UseGridEditingReturn {
   saveAllChanges: () => void;
   /** Discard all pending changes and exit edit mode */
   cancelAllChanges: () => void;
-  /** Request adding a new row (emits onRowAdd and auto-edits the new row) */
+  /** Request adding a new row (requires createEmptyRow) */
   requestAddRow: () => void;
 }
 
@@ -54,9 +53,7 @@ export function useGridEditing<TData>({
   columns,
   data,
   onCellValueChange,
-  onRowAdd,
   onEditSave,
-  onEditCancel,
   createEmptyRow,
   onNewRowSave,
   onPendingCellChange,
@@ -67,13 +64,19 @@ export function useGridEditing<TData>({
 }: UseGridEditingProps<TData>): UseGridEditingReturn {
   const [editingCell, setEditingCell] = useState<EditingState | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState<Map<string, PendingChange<TData>>>(
-    () => new Map(),
-  );
 
-  // Keep a mutable ref in sync so that saveAllChanges always reads the latest
-  // pending changes even when called in the same event batch as saveValue.
-  const pendingRef = useRef<Map<string, PendingChange<TData>>>(pendingChanges);
+  // Modified existing rows: rowIndex -> full modified row object
+  const [modifiedRows, setModifiedRows] = useState<Map<number, TData>>(() => new Map());
+
+  // Ref for modifiedRows so saveAllChanges always reads the latest
+  const modifiedRowsRef = useRef<Map<number, TData>>(modifiedRows);
+  useEffect(() => {
+    modifiedRowsRef.current = modifiedRows;
+  }, [modifiedRows]);
+
+  // Ref for onCellValueChange so flushSync always calls the latest callback
+  const onCellValueChangeRef = useRef(onCellValueChange);
+  onCellValueChangeRef.current = onCellValueChange;
 
   // Flag to auto-start editing after a new row is added
   const pendingEditAfterAdd = useRef(false);
@@ -87,8 +90,8 @@ export function useGridEditing<TData>({
   const { findNextEditableColumnIndex, findNextEditableCell } = useCellNavigation(columns, data);
 
   const hasPendingChanges = useMemo(
-    () => pendingChanges.size > 0 || pendingNewRows.length > 0,
-    [pendingChanges.size, pendingNewRows.length],
+    () => modifiedRows.size > 0 || pendingNewRows.length > 0,
+    [modifiedRows.size, pendingNewRows.length],
   );
 
   /** Check if a row (by its data object) is a pending new row */
@@ -100,7 +103,7 @@ export function useGridEditing<TData>({
     [getRowId, pendingRowIdSet],
   );
 
-  /** Update a pending row's cell value. Uses onPendingCellChange if provided. */
+  /** Update a pending new row's cell value. Uses onPendingCellChange if provided. */
   const updatePendingRowCell = useCallback(
     (row: TData, columnId: string, newValue: unknown) => {
       const updatedRow = onPendingCellChange
@@ -114,6 +117,23 @@ export function useGridEditing<TData>({
       );
     },
     [onPendingCellChange, getRowId, setPendingNewRows],
+  );
+
+  /** Update an existing row's cell value in the modifiedRows map (deferred). */
+  const updateModifiedRow = useCallback(
+    (rowIndex: number, row: TData, columnId: string, newValue: unknown) => {
+      const currentModified = modifiedRowsRef.current.get(rowIndex) ?? row;
+      const updatedRow = onPendingCellChange
+        ? onPendingCellChange(currentModified, columnId, newValue)
+        : { ...currentModified, [columnId]: newValue } as TData;
+
+      setModifiedRows((prev) => {
+        const next = new Map(prev);
+        next.set(rowIndex, updatedRow);
+        return next;
+      });
+    },
+    [onPendingCellChange],
   );
 
   const startEditing = useCallback(
@@ -151,27 +171,20 @@ export function useGridEditing<TData>({
         return;
       }
 
-      // Check if this is a pending new row
+      const accessorKey = col.accessorKey ?? col.id;
+
+      // Pending new row → update in pendingNewRows
       if (isPendingRow(row)) {
-        updatePendingRowCell(row, col.accessorKey ?? col.id, newValue);
+        updatePendingRowCell(row, accessorKey, newValue);
         setEditingCell(null);
         return;
       }
 
-      // Get old value from original data
-      const accessorKey = col.accessorKey ?? col.id;
-      const oldValue = col.accessorFn
-        ? col.accessorFn(row)
-        : (row as Record<string, unknown>)[accessorKey];
-
-      // Immediately fire onCellValueChange so the parent updates right away
-      if (oldValue !== newValue && onCellValueChange) {
-        onCellValueChange(row, accessorKey, newValue, oldValue);
-      }
-
+      // Existing row → store in modifiedRows (deferred commit)
+      updateModifiedRow(rowIndex, row, accessorKey, newValue);
       setEditingCell(null);
     },
-    [editingCell, data, columns, isPendingRow, updatePendingRowCell, onCellValueChange],
+    [editingCell, data, columns, isPendingRow, updatePendingRowCell, updateModifiedRow],
   );
 
   /**
@@ -190,19 +203,13 @@ export function useGridEditing<TData>({
         return;
       }
 
-      // Check if this is a pending new row
       const accessorKey = col.accessorKey ?? col.id;
+
       if (isPendingRow(row)) {
         updatePendingRowCell(row, accessorKey, newValue);
       } else {
-        // Immediately fire onCellValueChange
-        const oldValue = col.accessorFn
-          ? col.accessorFn(row)
-          : (row as Record<string, unknown>)[accessorKey];
-
-        if (oldValue !== newValue && onCellValueChange) {
-          onCellValueChange(row, accessorKey, newValue, oldValue);
-        }
+        // Existing row → store in modifiedRows (deferred commit)
+        updateModifiedRow(rowIndex, row, accessorKey, newValue);
       }
 
       // Find the current column index and navigate to next editable cell
@@ -215,29 +222,21 @@ export function useGridEditing<TData>({
         setEditingCell(null);
       }
     },
-    [editingCell, data, columns, findNextEditableCell, isPendingRow, updatePendingRowCell, onCellValueChange],
+    [editingCell, data, columns, findNextEditableCell, isPendingRow, updatePendingRowCell, updateModifiedRow],
   );
 
   /**
    * Request adding a new row.
-   * - If createEmptyRow is provided: creates a pending row internally (deferred save).
-   * - Otherwise: emits onRowAdd so the parent adds the row immediately (legacy mode).
+   * Requires createEmptyRow to be provided.
    * Auto-starts editing the first editable cell of the new row.
    */
   const requestAddRow = useCallback(() => {
-    if (createEmptyRow) {
-      const newRow = createEmptyRow();
-      setPendingNewRows((prev) => [...prev, newRow]);
-      setEditMode(true);
-      pendingEditAfterAdd.current = true;
-      return;
-    }
-
-    if (!onRowAdd) return;
+    if (!createEmptyRow) return;
+    const newRow = createEmptyRow();
+    setPendingNewRows((prev) => [...prev, newRow]);
     setEditMode(true);
     pendingEditAfterAdd.current = true;
-    onRowAdd();
-  }, [createEmptyRow, setPendingNewRows, onRowAdd]);
+  }, [createEmptyRow, setPendingNewRows]);
 
   // Watch for data length changes and auto-edit new row if requested
   useEffect(() => {
@@ -252,17 +251,36 @@ export function useGridEditing<TData>({
     prevDataLengthRef.current = data.length;
   }, [data.length, columns, findNextEditableColumnIndex]);
 
-  // Sync pendingRef on pendingChanges updates
-  useEffect(() => {
-    pendingRef.current = pendingChanges;
-  }, [pendingChanges]);
-
+  /**
+   * Commit all pending changes and exit edit mode.
+   * Uses flushSync to avoid React batching issues when calling
+   * onCellValueChange multiple times for different rows.
+   */
   const saveAllChanges = useCallback(() => {
-    // Read from ref to get the absolute latest (including batched updates)
-    const current = pendingRef.current;
-    if (onCellValueChange) {
-      current.forEach((change) => {
-        onCellValueChange(change.row, change.columnId, change.newValue, change.oldValue);
+    const currentModified = modifiedRowsRef.current;
+
+    // Commit modified existing rows via onCellValueChange
+    if (currentModified.size > 0 && onCellValueChangeRef.current) {
+      currentModified.forEach((modifiedRow, rowIndex) => {
+        const originalRow = data[rowIndex];
+        if (!originalRow) return;
+
+        // Find changed columns and commit each
+        columns.forEach((col) => {
+          const accessorKey = col.accessorKey ?? col.id;
+          const oldVal = col.accessorFn
+            ? col.accessorFn(originalRow)
+            : (originalRow as Record<string, unknown>)[accessorKey];
+          const newVal = col.accessorFn
+            ? col.accessorFn(modifiedRow)
+            : (modifiedRow as Record<string, unknown>)[accessorKey];
+
+          if (oldVal !== newVal) {
+            flushSync(() => {
+              onCellValueChangeRef.current!(originalRow, accessorKey, newVal, oldVal);
+            });
+          }
+        });
       });
     }
 
@@ -272,48 +290,60 @@ export function useGridEditing<TData>({
       onNewRowSave(currentPendingRows);
     }
 
-    // Clear pending new rows
+    // Clean up all state
+    setModifiedRows(new Map());
     setPendingNewRows([]);
-
-    const empty = new Map<string, PendingChange<TData>>();
-    pendingRef.current = empty;
-    setPendingChanges(empty);
     setEditingCell(null);
     setEditMode(false);
 
     // Notify parent that save completed
     onEditSave?.();
-  }, [onCellValueChange, onNewRowSave, setPendingNewRows, onEditSave]);
+  }, [columns, data, onNewRowSave, setPendingNewRows, onEditSave]);
 
+  /**
+   * Discard all pending changes and exit edit mode.
+   * Fully internal: clears modifiedRows + pendingNewRows.
+   * Consumer does NOT need to handle cancel.
+   */
   const cancelAllChanges = useCallback(() => {
-    // Discard pending new rows
     setPendingNewRows([]);
-
-    const empty = new Map<string, PendingChange<TData>>();
-    pendingRef.current = empty;
-    setPendingChanges(empty);
+    setModifiedRows(new Map());
     setEditingCell(null);
     setEditMode(false);
-
-    // Notify parent that cancel completed
-    onEditCancel?.();
-  }, [setPendingNewRows, onEditCancel]);
+  }, [setPendingNewRows]);
 
   const hasPendingChange = useCallback(
     (rowIndex: number, columnId: string): boolean => {
-      const key = `${rowIndex}-${columnId}`;
-      return pendingChanges.has(key);
+      const modifiedRow = modifiedRows.get(rowIndex);
+      if (!modifiedRow) return false;
+      const col = columns.find((c) => c.id === columnId);
+      if (!col) return false;
+      const accessorKey = col.accessorKey ?? col.id;
+      const originalRow = data[rowIndex];
+      if (!originalRow) return false;
+      const origVal = col.accessorFn
+        ? col.accessorFn(originalRow)
+        : (originalRow as Record<string, unknown>)[accessorKey];
+      const modVal = col.accessorFn
+        ? col.accessorFn(modifiedRow)
+        : (modifiedRow as Record<string, unknown>)[accessorKey];
+      return origVal !== modVal;
     },
-    [pendingChanges],
+    [modifiedRows, columns, data],
   );
 
   const getPendingValue = useCallback(
     (rowIndex: number, columnId: string): unknown | undefined => {
-      const key = `${rowIndex}-${columnId}`;
-      const change = pendingChanges.get(key);
-      return change?.newValue;
+      const modifiedRow = modifiedRows.get(rowIndex);
+      if (!modifiedRow) return undefined;
+      const col = columns.find((c) => c.id === columnId);
+      if (!col) return undefined;
+      const accessorKey = col.accessorKey ?? col.id;
+      return col.accessorFn
+        ? col.accessorFn(modifiedRow)
+        : (modifiedRow as Record<string, unknown>)[accessorKey];
     },
-    [pendingChanges],
+    [modifiedRows, columns],
   );
 
   const isEditing = useCallback(

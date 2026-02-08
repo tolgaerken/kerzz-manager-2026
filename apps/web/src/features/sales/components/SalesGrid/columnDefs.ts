@@ -12,6 +12,13 @@ const formatDate = (dateStr: string | null | undefined): string => {
   });
 };
 
+const formatCurrency = (value: number): string =>
+  new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    minimumFractionDigits: 2,
+  }).format(value);
+
 export const salesColumnDefs: GridColumnDef<Sale>[] = [
   {
     id: "no",
@@ -65,6 +72,65 @@ export const salesColumnDefs: GridColumnDef<Sale>[] = [
     width: 130,
     sortable: true,
     cell: (value) => formatDate(value as string),
+  },
+  {
+    id: "grandTotal",
+    header: "Genel Toplam",
+    accessorKey: "grandTotal",
+    width: 140,
+    sortable: true,
+    align: "right",
+    cellClassName: "font-mono text-xs font-semibold",
+    cell: (value) => formatCurrency((value as number) || 0),
+    footer: {
+      aggregate: "sum",
+      format: formatCurrency,
+    },
+  },
+  {
+    id: "hardwareTotal",
+    header: "Donanım",
+    accessorKey: "hardwareTotal",
+    width: 130,
+    sortable: true,
+    align: "right",
+    visible: false,
+    cellClassName: "font-mono text-xs",
+    cell: (value) => formatCurrency((value as number) || 0),
+    footer: {
+      aggregate: "sum",
+      format: formatCurrency,
+    },
+  },
+  {
+    id: "softwareTotal",
+    header: "Yazılım",
+    accessorKey: "softwareTotal",
+    width: 130,
+    sortable: true,
+    align: "right",
+    visible: false,
+    cellClassName: "font-mono text-xs",
+    cell: (value) => formatCurrency((value as number) || 0),
+    footer: {
+      aggregate: "sum",
+      format: formatCurrency,
+    },
+  },
+  {
+    id: "saasTotal",
+    header: "SaaS",
+    accessorKey: "saasTotal",
+    width: 130,
+    sortable: true,
+    align: "right",
+    visible: false,
+    cellClassName: "font-mono text-xs",
+    cell: (value) => formatCurrency((value as number) || 0),
+    footer: {
+      aggregate: "sum",
+      format: formatCurrency,
+    },
   },
   {
     id: "status",

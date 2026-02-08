@@ -26,6 +26,9 @@ export class PipelineRental {
   pid: string;
 
   @Prop({ type: String, default: "" })
+  productId: string;
+
+  @Prop({ type: String, default: "" })
   name: string;
 
   @Prop({ type: String, default: "" })
@@ -60,6 +63,9 @@ export class PipelineRental {
 
   @Prop({ type: Number, default: 12 })
   rentPeriod: number;
+
+  @Prop({ type: Number, default: 12 })
+  invoicePeriod: number;
 
   @Prop({ type: Number, default: 0 })
   discountRate: number;

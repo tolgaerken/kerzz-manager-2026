@@ -124,16 +124,12 @@ export class OffersService {
   async create(dto: CreateOfferDto): Promise<OfferResponseDto> {
     const { products, licenses, rentals, payments, ...offerData } = dto;
 
-    // Otomatik no üret
-    const no = await this.counterService.generateOfferNo();
-
     // pipelineRef yoksa yeni üret
     if (!offerData.pipelineRef) {
       offerData.pipelineRef = await this.counterService.generateRef();
     }
 
-    const offer = new this.offerModel({ ...offerData, no });
-    const saved = await offer.save();
+    const saved = await this.saveWithRetry(offerData);
     const offerId = saved._id.toString();
 
     // Dual write: alt koleksiyonları kaydet
@@ -315,6 +311,44 @@ export class OffersService {
       .exec();
 
     return this.findOne(id);
+  }
+
+  private async syncOfferCounter(): Promise<void> {
+    const maxDoc = await this.offerModel
+      .findOne({}, { no: 1 })
+      .sort({ no: -1 })
+      .lean()
+      .exec();
+
+    const maxNo = maxDoc?.no || 0;
+    await this.counterService.syncCounter("offer-no", maxNo);
+  }
+
+  private async saveWithRetry(
+    offerData: CreateOfferDto,
+    maxRetries = 3
+  ): Promise<OfferDocument> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const no = await this.counterService.generateOfferNo();
+        const offer = new this.offerModel({ ...offerData, no });
+        return await offer.save();
+      } catch (error: any) {
+        const isDuplicateNo =
+          error?.code === 11000 && error?.keyPattern?.no;
+
+        if (isDuplicateNo && attempt < maxRetries - 1) {
+          await this.syncOfferCounter();
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new BadRequestException(
+      "Teklif oluşturulamadı. Lütfen tekrar deneyin."
+    );
   }
 
   private mapToResponse(offer: any): OfferResponseDto {

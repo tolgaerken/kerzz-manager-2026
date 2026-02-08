@@ -26,6 +26,9 @@ export class PipelineLicense {
   pid: string;
 
   @Prop({ type: String, default: "" })
+  productId: string;
+
+  @Prop({ type: String, default: "" })
   name: string;
 
   @Prop({ type: String, default: "" })

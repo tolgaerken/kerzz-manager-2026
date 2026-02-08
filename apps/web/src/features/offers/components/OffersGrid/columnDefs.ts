@@ -12,6 +12,13 @@ const formatDate = (dateStr: string | null | undefined): string => {
   });
 };
 
+const formatCurrency = (value: number): string =>
+  new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    minimumFractionDigits: 2,
+  }).format(value);
+
 export const offerColumnDefs: GridColumnDef<Offer>[] = [
   {
     id: "no",
@@ -66,6 +73,20 @@ export const offerColumnDefs: GridColumnDef<Offer>[] = [
     width: 130,
     sortable: true,
     cell: (value) => formatDate(value as string),
+  },
+  {
+    id: "grandTotal",
+    header: "Genel Toplam",
+    accessorFn: (row) => row.totals?.overallGrandTotal || 0,
+    width: 140,
+    sortable: true,
+    align: "right",
+    cellClassName: "font-mono text-xs font-semibold",
+    cell: (value) => formatCurrency((value as number) || 0),
+    footer: {
+      aggregate: "sum",
+      format: formatCurrency,
+    },
   },
   {
     id: "status",

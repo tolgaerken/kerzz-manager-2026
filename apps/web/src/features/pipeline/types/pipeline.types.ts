@@ -9,6 +9,7 @@ export interface PipelineProduct {
   pipelineRef: string;
   catalogId: string;
   erpId: string;
+  productId: string;
   name: string;
   description: string;
   qty: number;
@@ -37,6 +38,7 @@ export interface PipelineLicense {
   catalogId: string;
   erpId: string;
   pid: string;
+  productId: string;
   name: string;
   description: string;
   type: string;
@@ -65,6 +67,7 @@ export interface PipelineRental {
   catalogId: string;
   erpId: string;
   pid: string;
+  productId: string;
   name: string;
   description: string;
   type: string;
@@ -77,6 +80,7 @@ export interface PipelineRental {
   vatRate: number;
   yearly: boolean;
   rentPeriod: number;
+  invoicePeriod: number;
   discountRate: number;
   discountTotal: number;
   taxTotal: number;

@@ -1,11 +1,10 @@
 import { useState, useCallback, useMemo } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Plus, RefreshCw } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useOffers,
   useCreateOffer,
   useUpdateOffer,
-  useDeleteOffer,
 } from "../features/offers/hooks/useOffers";
 import { OffersGrid } from "../features/offers/components/OffersGrid/OffersGrid";
 import { OffersFilters } from "../features/offers/components/OffersFilters/OffersFilters";
@@ -17,13 +16,30 @@ import type {
 } from "../features/offers/types/offer.types";
 import { useCustomerLookup } from "../features/lookup";
 
+const toDateInputValue = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+
+const getDefaultDateRange = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  return {
+    startDate: toDateInputValue(start),
+    endDate: toDateInputValue(end),
+  };
+};
+
 export function OffersPage() {
   // No pagination - fetch all data for virtual scroll
-  const [queryParams, setQueryParams] = useState<OfferQueryParams>({
+  const [queryParams, setQueryParams] = useState<OfferQueryParams>(() => ({
     sortField: "createdAt",
     sortOrder: "desc",
     limit: 99999,
-  });
+    ...getDefaultDateRange(),
+  }));
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
@@ -42,6 +58,13 @@ export function OffersPage() {
         : offer.customerName || "-",
     }));
   }, [data, getCustomerName]);
+
+  const totalAmount = useMemo(() => {
+    return enrichedOffers.reduce(
+      (sum, offer) => sum + (offer.totals?.overallGrandTotal || 0),
+      0
+    );
+  }, [enrichedOffers]);
 
   const handleFilterChange = useCallback(
     (filters: Partial<OfferQueryParams>) => {
@@ -89,18 +112,18 @@ export function OffersPage() {
 
   const toolbarButtons: ToolbarButtonConfig[] = [
     {
-      key: "add",
+      id: "add",
       label: "Yeni Teklif",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+      icon: <Plus size={14} />,
       onClick: () => {
         setEditingOffer(null);
         setIsFormOpen(true);
       },
     },
     {
-      key: "refresh",
+      id: "refresh",
       label: "Yenile",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`,
+      icon: <RefreshCw size={14} />,
       onClick: () => refetch(),
     },
   ];
@@ -154,6 +177,14 @@ export function OffersPage() {
         <div className="flex items-center justify-between mt-3 px-1">
           <span className="text-sm text-[var(--color-foreground-muted)]">
             Toplam: {data.meta.total} kayıt
+          </span>
+          <span className="text-sm font-semibold text-[var(--color-foreground)]">
+            Genel Toplam:{" "}
+            {new Intl.NumberFormat("tr-TR", {
+              style: "currency",
+              currency: "TRY",
+              minimumFractionDigits: 2,
+            }).format(totalAmount)}
           </span>
         </div>
       )}
