@@ -30,6 +30,7 @@ export function LicenseModulesTab({ items, onItemsChange }: LicenseModulesTabPro
       productsData?.data?.map((p) => ({
         _id: p._id,
         id: p.id,
+        pid: p.pid,
         name: p.name,
         friendlyName: p.friendlyName,
         nameWithCode: p.nameWithCode
@@ -44,6 +45,7 @@ export function LicenseModulesTab({ items, onItemsChange }: LicenseModulesTabPro
         onItemsChange={onItemsChange}
         products={products}
         loading={isLoading}
+        allowDelete
       />
     </div>
   );

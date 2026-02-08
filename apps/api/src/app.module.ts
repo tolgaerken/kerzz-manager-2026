@@ -41,6 +41,8 @@ import { MongoWsModule } from "./modules/mongo-ws";
 // Company & ERP Modules
 import { CompaniesModule } from "./modules/companies";
 import { ErpModule } from "./modules/erp";
+// Location Module
+import { LocationsModule } from "./modules/locations";
 // Utility Modules
 import { ExchangeRateModule } from "./modules/exchange-rate";
 import { ErpSettingsModule } from "./modules/erp-settings";
@@ -98,6 +100,8 @@ import { BankTransactionsModule } from "./modules/bank-transactions";
     ErpModule,
     // Bank Integration Module
     BankTransactionsModule,
+    // Location Module
+    LocationsModule,
     // Utility Modules
     ExchangeRateModule,
     ErpSettingsModule,

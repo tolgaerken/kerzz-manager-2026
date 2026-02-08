@@ -1,8 +1,10 @@
-import { useCallback } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { Grid } from "@kerzz/grid";
 import type { SortingState } from "@tanstack/react-table";
-import { licenseColumnDefs } from "./columnDefs";
+import { createLicenseColumnDefs } from "./columnDefs";
 import type { License } from "../../types";
+import { useCustomers } from "../../../customers";
+import type { Customer } from "../../../customers";
 
 interface LicensesGridProps {
   data: License[];
@@ -17,6 +19,57 @@ export function LicensesGrid({
   onSortChange,
   onRowDoubleClick
 }: LicensesGridProps) {
+  const [customerMap, setCustomerMap] = useState<Map<string, Customer>>(new Map());
+
+  // License'lardan unique customerId'leri çıkar
+  const customerIds = useMemo(() => {
+    const ids = new Set<string>();
+    data.forEach(license => {
+      if (license.customerId) {
+        ids.add(license.customerId);
+      }
+    });
+    return Array.from(ids);
+  }, [data]);
+
+  // Customer'ları fetch et - TÜM customer'ları çek (limit yok gibi)
+  const { data: customersData } = useCustomers({
+    limit: 999999, // Tüm customer'ları çekmek için çok yüksek limit
+  });
+
+  // Customer map'i oluştur
+  useEffect(() => {
+    if (customersData?.data) {
+      const map = new Map<string, Customer>();
+      customersData.data.forEach(customer => {
+        // _id ile ekle
+        map.set(customer._id, customer);
+        
+        // id ile ekle (trim edilmiş)
+        if (customer.id) {
+          const trimmedId = customer.id.toString().trim();
+          if (trimmedId) {
+            map.set(trimmedId, customer);
+          }
+        }
+        
+        // erpId ile de ekle (bazı sistemlerde erpId kullanılabilir)
+        if (customer.erpId) {
+          const trimmedErpId = customer.erpId.toString().trim();
+          if (trimmedErpId) {
+            map.set(trimmedErpId, customer);
+          }
+        }
+      });
+      setCustomerMap(map);
+    }
+  }, [customersData]);
+
+  // Column definitions'ı customerMap ile oluştur
+  const columnDefs = useMemo(() => {
+    return createLicenseColumnDefs(customerMap);
+  }, [customerMap]);
+
   const handleSortChange = useCallback(
     (sorting: SortingState) => {
       if (sorting.length > 0) {
@@ -37,7 +90,7 @@ export function LicensesGrid({
     <div className="h-full w-full flex-1">
       <Grid<License>
         data={data}
-        columns={licenseColumnDefs}
+        columns={columnDefs}
         height="100%"
         width="100%"
         locale="tr"

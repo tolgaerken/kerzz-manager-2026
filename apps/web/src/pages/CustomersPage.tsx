@@ -156,7 +156,7 @@ export function CustomersPage() {
       )}
 
       {/* Grid */}
-      <div className="flex-1 px-6 py-4">
+      <div className="flex-1 px-6 py-4 min-h-0">
         <CustomersGrid
           data={data?.data || []}
           loading={isLoading}

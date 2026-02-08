@@ -14,6 +14,10 @@ interface LicenseItemsGridProps {
   products: ProductOption[];
   /** Yükleniyor durumu */
   loading?: boolean;
+  /** Seçim modu: 'none' | 'single' | 'multiple' (varsayılan: 'multiple') */
+  selectionMode?: "none" | "single" | "multiple";
+  /** Silme işlemine izin verilip verilmeyeceği (varsayılan: false) */
+  allowDelete?: boolean;
 }
 
 /**
@@ -24,9 +28,16 @@ export function LicenseItemsGrid({
   items,
   onItemsChange,
   products,
-  loading = false
+  loading = false,
+  selectionMode = "multiple",
+  allowDelete = false
 }: LicenseItemsGridProps) {
-  const [selectedRow, setSelectedRow] = useState<LicenseItem | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Grid'in selection change callback'i
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
+  }, []);
 
   // Grid context: ürün listesini column renderer'a iletir
   const gridContext = useMemo(
@@ -39,7 +50,8 @@ export function LicenseItemsGrid({
     id: crypto.randomUUID(),
     moduleId: "",
     name: "",
-    qty: 1
+    qty: 1,
+    productId: ""
   }), []);
 
   // Kaydet tıklandığında pending satırları ekle
@@ -52,9 +64,17 @@ export function LicenseItemsGrid({
     (row: LicenseItem, columnId: string, newValue: unknown): LicenseItem => {
       const updated = { ...row, [columnId]: newValue };
       if (columnId === "moduleId") {
-        const product = products.find((p) => p.id === newValue);
+        const valStr = String(newValue);
+        const product = products.find(
+          (p) =>
+            String(parseInt(p.pid, 10)) === valStr ||
+            p.pid === valStr ||
+            p.id === valStr ||
+            p._id === valStr
+        );
         if (product) {
           updated.name = product.name;
+          updated.productId = product.id;
         }
       }
       return updated;
@@ -71,10 +91,17 @@ export function LicenseItemsGrid({
 
       // moduleId değiştiğinde, ürün adını da güncelle
       if (columnId === "moduleId") {
-        const product = products.find((p) => p.id === newValue);
+        const valStr = String(newValue);
+        const product = products.find(
+          (p) =>
+            String(parseInt(p.pid, 10)) === valStr ||
+            p.pid === valStr ||
+            p.id === valStr ||
+            p._id === valStr
+        );
         if (product) {
           updated = updated.map((item) =>
-            item.id === row.id ? { ...item, name: product.name } : item
+            item.id === row.id ? { ...item, name: product.name, productId: product.id } : item
           );
         }
       }
@@ -84,31 +111,34 @@ export function LicenseItemsGrid({
     [items, onItemsChange, products]
   );
 
-  // Satır seçme
-  const handleRowClick = useCallback((row: LicenseItem) => {
-    setSelectedRow(row);
-  }, []);
-
-  // Seçili satırı silme
+  // Seçili satırları silme (çoklu silme desteği)
   const handleDelete = useCallback(() => {
-    if (selectedRow) {
-      onItemsChange(items.filter((item) => item.id !== selectedRow.id));
-      setSelectedRow(null);
+    if (selectedIds.length > 0) {
+      onItemsChange(items.filter((item) => !selectedIds.includes(item.id)));
+      setSelectedIds([]);
     }
-  }, [items, selectedRow, onItemsChange]);
+  }, [items, selectedIds, onItemsChange]);
+
+  // Buton etiketi: tekse "Sil", çokluysa "Sil (N)"
+  const deleteLabel = selectedIds.length > 1
+    ? `Sil (${selectedIds.length})`
+    : "Sil";
 
   // Toolbar yapılandırması
   const toolbarConfig = useMemo<ToolbarConfig<LicenseItem>>(() => {
-    const customButtons: ToolbarButtonConfig[] = [
-      {
+    const customButtons: ToolbarButtonConfig[] = [];
+
+    // Sadece allowDelete true ise silme butonu ekle
+    if (allowDelete) {
+      customButtons.push({
         id: "delete",
-        label: "Sil",
+        label: deleteLabel,
         icon: <Trash2 className="w-3.5 h-3.5" />,
         onClick: handleDelete,
-        disabled: !selectedRow,
+        disabled: selectedIds.length === 0,
         variant: "danger"
-      }
-    ];
+      });
+    }
 
     return {
       showSearch: true,
@@ -118,7 +148,7 @@ export function LicenseItemsGrid({
       showAddRow: true,
       customButtons
     };
-  }, [handleDelete, selectedRow]);
+  }, [allowDelete, deleteLabel, handleDelete, selectedIds.length]);
 
   if (loading) {
     return (
@@ -135,7 +165,10 @@ export function LicenseItemsGrid({
         columns={licenseItemColumns}
         getRowId={(row) => row.id}
         onCellValueChange={handleCellValueChange}
-        onRowClick={handleRowClick}
+        selectionMode={selectionMode}
+        selectionCheckbox={selectionMode === "multiple"}
+        selectedIds={selectedIds}
+        onSelectionChange={handleSelectionChange}
         createEmptyRow={createEmptyRow}
         onNewRowSave={handleNewRowSave}
         onPendingCellChange={handlePendingCellChange}
@@ -143,7 +176,6 @@ export function LicenseItemsGrid({
         height="100%"
         locale="tr"
         toolbar={toolbarConfig}
-        selectionMode="single"
       />
     </div>
   );

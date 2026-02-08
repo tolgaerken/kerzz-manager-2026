@@ -1,3 +1,5 @@
+import type { AddressData } from "../../locations/types";
+
 export interface Customer {
   _id: string;
   id: string;
@@ -5,9 +7,7 @@ export interface Customer {
   taxNo: string;
   name: string;
   companyName: string;
-  address: string;
-  city: string;
-  district: string;
+  address: AddressData;
   phone: string;
   email: string;
   enabled: boolean;
@@ -41,9 +41,7 @@ export interface CreateCustomerInput {
   taxNo: string;
   name?: string;
   companyName?: string;
-  address?: string;
-  city?: string;
-  district?: string;
+  address?: AddressData;
   phone?: string;
   email?: string;
   enabled?: boolean;
@@ -53,9 +51,7 @@ export interface UpdateCustomerInput {
   taxNo?: string;
   name?: string;
   companyName?: string;
-  address?: string;
-  city?: string;
-  district?: string;
+  address?: AddressData;
   phone?: string;
   email?: string;
   enabled?: boolean;

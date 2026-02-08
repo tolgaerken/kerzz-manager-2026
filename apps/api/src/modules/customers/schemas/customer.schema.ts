@@ -3,6 +3,36 @@ import { Document, Types } from "mongoose";
 
 export type CustomerDocument = Customer & Document;
 
+@Schema({ _id: false })
+export class CustomerAddress {
+  @Prop({ default: "" })
+  address: string;
+
+  @Prop({ default: 0 })
+  cityId: number;
+
+  @Prop({ default: "" })
+  city: string;
+
+  @Prop({ default: 0 })
+  townId: number;
+
+  @Prop({ default: "" })
+  town: string;
+
+  @Prop({ default: 0 })
+  districtId: number;
+
+  @Prop({ default: "" })
+  district: string;
+
+  @Prop({ default: "" })
+  countryId: string;
+
+  @Prop({ default: "" })
+  country: string;
+}
+
 @Schema({ collection: "customers", timestamps: true })
 export class Customer {
   _id: Types.ObjectId;
@@ -22,14 +52,8 @@ export class Customer {
   @Prop({ type: String })
   companyName: string;
 
-  @Prop({ type: String })
-  address: string;
-
-  @Prop({ type: String })
-  city: string;
-
-  @Prop({ type: String })
-  district: string;
+  @Prop({ type: CustomerAddress, default: () => ({}) })
+  address: CustomerAddress;
 
   @Prop({ type: String })
   phone: string;

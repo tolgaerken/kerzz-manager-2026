@@ -31,6 +31,7 @@ export function LicenseSaasTab({ items, onItemsChange }: LicenseSaasTabProps) {
       productsData?.data?.map((p) => ({
         _id: p._id,
         id: p.id,
+        pid: p.pid,
         name: p.name,
         friendlyName: p.friendlyName,
         nameWithCode: p.nameWithCode
@@ -45,6 +46,7 @@ export function LicenseSaasTab({ items, onItemsChange }: LicenseSaasTabProps) {
         onItemsChange={onItemsChange}
         products={products}
         loading={isLoading}
+        allowDelete
       />
     </div>
   );

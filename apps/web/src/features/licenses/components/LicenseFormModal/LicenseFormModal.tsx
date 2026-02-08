@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, Package, Layers, Building2, Phone, Mail, MapPin, User } from "lucide-react";
+import { X, Package, Layers, Building2, Phone, User } from "lucide-react";
 import type { License, CreateLicenseInput, UpdateLicenseInput, LicenseItem, LicenseType, CompanyType } from "../../types";
 import { LICENSE_TYPES, COMPANY_TYPES, LICENSE_CATEGORIES } from "../../constants/licenses.constants";
 import { LicenseModulesTab } from "../LicenseModulesTab";
 import { LicenseSaasTab } from "../LicenseSaasTab";
+import { CustomerAutocomplete } from "./CustomerAutocomplete";
+import { useCustomers } from "../../../customers";
+import type { Customer } from "../../../customers";
+import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
+import type { AddressData } from "../../../locations";
 
 interface LicenseFormModalProps {
   isOpen: boolean;
@@ -31,6 +36,7 @@ export function LicenseFormModal({
 }: LicenseFormModalProps) {
   const isEdit = !!license;
   const [activeTab, setActiveTab] = useState<TabId>("info");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const [formData, setFormData] = useState<CreateLicenseInput>({
     brandName: "",
@@ -47,20 +53,17 @@ export function LicenseFormModal({
     hasRenty: false,
     hasLicense: false,
     hasBoss: false,
-    address: {
-      address: "",
-      city: "",
-      town: "",
-      cityId: 0,
-      townId: 0,
-      country: "Türkiye",
-      countryId: "TR"
-    },
+    address: { ...EMPTY_ADDRESS },
     licenseItems: [],
     saasItems: []
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Customer'ları çek (edit modda customer'ı bulmak için)
+  const { data: customersData } = useCustomers({
+    limit: 999999,
+  });
 
   useEffect(() => {
     if (license) {
@@ -84,6 +87,23 @@ export function LicenseFormModal({
         saasItems: license.saasItems || []
       });
       setActiveTab("info");
+      
+      // Edit modda: customerId varsa customer'ı bul ve selectedCustomer'a set et
+      if (license.customerId && customersData?.data) {
+        const trimmedId = license.customerId.toString().trim();
+        const customer = customersData.data.find(c => 
+          c._id === trimmedId || 
+          c.id === trimmedId || 
+          c.erpId === trimmedId
+        );
+        if (customer) {
+          setSelectedCustomer(customer);
+        } else {
+          setSelectedCustomer(null);
+        }
+      } else {
+        setSelectedCustomer(null);
+      }
     } else {
       setFormData({
         brandName: "",
@@ -100,22 +120,15 @@ export function LicenseFormModal({
         hasRenty: false,
         hasLicense: false,
         hasBoss: false,
-        address: {
-          address: "",
-          city: "",
-          town: "",
-          cityId: 0,
-          townId: 0,
-          country: "Türkiye",
-          countryId: "TR"
-        },
+        address: { ...EMPTY_ADDRESS },
         licenseItems: [],
         saasItems: []
       });
       setActiveTab("info");
+      setSelectedCustomer(null);
     }
     setErrors({});
-  }, [license, isOpen]);
+  }, [license, isOpen, customersData]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -274,18 +287,17 @@ export function LicenseFormModal({
                       )}
                     </div>
 
-                    <div>
-                      <label htmlFor="customerName" className={labelClasses}>
-                        Müşteri Adı
-                      </label>
-                      <input
-                        type="text"
-                        id="customerName"
-                        name="customerName"
-                        value={formData.customerName}
-                        onChange={handleChange}
-                        className={inputClasses}
-                        placeholder="Müşteri adı"
+                    <div className="md:col-span-2">
+                      <CustomerAutocomplete
+                        value={selectedCustomer}
+                        onChange={(customer) => {
+                          setSelectedCustomer(customer);
+                          setFormData(prev => ({
+                            ...prev,
+                            customerId: customer?._id || "",
+                            customerName: customer?.name || ""
+                          }));
+                        }}
                       />
                     </div>
 
@@ -390,56 +402,23 @@ export function LicenseFormModal({
 
                 {/* Adres Bilgileri */}
                 <div>
-                  <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-3 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Adres Bilgileri
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="address.city" className={labelClasses}>
-                        Şehir
-                      </label>
-                      <input
-                        type="text"
-                        id="address.city"
-                        name="address.city"
-                        value={formData.address?.city || ""}
-                        onChange={handleChange}
-                        className={inputClasses}
-                        placeholder="Şehir"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="address.town" className={labelClasses}>
-                        İlçe
-                      </label>
-                      <input
-                        type="text"
-                        id="address.town"
-                        name="address.town"
-                        value={formData.address?.town || ""}
-                        onChange={handleChange}
-                        className={inputClasses}
-                        placeholder="İlçe"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label htmlFor="address.address" className={labelClasses}>
-                        Adres
-                      </label>
-                      <textarea
-                        id="address.address"
-                        name="address.address"
-                        value={formData.address?.address || ""}
-                        onChange={handleChange}
-                        className={`${inputClasses} resize-none`}
-                        rows={2}
-                        placeholder="Açık adres"
-                      />
-                    </div>
-                  </div>
+                  <AddressSelector
+                    value={{
+                      address: formData.address?.address || "",
+                      cityId: formData.address?.cityId || 0,
+                      city: formData.address?.city || "",
+                      townId: formData.address?.townId || 0,
+                      town: formData.address?.town || "",
+                      districtId: formData.address?.districtId || 0,
+                      district: formData.address?.district || "",
+                      countryId: formData.address?.countryId || "TR",
+                      country: formData.address?.country || "Türkiye",
+                    }}
+                    onChange={(newAddress) =>
+                      setFormData((prev) => ({ ...prev, address: newAddress }))
+                    }
+                    errors={errors}
+                  />
                 </div>
 
                 {/* Durum Bilgileri */}

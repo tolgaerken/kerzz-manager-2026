@@ -32,7 +32,7 @@ export const customerColumnDefs: GridColumnDef<Customer>[] = [
   {
     id: "city",
     header: "Şehir",
-    accessorKey: "city",
+    accessorFn: (row) => row.address?.city || "",
     width: 120,
     minWidth: 120,
     sortable: true,
@@ -41,7 +41,7 @@ export const customerColumnDefs: GridColumnDef<Customer>[] = [
   {
     id: "district",
     header: "İlçe",
-    accessorKey: "district",
+    accessorFn: (row) => row.address?.town || "",
     width: 120,
     minWidth: 120,
     sortable: true,

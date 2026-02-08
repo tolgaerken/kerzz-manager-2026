@@ -1,5 +1,6 @@
 import type { GridColumnDef } from "@kerzz/grid";
 import type { License } from "../../types";
+import type { Customer } from "../../../customers";
 import { getTypeName, getCompanyTypeName, getCategoryName } from "../../constants/licenses.constants";
 
 /** Tarih formatlama */
@@ -29,7 +30,7 @@ const getOnlineStatusClass = (lastOnline: string | null): string => {
   return "text-red-500";
 };
 
-export const licenseColumnDefs: GridColumnDef<License>[] = [
+export const createLicenseColumnDefs = (customerMap: Map<string, Customer>): GridColumnDef<License>[] => [
   {
     id: "licenseId",
     header: "ID",
@@ -51,7 +52,14 @@ export const licenseColumnDefs: GridColumnDef<License>[] = [
   {
     id: "customerName",
     header: "Müşteri",
-    accessorKey: "customerName",
+    accessorFn: (row) => {
+      if (row.customerId) {
+        const trimmedId = row.customerId.toString().trim();
+        const customer = customerMap.get(trimmedId);
+        return customer?.name || customer?.companyName || row.customerName || "-";
+      }
+      return row.customerName || "-";
+    },
     width: 180,
     minWidth: 150,
     sortable: true,

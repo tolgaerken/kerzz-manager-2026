@@ -11,6 +11,7 @@ import type { CellEditorProps } from "@kerzz/grid";
 export interface ProductOption {
   _id: string;
   id: string;
+  pid: string;
   name: string;
   friendlyName: string;
   nameWithCode: string;
@@ -29,12 +30,29 @@ export function ProductAutocompleteEditor<TData>({
   const products = (context?.products as ProductOption[]) || [];
 
   const initialValue = value != null ? String(value) : "";
+
+  /** Find a product by moduleId (checks pid as number, then id, then _id) */
+  const findProduct = useCallback(
+    (moduleId: string): ProductOption | undefined => {
+      if (!moduleId) return undefined;
+      return products.find(
+        (p) =>
+          String(parseInt(p.pid, 10)) === moduleId ||
+          p.pid === moduleId ||
+          p.id === moduleId ||
+          p._id === moduleId
+      );
+    },
+    [products]
+  );
+
   const [searchText, setSearchText] = useState("");
   const [selectedId, setSelectedId] = useState<string>(initialValue);
   const [isOpen, setIsOpen] = useState(true);
   const [highlightedIndex, setHighlightedIndex] = useState(() => {
     if (initialValue) {
-      const idx = products.findIndex((p) => p.id === initialValue);
+      const found = findProduct(initialValue);
+      const idx = found ? products.indexOf(found) : -1;
       return idx >= 0 ? idx : 0;
     }
     return 0;
@@ -69,13 +87,20 @@ export function ProductAutocompleteEditor<TData>({
     }
   }, [highlightedIndex, filteredProducts.length]);
 
+  /** moduleId olarak pid'nin integer halini kaydet (io-cloud-2025 uyumluluğu) */
+  const getModuleIdFromProduct = useCallback(
+    (product: ProductOption): string => String(parseInt(product.pid, 10) || 0),
+    []
+  );
+
   const handleSelect = useCallback(
     (product: ProductOption) => {
-      setSelectedId(product.id);
+      const moduleId = getModuleIdFromProduct(product);
+      setSelectedId(moduleId);
       setIsOpen(false);
-      onSave(product.id);
+      onSave(moduleId);
     },
-    [onSave]
+    [onSave, getModuleIdFromProduct]
   );
 
   const handleClear = useCallback(() => {
@@ -117,10 +142,10 @@ export function ProductAutocompleteEditor<TData>({
     [filteredProducts, highlightedIndex, handleSelect, onCancel]
   );
 
-  // Mevcut seçili ürünü bul
+  // Mevcut seçili ürünü bul (pid, id, _id hepsiyle eşleştir)
   const selectedProduct = useMemo(
-    () => products.find((p) => String(p.id) === String(selectedId)),
-    [products, selectedId]
+    () => findProduct(String(selectedId)),
+    [findProduct, selectedId]
   );
 
   return (
@@ -165,7 +190,7 @@ export function ProductAutocompleteEditor<TData>({
                 index === highlightedIndex
                   ? " kz-editor__dropdown-item--highlighted"
                   : ""
-              }${product.id === selectedId ? " kz-editor__dropdown-item--selected" : ""}`}
+              }${getModuleIdFromProduct(product) === selectedId ? " kz-editor__dropdown-item--selected" : ""}`}
             >
               {product.nameWithCode || product.friendlyName || product.name}
             </div>

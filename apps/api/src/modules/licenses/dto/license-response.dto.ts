@@ -4,6 +4,8 @@ export interface AddressDto {
   city: string;
   townId: number;
   town: string;
+  districtId: number;
+  district: string;
   countryId: string;
   country: string;
 }

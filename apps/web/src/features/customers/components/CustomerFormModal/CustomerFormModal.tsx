@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Modal } from "../../../../components/ui";
 import type { Customer, CreateCustomerInput, UpdateCustomerInput } from "../../types";
+import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
+import type { AddressData } from "../../../locations";
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -23,9 +25,7 @@ export function CustomerFormModal({
     taxNo: "",
     name: "",
     companyName: "",
-    address: "",
-    city: "",
-    district: "",
+    address: { ...EMPTY_ADDRESS },
     phone: "",
     email: "",
     enabled: true
@@ -39,9 +39,7 @@ export function CustomerFormModal({
         taxNo: customer.taxNo,
         name: customer.name,
         companyName: customer.companyName,
-        address: customer.address,
-        city: customer.city,
-        district: customer.district,
+        address: customer.address || { ...EMPTY_ADDRESS },
         phone: customer.phone,
         email: customer.email,
         enabled: customer.enabled
@@ -51,9 +49,7 @@ export function CustomerFormModal({
         taxNo: "",
         name: "",
         companyName: "",
-        address: "",
-        city: "",
-        district: "",
+        address: { ...EMPTY_ADDRESS },
         phone: "",
         email: "",
         enabled: true
@@ -159,55 +155,18 @@ export function CustomerFormModal({
               placeholder="Şirket adı"
             />
           </div>
+        </div>
 
-          {/* Şehir */}
-          <div>
-            <label htmlFor="city" className={labelClasses}>
-              Şehir
-            </label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              className={inputClasses}
-              placeholder="Şehir"
-            />
-          </div>
+        {/* Adres Bilgileri - AddressSelector */}
+        <AddressSelector
+          value={formData.address || EMPTY_ADDRESS}
+          onChange={(newAddress) =>
+            setFormData((prev) => ({ ...prev, address: newAddress }))
+          }
+          errors={errors}
+        />
 
-          {/* İlçe */}
-          <div>
-            <label htmlFor="district" className={labelClasses}>
-              İlçe
-            </label>
-            <input
-              type="text"
-              id="district"
-              name="district"
-              value={formData.district}
-              onChange={handleChange}
-              className={inputClasses}
-              placeholder="İlçe"
-            />
-          </div>
-
-          {/* Adres */}
-          <div className="md:col-span-2">
-            <label htmlFor="address" className={labelClasses}>
-              Adres
-            </label>
-            <textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className={`${inputClasses} resize-none`}
-              rows={2}
-              placeholder="Adres"
-            />
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Telefon */}
           <div>
             <label htmlFor="phone" className={labelClasses}>

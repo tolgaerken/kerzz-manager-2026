@@ -31,6 +31,14 @@ export class AddressInputDto {
   town?: string;
 
   @IsOptional()
+  @IsNumber()
+  districtId?: number;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
   @IsString()
   countryId?: string;
 

@@ -21,6 +21,8 @@ export interface Address {
   city: string;
   townId: number;
   town: string;
+  districtId: number;
+  district: string;
   countryId: string;
   country: string;
 }
@@ -38,6 +40,7 @@ export interface LicenseItem {
   moduleId: string;
   name: string;
   qty: number;
+  productId?: string;
   subItems?: unknown[];
 }
 

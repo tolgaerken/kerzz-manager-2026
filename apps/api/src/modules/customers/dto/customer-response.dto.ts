@@ -1,3 +1,15 @@
+export class CustomerAddressDto {
+  address: string;
+  cityId: number;
+  city: string;
+  townId: number;
+  town: string;
+  districtId: number;
+  district: string;
+  countryId: string;
+  country: string;
+}
+
 export class CustomerResponseDto {
   _id: string;
   id: string;
@@ -5,9 +17,7 @@ export class CustomerResponseDto {
   taxNo: string;
   name: string;
   companyName: string;
-  address: string;
-  city: string;
-  district: string;
+  address: CustomerAddressDto;
   phone: string;
   email: string;
   taxOffice: string;

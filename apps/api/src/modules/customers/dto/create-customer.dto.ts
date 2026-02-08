@@ -1,4 +1,50 @@
-import { IsString, IsOptional, IsBoolean, IsNotEmpty } from "class-validator";
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  ValidateNested,
+} from "class-validator";
+import { Type } from "class-transformer";
+
+export class CustomerAddressInputDto {
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsNumber()
+  cityId?: number;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsNumber()
+  townId?: number;
+
+  @IsOptional()
+  @IsString()
+  town?: string;
+
+  @IsOptional()
+  @IsNumber()
+  districtId?: number;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
+  @IsString()
+  countryId?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+}
 
 export class CreateCustomerDto {
   @IsString()
@@ -13,17 +59,10 @@ export class CreateCustomerDto {
   @IsOptional()
   companyName?: string;
 
-  @IsString()
   @IsOptional()
-  address?: string;
-
-  @IsString()
-  @IsOptional()
-  city?: string;
-
-  @IsString()
-  @IsOptional()
-  district?: string;
+  @ValidateNested()
+  @Type(() => CustomerAddressInputDto)
+  address?: CustomerAddressInputDto;
 
   @IsString()
   @IsOptional()

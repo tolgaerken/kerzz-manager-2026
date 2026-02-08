@@ -21,6 +21,12 @@ export class Address {
   @Prop({ default: "" })
   town: string;
 
+  @Prop({ default: 0 })
+  districtId: number;
+
+  @Prop({ default: "" })
+  district: string;
+
   @Prop({ default: "" })
   countryId: string;
 

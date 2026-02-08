@@ -23,16 +23,16 @@ export const licenseItemColumns: GridColumnDef<LicenseItem>[] = [
       const valueStr = String(value);
       const products =
         ((context as Record<string, unknown>)?.products as ProductOption[]) || [];
-      const found = products.find((p) => p.id === valueStr);
+      // moduleId, pid'nin integer hali olarak saklanır; id ve _id ile de eşleştir
+      const found = products.find(
+        (p) =>
+          String(parseInt(p.pid, 10)) === valueStr ||
+          p.pid === valueStr ||
+          p.id === valueStr ||
+          p._id === valueStr
+      );
       return found?.nameWithCode || found?.friendlyName || found?.name || String(value);
     }
-  },
-  {
-    id: "name",
-    accessorKey: "name",
-    header: "Modül Adı",
-    width: 250,
-    editable: false
   },
   {
     id: "qty",

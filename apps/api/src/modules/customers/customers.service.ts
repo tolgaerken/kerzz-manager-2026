@@ -44,7 +44,7 @@ export class CustomersService {
           { companyName: { $regex: search, $options: "i" } },
           { erpId: { $regex: search, $options: "i" } },
           { taxNo: { $regex: search, $options: "i" } },
-          { city: { $regex: search, $options: "i" } },
+          { "address.city": { $regex: search, $options: "i" } },
           { phone: { $regex: search, $options: "i" } },
           { email: { $regex: search, $options: "i" } }
         ]
@@ -134,6 +134,7 @@ export class CustomersService {
   }
 
   private mapToResponseDto(customer: Customer): CustomerResponseDto {
+    const addr = customer.address || {} as any;
     return {
       _id: customer._id.toString(),
       id: customer.id || "",
@@ -141,9 +142,17 @@ export class CustomersService {
       taxNo: customer.taxNo || "",
       name: customer.name || "",
       companyName: customer.companyName || "",
-      address: customer.address || "",
-      city: customer.city || "",
-      district: customer.district || "",
+      address: {
+        address: addr.address || "",
+        cityId: addr.cityId || 0,
+        city: addr.city || "",
+        townId: addr.townId || 0,
+        town: addr.town || "",
+        districtId: addr.districtId || 0,
+        district: addr.district || "",
+        countryId: addr.countryId || "",
+        country: addr.country || "",
+      },
       phone: customer.phone || "",
       email: customer.email || "",
       taxOffice: customer.taxOffice || "",

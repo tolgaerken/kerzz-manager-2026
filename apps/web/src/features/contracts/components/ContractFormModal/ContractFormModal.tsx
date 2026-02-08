@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { X, FileText, Calendar, Building2, Settings } from "lucide-react";
 import type { CreateContractInput } from "../../types";
 import { useCustomers } from "../../../customers/hooks/useCustomers";
+import { useCompanies } from "../../../companies/hooks";
 
 interface ContractFormModalProps {
   isOpen: boolean;
@@ -9,12 +10,6 @@ interface ContractFormModalProps {
   onSubmit: (data: CreateContractInput) => void;
   isLoading?: boolean;
 }
-
-const INTERNAL_FIRMS = [
-  { id: "Kerzz", name: "Kerzz" },
-  { id: "KerzzTech", name: "Kerzz Tech" },
-  { id: "KerzzSoft", name: "Kerzz Soft" }
-];
 
 const LATE_FEE_TYPES = [
   { id: "yi-ufe", name: "Yİ-ÜFE" },
@@ -42,13 +37,15 @@ export function ContractFormModal({
     limit: 20
   });
 
+  const { data: companiesData } = useCompanies();
+
   const [formData, setFormData] = useState<CreateContractInput>({
     customerId: "",
     description: "",
     startDate: new Date().toISOString().split("T")[0],
     endDate: "",
     noEndDate: true,
-    internalFirm: "Kerzz",
+    internalFirm: "",
     yearly: false,
     maturity: 0,
     lateFeeType: "yi-ufe",
@@ -70,7 +67,7 @@ export function ContractFormModal({
         startDate: new Date().toISOString().split("T")[0],
         endDate: "",
         noEndDate: true,
-        internalFirm: "Kerzz",
+        internalFirm: companiesData?.[0]?.idc || "",
         yearly: false,
         maturity: 0,
         lateFeeType: "yi-ufe",
@@ -83,7 +80,7 @@ export function ContractFormModal({
       setCustomerSearch("");
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, companiesData]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -290,9 +287,10 @@ export function ContractFormModal({
                       onChange={handleChange}
                       className={selectClasses}
                     >
-                      {INTERNAL_FIRMS.map((firm) => (
-                        <option key={firm.id} value={firm.id}>
-                          {firm.name}
+                      <option value="">Seçiniz</option>
+                      {companiesData?.map((company) => (
+                        <option key={company._id} value={company.idc}>
+                          {company.name}
                         </option>
                       ))}
                     </select>

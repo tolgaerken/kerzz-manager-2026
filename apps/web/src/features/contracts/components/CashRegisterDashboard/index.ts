@@ -1,0 +1,1 @@
+export { CashRegisterDashboard } from "./CashRegisterDashboard";
