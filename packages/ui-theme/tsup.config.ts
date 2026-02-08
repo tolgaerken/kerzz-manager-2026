@@ -26,6 +26,7 @@ export default defineConfig({
     'react-i18next',
     'zustand',
     'dayjs',
+    'react-hot-toast',
   ],
 });
 

@@ -22,13 +22,13 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <SocketProvider>
-        <LookupProvider>
-          <ThemeProvider>
+      <ThemeProvider>
+        <SocketProvider>
+          <LookupProvider>
             <RouterProvider router={router} />
-          </ThemeProvider>
-        </LookupProvider>
-      </SocketProvider>
+          </LookupProvider>
+        </SocketProvider>
+      </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </React.StrictMode>

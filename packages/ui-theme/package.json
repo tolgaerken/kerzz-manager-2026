@@ -43,7 +43,14 @@
     "@emotion/styled": ">=11.0.0",
     "i18next": ">=23.0.0",
     "react-i18next": ">=13.0.0",
+    "react-hot-toast": ">=2.0.0",
     "zustand": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-hot-toast": { "optional": true },
+    "@mui/material": { "optional": true },
+    "@emotion/react": { "optional": true },
+    "@emotion/styled": { "optional": true }
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

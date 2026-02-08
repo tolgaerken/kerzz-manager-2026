@@ -1,20 +1,24 @@
-// Types
-export type { ThemeMode, ColorPalette, ThemeState, ThemeStore } from "./types";
+/**
+ * Tema Modülü
+ * @kerzz/ui-theme paketini bridge katmanı ile projeye entegre eder
+ */
 
-// Store
-export { useThemeStore } from "./themeStore";
-
-// Hook
-export { useTheme, themeModes } from "./useTheme";
-
-// Provider
+// Bridge Provider
 export { ThemeProvider } from "./ThemeProvider";
 
-// Palettes
-export { palettes, paletteList, defaultPalette } from "./palettes";
+// Local hook (ui-theme store'u sarar)
+export { useTheme, themeModes } from "./useTheme";
 
-// Colors
-export { colorTokens, semanticColors } from "./colors";
+// Re-export: ui-theme store ve tipleri
+export { useThemeStore } from "@kerzz/ui-theme";
+export type { ThemeState } from "@kerzz/ui-theme";
 
-// Themes
-export { darkTheme, lightTheme } from "./themes";
+// Re-export: Preset'ler
+export { getPreset, getPresetList, getPresetIds, getSemanticColors, presets, DEFAULT_PRESET_ID } from "@kerzz/ui-theme";
+export type { ThemePreset, ThemeSemanticColors } from "@kerzz/ui-theme";
+
+// Re-export: Token'lar
+export { semanticColors } from "@kerzz/ui-theme";
+
+// Re-export: Sidebar store
+export { useSidebarStore } from "@kerzz/ui-theme";

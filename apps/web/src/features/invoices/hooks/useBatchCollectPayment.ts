@@ -19,12 +19,19 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isPausedRef = useRef(false);
   const progressRef = useRef<BatchCollectProgress | null>(null);
-  const processNextItemRef = useRef<(progress: BatchCollectProgress) => Promise<void>>();
+  const processNextItemRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
-  // Ref'i state ile senkronize tut
-  useEffect(() => {
-    progressRef.current = progress;
-  }, [progress]);
+  // State güncellerken ref'i de anlık senkronize eden yardımcı
+  const updateProgress = useCallback(
+    (updater: (prev: BatchCollectProgress | null) => BatchCollectProgress | null) => {
+      setProgress((prev) => {
+        const next = updater(prev);
+        progressRef.current = next;
+        return next;
+      });
+    },
+    []
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -36,7 +43,10 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
   }, []);
 
   const processNextItem = useCallback(
-    async (currentProgress: BatchCollectProgress) => {
+    async () => {
+      const currentProgress = progressRef.current;
+      if (!currentProgress) return;
+
       if (isPausedRef.current) {
         console.log("[BatchCollect] Duraklatıldı, işlem bekliyor");
         return;
@@ -52,7 +62,7 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
 
       if (nextIndex === -1) {
         console.log("[BatchCollect] Tüm item'lar işlendi ✓");
-        setProgress((prev) => {
+        updateProgress((prev) => {
           if (!prev) return null;
           return {
             ...prev,
@@ -70,8 +80,8 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         { invoiceNo: item.invoice.invoiceNumber, customerId: item.invoice.customerId, amount: item.invoice.grandTotal }
       );
 
-      // Update item status to processing
-      setProgress((prev) => {
+      // Item durumunu "processing" olarak güncelle
+      updateProgress((prev) => {
         if (!prev) return null;
         const newItems = [...prev.items];
         newItems[nextIndex] = { ...newItems[nextIndex], status: "processing" };
@@ -82,8 +92,6 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         };
       });
 
-      let newProgress: BatchCollectProgress;
-
       try {
         const result = await collectPayment({
           customerId: item.invoice.customerId,
@@ -92,44 +100,43 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
           invoiceNo: item.invoice.invoiceNumber
         });
 
-        const newItems = [...currentProgress.items];
-
-        if (!result.success) {
-          newItems[nextIndex] = {
-            ...newItems[nextIndex],
-            status: "error",
-            error: result.paymentError || result.message
-          };
-          console.log(
-            `[BatchCollect] HATA [${nextIndex + 1}/${currentProgress.totalCount}]`,
-            { invoiceNo: item.invoice.invoiceNumber, error: result.paymentError || result.message }
-          );
-        } else {
-          newItems[nextIndex] = {
-            ...newItems[nextIndex],
-            status: "completed"
-          };
-          console.log(
-            `[BatchCollect] BAŞARILI [${nextIndex + 1}/${currentProgress.totalCount}]`,
-            { invoiceNo: item.invoice.invoiceNumber }
-          );
-        }
-
-        const completedCount = newItems.filter(
-          (i) => i.status === "completed" || i.status === "error"
-        ).length;
-        const errorCount = newItems.filter((i) => i.status === "error").length;
-
-        newProgress = {
-          ...currentProgress,
-          items: newItems,
-          completedCount,
-          errorCount
-        };
-
-        setProgress((prev) => {
+        // En güncel state üzerinden güncelle (stale closure önlemi)
+        updateProgress((prev) => {
           if (!prev) return null;
-          return { ...newProgress, isMinimized: prev.isMinimized };
+          const newItems = [...prev.items];
+
+          if (!result.success) {
+            newItems[nextIndex] = {
+              ...newItems[nextIndex],
+              status: "error",
+              error: result.paymentError || result.message
+            };
+            console.log(
+              `[BatchCollect] HATA [${nextIndex + 1}/${prev.totalCount}]`,
+              { invoiceNo: item.invoice.invoiceNumber, error: result.paymentError || result.message }
+            );
+          } else {
+            newItems[nextIndex] = {
+              ...newItems[nextIndex],
+              status: "completed"
+            };
+            console.log(
+              `[BatchCollect] BAŞARILI [${nextIndex + 1}/${prev.totalCount}]`,
+              { invoiceNo: item.invoice.invoiceNumber }
+            );
+          }
+
+          const completedCount = newItems.filter(
+            (i) => i.status === "completed" || i.status === "error"
+          ).length;
+          const errorCount = newItems.filter((i) => i.status === "error").length;
+
+          return {
+            ...prev,
+            items: newItems,
+            completedCount,
+            errorCount
+          };
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -138,37 +145,36 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
           { invoiceNo: item.invoice.invoiceNumber, error: errorMessage }
         );
 
-        const newItems = [...currentProgress.items];
-        newItems[nextIndex] = {
-          ...newItems[nextIndex],
-          status: "error",
-          error: errorMessage
-        };
-
-        const completedCount = newItems.filter(
-          (i) => i.status === "completed" || i.status === "error"
-        ).length;
-        const errorCount = newItems.filter((i) => i.status === "error").length;
-
-        newProgress = {
-          ...currentProgress,
-          items: newItems,
-          completedCount,
-          errorCount
-        };
-
-        setProgress((prev) => {
+        // En güncel state üzerinden hata durumunu güncelle
+        updateProgress((prev) => {
           if (!prev) return null;
-          return { ...newProgress, isMinimized: prev.isMinimized };
+          const newItems = [...prev.items];
+          newItems[nextIndex] = {
+            ...newItems[nextIndex],
+            status: "error",
+            error: errorMessage
+          };
+
+          const completedCount = newItems.filter(
+            (i) => i.status === "completed" || i.status === "error"
+          ).length;
+          const errorCount = newItems.filter((i) => i.status === "error").length;
+
+          return {
+            ...prev,
+            items: newItems,
+            completedCount,
+            errorCount
+          };
         });
       }
 
       // Sonraki item'a geç - ref üzerinden çağır (stale closure önlemi)
       if (processNextItemRef.current) {
-        await processNextItemRef.current(newProgress);
+        await processNextItemRef.current();
       }
     },
-    [queryClient]
+    [queryClient, updateProgress]
   );
 
   // processNextItem ref'ini güncelle
@@ -189,7 +195,7 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         status: "pending"
       }));
 
-      const newProgress: BatchCollectProgress = {
+      const initialProgress: BatchCollectProgress = {
         id: generateId(),
         status: "running",
         items,
@@ -205,19 +211,20 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         invoiceNos: invoices.map((inv) => inv.invoiceNumber)
       });
 
-      setProgress(newProgress);
-      processNextItem(newProgress);
+      // Ref'i anlık senkronize et, ardından işlemi başlat
+      updateProgress(() => initialProgress);
+      processNextItem();
     },
-    [processNextItem]
+    [processNextItem, updateProgress]
   );
 
   const pauseBatchCollect = useCallback(() => {
     isPausedRef.current = true;
-    setProgress((prev) => {
+    updateProgress((prev) => {
       if (!prev) return null;
       return { ...prev, status: "paused" };
     });
-  }, []);
+  }, [updateProgress]);
 
   const resumeBatchCollect = useCallback(() => {
     isPausedRef.current = false;
@@ -227,36 +234,38 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
       completed: currentProgress.completedCount,
       total: currentProgress.totalCount
     });
-    const newProgress = { ...currentProgress, status: "running" as const };
-    setProgress(newProgress);
-    processNextItem(newProgress);
-  }, [processNextItem]);
+    updateProgress((prev) => {
+      if (!prev) return null;
+      return { ...prev, status: "running" as const };
+    });
+    processNextItem();
+  }, [processNextItem, updateProgress]);
 
   const cancelBatchCollect = useCallback(() => {
     isPausedRef.current = true;
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    setProgress(null);
-  }, []);
+    updateProgress(() => null);
+  }, [updateProgress]);
 
   const minimizeBatchCollect = useCallback(() => {
-    setProgress((prev) => {
+    updateProgress((prev) => {
       if (!prev) return null;
       return { ...prev, isMinimized: true };
     });
-  }, []);
+  }, [updateProgress]);
 
   const maximizeBatchCollect = useCallback(() => {
-    setProgress((prev) => {
+    updateProgress((prev) => {
       if (!prev) return null;
       return { ...prev, isMinimized: false };
     });
-  }, []);
+  }, [updateProgress]);
 
   const clearBatchCollect = useCallback(() => {
-    setProgress(null);
-  }, []);
+    updateProgress(() => null);
+  }, [updateProgress]);
 
   return {
     progress,

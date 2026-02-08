@@ -10,7 +10,11 @@
     "lint": "eslint src --max-warnings=0"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
     "@kerzz/grid": "workspace:*",
+    "@kerzz/ui-theme": "workspace:*",
+    "@mui/material": "^5.15.0",
     "@tanstack/react-query": "latest",
     "@tanstack/react-router": "latest",
     "ag-grid-community": "^35.0.1",
@@ -19,6 +23,7 @@
     "lucide-react": "^0.563.0",
     "react": "latest",
     "react-dom": "latest",
+    "react-hot-toast": "^2.6.0",
     "react-i18next": "latest",
     "recharts": "^3.7.0",
     "socket.io-client": "^4.8.3",

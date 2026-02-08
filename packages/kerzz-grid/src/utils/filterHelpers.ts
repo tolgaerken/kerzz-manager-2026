@@ -71,6 +71,7 @@ function applyCondition(
   condition: FilterCondition,
   filterValue: string,
   filterValueTo?: string,
+  isNumeric?: boolean,
 ): boolean {
   const strCell = String(cellValue ?? '').toLowerCase();
   const strFilter = filterValue.toLowerCase();
@@ -78,16 +79,28 @@ function applyCondition(
   switch (condition) {
     case 'contains':
       return strCell.includes(strFilter);
-    case 'equals':
+    case 'equals': {
+      if (isNumeric) {
+        const numCell = Number(cellValue);
+        const numFilter = Number(filterValue);
+        return !isNaN(numCell) && !isNaN(numFilter) && numCell === numFilter;
+      }
       return strCell === strFilter;
+    }
     case 'startsWith':
       return strCell.startsWith(strFilter);
     case 'endsWith':
       return strCell.endsWith(strFilter);
     case 'notContains':
       return !strCell.includes(strFilter);
-    case 'notEqual':
+    case 'notEqual': {
+      if (isNumeric) {
+        const numCell = Number(cellValue);
+        const numFilter = Number(filterValue);
+        return !isNaN(numCell) && !isNaN(numFilter) && numCell !== numFilter;
+      }
       return strCell !== strFilter;
+    }
     case 'greaterThan': {
       const numCell = Number(cellValue);
       const numFilter = Number(filterValue);
