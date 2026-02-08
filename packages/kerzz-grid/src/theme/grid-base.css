@@ -923,6 +923,7 @@
   padding: 40px 20px;
   color: var(--kz-text-muted);
   font-size: 14px;
+  flex: 1;
 }
 
 /* ---- Active Filter Bar ---- */

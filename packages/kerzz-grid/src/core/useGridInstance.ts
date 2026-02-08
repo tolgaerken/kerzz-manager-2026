@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import type { GridColumnDef } from '../types/column.types';
 import type { GridProps } from '../types/grid.types';
 import { useStateStore } from './useStateStore';
@@ -101,29 +101,39 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
     },
   });
 
+  const normalizedColumnOrder = useMemo(() => {
+    const order = stateStore.state.columnOrder;
+    if (order.length === 0) return columns.map((c) => c.id);
+
+    // Filter valid columns and remove duplicates
+    const next = Array.from(new Set(order.filter((id) => columns.some((c) => c.id === id))));
+    const seen = new Set(next);
+    for (const col of columns) {
+      if (!seen.has(col.id)) next.push(col.id);
+    }
+    return next;
+  }, [columns, stateStore.state.columnOrder]);
+
+  useEffect(() => {
+    const current = stateStore.state.columnOrder;
+    if (current.length === 0 && normalizedColumnOrder.length === 0) return;
+
+    const isSameLength = current.length === normalizedColumnOrder.length;
+    const isSameOrder = isSameLength && current.every((id, idx) => id === normalizedColumnOrder[idx]);
+    if (!isSameOrder) {
+      stateStore.setColumnOrder(normalizedColumnOrder);
+    }
+  }, [normalizedColumnOrder, stateStore.state.columnOrder, stateStore.setColumnOrder]);
+
   // Ordered & visible columns
   const orderedColumns = useMemo(() => {
-    const order = stateStore.state.columnOrder;
     const visibility = stateStore.state.columnVisibility;
-
-    let ordered: GridColumnDef<TData>[];
-
-    if (order.length > 0) {
-      const colMap = new Map(columns.map((c) => [c.id, c]));
-      ordered = order
-        .map((id) => colMap.get(id))
-        .filter((c): c is GridColumnDef<TData> => c != null);
-
-      // Add any new columns not in stored order
-      for (const col of columns) {
-        if (!order.includes(col.id)) ordered.push(col);
-      }
-    } else {
-      ordered = [...columns];
-    }
-
+    const colMap = new Map(columns.map((c) => [c.id, c]));
+    const ordered = normalizedColumnOrder
+      .map((id) => colMap.get(id))
+      .filter((c): c is GridColumnDef<TData> => c != null);
     return ordered.filter((c) => visibility[c.id] !== false);
-  }, [columns, stateStore.state.columnOrder, stateStore.state.columnVisibility]);
+  }, [columns, normalizedColumnOrder, stateStore.state.columnVisibility]);
 
   // Auto-detect numeric columns and resolve alignment
   const resolvedColumns = useMemo(() => {
@@ -165,9 +175,7 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
 
   // Column drag
   const columnDrag = useColumnDrag({
-    columnOrder: stateStore.state.columnOrder.length > 0
-      ? stateStore.state.columnOrder
-      : columns.map((c) => c.id),
+    columnOrder: normalizedColumnOrder,
     onColumnOrderChange: (order) => {
       stateStore.setColumnOrder(order);
       onColumnOrderChange?.(order);

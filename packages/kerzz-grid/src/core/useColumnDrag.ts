@@ -57,7 +57,7 @@ export function useColumnDrag({
   const handleDrop = useCallback(
     (targetColumnId: string, e: React.DragEvent) => {
       e.preventDefault();
-      const sourceId = dragColumnId;
+      const sourceId = e.dataTransfer.getData('text/plain') || dragColumnId;
 
       if (!sourceId || sourceId === targetColumnId) {
         setDragColumnId(null);
@@ -77,7 +77,10 @@ export function useColumnDrag({
 
       // Remove source and insert at target position
       order.splice(sourceIndex, 1);
-      order.splice(targetIndex, 0, sourceId);
+      const adjustedTargetIndex = sourceIndex < targetIndex
+        ? targetIndex - 1
+        : targetIndex;
+      order.splice(adjustedTargetIndex, 0, sourceId);
       onColumnOrderChange(order);
 
       setDragColumnId(null);
