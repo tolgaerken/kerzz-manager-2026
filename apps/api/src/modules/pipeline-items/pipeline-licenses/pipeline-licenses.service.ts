@@ -63,12 +63,16 @@ export class PipelineLicensesService {
     await this.model.deleteMany({ parentId, parentType }).exec();
     if (!items || items.length === 0) return [];
 
-    const docs = items.map((item) => ({
-      ...item,
-      parentId,
-      parentType,
-      pipelineRef,
-    }));
+    // _id temizlenerek — frontend geçici ID gönderebilir
+    const docs = items.map((item) => {
+      const { _id, ...rest } = item as any;
+      return {
+        ...rest,
+        parentId,
+        parentType,
+        pipelineRef,
+      };
+    });
 
     const inserted = await this.model.insertMany(docs);
     return inserted.map((doc) => doc.toObject());

@@ -65,6 +65,27 @@ export function LicenseItemsTable({
     [items, onItemsChange],
   );
 
+  const handleAdd = useCallback(() => {
+    const newItem: LicenseItem = recalculateItem({
+      _id: generateTempId(),
+      catalogId: "",
+      erpId: "",
+      pid: "",
+      name: "",
+      description: "",
+      type: "",
+      qty: 1,
+      unit: "",
+      purchasePrice: 0,
+      salePrice: 0,
+      price: 0,
+      currency: "tl",
+      vatRate: 0,
+      discountRate: 0,
+    } as any);
+    onItemsChange([...items, newItem]);
+  }, [items, onItemsChange]);
+
   const handleDelete = useCallback(() => {
     if (!selectedId) return;
     onItemsChange(items.filter((i) => i._id !== selectedId));
@@ -103,7 +124,7 @@ export function LicenseItemsTable({
       showExcelExport: false,
       showPdfExport: false,
       showColumnVisibility: false,
-      showAddRow: false,
+      showAddRow: !readOnly,
       customButtons,
     };
   }, [readOnly, handleDelete, selectedId]);
@@ -117,6 +138,7 @@ export function LicenseItemsTable({
           getRowId={(row) => row._id || ""}
           onCellValueChange={handleCellValueChange}
           onRowClick={handleRowClick}
+          onRowAdd={readOnly ? undefined : handleAdd}
           height="100%"
           locale="tr"
           toolbar={toolbarConfig}

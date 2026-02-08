@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import type { PipelinePayment } from "../../types/pipeline.types";
 import { generateTempId } from "../../utils/lineItemCalculations";
@@ -59,23 +59,14 @@ export function PaymentItemsTable({
     const customButtons: ToolbarButtonConfig[] = [];
 
     if (!readOnly) {
-      customButtons.push(
-        {
-          id: "add",
-          label: "Ödeme Ekle",
-          icon: <Plus className="w-3.5 h-3.5" />,
-          onClick: handleAdd,
-          variant: "primary",
-        },
-        {
-          id: "delete",
-          label: "Sil",
-          icon: <Trash2 className="w-3.5 h-3.5" />,
-          onClick: handleDelete,
-          disabled: !selectedId,
-          variant: "danger",
-        },
-      );
+      customButtons.push({
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: handleDelete,
+        disabled: !selectedId,
+        variant: "danger",
+      });
     }
 
     return {
@@ -83,10 +74,10 @@ export function PaymentItemsTable({
       showExcelExport: false,
       showPdfExport: false,
       showColumnVisibility: false,
-      showAddRow: false,
+      showAddRow: !readOnly,
       customButtons,
     };
-  }, [readOnly, handleAdd, handleDelete, selectedId]);
+  }, [readOnly, handleDelete, selectedId]);
 
   return (
     <div className="flex flex-col h-full">
@@ -97,6 +88,7 @@ export function PaymentItemsTable({
           getRowId={(row) => row._id || ""}
           onCellValueChange={handleCellValueChange}
           onRowClick={handleRowClick}
+          onRowAdd={readOnly ? undefined : handleAdd}
           height="100%"
           locale="tr"
           toolbar={toolbarConfig}

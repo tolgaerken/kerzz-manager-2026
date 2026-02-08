@@ -54,4 +54,12 @@ export class PipelineCounterService {
     );
     return counter.seq;
   }
+
+  async syncCounter(counterId: string, minValue: number): Promise<void> {
+    await this.counterModel.findOneAndUpdate(
+      { _id: counterId },
+      { $max: { seq: minValue } },
+      { upsert: true }
+    );
+  }
 }

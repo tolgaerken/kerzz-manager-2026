@@ -4,6 +4,7 @@ import type { ActiveFilter } from '../../types/filter.types';
 import type { ToolbarConfig } from '../../types/toolbar.types';
 import type { GridColumnDef } from '../../types/column.types';
 import { useGridInstance } from '../../core/useGridInstance';
+import { useGridEditing } from '../../core/useGridEditing';
 import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { themeToCssVars } from '../../utils/memoize';
@@ -30,10 +31,49 @@ function GridInner<TData>(
     onRowClick,
     onRowDoubleClick,
     columns,
+    getRowId,
+    onCellValueChange,
+    onRowAdd,
+    onEditSave,
+    onEditCancel,
+    createEmptyRow,
+    onNewRowSave,
+    onPendingCellChange,
+    context,
   } = props;
 
   const locale = useLocale();
-  const grid = useGridInstance(props);
+  const [pendingNewRows, setPendingNewRows] = useState<TData[]>([]);
+  const grid = useGridInstance(props, pendingNewRows.length);
+  const pendingRowIdSet = useMemo(() => {
+    if (!getRowId || pendingNewRows.length === 0) return new Set<string>();
+    const ids = pendingNewRows
+      .map((row) => getRowId(row))
+      .filter((id) => id && id.length > 0);
+    return new Set(ids);
+  }, [pendingNewRows, getRowId]);
+
+  // Merge filtered data with pending new rows for display & editing
+  const displayData = useMemo(() => {
+    if (pendingNewRows.length === 0) return grid.filteredData;
+    return [...grid.filteredData, ...pendingNewRows];
+  }, [grid.filteredData, pendingNewRows]);
+
+  const editing = useGridEditing<TData>({
+    columns: grid.orderedColumns as GridColumnDef<TData>[],
+    data: displayData,
+    onCellValueChange,
+    onRowAdd,
+    onEditSave,
+    onEditCancel,
+    createEmptyRow,
+    onNewRowSave,
+    onPendingCellChange,
+    pendingNewRows,
+    setPendingNewRows,
+    pendingRowIdSet,
+    getRowId,
+  });
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
   const colBtnRef = useRef<HTMLButtonElement>(null);
   const headerWrapperRef = useRef<HTMLDivElement>(null);
@@ -50,7 +90,7 @@ function GridInner<TData>(
 
   // Sync horizontal scroll: body -> header & footer
   // hasData dependency ensures the effect re-runs when body mounts/unmounts
-  const hasData = grid.filteredData.length > 0;
+  const hasData = displayData.length > 0;
 
   useEffect(() => {
     const scrollEl = grid.scrollContainerRef.current;
@@ -82,8 +122,8 @@ function GridInner<TData>(
     getSelectedIds: () => [],
     selectAll: () => {},
     deselectAll: () => {},
-    addRow: () => {},
-  }), [grid]);
+    addRow: () => editing.requestAddRow(),
+  }), [grid, editing]);
 
   // Convert theme to CSS vars
   const cssVars = useMemo(() => themeToCssVars(grid.theme), [grid.theme]);
@@ -130,6 +170,10 @@ function GridInner<TData>(
           cssVars={cssVars}
           searchTerm={grid.searchTerm}
           onSearchChange={grid.setSearchTerm}
+          editMode={editing.editMode}
+          onSaveAll={editing.saveAllChanges}
+          onCancelAll={editing.cancelAllChanges}
+          onAddRow={createEmptyRow || onRowAdd ? editing.requestAddRow : undefined}
         />
       )}
 
@@ -207,9 +251,9 @@ function GridInner<TData>(
       </div>
 
       {/* Body */}
-      {grid.filteredData.length > 0 ? (
+      {displayData.length > 0 ? (
         <GridBody
-          data={grid.filteredData}
+          data={displayData}
           columns={grid.orderedColumns}
           virtualRows={grid.virtualRows}
           totalHeight={grid.totalHeight}
@@ -219,6 +263,17 @@ function GridInner<TData>(
           scrollContainerRef={grid.scrollContainerRef}
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
+          isEditing={editing.isEditing}
+          editMode={editing.editMode}
+          hasPendingChange={editing.hasPendingChange}
+          getPendingValue={editing.getPendingValue}
+          onStartEditing={editing.startEditing}
+          onSaveEdit={editing.saveValue}
+          onCancelEdit={editing.stopEditing}
+          onSaveAndMoveNext={editing.saveAndMoveNext}
+          context={context}
+          pendingRowIdSet={pendingRowIdSet}
+          getRowIdFn={getRowId}
         />
       ) : (
         <div className="kz-grid-no-data">

@@ -12,7 +12,7 @@ import { useFooterAggregation } from './useFooterAggregation';
 import { useGridTheme } from '../theme/ThemeProvider';
 import type { SortingState } from '@tanstack/react-table';
 
-export function useGridInstance<TData>(props: GridProps<TData>) {
+export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 0) {
   const {
     data,
     columns,
@@ -160,7 +160,7 @@ export function useGridInstance<TData>(props: GridProps<TData>) {
 
   // Virtualization
   const virtualization = useVirtualization({
-    rowCount: filteredData.length,
+    rowCount: filteredData.length + extraRowCount,
     rowHeight: effectiveRowHeight,
     overscan,
   });

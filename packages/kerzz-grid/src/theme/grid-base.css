@@ -915,6 +915,235 @@
   color: var(--kz-primary);
 }
 
+/* ---- Cell States ---- */
+.kz-grid-cell--editable {
+  cursor: pointer;
+}
+
+.kz-grid-cell--editable:hover {
+  background: var(--kz-row-hover);
+}
+
+.kz-grid-cell--editing {
+  padding: 0;
+  overflow: visible;
+  z-index: 5;
+}
+
+.kz-grid-cell--changed {
+  background: color-mix(in srgb, var(--kz-primary) 8%, transparent);
+}
+
+/* ---- Row States (editing) ---- */
+.kz-grid-row--editing {
+  z-index: 2;
+}
+
+.kz-grid-row--changed {
+  background: color-mix(in srgb, var(--kz-primary) 4%, var(--kz-row-bg));
+}
+
+.kz-grid-row--pending-new {
+  background: color-mix(in srgb, var(--kz-primary) 6%, var(--kz-row-bg));
+  border-left: 2px solid var(--kz-primary);
+}
+
+/* ============================
+   Cell Editors
+   ============================ */
+
+/* ---- Base Editor ---- */
+.kz-editor {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: var(--kz-font-size);
+  color: var(--kz-text);
+  box-sizing: border-box;
+}
+
+/* ---- Text & Number Editor ---- */
+.kz-editor--text,
+.kz-editor--number {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--kz-cell-padding-x);
+  border: 2px solid var(--kz-primary);
+  border-radius: 0;
+  background: var(--kz-bg);
+  color: var(--kz-text);
+  font-family: inherit;
+  font-size: var(--kz-font-size);
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
+}
+
+.kz-editor--text:focus,
+.kz-editor--number:focus {
+  border-color: var(--kz-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.kz-editor--number {
+  text-align: right;
+}
+
+/* ---- Select Editor ---- */
+.kz-editor--select {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.kz-editor__select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--kz-cell-padding-x);
+  border: 2px solid var(--kz-primary);
+  background: var(--kz-bg);
+  color: var(--kz-text);
+  font-family: inherit;
+  font-size: var(--kz-font-size);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.kz-editor__select-trigger-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.kz-editor__select-trigger-chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--kz-text-muted);
+}
+
+/* ---- Editor Dropdown (shared by Select & Autocomplete) ---- */
+.kz-editor__dropdown {
+  position: absolute;
+  top: 100%;
+  left: -2px;
+  right: -2px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--kz-bg);
+  border: 1px solid var(--kz-border);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+  font-size: var(--kz-font-size);
+}
+
+.kz-editor__dropdown-item {
+  padding: 6px var(--kz-cell-padding-x);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+}
+
+.kz-editor__dropdown-item:hover,
+.kz-editor__dropdown-item--highlighted {
+  background: var(--kz-row-hover);
+}
+
+.kz-editor__dropdown-item--selected {
+  color: var(--kz-primary);
+  font-weight: 600;
+}
+
+.kz-editor__dropdown--empty {
+  padding: 8px var(--kz-cell-padding-x);
+  color: var(--kz-text-muted);
+  font-size: var(--kz-filter-font-size);
+  font-style: italic;
+}
+
+/* ---- Autocomplete Editor ---- */
+.kz-editor--autocomplete {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.kz-editor__autocomplete-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border: 2px solid var(--kz-primary);
+  background: var(--kz-bg);
+  box-sizing: border-box;
+}
+
+.kz-editor__autocomplete-icon {
+  position: absolute;
+  left: 8px;
+  width: 14px;
+  height: 14px;
+  color: var(--kz-text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.kz-editor__autocomplete-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 28px;
+  border: none;
+  background: transparent;
+  color: var(--kz-text);
+  font-family: inherit;
+  font-size: var(--kz-font-size);
+  outline: none;
+}
+
+.kz-editor__autocomplete-input::placeholder {
+  color: var(--kz-text-muted);
+}
+
+.kz-editor__autocomplete-clear {
+  position: absolute;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--kz-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  transition: all 0.15s;
+}
+
+.kz-editor__autocomplete-clear:hover {
+  color: var(--kz-text);
+  background: var(--kz-border);
+}
+
 /* ---- No Data ---- */
 .kz-grid-no-data {
   display: flex;

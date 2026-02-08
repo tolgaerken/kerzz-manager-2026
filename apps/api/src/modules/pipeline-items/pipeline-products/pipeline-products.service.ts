@@ -65,13 +65,16 @@ export class PipelineProductsService {
 
     if (!items || items.length === 0) return [];
 
-    // Insert new items
-    const docs = items.map((item) => ({
-      ...item,
-      parentId,
-      parentType,
-      pipelineRef,
-    }));
+    // Insert new items (_id temizlenerek — frontend geçici ID gönderebilir)
+    const docs = items.map((item) => {
+      const { _id, ...rest } = item as any;
+      return {
+        ...rest,
+        parentId,
+        parentType,
+        pipelineRef,
+      };
+    });
 
     const inserted = await this.model.insertMany(docs);
     return inserted.map((doc) => doc.toObject());

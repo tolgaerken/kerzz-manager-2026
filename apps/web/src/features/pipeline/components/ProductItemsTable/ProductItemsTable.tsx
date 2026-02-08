@@ -63,6 +63,25 @@ export function ProductItemsTable({
     [items, onItemsChange],
   );
 
+  const handleAdd = useCallback(() => {
+    const newItem: ProductItem = recalculateItem({
+      _id: generateTempId(),
+      catalogId: "",
+      erpId: "",
+      name: "",
+      description: "",
+      qty: 1,
+      unit: "",
+      purchasePrice: 0,
+      salePrice: 0,
+      price: 0,
+      currency: "tl",
+      vatRate: 0,
+      discountRate: 0,
+    } as any);
+    onItemsChange([...items, newItem]);
+  }, [items, onItemsChange]);
+
   const handleDelete = useCallback(() => {
     if (!selectedId) return;
     onItemsChange(items.filter((i) => i._id !== selectedId));
@@ -101,7 +120,7 @@ export function ProductItemsTable({
       showExcelExport: false,
       showPdfExport: false,
       showColumnVisibility: false,
-      showAddRow: false,
+      showAddRow: !readOnly,
       customButtons,
     };
   }, [readOnly, handleDelete, selectedId]);
@@ -115,6 +134,7 @@ export function ProductItemsTable({
           getRowId={(row) => row._id || ""}
           onCellValueChange={handleCellValueChange}
           onRowClick={handleRowClick}
+          onRowAdd={readOnly ? undefined : handleAdd}
           height="100%"
           locale="tr"
           toolbar={toolbarConfig}

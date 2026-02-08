@@ -124,15 +124,11 @@ export class SalesService {
   async create(dto: CreateSaleDto): Promise<SaleResponseDto> {
     const { products, licenses, rentals, payments, ...saleData } = dto;
 
-    // Otomatik no üret
-    const no = await this.counterService.generateSaleNo();
-
     if (!saleData.pipelineRef) {
       saleData.pipelineRef = await this.counterService.generateRef();
     }
 
-    const sale = new this.saleModel({ ...saleData, no });
-    const saved = await sale.save();
+    const saved = await this.saveWithRetry(saleData);
     const saleId = saved._id.toString();
 
     if (products || licenses || rentals || payments) {
@@ -350,9 +346,6 @@ export class SalesService {
   ): Promise<SaleResponseDto> {
     const offer = await this.offersService.getForConversion(offerId);
 
-    // Otomatik no üret
-    const no = await this.counterService.generateSaleNo();
-
     // Sale oluştur
     const saleData: CreateSaleDto = {
       pipelineRef: (offer as any).pipelineRef,
@@ -369,8 +362,7 @@ export class SalesService {
       ...extraData,
     };
 
-    const sale = new this.saleModel({ ...saleData, no });
-    const saved = await sale.save();
+    const saved = await this.saveWithRetry(saleData);
     const saleId = saved._id.toString();
 
     // Alt koleksiyonları klonla
@@ -459,5 +451,43 @@ export class SalesService {
       createdAt: sale.createdAt,
       updatedAt: sale.updatedAt,
     };
+  }
+
+  private async syncSaleCounter(): Promise<void> {
+    const maxDoc = await this.saleModel
+      .findOne({}, { no: 1 })
+      .sort({ no: -1 })
+      .lean()
+      .exec();
+
+    const maxNo = maxDoc?.no || 0;
+    await this.counterService.syncCounter("sale-no", maxNo);
+  }
+
+  private async saveWithRetry(
+    saleData: CreateSaleDto,
+    maxRetries = 3
+  ): Promise<SaleDocument> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const no = await this.counterService.generateSaleNo();
+        const sale = new this.saleModel({ ...saleData, no });
+        return await sale.save();
+      } catch (error: any) {
+        const isDuplicateNo =
+          error?.code === 11000 && error?.keyPattern?.no;
+
+        if (isDuplicateNo && attempt < maxRetries - 1) {
+          await this.syncSaleCounter();
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new BadRequestException(
+      "Satış oluşturulamadı. Lütfen tekrar deneyin."
+    );
   }
 }
