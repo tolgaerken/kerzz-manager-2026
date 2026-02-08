@@ -30,6 +30,7 @@ interface ContractDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   contract: Contract;
+  onContractUpdated?: (contract: Contract) => void;
 }
 
 type TabId =
@@ -64,7 +65,8 @@ const tabs: Tab[] = [
 export function ContractDetailModal({
   isOpen,
   onClose,
-  contract
+  contract,
+  onContractUpdated
 }: ContractDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [loadedTabs, setLoadedTabs] = useState<Record<TabId, boolean>>({ summary: true } as Record<TabId, boolean>);
@@ -95,7 +97,7 @@ export function ContractDetailModal({
   const renderTabContent = () => {
     switch (activeTab) {
       case "summary":
-        return <ContractSummaryTab contract={contract} />;
+        return <ContractSummaryTab contract={contract} onContractUpdated={onContractUpdated} />;
       case "users":
         return loadedTabs.users ? <ContractUsersTab contractId={contract.id} /> : null;
       case "supports":

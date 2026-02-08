@@ -11,6 +11,11 @@ export class SaleResponseDto {
   sellerId: string;
   sellerName: string;
   totals: Record<string, any>;
+  grandTotal?: number;
+  hardwareTotal?: number;
+  saasTotal?: number;
+  softwareTotal?: number;
+  total?: number;
   usdRate: number;
   eurRate: number;
   status: string;
@@ -53,4 +58,9 @@ export class SaleStatsDto {
   active: number;
   completed: number;
   cancelled: number;
+  totalSalesAmount?: number;
+  hardwareSalesAmount?: number;
+  licenseSalesAmount?: number;
+  saasSalesAmount?: number;
+  topSales?: SaleResponseDto[];
 }

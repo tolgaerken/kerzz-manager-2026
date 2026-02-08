@@ -1,5 +1,12 @@
 import { CONTRACTS_CONSTANTS } from "../constants/contracts.constants";
-import type { ContractQueryParams, ContractsResponse, Contract, CreateContractInput, CheckContractResult } from "../types";
+import type {
+  ContractQueryParams,
+  ContractsResponse,
+  Contract,
+  CreateContractInput,
+  UpdateContractInput,
+  CheckContractResult
+} from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACTS_CONSTANTS;
 
@@ -64,6 +71,22 @@ export async function createContract(data: CreateContractInput): Promise<Contrac
       Accept: "application/json"
     },
     body: JSON.stringify(data)
+  });
+
+  return handleResponse<Contract>(response);
+}
+
+export async function updateContract(id: string, data: UpdateContractInput): Promise<Contract> {
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${id}`;
+  const { id: _ignoredId, ...payload } = data;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify(payload)
   });
 
   return handleResponse<Contract>(response);

@@ -2,7 +2,10 @@ import { useState, useCallback, useMemo } from "react";
 import { Trash2, FolderOpen } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import type { PipelineRental } from "../../types/pipeline.types";
-import { recalculateItem, generateTempId } from "../../utils/lineItemCalculations";
+import {
+  recalculateRentalItem,
+  generateTempId,
+} from "../../utils/lineItemCalculations";
 import { rentalItemsColumns } from "../../columnDefs/rentalItemsColumns";
 import { CatalogSelectModal, type CatalogItem } from "../CatalogSelectModal/CatalogSelectModal";
 
@@ -14,7 +17,13 @@ interface RentalItemsTableProps {
   readOnly?: boolean;
 }
 
-const RECALC_FIELDS = new Set(["qty", "price", "vatRate", "discountRate"]);
+const RECALC_FIELDS = new Set([
+  "qty",
+  "price",
+  "vatRate",
+  "discountRate",
+  "rentPeriod",
+]);
 
 export function RentalItemsTable({
   items,
@@ -29,9 +38,17 @@ export function RentalItemsTable({
       onItemsChange(
         items.map((item) => {
           if (item._id !== row._id) return item;
-          const updated = { ...item, [columnId]: newValue };
+          const nextValue =
+            columnId === "rentPeriod" ? Number(newValue) || 1 : newValue;
+          const updated = {
+            ...item,
+            [columnId]: nextValue,
+            ...(columnId === "rentPeriod"
+              ? { yearly: (Number(nextValue) || 1) >= 12 }
+              : {}),
+          };
           return RECALC_FIELDS.has(columnId)
-            ? recalculateItem(updated as any)
+            ? recalculateRentalItem(updated as any)
             : updated;
         }),
       );
@@ -42,7 +59,7 @@ export function RentalItemsTable({
   const handleCatalogSelect = useCallback(
     (selected: CatalogItem[]) => {
       const newItems: RentalItem[] = selected.map((cat) =>
-        recalculateItem({
+        recalculateRentalItem({
           _id: generateTempId(),
           catalogId: cat.catalogId,
           erpId: cat.erpId,
@@ -58,7 +75,7 @@ export function RentalItemsTable({
           currency: cat.currency,
           vatRate: cat.vatRate,
           yearly: false,
-          rentPeriod: 12,
+          rentPeriod: 1,
           discountRate: 0,
         } as any),
       );

@@ -215,11 +215,62 @@ export class SalesService {
     return this.mapToResponse(sale);
   }
 
-  async getStats(): Promise<SaleStatsDto> {
+  async getStats(query?: SaleQueryDto): Promise<SaleStatsDto> {
+    const filter: Record<string, any> = {};
+
+    let start = query?.startDate ? new Date(query.startDate) : undefined;
+    let end = query?.endDate ? new Date(query.endDate) : undefined;
+
+    if (query?.period) {
+      const now = new Date();
+      if (!end) end = now;
+      if (!start) {
+        start = new Date(now);
+        switch (query.period) {
+          case "daily":
+            start.setHours(0, 0, 0, 0);
+            break;
+          case "weekly": {
+            const day = start.getDay() || 7; // Sunday is 0, make it 7
+            // Pazartesiye git
+            start.setDate(start.getDate() - (day - 1));
+            start.setHours(0, 0, 0, 0);
+            break;
+          }
+          case "monthly":
+            start.setDate(1);
+            start.setHours(0, 0, 0, 0);
+            break;
+          case "quarterly": {
+            const q = Math.floor(start.getMonth() / 3);
+            start.setMonth(q * 3, 1);
+            start.setHours(0, 0, 0, 0);
+            break;
+          }
+          case "yearly":
+            start.setMonth(0, 1);
+            start.setHours(0, 0, 0, 0);
+            break;
+        }
+      }
+    }
+
+    if (start || end) {
+      filter.saleDate = {};
+      if (start) filter.saleDate.$gte = start;
+      if (end) {
+        const endDate = new Date(end);
+        // Eğer saat verilmemişse gün sonuna ayarla
+        if (endDate.getHours() === 0 && endDate.getMinutes() === 0) {
+          endDate.setHours(23, 59, 59, 999);
+        }
+        filter.saleDate.$lte = endDate;
+      }
+    }
+
+    // Status pipeline
     const pipeline = await this.saleModel
-      .aggregate([
-        { $group: { _id: "$status", count: { $sum: 1 } } },
-      ])
+      .aggregate([{ $match: filter }, { $group: { _id: "$status", count: { $sum: 1 } } }])
       .exec();
 
     const stats: SaleStatsDto = {
@@ -231,9 +282,14 @@ export class SalesService {
       active: 0,
       completed: 0,
       cancelled: 0,
+      totalSalesAmount: 0,
+      hardwareSalesAmount: 0,
+      licenseSalesAmount: 0,
+      saasSalesAmount: 0,
+      topSales: [],
     };
 
-    const statusMap: Record<string, keyof Omit<SaleStatsDto, "total">> = {
+    const statusMap: Record<string, keyof Omit<SaleStatsDto, "total" | "topSales">> = {
       pending: "pending",
       "collection-waiting": "collectionWaiting",
       "setup-waiting": "setupWaiting",
@@ -245,11 +301,40 @@ export class SalesService {
 
     for (const item of pipeline) {
       const key = statusMap[item._id];
-      if (key) {
+      if (key && key in stats) {
+        // @ts-ignore
         stats[key] = item.count;
       }
       stats.total += item.count;
     }
+
+    const totals = await this.saleModel
+      .aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: null,
+            totalSalesAmount: { $sum: { $ifNull: ["$grandTotal", 0] } },
+            hardwareSalesAmount: { $sum: { $ifNull: ["$hardwareTotal", 0] } },
+            saasSalesAmount: { $sum: { $ifNull: ["$saasTotal", 0] } },
+            licenseSalesAmount: { $sum: { $ifNull: ["$softwareTotal", 0] } },
+          },
+        },
+      ])
+      .exec();
+
+    stats.totalSalesAmount = totals[0]?.totalSalesAmount || 0;
+    stats.hardwareSalesAmount = totals[0]?.hardwareSalesAmount || 0;
+    stats.saasSalesAmount = totals[0]?.saasSalesAmount || 0;
+    stats.licenseSalesAmount = totals[0]?.licenseSalesAmount || 0;
+
+    stats.topSales = await this.saleModel
+      .find(filter)
+      .sort({ grandTotal: -1 })
+      .limit(10)
+      .lean()
+      .exec()
+      .then((docs) => docs.map((doc) => this.mapToResponse(doc)));
 
     return stats;
   }
@@ -339,6 +424,10 @@ export class SalesService {
   }
 
   private mapToResponse(sale: any): SaleResponseDto {
+    const statusValue = Array.isArray(sale.status)
+      ? sale.status[0] || "pending"
+      : sale.status || "pending";
+
     return {
       _id: sale._id.toString(),
       no: sale.no || 0,
@@ -352,9 +441,14 @@ export class SalesService {
       sellerId: sale.sellerId || "",
       sellerName: sale.sellerName || "",
       totals: sale.totals || {},
+      grandTotal: sale.grandTotal || 0,
+      hardwareTotal: sale.hardwareTotal || 0,
+      saasTotal: sale.saasTotal || 0,
+      softwareTotal: sale.softwareTotal || 0,
+      total: sale.total || 0,
       usdRate: sale.usdRate || 0,
       eurRate: sale.eurRate || 0,
-      status: sale.status || "pending",
+      status: statusValue,
       approved: sale.approved || false,
       approvedBy: sale.approvedBy || "",
       approvedByName: sale.approvedByName || "",

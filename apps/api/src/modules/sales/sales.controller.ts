@@ -24,8 +24,8 @@ export class SalesController {
   }
 
   @Get("stats")
-  async getStats() {
-    return this.salesService.getStats();
+  async getStats(@Query() query: SaleQueryDto) {
+    return this.salesService.getStats(query);
   }
 
   @Get(":id")

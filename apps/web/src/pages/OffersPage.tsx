@@ -22,6 +22,7 @@ export function OffersPage() {
   const [queryParams, setQueryParams] = useState<OfferQueryParams>({
     sortField: "createdAt",
     sortOrder: "desc",
+    limit: 99999,
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);

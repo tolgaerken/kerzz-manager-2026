@@ -3,6 +3,7 @@ import type { PipelineRental } from "../types/pipeline.types";
 import { PIPELINE_CONSTANTS } from "../constants/pipeline.constants";
 
 const CURRENCY_OPTIONS = [...PIPELINE_CONSTANTS.CURRENCIES];
+const BILLING_PERIOD_OPTIONS = [...PIPELINE_CONSTANTS.BILLING_PERIOD_OPTIONS];
 
 const currencyFormatter = (value: unknown) => {
   if (value == null) return "";
@@ -31,22 +32,21 @@ export const rentalItemsColumns: GridColumnDef<Partial<PipelineRental>>[] = [
     cellEditor: { type: "text" },
   },
   {
-    id: "yearly",
-    accessorKey: "yearly",
-    header: "Periyot",
-    width: 80,
-    editable: true,
-    cellEditor: { type: "boolean" },
-    cell: (value) => (value ? "Yıllık" : "Aylık"),
-  },
-  {
     id: "rentPeriod",
     accessorKey: "rentPeriod",
-    header: "Süre (Ay)",
-    width: 90,
-    align: "right",
+    header: "Fatura Periodu",
+    width: 130,
     editable: true,
-    cellEditor: { type: "number" },
+    cellEditor: {
+      type: "select",
+      options: BILLING_PERIOD_OPTIONS,
+    },
+    valueFormatter: (value) => {
+      const found = BILLING_PERIOD_OPTIONS.find(
+        (option) => String(option.id) === String(value),
+      );
+      return found?.name || String(value ?? "");
+    },
   },
   {
     id: "qty",
@@ -60,8 +60,8 @@ export const rentalItemsColumns: GridColumnDef<Partial<PipelineRental>>[] = [
   {
     id: "price",
     accessorKey: "price",
-    header: "Fiyat",
-    width: 110,
+    header: "Aylık Fiyat",
+    width: 120,
     align: "right",
     editable: true,
     cellEditor: { type: "number" },
@@ -99,6 +99,29 @@ export const rentalItemsColumns: GridColumnDef<Partial<PipelineRental>>[] = [
     align: "right",
     editable: true,
     cellEditor: { type: "number" },
+  },
+  {
+    id: "discountTotal",
+    accessorKey: "discountTotal",
+    header: "İskonto Tutarı",
+    width: 120,
+    align: "right",
+    editable: false,
+    valueFormatter: currencyFormatter,
+  },
+  {
+    id: "discountedMonthlyPrice",
+    accessorKey: "discountedMonthlyPrice",
+    header: "İskontolu Aylık Fiyat",
+    width: 150,
+    align: "right",
+    editable: false,
+    cell: (_value, row) => {
+      const price = row.price || 0;
+      const discountRate = row.discountRate || 0;
+      const discountedPrice = price * (1 - discountRate / 100);
+      return currencyFormatter(discountedPrice);
+    },
   },
   {
     id: "grandTotal",

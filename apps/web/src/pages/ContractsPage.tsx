@@ -140,6 +140,10 @@ export function ContractsPage() {
     setIsModalOpen(false);
   }, []);
 
+  const handleContractUpdated = useCallback((updatedContract: Contract) => {
+    setSelectedContract(updatedContract);
+  }, []);
+
   const handleCreateClick = useCallback(() => {
     setIsFormModalOpen(true);
   }, []);
@@ -359,6 +363,7 @@ export function ContractsPage() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           contract={selectedContract}
+          onContractUpdated={handleContractUpdated}
         />
       )}
 

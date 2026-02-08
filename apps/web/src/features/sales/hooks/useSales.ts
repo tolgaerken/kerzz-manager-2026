@@ -39,10 +39,10 @@ export function useSale(id: string) {
   });
 }
 
-export function useSaleStats() {
+export function useSaleStats(params: SaleQueryParams = {}) {
   return useQuery<SaleStats, Error>({
-    queryKey: [QUERY_KEYS.SALE_STATS],
-    queryFn: () => fetchSaleStats(),
+    queryKey: [QUERY_KEYS.SALE_STATS, params],
+    queryFn: () => fetchSaleStats(params),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 15,
   });

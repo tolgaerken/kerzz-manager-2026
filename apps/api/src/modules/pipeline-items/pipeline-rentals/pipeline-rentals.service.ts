@@ -108,4 +108,12 @@ export class PipelineRentalsService {
       .exec();
     return result.deletedCount;
   }
+
+  async aggregateTotal(parentIds: string[]): Promise<number> {
+    const result = await this.model.aggregate([
+      { $match: { parentId: { $in: parentIds }, parentType: "sale" } },
+      { $group: { _id: null, total: { $sum: "$grandTotal" } } },
+    ]);
+    return result[0]?.total || 0;
+  }
 }

@@ -10,6 +10,10 @@ interface LineItemFields {
   discountRate: number;
 }
 
+interface RentalLineItemFields extends LineItemFields {
+  rentPeriod: number;
+}
+
 interface CalculatedFields {
   subTotal: number;
   discountTotal: number;
@@ -41,12 +45,47 @@ export function calculateLineItem(item: LineItemFields): CalculatedFields {
 }
 
 /**
+ * Kiralama kalemi icin ara toplam, indirim, KDV ve genel toplamı hesaplar.
+ * (Aylık fiyat * süre) üzerinden hesaplama yapar.
+ */
+export function calculateRentalItem(item: RentalLineItemFields): CalculatedFields {
+  const qty = item.qty || 0;
+  const price = item.price || 0;
+  const rentPeriod = item.rentPeriod || 1;
+  const vatRate = item.vatRate || 0;
+  const discountRate = item.discountRate || 0;
+
+  const subTotal = qty * price * rentPeriod;
+  const discountTotal = subTotal * (discountRate / 100);
+  const afterDiscount = subTotal - discountTotal;
+  const taxTotal = afterDiscount * (vatRate / 100);
+  const grandTotal = afterDiscount + taxTotal;
+
+  return {
+    subTotal: round2(subTotal),
+    discountTotal: round2(discountTotal),
+    taxTotal: round2(taxTotal),
+    grandTotal: round2(grandTotal),
+  };
+}
+
+/**
  * Bir satır kalemini hesaplanmış alanlarla günceller.
  */
 export function recalculateItem<T extends LineItemFields & Partial<CalculatedFields>>(
   item: T,
 ): T {
   const calc = calculateLineItem(item);
+  return { ...item, ...calc };
+}
+
+/**
+ * Kiralama kalemini hesaplanmış alanlarla günceller.
+ */
+export function recalculateRentalItem<
+  T extends RentalLineItemFields & Partial<CalculatedFields>,
+>(item: T): T {
+  const calc = calculateRentalItem(item);
   return { ...item, ...calc };
 }
 

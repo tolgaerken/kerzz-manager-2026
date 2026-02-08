@@ -6,6 +6,7 @@ import { Sale, SaleSchema } from "./schemas/sale.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { PipelineModule } from "../pipeline";
 import { OffersModule } from "../offers";
+import { PipelineItemsModule } from "../pipeline-items";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OffersModule } from "../offers";
     ),
     PipelineModule,
     OffersModule,
+    PipelineItemsModule,
   ],
   controllers: [SalesController],
   providers: [SalesService],

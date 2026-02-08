@@ -42,6 +42,21 @@ export class Sale {
   totals: Record<string, any>;
 
   @Prop({ type: Number, default: 0 })
+  grandTotal: number;
+
+  @Prop({ type: Number, default: 0 })
+  hardwareTotal: number;
+
+  @Prop({ type: Number, default: 0 })
+  saasTotal: number;
+
+  @Prop({ type: Number, default: 0 })
+  softwareTotal: number;
+
+  @Prop({ type: Number, default: 0 })
+  total: number;
+
+  @Prop({ type: Number, default: 0 })
   usdRate: number;
 
   @Prop({ type: Number, default: 0 })

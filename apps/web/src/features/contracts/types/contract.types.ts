@@ -72,6 +72,10 @@ export interface CreateContractInput {
   noNotification?: boolean;
 }
 
+export interface UpdateContractInput extends CreateContractInput {
+  id: string;
+}
+
 // Contract Detail Types
 export type Currency = "tl" | "usd" | "eur";
 

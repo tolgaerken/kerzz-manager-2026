@@ -122,11 +122,14 @@ export function useGridEditing<TData>({
         typeof col.editable === 'function' ? col.editable(row) : col.editable === true;
       if (!isEditable) return;
 
-      // Enter edit mode on first edit
-      setEditMode(true);
+      // Enter edit mode only when there are pending new rows (batch mode).
+      // Otherwise just open the cell editor inline.
+      if (pendingNewRows.length > 0) {
+        setEditMode(true);
+      }
       setEditingCell({ rowIndex, columnId });
     },
-    [columns, data],
+    [columns, data, pendingNewRows.length],
   );
 
   const stopEditing = useCallback(() => {
@@ -153,22 +156,19 @@ export function useGridEditing<TData>({
       }
 
       // Get old value from original data
+      const accessorKey = col.accessorKey ?? col.id;
       const oldValue = col.accessorFn
         ? col.accessorFn(row)
-        : (row as Record<string, unknown>)[col.accessorKey ?? col.id];
+        : (row as Record<string, unknown>)[accessorKey];
 
-      // Store in pending changes (only if value actually changed)
-      if (oldValue !== newValue) {
-        const key = `${rowIndex}-${columnId}`;
-        const next = new Map(pendingRef.current);
-        next.set(key, { rowIndex, columnId, newValue, oldValue, row });
-        pendingRef.current = next;
-        setPendingChanges(next);
+      // Immediately fire onCellValueChange so the parent updates right away
+      if (oldValue !== newValue && onCellValueChange) {
+        onCellValueChange(row, accessorKey, newValue, oldValue);
       }
 
       setEditingCell(null);
     },
-    [editingCell, data, columns, isPendingRow, updatePendingRowCell],
+    [editingCell, data, columns, isPendingRow, updatePendingRowCell, onCellValueChange],
   );
 
   /**
@@ -207,20 +207,17 @@ export function useGridEditing<TData>({
       }
 
       // Check if this is a pending new row
+      const accessorKey = col.accessorKey ?? col.id;
       if (isPendingRow(row)) {
-        updatePendingRowCell(row, col.accessorKey ?? col.id, newValue);
+        updatePendingRowCell(row, accessorKey, newValue);
       } else {
-        // Save the current value to pending changes
+        // Immediately fire onCellValueChange
         const oldValue = col.accessorFn
           ? col.accessorFn(row)
-          : (row as Record<string, unknown>)[col.accessorKey ?? col.id];
+          : (row as Record<string, unknown>)[accessorKey];
 
-        if (oldValue !== newValue) {
-          const key = `${rowIndex}-${columnId}`;
-          const next = new Map(pendingRef.current);
-          next.set(key, { rowIndex, columnId, newValue, oldValue, row });
-          pendingRef.current = next;
-          setPendingChanges(next);
+        if (oldValue !== newValue && onCellValueChange) {
+          onCellValueChange(row, accessorKey, newValue, oldValue);
         }
       }
 
@@ -247,7 +244,7 @@ export function useGridEditing<TData>({
       // No more editable cells, just close editor
       setEditingCell(null);
     },
-    [editingCell, data, columns, findNextEditableColumnIndex, isPendingRow, updatePendingRowCell],
+    [editingCell, data, columns, findNextEditableColumnIndex, isPendingRow, updatePendingRowCell, onCellValueChange],
   );
 
   /**

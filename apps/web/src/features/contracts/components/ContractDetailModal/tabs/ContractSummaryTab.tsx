@@ -1,11 +1,18 @@
-import { Building2, Calendar, CreditCard, TrendingUp } from "lucide-react";
-import type { Contract } from "../../../types";
+import { useState, useCallback } from "react";
+import { Building2, Calendar, CreditCard, TrendingUp, Pencil } from "lucide-react";
+import type { Contract, UpdateContractInput } from "../../../types";
+import { ContractEditFormModal } from "../../ContractEditFormModal";
+import { useUpdateContract } from "../../../hooks/useUpdateContract";
 
 interface ContractSummaryTabProps {
   contract: Contract;
+  onContractUpdated?: (contract: Contract) => void;
 }
 
-export function ContractSummaryTab({ contract }: ContractSummaryTabProps) {
+export function ContractSummaryTab({ contract, onContractUpdated }: ContractSummaryTabProps) {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const updateMutation = useUpdateContract();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
@@ -18,14 +25,51 @@ export function ContractSummaryTab({ contract }: ContractSummaryTabProps) {
     return new Date(dateStr).toLocaleDateString("tr-TR");
   };
 
+  const handleEditOpen = useCallback(() => {
+    setIsEditOpen(true);
+  }, []);
+
+  const handleEditClose = useCallback(() => {
+    setIsEditOpen(false);
+  }, []);
+
+  const handleEditSubmit = useCallback(
+    (data: UpdateContractInput) => {
+      updateMutation.mutate(data, {
+        onSuccess: (updatedContract) => {
+          onContractUpdated?.(updatedContract);
+          setIsEditOpen(false);
+        }
+      });
+    },
+    [updateMutation, onContractUpdated]
+  );
+
   return (
     <div className="space-y-6 h-full overflow-auto">
+      {updateMutation.isError && (
+        <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error">
+          {updateMutation.error instanceof Error
+            ? updateMutation.error.message
+            : "Kontrat güncellenirken bir hata oluştu"}
+        </div>
+      )}
       {/* Genel Bilgiler */}
       <div className="rounded-lg border border-border bg-surface-elevated p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Building2 className="w-4 h-4" />
-          Genel Bilgiler
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            Genel Bilgiler
+          </h3>
+          <button
+            type="button"
+            onClick={handleEditOpen}
+            className="inline-flex items-center gap-2 rounded-md border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-border hover:bg-surface-elevated"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Düzenle
+          </button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Kontrat No</p>
@@ -144,6 +188,14 @@ export function ContractSummaryTab({ contract }: ContractSummaryTabProps) {
           </p>
         </div>
       )}
+
+      <ContractEditFormModal
+        isOpen={isEditOpen}
+        onClose={handleEditClose}
+        onSubmit={handleEditSubmit}
+        isLoading={updateMutation.isPending}
+        contract={contract}
+      />
     </div>
   );
 }

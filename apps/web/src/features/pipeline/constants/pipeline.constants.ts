@@ -34,6 +34,12 @@ export const PIPELINE_CONSTANTS = {
     { id: "usd", name: "USD" },
     { id: "eur", name: "EUR" },
   ],
+  BILLING_PERIOD_OPTIONS: [
+    { id: "1", name: "Aylık" },
+    { id: "3", name: "3 Aylık" },
+    { id: "6", name: "6 Aylık" },
+    { id: "12", name: "Yıllık" },
+  ],
   LEAD_SOURCES: [
     { id: "web", name: "Web" },
     { id: "phone", name: "Telefon" },

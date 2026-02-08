@@ -49,4 +49,9 @@ export class SaleQueryDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(["daily", "weekly", "monthly", "quarterly", "yearly"])
+  period?: string;
 }

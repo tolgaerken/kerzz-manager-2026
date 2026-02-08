@@ -32,7 +32,7 @@ export function useStateStore({
 
   const createDefaultState = useCallback((): GridState => {
     const defaults = StateManager.createDefault();
-    defaults.columnOrder = columns.map((c) => c.id);
+    defaults.columnOrder = Array.from(new Set(columns.map((c) => c.id)));
     defaults.columnVisibility = Object.fromEntries(
       columns.map((c) => [c.id, c.visible !== false]),
     );

@@ -35,6 +35,7 @@ function buildQueryString(params: SaleQueryParams): string {
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
   if (params.startDate) searchParams.set("startDate", params.startDate);
   if (params.endDate) searchParams.set("endDate", params.endDate);
+  if (params.period) searchParams.set("period", params.period);
 
   return searchParams.toString();
 }
@@ -171,8 +172,11 @@ export async function revertSale(id: string): Promise<Sale> {
   return handleResponse<Sale>(response);
 }
 
-export async function fetchSaleStats(): Promise<SaleStats> {
-  const url = `${API_BASE_URL}${ENDPOINTS.SALES}/stats`;
+export async function fetchSaleStats(
+  params: SaleQueryParams = {}
+): Promise<SaleStats> {
+  const queryString = buildQueryString(params);
+  const url = `${API_BASE_URL}${ENDPOINTS.SALES}/stats${queryString ? `?${queryString}` : ""}`;
 
   const response = await fetch(url, {
     method: "GET",

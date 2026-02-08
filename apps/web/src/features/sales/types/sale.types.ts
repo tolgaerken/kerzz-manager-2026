@@ -1,4 +1,11 @@
-export type SaleStatus = "pending" | "collection-waiting" | "setup-waiting" | "training-waiting" | "active" | "completed" | "cancelled";
+export type SaleStatus =
+  | "pending"
+  | "collection-waiting"
+  | "setup-waiting"
+  | "training-waiting"
+  | "active"
+  | "completed"
+  | "cancelled";
 
 export interface Sale {
   _id: string;
@@ -13,9 +20,14 @@ export interface Sale {
   sellerId: string;
   sellerName: string;
   totals: Record<string, any>;
+  grandTotal?: number;
+  hardwareTotal?: number;
+  saasTotal?: number;
+  softwareTotal?: number;
+  total?: number;
   usdRate: number;
   eurRate: number;
-  status: SaleStatus;
+  status: SaleStatus | string | string[];
   approved: boolean;
   approvedBy: string;
   approvedByName: string;
@@ -42,6 +54,7 @@ export interface SaleQueryParams {
   sortOrder?: "asc" | "desc";
   startDate?: string;
   endDate?: string;
+  period?: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
 }
 
 export interface PaginationMeta {
@@ -67,6 +80,11 @@ export interface SaleStats {
   active: number;
   completed: number;
   cancelled: number;
+  totalSalesAmount?: number;
+  hardwareSalesAmount?: number;
+  licenseSalesAmount?: number;
+  saasSalesAmount?: number;
+  topSales?: Sale[];
 }
 
 export interface CreateSaleInput {
