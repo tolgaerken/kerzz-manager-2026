@@ -3,6 +3,7 @@ import type { GridColumnDef } from '../../types/column.types';
 import type { ActiveFilter } from '../../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { HeaderCell } from '../HeaderCell/HeaderCell';
+import { SelectionHeaderCell } from '../Selection/SelectionHeaderCell';
 
 interface GridHeaderProps<TData> {
   columns: GridColumnDef<TData>[];
@@ -12,6 +13,16 @@ interface GridHeaderProps<TData> {
   filters: Record<string, ActiveFilter>;
   getColumnWidth: (columnId: string, defaultWidth?: number) => number;
   totalWidth: number;
+  /** Whether selection checkbox column is shown */
+  showSelectionCheckbox?: boolean;
+  /** Whether "select all" is enabled */
+  enableSelectAll?: boolean;
+  /** Whether all rows are selected */
+  isAllSelected?: boolean;
+  /** Whether some (but not all) rows are selected */
+  isIndeterminate?: boolean;
+  /** Callback when header checkbox is toggled */
+  onToggleAll?: () => void;
   onSort: (columnId: string) => void;
   onResizeStart: (columnId: string, e: React.MouseEvent | React.TouchEvent) => void;
   onFilterApply: (columnId: string, filter: ActiveFilter) => void;
@@ -33,6 +44,11 @@ function GridHeaderInner<TData>({
   filters,
   getColumnWidth,
   totalWidth,
+  showSelectionCheckbox,
+  enableSelectAll,
+  isAllSelected,
+  isIndeterminate,
+  onToggleAll,
   onSort,
   onResizeStart,
   onFilterApply,
@@ -47,6 +63,17 @@ function GridHeaderInner<TData>({
 }: GridHeaderProps<TData>) {
   return (
     <div className="kz-grid-header" style={{ minWidth: totalWidth }}>
+      {showSelectionCheckbox && (
+        enableSelectAll ? (
+          <SelectionHeaderCell
+            isAllSelected={!!isAllSelected}
+            isIndeterminate={!!isIndeterminate}
+            onToggleAll={onToggleAll ?? (() => {})}
+          />
+        ) : (
+          <div className="kz-header-cell kz-selection-header-cell" />
+        )
+      )}
       {columns.map((col) => (
         <HeaderCell
           key={col.id}

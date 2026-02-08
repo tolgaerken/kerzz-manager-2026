@@ -4,6 +4,7 @@ import type { ActiveFilter } from '../../types/filter.types';
 import type { ToolbarConfig } from '../../types/toolbar.types';
 import type { GridColumnDef } from '../../types/column.types';
 import { useGridInstance } from '../../core/useGridInstance';
+import { useRowSelection } from '../../core/useRowSelection';
 import { useGridEditing } from '../../core/useGridEditing';
 import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
@@ -28,6 +29,11 @@ function GridInner<TData>(
     loading = false,
     stripedRows = false,
     toolbar,
+    selectionMode = 'none',
+    selectionCheckbox,
+    selectedIds,
+    defaultSelectedIds,
+    onSelectionChange,
     onRowClick,
     onRowDoubleClick,
     columns,
@@ -57,6 +63,56 @@ function GridInner<TData>(
     if (pendingNewRows.length === 0) return grid.filteredData;
     return [...grid.filteredData, ...pendingNewRows];
   }, [grid.filteredData, pendingNewRows]);
+
+  const showSelectionCheckbox = useMemo(() => {
+    if (selectionMode === 'none') return false;
+    return selectionCheckbox ?? true;
+  }, [selectionMode, selectionCheckbox]);
+
+  const rowIdMap = useMemo(() => {
+    if (getRowId) return null;
+    const map = new Map<TData, string>();
+    displayData.forEach((row, index) => {
+      map.set(row, String(index));
+    });
+    return map;
+  }, [displayData, getRowId]);
+
+  const getRowIdFn = useCallback(
+    (row: TData) => {
+      if (getRowId) return getRowId(row);
+      const mapped = rowIdMap?.get(row);
+      if (mapped !== undefined) return mapped;
+      const fallbackIndex = displayData.indexOf(row);
+      return fallbackIndex >= 0 ? String(fallbackIndex) : '';
+    },
+    [getRowId, rowIdMap, displayData],
+  );
+
+  const getRowIdForBody = useCallback(
+    (row: TData, index: number) => {
+      if (getRowId) return getRowId(row);
+      return String(index);
+    },
+    [getRowId],
+  );
+
+  const selection = useRowSelection<TData>({
+    data: displayData,
+    getRowId: getRowIdFn,
+    mode: selectionMode,
+    selectedIds,
+    defaultSelectedIds,
+    onSelectionChange,
+  });
+
+  const handleToggleAll = useCallback(() => {
+    if (selection.isAllSelected) {
+      selection.deselectAll();
+      return;
+    }
+    selection.selectAll();
+  }, [selection.isAllSelected, selection.deselectAll, selection.selectAll]);
 
   const editing = useGridEditing<TData>({
     columns: grid.orderedColumns as GridColumnDef<TData>[],
@@ -122,11 +178,11 @@ function GridInner<TData>(
     scrollToRow: (index: number) => {
       grid.rowVirtualizer.scrollToIndex(index, { align: 'center' });
     },
-    getSelectedIds: () => [],
-    selectAll: () => {},
-    deselectAll: () => {},
+    getSelectedIds: () => Array.from(selection.selectedIds),
+    selectAll: () => selection.selectAll(),
+    deselectAll: () => selection.deselectAll(),
     addRow: () => editing.requestAddRow(),
-  }), [grid, editing]);
+  }), [grid, editing, selection]);
 
   // Convert theme to CSS vars
   const cssVars = useMemo(() => themeToCssVars(grid.theme), [grid.theme]);
@@ -245,6 +301,11 @@ function GridInner<TData>(
           filters={grid.filters}
           getColumnWidth={grid.columnResize.getColumnWidth}
           totalWidth={grid.totalWidth}
+          showSelectionCheckbox={showSelectionCheckbox}
+          enableSelectAll={selectionMode === 'multiple'}
+          isAllSelected={selection.isAllSelected}
+          isIndeterminate={selection.isIndeterminate}
+          onToggleAll={handleToggleAll}
           onSort={grid.handleSort}
           onResizeStart={grid.columnResize.handleResizeStart}
           onFilterApply={handleFilterApply}
@@ -272,6 +333,10 @@ function GridInner<TData>(
           scrollContainerRef={grid.scrollContainerRef}
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
+          showSelectionCheckbox={showSelectionCheckbox}
+          isRowSelected={selection.isSelected}
+          getRowId={getRowIdForBody}
+          onSelectionToggle={selection.toggleRow}
           isEditing={editing.isEditing}
           editMode={editing.editMode}
           hasPendingChange={editing.hasPendingChange}
@@ -297,6 +362,7 @@ function GridInner<TData>(
           aggregation={grid.footerAggregation}
           getColumnWidth={grid.columnResize.getColumnWidth}
           totalWidth={grid.totalWidth}
+          showSelectionCheckbox={showSelectionCheckbox}
         />
       </div>
 
