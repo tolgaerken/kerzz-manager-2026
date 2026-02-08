@@ -1,0 +1,112 @@
+{
+  "common": {
+    "loading": "Loading",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "actions": "Actions",
+    "search": "Search",
+    "filter": "Filter",
+    "view": "View",
+    "back": "Back",
+    "refresh": "Refresh",
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "error": "An error occurred",
+    "rowsPerPage": "Rows per page",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "language": "Language",
+    "profile": "Profile",
+    "logout": "Logout",
+    "settings": "Settings"
+  },
+  "theme": {
+    "dark": "Dark Mode",
+    "light": "Light Mode",
+    "toggle": "Toggle Theme",
+    "presets": {
+      "title": "Choose Theme",
+      "subtitle": "Select a color theme for your application",
+      "kerzzRed": {
+        "name": "Kerzz Red",
+        "description": "Classic Kerzz theme with warm red tones"
+      },
+      "oceanBlue": {
+        "name": "Ocean Blue",
+        "description": "Calm and professional blue tones"
+      },
+      "forestGreen": {
+        "name": "Forest Green",
+        "description": "Natural and peaceful green tones"
+      },
+      "sunsetOrange": {
+        "name": "Sunset Orange",
+        "description": "Energetic and warm orange tones"
+      },
+      "midnightPurple": {
+        "name": "Midnight Purple",
+        "description": "Mysterious and luxurious purple tones"
+      },
+      "anthraciteGray": {
+        "name": "Anthracite Gray",
+        "description": "Simple and minimalist gray tones"
+      }
+    },
+    "colorPreview": {
+      "primaryScale": "Primary Color Scale",
+      "darkMode": "Dark Mode",
+      "lightMode": "Light Mode",
+      "gradients": {
+        "title": "Gradients",
+        "primary": "Primary",
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "evening": "Evening",
+        "dark": "Dark"
+      },
+      "chart": {
+        "title": "Chart Colors",
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "accent": "Accent"
+      },
+      "semantic": {
+        "title": "Semantic Colors",
+        "success": "Success",
+        "warning": "Warning",
+        "error": "Error",
+        "info": "Info"
+      }
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "network": "Connection error",
+    "unauthorized": "Unauthorized access",
+    "notFound": "Not found",
+    "validation": "Validation error"
+  },
+  "roles": {
+    "owner": "Owner",
+    "manager": "Manager",
+    "staff": "Staff",
+    "admin": "Admin"
+  }
+}
+
+
+
+
+

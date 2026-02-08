@@ -10,6 +10,8 @@ export const en: GridLocale = {
   filterNotContains: 'Does not contain',
   filterGreaterThan: 'Greater than',
   filterLessThan: 'Less than',
+  filterGreaterThanOrEqual: 'Greater than or equal',
+  filterLessThanOrEqual: 'Less than or equal',
   filterBetween: 'Between',
   filterNotEqual: 'Not equal',
   filterBefore: 'Before',
@@ -27,6 +29,7 @@ export const en: GridLocale = {
   filterOk: 'OK',
   filterCancel: 'Cancel',
   filterClose: 'Close',
+  filterInvalidNumber: 'Invalid number',
   filterMonths: 'January,February,March,April,May,June,July,August,September,October,November,December',
 
   // Sort

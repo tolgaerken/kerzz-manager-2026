@@ -12,6 +12,8 @@ export type NumberFilterCondition =
   | 'notEqual'
   | 'greaterThan'
   | 'lessThan'
+  | 'greaterThanOrEqual'
+  | 'lessThanOrEqual'
   | 'between';
 
 export type DateFilterCondition =
@@ -49,7 +51,21 @@ export interface DateTreeFilterConfig {
   showBlanks?: boolean;
 }
 
-export type ColumnFilterConfig = DropdownFilterConfig | InputFilterConfig | DateTreeFilterConfig;
+export interface NumericFilterConfig {
+  type: 'numeric';
+  /** Available conditions for this filter */
+  conditions?: NumberFilterCondition[];
+  /** Debounce delay in ms (default: 300) */
+  debounceMs?: number;
+  /** Step value for number input */
+  step?: number;
+  /** Minimum allowed value */
+  min?: number;
+  /** Maximum allowed value */
+  max?: number;
+}
+
+export type ColumnFilterConfig = DropdownFilterConfig | InputFilterConfig | DateTreeFilterConfig | NumericFilterConfig;
 
 export interface ActiveDropdownFilter {
   type: 'dropdown';
@@ -71,7 +87,14 @@ export interface ActiveDateTreeFilter {
   showBlanks: boolean;
 }
 
-export type ActiveFilter = ActiveDropdownFilter | ActiveInputFilter | ActiveDateTreeFilter;
+export interface ActiveNumericFilter {
+  type: 'numeric';
+  condition: NumberFilterCondition;
+  value: string;
+  valueTo?: string; // For 'between' condition
+}
+
+export type ActiveFilter = ActiveDropdownFilter | ActiveInputFilter | ActiveDateTreeFilter | ActiveNumericFilter;
 
 export interface FilterState {
   [columnId: string]: ActiveFilter;

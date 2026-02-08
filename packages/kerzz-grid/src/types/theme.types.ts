@@ -41,6 +41,8 @@ export interface GridThemeColors {
   resizeHandle?: string;
   /** Focus ring color */
   focusRing?: string;
+  /** Error color */
+  error?: string;
 }
 
 export interface GridThemeFontSize {

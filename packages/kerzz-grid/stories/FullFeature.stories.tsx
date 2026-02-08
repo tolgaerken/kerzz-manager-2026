@@ -97,7 +97,10 @@ const columns: GridColumnDef<Customer>[] = [
     align: 'right',
     sortable: true,
     cell: (v) => `₺${Number(v).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`,
-    filter: { type: 'input', conditions: ['greaterThan', 'lessThan', 'between', 'equals'] },
+    filter: { 
+      type: 'numeric',
+      conditions: ['greaterThan', 'lessThan', 'greaterThanOrEqual', 'lessThanOrEqual', 'between', 'equals']
+    },
     footer: { aggregate: 'sum', format: (v) => `₺${v.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` },
   },
   {
@@ -107,6 +110,10 @@ const columns: GridColumnDef<Customer>[] = [
     width: 90,
     align: 'right',
     sortable: true,
+    filter: { 
+      type: 'numeric',
+      conditions: ['equals', 'greaterThan', 'lessThan', 'greaterThanOrEqual', 'lessThanOrEqual']
+    },
     footer: { aggregate: 'avg', format: (v) => v.toFixed(1) },
   },
   {
@@ -154,7 +161,7 @@ export const AllFeatures: Story = {
     <div>
       <h3 style={{ marginBottom: 8, fontSize: 16 }}>Müşteri Yönetimi - Tüm Özellikler</h3>
       <p style={{ marginBottom: 12, fontSize: 13, color: '#666' }}>
-        Toolbar, Excel/PDF export, custom butonlar, sıralama, dropdown/input/dateTree filter, kolon taşıma, boyutlandırma, gizle/göster, footer aggregation
+        Toolbar, Excel/PDF export, custom butonlar, sıralama, dropdown/input/dateTree/numeric filter, kolon taşıma, boyutlandırma, gizle/göster, footer aggregation
       </p>
       <Grid<Customer>
         data={data}

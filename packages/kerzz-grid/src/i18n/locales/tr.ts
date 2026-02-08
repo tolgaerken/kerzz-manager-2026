@@ -10,6 +10,8 @@ export const tr: GridLocale = {
   filterNotContains: 'İçermez',
   filterGreaterThan: 'Büyüktür',
   filterLessThan: 'Küçüktür',
+  filterGreaterThanOrEqual: 'Büyük eşit',
+  filterLessThanOrEqual: 'Küçük eşit',
   filterBetween: 'Arasında',
   filterNotEqual: 'Eşit değildir',
   filterBefore: 'Önce',
@@ -27,6 +29,7 @@ export const tr: GridLocale = {
   filterOk: 'Tamam',
   filterCancel: 'İptal',
   filterClose: 'Kapat',
+  filterInvalidNumber: 'Geçersiz sayı',
   filterMonths: 'Ocak,Şubat,Mart,Nisan,Mayıs,Haziran,Temmuz,Ağustos,Eylül,Ekim,Kasım,Aralık',
 
   // Sort

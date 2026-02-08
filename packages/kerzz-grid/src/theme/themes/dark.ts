@@ -23,6 +23,7 @@ export const darkTheme: ResolvedGridTheme = {
     filterActive: '#60a5fa',
     resizeHandle: '#64748b',
     focusRing: '#60a5fa',
+    error: '#f87171',
   },
   fontSize: {
     header: '13px',

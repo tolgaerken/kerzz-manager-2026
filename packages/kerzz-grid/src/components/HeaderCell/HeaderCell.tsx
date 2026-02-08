@@ -1,12 +1,13 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
-import type { ActiveFilter, ActiveDropdownFilter, ActiveInputFilter, ActiveDateTreeFilter, DropdownFilterConfig, InputFilterConfig, DateTreeFilterConfig } from '../../types/filter.types';
+import type { ActiveFilter, ActiveDropdownFilter, ActiveInputFilter, ActiveDateTreeFilter, ActiveNumericFilter, DropdownFilterConfig, InputFilterConfig, DateTreeFilterConfig, NumericFilterConfig } from '../../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { SortIndicator } from './SortIndicator';
 import { ResizeHandle } from './ResizeHandle';
 import { FilterDropdown } from '../Filter/FilterDropdown';
 import { FilterInput } from '../Filter/FilterInput';
 import { FilterDateTree } from '../Filter/FilterDateTree';
+import { FilterNumeric } from '../Filter/FilterNumeric';
 import { Portal } from '../Portal/Portal';
 import { usePopoverPosition } from '../../core/usePopoverPosition';
 import { useGridTheme } from '../../theme/ThemeProvider';
@@ -229,6 +230,32 @@ function HeaderCellInner<TData>({
               data={data}
               filterConfig={column.filter as DateTreeFilterConfig}
               activeFilter={activeFilter?.type === 'dateTree' ? activeFilter as ActiveDateTreeFilter : undefined}
+              onApply={handleFilterApply}
+              onClear={handleFilterClear}
+              onClose={() => setFilterOpen(false)}
+            />
+          </div>
+        </Portal>
+      )}
+
+      {filterOpen && column.filter?.type === 'numeric' && (
+        <Portal>
+          <div
+            ref={popoverRef}
+            className="kz-grid"
+            style={{
+              ...cssVars,
+              position: 'fixed',
+              top: popoverPos.top,
+              left: popoverPos.left,
+              zIndex: 99999,
+              border: 'none',
+              background: 'transparent',
+            }}
+          >
+            <FilterNumeric
+              filterConfig={column.filter as NumericFilterConfig}
+              activeFilter={activeFilter?.type === 'numeric' ? activeFilter as ActiveNumericFilter : undefined}
               onApply={handleFilterApply}
               onClear={handleFilterClear}
               onClose={() => setFilterOpen(false)}

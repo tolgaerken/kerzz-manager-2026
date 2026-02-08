@@ -1,0 +1,86 @@
+{
+  "common": {
+    "loading": "Chargement",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "actions": "Actions",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "view": "Voir",
+    "back": "Retour",
+    "refresh": "Actualiser",
+    "all": "Tous",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "error": "Une erreur est survenue",
+    "rowsPerPage": "Lignes par page",
+    "close": "Fermer",
+    "yes": "Oui",
+    "no": "Non",
+    "confirm": "Confirmer",
+    "language": "Langue",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "settings": "Paramètres"
+  },
+  "theme": {
+    "dark": "Mode sombre",
+    "light": "Mode clair",
+    "toggle": "Changer de thème",
+    "presets": {
+      "title": "Choisir le thème",
+      "subtitle": "Sélectionnez un thème de couleur pour votre application",
+      "kerzzRed": {
+        "name": "Rouge Kerzz",
+        "description": "Thème classique Kerzz avec des tons rouges chaleureux"
+      },
+      "oceanBlue": {
+        "name": "Bleu Océan",
+        "description": "Tons bleus calmes et professionnels"
+      },
+      "forestGreen": {
+        "name": "Vert Forêt",
+        "description": "Tons verts naturels et paisibles"
+      },
+      "sunsetOrange": {
+        "name": "Orange Coucher de Soleil",
+        "description": "Tons orange énergiques et chaleureux"
+      },
+      "midnightPurple": {
+        "name": "Violet Minuit",
+        "description": "Tons violets mystérieux et luxueux"
+      },
+      "anthraciteGray": {
+        "name": "Gris Anthracite",
+        "description": "Tons gris simples et minimalistes"
+      }
+    }
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "email": "E-mail",
+    "password": "Mot de passe"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue",
+    "network": "Erreur de connexion",
+    "unauthorized": "Accès non autorisé",
+    "notFound": "Non trouvé",
+    "validation": "Erreur de validation"
+  },
+  "roles": {
+    "owner": "Propriétaire",
+    "manager": "Gérant",
+    "staff": "Personnel",
+    "admin": "Admin"
+  }
+}
+
+
+
+
+

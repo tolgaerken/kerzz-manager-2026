@@ -1,0 +1,63 @@
+{
+  "name": "@kerzz/ui-theme",
+  "version": "0.1.35",
+  "description": "Kerzz Cloud ortak tema, stil ve i18n paketi",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./tokens": {
+      "types": "./dist/tokens.d.ts",
+      "import": "./dist/tokens.mjs",
+      "require": "./dist/tokens.js"
+    },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "import": "./dist/presets.mjs",
+      "require": "./dist/presets.js"
+    },
+    "./css/base.css": "./src/css/base.css",
+    "./tailwind": {
+      "types": "./dist/tailwind/preset.d.ts",
+      "import": "./dist/tailwind/preset.mjs",
+      "require": "./dist/tailwind/preset.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/css"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@mui/material": ">=5.0.0",
+    "@emotion/react": ">=11.0.0",
+    "@emotion/styled": ">=11.0.0",
+    "i18next": ">=23.0.0",
+    "react-i18next": ">=13.0.0",
+    "zustand": ">=4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/x-date-pickers": "^6.0.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "dayjs": "^1.11.0",
+    "i18next": "^23.0.0",
+    "react": "^18.2.0",
+    "react-i18next": "^13.0.0",
+    "zustand": "^4.4.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

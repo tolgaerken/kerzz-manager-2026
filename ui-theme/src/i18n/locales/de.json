@@ -1,0 +1,86 @@
+{
+  "common": {
+    "loading": "Laden",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "actions": "Aktionen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "view": "Ansehen",
+    "back": "Zurück",
+    "refresh": "Aktualisieren",
+    "all": "Alle",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "error": "Ein Fehler ist aufgetreten",
+    "rowsPerPage": "Zeilen pro Seite",
+    "close": "Schließen",
+    "yes": "Ja",
+    "no": "Nein",
+    "confirm": "Bestätigen",
+    "language": "Sprache",
+    "profile": "Profil",
+    "logout": "Abmelden",
+    "settings": "Einstellungen"
+  },
+  "theme": {
+    "dark": "Dunkler Modus",
+    "light": "Heller Modus",
+    "toggle": "Thema wechseln",
+    "presets": {
+      "title": "Thema wählen",
+      "subtitle": "Wählen Sie ein Farbthema für Ihre Anwendung",
+      "kerzzRed": {
+        "name": "Kerzz Rot",
+        "description": "Klassisches Kerzz-Thema mit warmen Rottönen"
+      },
+      "oceanBlue": {
+        "name": "Ozeanblau",
+        "description": "Ruhige und professionelle Blautöne"
+      },
+      "forestGreen": {
+        "name": "Waldgrün",
+        "description": "Natürliche und friedliche Grüntöne"
+      },
+      "sunsetOrange": {
+        "name": "Sonnenuntergang Orange",
+        "description": "Energische und warme Orangetöne"
+      },
+      "midnightPurple": {
+        "name": "Mitternachtslila",
+        "description": "Mysteriöse und luxuriöse Lilatöne"
+      },
+      "anthraciteGray": {
+        "name": "Anthrazitgrau",
+        "description": "Einfache und minimalistische Grautöne"
+      }
+    }
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort"
+  },
+  "errors": {
+    "generic": "Ein Fehler ist aufgetreten",
+    "network": "Verbindungsfehler",
+    "unauthorized": "Unbefugter Zugriff",
+    "notFound": "Nicht gefunden",
+    "validation": "Validierungsfehler"
+  },
+  "roles": {
+    "owner": "Eigentümer",
+    "manager": "Manager",
+    "staff": "Mitarbeiter",
+    "admin": "Admin"
+  }
+}
+
+
+
+
+

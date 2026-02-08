@@ -19,6 +19,7 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isPausedRef = useRef(false);
   const progressRef = useRef<BatchCollectProgress | null>(null);
+  const processNextItemRef = useRef<(progress: BatchCollectProgress) => Promise<void>>();
 
   // Ref'i state ile senkronize tut
   useEffect(() => {
@@ -162,11 +163,18 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         });
       }
 
-      // Sonraki item'a geç (setProgress dışında, setTimeout yok)
-      await processNextItem(newProgress);
+      // Sonraki item'a geç - ref üzerinden çağır (stale closure önlemi)
+      if (processNextItemRef.current) {
+        await processNextItemRef.current(newProgress);
+      }
     },
     [queryClient]
   );
+
+  // processNextItem ref'ini güncelle
+  useEffect(() => {
+    processNextItemRef.current = processNextItem;
+  }, [processNextItem]);
 
   const startBatchCollect = useCallback(
     (invoices: Invoice[]) => {

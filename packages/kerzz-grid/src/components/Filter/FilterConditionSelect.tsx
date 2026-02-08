@@ -16,6 +16,8 @@ const conditionLocaleMap: Record<FilterCondition, string> = {
   notContains: 'filterNotContains',
   greaterThan: 'filterGreaterThan',
   lessThan: 'filterLessThan',
+  greaterThanOrEqual: 'filterGreaterThanOrEqual',
+  lessThanOrEqual: 'filterLessThanOrEqual',
   between: 'filterBetween',
   notEqual: 'filterNotEqual',
   before: 'filterBefore',

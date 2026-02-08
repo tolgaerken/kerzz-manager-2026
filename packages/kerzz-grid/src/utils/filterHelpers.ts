@@ -20,6 +20,9 @@ export function matchesFilter(
   if (filter.type === 'dateTree') {
     return matchesDateTreeFilter(cellValue, filter);
   }
+  if (filter.type === 'numeric') {
+    return matchesNumericFilter(cellValue, filter);
+  }
   return matchesInputFilter(cellValue, filter);
 }
 
@@ -43,6 +46,20 @@ function matchesInputFilter(
   const { condition, value, valueTo } = filter;
 
   if (!value && condition !== 'today' && condition !== 'thisWeek' && condition !== 'blank' && condition !== 'notBlank') {
+    return true; // No filter value, pass everything
+  }
+
+  return applyCondition(cellValue, condition, value, valueTo);
+}
+
+function matchesNumericFilter(
+  cellValue: unknown,
+  filter: ActiveFilter,
+): boolean {
+  if (filter.type !== 'numeric') return false;
+  const { condition, value, valueTo } = filter;
+
+  if (!value) {
     return true; // No filter value, pass everything
   }
 
@@ -80,6 +97,16 @@ function applyCondition(
       const numCell = Number(cellValue);
       const numFilter = Number(filterValue);
       return !isNaN(numCell) && !isNaN(numFilter) && numCell < numFilter;
+    }
+    case 'greaterThanOrEqual': {
+      const numCell = Number(cellValue);
+      const numFilter = Number(filterValue);
+      return !isNaN(numCell) && !isNaN(numFilter) && numCell >= numFilter;
+    }
+    case 'lessThanOrEqual': {
+      const numCell = Number(cellValue);
+      const numFilter = Number(filterValue);
+      return !isNaN(numCell) && !isNaN(numFilter) && numCell <= numFilter;
     }
     case 'between': {
       const numCell = Number(cellValue);
@@ -270,7 +297,8 @@ export function getFilterSummary(filter: ActiveFilter, locale: GridLocale): stri
       }
       return `${count} ${locale.filterSelected}`;
     }
-    case 'input': {
+    case 'input':
+    case 'numeric': {
       const conditionLabel = getConditionLabel(filter.condition, locale);
       if (filter.condition === 'between' && filter.valueTo) {
         return `${conditionLabel}: ${filter.value} - ${filter.valueTo}`;
@@ -301,6 +329,8 @@ function getConditionLabel(condition: FilterCondition, locale: GridLocale): stri
     notContains: locale.filterNotContains,
     greaterThan: locale.filterGreaterThan,
     lessThan: locale.filterLessThan,
+    greaterThanOrEqual: locale.filterGreaterThanOrEqual,
+    lessThanOrEqual: locale.filterLessThanOrEqual,
     between: locale.filterBetween,
     notEqual: locale.filterNotEqual,
     before: locale.filterBefore,

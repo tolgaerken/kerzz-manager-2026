@@ -1,0 +1,86 @@
+{
+  "common": {
+    "loading": "جاري التحميل",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "actions": "الإجراءات",
+    "search": "بحث",
+    "filter": "تصفية",
+    "view": "عرض",
+    "back": "رجوع",
+    "refresh": "تحديث",
+    "all": "الكل",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "error": "حدث خطأ",
+    "rowsPerPage": "الصفوف في الصفحة",
+    "close": "إغلاق",
+    "yes": "نعم",
+    "no": "لا",
+    "confirm": "تأكيد",
+    "language": "اللغة",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج",
+    "settings": "الإعدادات"
+  },
+  "theme": {
+    "dark": "الوضع الداكن",
+    "light": "الوضع الفاتح",
+    "toggle": "تبديل السمة",
+    "presets": {
+      "title": "اختر السمة",
+      "subtitle": "اختر سمة لونية لتطبيقك",
+      "kerzzRed": {
+        "name": "أحمر كيرز",
+        "description": "سمة كيرز الكلاسيكية بدرجات الأحمر الدافئة"
+      },
+      "oceanBlue": {
+        "name": "أزرق المحيط",
+        "description": "درجات الأزرق الهادئة والمهنية"
+      },
+      "forestGreen": {
+        "name": "أخضر الغابة",
+        "description": "درجات الأخضر الطبيعية والهادئة"
+      },
+      "sunsetOrange": {
+        "name": "برتقالي الغروب",
+        "description": "درجات البرتقالي الحيوية والدافئة"
+      },
+      "midnightPurple": {
+        "name": "بنفسجي منتصف الليل",
+        "description": "درجات البنفسجي الغامضة والفاخرة"
+      },
+      "anthraciteGray": {
+        "name": "رمادي أنثراسيت",
+        "description": "درجات الرمادي البسيطة والأنيقة"
+      }
+    }
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور"
+  },
+  "errors": {
+    "generic": "حدث خطأ",
+    "network": "خطأ في الاتصال",
+    "unauthorized": "وصول غير مصرح",
+    "notFound": "غير موجود",
+    "validation": "خطأ في التحقق"
+  },
+  "roles": {
+    "owner": "المالك",
+    "manager": "المدير",
+    "staff": "الموظفين",
+    "admin": "المشرف"
+  }
+}
+
+
+
+
+

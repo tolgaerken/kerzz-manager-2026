@@ -8,6 +8,8 @@ export interface GridLocale {
   filterNotContains: string;
   filterGreaterThan: string;
   filterLessThan: string;
+  filterGreaterThanOrEqual: string;
+  filterLessThanOrEqual: string;
   filterBetween: string;
   filterNotEqual: string;
   filterBefore: string;
@@ -25,6 +27,7 @@ export interface GridLocale {
   filterOk: string;
   filterCancel: string;
   filterClose: string;
+  filterInvalidNumber: string;
   /** Comma-separated month names (January,...,December) */
   filterMonths: string;
 

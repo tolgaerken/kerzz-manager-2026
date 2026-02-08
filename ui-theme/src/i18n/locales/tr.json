@@ -1,0 +1,112 @@
+{
+  "common": {
+    "loading": "Yükleniyor",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "create": "Oluştur",
+    "actions": "İşlemler",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "view": "Görüntüle",
+    "back": "Geri",
+    "refresh": "Yenile",
+    "all": "Tümü",
+    "active": "Aktif",
+    "inactive": "Pasif",
+    "error": "Bir hata oluştu",
+    "rowsPerPage": "Sayfa başına satır",
+    "close": "Kapat",
+    "yes": "Evet",
+    "no": "Hayır",
+    "confirm": "Onayla",
+    "language": "Dil",
+    "profile": "Profil",
+    "logout": "Çıkış Yap",
+    "settings": "Ayarlar"
+  },
+  "theme": {
+    "dark": "Karanlık Mod",
+    "light": "Aydınlık Mod",
+    "toggle": "Tema Değiştir",
+    "presets": {
+      "title": "Tema Seç",
+      "subtitle": "Uygulamanız için bir renk teması seçin",
+      "kerzzRed": {
+        "name": "Kerzz Kırmızı",
+        "description": "Klasik Kerzz teması, sıcak kırmızı tonları"
+      },
+      "oceanBlue": {
+        "name": "Okyanus Mavisi",
+        "description": "Sakin ve profesyonel mavi tonları"
+      },
+      "forestGreen": {
+        "name": "Orman Yeşili",
+        "description": "Doğal ve huzurlu yeşil tonları"
+      },
+      "sunsetOrange": {
+        "name": "Gün Batımı Turuncu",
+        "description": "Enerjik ve sıcak turuncu tonları"
+      },
+      "midnightPurple": {
+        "name": "Gece Moru",
+        "description": "Gizemli ve lüks mor tonları"
+      },
+      "anthraciteGray": {
+        "name": "Antrasit Gri",
+        "description": "Sade ve minimalist gri tonları"
+      }
+    },
+    "colorPreview": {
+      "primaryScale": "Primary Renk Skalası",
+      "darkMode": "Karanlık Mod",
+      "lightMode": "Aydınlık Mod",
+      "gradients": {
+        "title": "Gradientler",
+        "primary": "Primary",
+        "morning": "Sabah",
+        "afternoon": "Öğleden Sonra",
+        "evening": "Akşam",
+        "dark": "Karanlık"
+      },
+      "chart": {
+        "title": "Chart Renkleri",
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "accent": "Accent"
+      },
+      "semantic": {
+        "title": "Semantic Renkler",
+        "success": "Success",
+        "warning": "Warning",
+        "error": "Error",
+        "info": "Info"
+      }
+    }
+  },
+  "auth": {
+    "login": "Giriş Yap",
+    "logout": "Çıkış Yap",
+    "email": "E-posta",
+    "password": "Şifre"
+  },
+  "errors": {
+    "generic": "Bir hata oluştu",
+    "network": "Bağlantı hatası",
+    "unauthorized": "Yetkisiz erişim",
+    "notFound": "Bulunamadı",
+    "validation": "Doğrulama hatası"
+  },
+  "roles": {
+    "owner": "Sahip",
+    "manager": "Yönetici",
+    "staff": "Personel",
+    "admin": "Admin"
+  }
+}
+
+
+
+
+

@@ -1,0 +1,156 @@
+/**
+ * Kerzz Cloud Base CSS
+ * Ortak CSS değişkenleri, scrollbar stilleri, utility class'ları
+ */
+
+:root {
+  --primary: #ef5343;
+  --primary-dark: #dc3525;
+  --bg-light: #f8fafc;
+  --bg-dark: #0f172a;
+  --card-light: #ffffff;
+  --card-dark: #1e293b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+  height: 100dvh;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+body {
+  font-family: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  height: 100dvh;
+}
+
+#root {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* iOS Safari bouncing engellemek için */
+@supports (-webkit-touch-callout: none) {
+  html, body, #root {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Light mode */
+body {
+  background-color: var(--bg-light);
+  color: #1e293b;
+}
+
+/* Dark mode */
+body.dark {
+  background-color: var(--bg-dark);
+  color: #f1f5f9;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .glass {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .dark .glass {
+    background: rgba(30, 41, 59, 0.8);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #ef5343 0%, #dc3525 100%);
+  }
+
+  .gradient-dark {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+

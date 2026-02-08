@@ -50,6 +50,7 @@ export function themeToCssVars(theme: {
     filterActive: '--kz-filter-active',
     resizeHandle: '--kz-resize-handle',
     focusRing: '--kz-focus-ring',
+    error: '--kz-error',
   };
 
   for (const [key, cssVar] of Object.entries(colorMap)) {
