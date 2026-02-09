@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
+import type { ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
 import { leadColumnDefs } from "./columnDefs";
 import type { Lead } from "../../types/lead.types";
 
@@ -8,6 +9,7 @@ interface LeadsGridProps {
   loading: boolean;
   onSortChange?: (field: string, order: "asc" | "desc") => void;
   onRowDoubleClick?: (lead: Lead) => void;
+  toolbarButtons?: ToolbarButtonConfig[];
 }
 
 export function LeadsGrid({
@@ -15,6 +17,7 @@ export function LeadsGrid({
   loading,
   onSortChange,
   onRowDoubleClick,
+  toolbarButtons,
 }: LeadsGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
@@ -56,6 +59,16 @@ export function LeadsGrid({
     [onSortChange],
   );
 
+  const toolbarConfig: ToolbarConfig<Lead> = useMemo(
+    () => ({
+      showSearch: true,
+      showColumnVisibility: true,
+      showExcelExport: true,
+      customButtons: toolbarButtons,
+    }),
+    [toolbarButtons]
+  );
+
   const columns = leadColumnDefs.map((col) => ({
     ...col,
     cellClassName: (_value: unknown, row: Lead) => {
@@ -82,11 +95,7 @@ export function LeadsGrid({
         onRowDoubleClick={handleRowDoubleClick}
         onSortChange={handleSortChange}
         stripedRows
-        toolbar={{
-          search: true,
-          columnVisibility: true,
-          excelExport: true,
-        }}
+        toolbar={toolbarConfig}
         stateKey="leads-grid"
         stateStorage="localStorage"
       />

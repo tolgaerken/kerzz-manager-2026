@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Users, Plus, RefreshCw, ArrowRightCircle, CalendarDays } from "lucide-react";
+import { Plus, RefreshCw, CalendarDays } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useLeads,
@@ -82,18 +82,18 @@ export function LeadsPage() {
 
   const toolbarButtons: ToolbarButtonConfig[] = [
     {
-      key: "add",
+      id: "add",
       label: "Yeni Lead",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+      icon: <Plus size={14} />,
       onClick: () => {
         setEditingLead(null);
         setIsFormOpen(true);
       },
     },
     {
-      key: "refresh",
+      id: "refresh",
       label: "Yenile",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`,
+      icon: <RefreshCw size={14} />,
       onClick: () => refetch(),
     },
   ];
