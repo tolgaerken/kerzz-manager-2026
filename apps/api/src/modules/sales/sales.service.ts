@@ -145,13 +145,26 @@ export class SalesService {
 
   async update(id: string, dto: UpdateSaleDto): Promise<SaleResponseDto> {
     const { products, licenses, rentals, payments, ...saleData } = dto;
+    const existing = await this.saleModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+
+    const updateOps: Record<string, any> = { $set: saleData };
+    const nextStatus = saleData.status;
+
+    if (nextStatus && nextStatus !== existing.status) {
+      updateOps.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          existing,
+          nextStatus,
+          saleData.sellerName || saleData.sellerId || ""
+        ),
+      };
+    }
 
     const sale = await this.saleModel
-      .findByIdAndUpdate(id, saleData, { new: true })
+      .findByIdAndUpdate(id, updateOps, { new: true })
       .lean()
       .exec();
-
-    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
 
     if (
       products !== undefined ||
@@ -448,8 +461,29 @@ export class SalesService {
       labels: sale.labels || [],
       notes: sale.notes || "",
       internalFirm: sale.internalFirm || "",
+      stageHistory: sale.stageHistory || [],
       createdAt: sale.createdAt,
       updatedAt: sale.updatedAt,
+    };
+  }
+
+  private buildStageHistoryEntry(
+    sale: any,
+    toStatus: string,
+    changedBy: string
+  ) {
+    const now = new Date();
+    const lastChangedAt = sale.stageHistory?.length
+      ? sale.stageHistory[sale.stageHistory.length - 1]?.changedAt
+      : sale.createdAt || sale.updatedAt || now;
+    const durationInStage =
+      now.getTime() - new Date(lastChangedAt).getTime();
+    return {
+      fromStatus: sale.status || "",
+      toStatus,
+      changedBy,
+      changedAt: now,
+      durationInStage: Math.max(durationInStage, 0),
     };
   }
 

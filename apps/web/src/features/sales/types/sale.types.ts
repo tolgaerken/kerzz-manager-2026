@@ -35,6 +35,13 @@ export interface Sale {
   labels: string[];
   notes: string;
   internalFirm: string;
+  stageHistory?: {
+    fromStatus: SaleStatus;
+    toStatus: SaleStatus;
+    changedBy?: string;
+    changedAt: string;
+    durationInStage: number;
+  }[];
   products?: any[];
   licenses?: any[];
   rentals?: any[];

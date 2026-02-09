@@ -120,10 +120,26 @@ export class LeadsService {
   }
 
   async update(id: string, dto: UpdateLeadDto): Promise<LeadResponseDto> {
+    const existing = await this.leadModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Lead bulunamadı: ${id}`);
+
+    const updateOps: Record<string, any> = { $set: dto };
+    const nextStatus = dto.status;
+
+    if (nextStatus && nextStatus !== existing.status) {
+      const historyEntry = this.buildStageHistoryEntry(
+        existing,
+        nextStatus,
+        dto.assignedUserName || dto.assignedUserId || ""
+      );
+      updateOps.$push = { stageHistory: historyEntry };
+    }
+
     const lead = await this.leadModel
-      .findByIdAndUpdate(id, dto, { new: true })
+      .findByIdAndUpdate(id, updateOps, { new: true })
       .lean()
       .exec();
+
     if (!lead) throw new NotFoundException(`Lead bulunamadı: ${id}`);
     return this.mapToResponse(lead);
   }
@@ -156,16 +172,61 @@ export class LeadsService {
   }
 
   async getStats(): Promise<LeadStatsDto> {
-    const pipeline = await this.leadModel
-      .aggregate([
-        {
-          $group: {
-            _id: "$status",
-            count: { $sum: 1 },
+    const openStatuses = ["new", "contacted", "qualified"];
+    const weightedStatuses = ["new", "contacted", "qualified"];
+
+    const [pipeline, openValueResult, weightedValueResult] = await Promise.all([
+      this.leadModel
+        .aggregate([
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+            },
           },
-        },
-      ])
-      .exec();
+        ])
+        .exec(),
+      this.leadModel
+        .aggregate([
+          { $match: { status: { $in: openStatuses } } },
+          {
+            $group: {
+              _id: null,
+              openValue: { $sum: { $ifNull: ["$estimatedValue", 0] } },
+            },
+          },
+        ])
+        .exec(),
+      this.leadModel
+        .aggregate([
+          { $match: { status: { $in: weightedStatuses } } },
+          {
+            $addFields: {
+              weight: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ["$status", "new"] }, then: 0.1 },
+                    { case: { $eq: ["$status", "contacted"] }, then: 0.2 },
+                    { case: { $eq: ["$status", "qualified"] }, then: 0.4 },
+                  ],
+                  default: 0,
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              weightedValue: {
+                $sum: {
+                  $multiply: [{ $ifNull: ["$estimatedValue", 0] }, "$weight"],
+                },
+              },
+            },
+          },
+        ])
+        .exec(),
+    ]);
 
     const stats: LeadStatsDto = {
       total: 0,
@@ -175,6 +236,8 @@ export class LeadsService {
       unqualified: 0,
       converted: 0,
       lost: 0,
+      openValue: 0,
+      weightedValue: 0,
     };
 
     for (const item of pipeline) {
@@ -184,6 +247,9 @@ export class LeadsService {
       }
       stats.total += item.count;
     }
+
+    stats.openValue = openValueResult[0]?.openValue || 0;
+    stats.weightedValue = weightedValueResult[0]?.weightedValue || 0;
 
     return stats;
   }
@@ -215,9 +281,21 @@ export class LeadsService {
     id: string,
     customerId?: string
   ): Promise<void> {
+    const existing = await this.leadModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Lead bulunamadı: ${id}`);
+
     const update: any = { status: "converted" };
     if (customerId) {
       update.customerId = customerId;
+    }
+    if (existing.status !== "converted") {
+      update.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          existing,
+          "converted",
+          existing.assignedUserName || existing.assignedUserId || ""
+        ),
+      };
     }
     await this.leadModel.findByIdAndUpdate(id, update).exec();
   }
@@ -226,9 +304,42 @@ export class LeadsService {
    * Converted lead'i geri alır
    */
   async revertConversion(id: string): Promise<void> {
+    const existing = await this.leadModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Lead bulunamadı: ${id}`);
+
+    const update: any = { status: "qualified" };
+    if (existing.status !== "qualified") {
+      update.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          existing,
+          "qualified",
+          existing.assignedUserName || existing.assignedUserId || ""
+        ),
+      };
+    }
     await this.leadModel
-      .findByIdAndUpdate(id, { status: "qualified" })
+      .findByIdAndUpdate(id, update)
       .exec();
+  }
+
+  private buildStageHistoryEntry(
+    lead: any,
+    toStatus: string,
+    changedBy: string
+  ) {
+    const now = new Date();
+    const lastChangedAt = lead.stageHistory?.length
+      ? lead.stageHistory[lead.stageHistory.length - 1]?.changedAt
+      : lead.createdAt || lead.updatedAt || now;
+    const durationInStage =
+      now.getTime() - new Date(lastChangedAt).getTime();
+    return {
+      fromStatus: lead.status || "",
+      toStatus,
+      changedBy,
+      changedAt: now,
+      durationInStage: Math.max(durationInStage, 0),
+    };
   }
 
   private mapToResponse(lead: any): LeadResponseDto {
@@ -251,6 +362,8 @@ export class LeadsService {
       expectedCloseDate: lead.expectedCloseDate,
       labels: lead.labels || [],
       activities: lead.activities || [],
+      lossInfo: lead.lossInfo || {},
+      stageHistory: lead.stageHistory || [],
       createdAt: lead.createdAt,
       updatedAt: lead.updatedAt,
     };

@@ -171,3 +171,11 @@ export async function convertOfferToSale(offerId: string, data: { userId: string
   });
   return handleResponse<any>(response);
 }
+
+export async function revertLeadToOffer(leadId: string) {
+  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.PIPELINE}/revert/lead-to-offer/${leadId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  return handleResponse<any>(response);
+}

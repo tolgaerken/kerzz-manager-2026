@@ -1,15 +1,22 @@
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "../features/auth";
-import { LayoutDashboard, FileText, ShoppingCart, Plug } from "lucide-react";
+import {
+  ConversionRates,
+  FunnelChart,
+  PipelineValueCard,
+  usePipelineStats,
+} from "../features/pipeline-dashboard";
 
 export function DashboardPage() {
   const { userInfo, activeLicance, isAdmin, isFinance, isManager } = useAuth();
-
-  const stats = [
-    { label: "Toplam Kontrat", value: "12", icon: FileText, colorClass: "bg-info/20 text-info" },
-    { label: "Aktif Satış", value: "8", icon: ShoppingCart, colorClass: "bg-success/20 text-success" },
-    { label: "Entegrasyon", value: "5", icon: Plug, colorClass: "bg-accent/20 text-accent" },
-    { label: "Bekleyen İşlem", value: "3", icon: LayoutDashboard, colorClass: "bg-warning/20 text-warning" },
-  ];
+  const {
+    data: pipelineData,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    refetch,
+  } = usePipelineStats();
 
   return (
     <div className="space-y-6">
@@ -21,25 +28,55 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-lg border border-border bg-surface p-6"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`rounded-lg p-3 ${stat.colorClass}`}>
-                <stat.icon className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-sm text-muted">{stat.label}</p>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Funnel Overview */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Satış Pipeline Özeti</h2>
+          <p className="text-sm text-muted">Lead, teklif ve satış performansı</p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="flex h-9 items-center justify-center rounded-lg border border-border bg-surface px-3 text-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+        </button>
       </div>
+
+      {isError && (
+        <div className="flex items-center gap-3 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 p-4 text-[var(--color-error)]">
+          <AlertCircle className="h-5 w-5" />
+          <div>
+            <p className="font-medium">Pipeline verileri yüklenemedi</p>
+            <p className="text-sm opacity-80">
+              {error instanceof Error ? error.message : "Bilinmeyen hata"}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <FunnelChart
+            leads={pipelineData.leads}
+            offers={pipelineData.offers}
+            sales={pipelineData.sales}
+            isLoading={isLoading}
+          />
+        </div>
+        <PipelineValueCard
+          value={pipelineData.metrics.pipelineValue}
+          weightedValue={pipelineData.metrics.weightedPipelineValue}
+          isLoading={isLoading}
+        />
+      </div>
+
+      <ConversionRates
+        leadToOfferRate={pipelineData.metrics.leadToOfferRate}
+        offerToSaleRate={pipelineData.metrics.offerToSaleRate}
+        overallConversionRate={pipelineData.metrics.overallConversionRate}
+        isLoading={isLoading}
+      />
 
       {/* Info Cards */}
       <div className="grid gap-6 lg:grid-cols-2">

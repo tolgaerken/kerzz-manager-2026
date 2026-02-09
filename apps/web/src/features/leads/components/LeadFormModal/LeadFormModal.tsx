@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
+import { MessageSquare } from "lucide-react";
 import { Modal } from "../../../../components/ui";
 import type {
   Lead,
   CreateLeadInput,
   LeadPriority,
+  LeadStatus,
 } from "../../types/lead.types";
+import { LossReasonModal } from "../LossReasonModal";
+import { useLogPanelStore } from "../../../manager-log";
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -33,6 +37,15 @@ const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
   { value: "urgent", label: "Acil" },
 ];
 
+const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
+  { value: "new", label: "Yeni" },
+  { value: "contacted", label: "İletişime Geçildi" },
+  { value: "qualified", label: "Nitelikli" },
+  { value: "unqualified", label: "Niteliksiz" },
+  { value: "converted", label: "Dönüştürüldü" },
+  { value: "lost", label: "Kaybedildi" },
+];
+
 const CURRENCY_OPTIONS = [
   { value: "TRY", label: "TRY - Türk Lirası" },
   { value: "USD", label: "USD - Amerikan Doları" },
@@ -46,6 +59,7 @@ const initialFormState: CreateLeadInput = {
   contactPhone: "",
   contactEmail: "",
   source: "",
+  status: "new",
   priority: "medium",
   estimatedValue: 0,
   currency: "TRY",
@@ -63,6 +77,9 @@ export function LeadFormModal({
 }: LeadFormModalProps) {
   const [formData, setFormData] = useState<CreateLeadInput>(initialFormState);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLossModalOpen, setIsLossModalOpen] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+  const { openPipelinePanel } = useLogPanelStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -73,6 +90,7 @@ export function LeadFormModal({
           contactPhone: lead.contactPhone || "",
           contactEmail: lead.contactEmail || "",
           source: lead.source || "",
+          status: lead.status || "new",
           priority: lead.priority || "medium",
           estimatedValue: lead.estimatedValue || 0,
           currency: lead.currency || "TRY",
@@ -81,11 +99,14 @@ export function LeadFormModal({
             : "",
           assignedUserName: lead.assignedUserName || "",
           notes: lead.notes || "",
+          lossInfo: lead.lossInfo,
         });
       } else {
         setFormData({ ...initialFormState });
       }
       setErrors({});
+      setIsLossModalOpen(false);
+      setPendingSubmit(false);
     }
   }, [isOpen, lead]);
 
@@ -111,6 +132,11 @@ export function LeadFormModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    if (formData.status === "lost" && !formData.lossInfo?.reason) {
+      setIsLossModalOpen(true);
+      setPendingSubmit(true);
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -118,7 +144,13 @@ export function LeadFormModal({
     field: keyof CreateLeadInput,
     value: string | number,
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "status" && value !== "lost") {
+        next.lossInfo = undefined;
+      }
+      return next;
+    });
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -129,6 +161,16 @@ export function LeadFormModal({
   };
 
   const isEditMode = !!lead;
+
+  const handleOpenLogs = () => {
+    if (!lead) return;
+    openPipelinePanel({
+      pipelineRef: lead.pipelineRef,
+      customerId: lead.customerId,
+      leadId: lead._id,
+      title: `Lead: ${lead.contactName || lead.companyName || lead.pipelineRef}`,
+    });
+  };
 
   return (
     <Modal
@@ -208,6 +250,26 @@ export function LeadFormModal({
                 {errors.contactEmail}
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Durum */}
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
+              Durum
+            </label>
+            <select
+              value={formData.status || "new"}
+              onChange={(e) => handleChange("status", e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 transition-shadow"
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -332,47 +394,83 @@ export function LeadFormModal({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--color-border)]">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-          >
-            İptal
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-          >
-            {isLoading && (
-              <svg
-                className="w-4 h-4 animate-spin"
-                viewBox="0 0 24 24"
-                fill="none"
+        <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
+          {/* Sol taraf - Loglar butonu (sadece edit modunda) */}
+          <div>
+            {isEditMode && lead?.pipelineRef && (
+              <button
+                type="button"
+                onClick={handleOpenLogs}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors"
               >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="opacity-25"
-                />
-                <path
-                  d="M4 12a8 8 0 018-8"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  className="opacity-75"
-                />
-              </svg>
+                <MessageSquare className="w-4 h-4" />
+                Loglar
+              </button>
             )}
-            {isEditMode ? "Güncelle" : "Kaydet"}
-          </button>
+          </div>
+          
+          {/* Sağ taraf - İptal ve Kaydet */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            >
+              {isLoading && (
+                <svg
+                  className="w-4 h-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="opacity-25"
+                  />
+                  <path
+                    d="M4 12a8 8 0 018-8"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    className="opacity-75"
+                  />
+                </svg>
+              )}
+              {isEditMode ? "Güncelle" : "Kaydet"}
+            </button>
+          </div>
         </div>
       </form>
+
+      <LossReasonModal
+        isOpen={isLossModalOpen}
+        initialValue={formData.lossInfo}
+        onClose={() => {
+          setIsLossModalOpen(false);
+          setPendingSubmit(false);
+        }}
+        onSubmit={(value) => {
+          const nextData = { ...formData, lossInfo: value, status: "lost" };
+          setFormData(nextData);
+          setIsLossModalOpen(false);
+          if (pendingSubmit) {
+            onSubmit(nextData);
+            setPendingSubmit(false);
+          }
+        }}
+        isLoading={isLoading}
+      />
     </Modal>
   );
 }

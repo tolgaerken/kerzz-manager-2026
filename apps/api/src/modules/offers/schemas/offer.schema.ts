@@ -20,6 +20,42 @@ export class OfferConversionInfo {
 }
 
 @Schema({ _id: false })
+export class OfferLossInfo {
+  @Prop({ type: String, default: "" })
+  reason: string; // price, competitor, timing, no-budget, no-response, other
+
+  @Prop({ type: String, default: "" })
+  competitor?: string;
+
+  @Prop({ type: String, default: "" })
+  notes?: string;
+
+  @Prop({ type: Date })
+  lostAt?: Date;
+
+  @Prop({ type: String, default: "" })
+  lostBy?: string;
+}
+
+@Schema({ _id: false })
+export class OfferStageHistory {
+  @Prop({ type: String, default: "" })
+  fromStatus: string;
+
+  @Prop({ type: String, default: "" })
+  toStatus: string;
+
+  @Prop({ type: String, default: "" })
+  changedBy: string;
+
+  @Prop({ type: Date, default: () => new Date() })
+  changedAt: Date;
+
+  @Prop({ type: Number, default: 0 })
+  durationInStage: number;
+}
+
+@Schema({ _id: false })
 export class OfferMailRecipient {
   @Prop({ type: String, default: "" })
   email: string;
@@ -91,6 +127,12 @@ export class Offer {
 
   @Prop({ type: OfferConversionInfo, default: () => ({}) })
   conversionInfo: OfferConversionInfo;
+
+  @Prop({ type: OfferLossInfo, default: () => ({}) })
+  lossInfo: OfferLossInfo;
+
+  @Prop({ type: [OfferStageHistory], default: [] })
+  stageHistory: OfferStageHistory[];
 
   @Prop({ type: String, default: "" })
   offerNote: string;

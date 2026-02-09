@@ -20,6 +20,7 @@ export class ManagerLogResponseDto {
   customerId: string;
   contextType: string;
   contextId: string;
+  pipelineRef?: string;
   message: string;
   mentions: ManagerLogMentionResponseDto[];
   references: ManagerLogReferenceResponseDto[];

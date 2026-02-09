@@ -20,6 +20,7 @@ export interface Log {
   customerId: string;
   contextType: string;
   contextId: string;
+  pipelineRef?: string;
   message: string;
   mentions: LogMention[];
   references: LogReference[];
@@ -52,6 +53,7 @@ export interface CreateLogInput {
   customerId: string;
   contextType: string;
   contextId: string;
+  pipelineRef?: string;
   message: string;
   mentions?: LogMention[];
   references?: LogReference[];
@@ -63,9 +65,26 @@ export interface CreateLogInput {
   authorName: string;
 }
 
+export interface PipelineLogsResponse {
+  pipelineRef: string;
+  lead: Log[];
+  offer: Log[];
+  sale: Log[];
+}
+
 export interface LogPanelContext {
   customerId: string;
   contextType: string;
   contextId: string;
   title?: string;
+}
+
+export interface PipelineLogPanelContext {
+  pipelineRef: string;
+  customerId?: string;
+  title?: string;
+  // Hangi entity'den açıldığını belirler
+  leadId?: string;
+  offerId?: string;
+  saleId?: string;
 }

@@ -2,6 +2,7 @@ export {
   offerKeys,
   useOffers,
   useOffer,
+  useOfferStats,
   useCreateOffer,
   useUpdateOffer,
   useDeleteOffer,

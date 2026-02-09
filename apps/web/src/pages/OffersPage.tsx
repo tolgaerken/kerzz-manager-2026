@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { CalendarDays, Plus, RefreshCw } from "lucide-react";
+import { CalendarDays, MessageSquare, Plus, RefreshCw, Repeat } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useOffers,
@@ -15,6 +15,10 @@ import type {
   CreateOfferInput,
 } from "../features/offers/types/offer.types";
 import { useCustomerLookup } from "../features/lookup";
+import { useConvertOfferToSale } from "../features/pipeline/hooks/usePipelineItems";
+import { useAuth } from "../features/auth";
+import { useRevertSale } from "../features/sales";
+import { useLogPanelStore } from "../features/manager-log";
 
 const toDateInputValue = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -43,11 +47,16 @@ export function OffersPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
   const { data, isLoading, refetch } = useOffers(queryParams);
   const createMutation = useCreateOffer();
   const updateMutation = useUpdateOffer();
+  const convertMutation = useConvertOfferToSale();
+  const { userInfo } = useAuth();
+  const revertSaleMutation = useRevertSale();
   const { getCustomerName } = useCustomerLookup();
+  const { openPipelinePanel } = useLogPanelStore();
 
   const enrichedOffers = useMemo(() => {
     if (!data?.data) return [];
@@ -110,6 +119,31 @@ export function OffersPage() {
     [editingOffer, updateMutation]
   );
 
+  const handleConvertOffer = useCallback(async () => {
+    if (!selectedOffer || !userInfo) return;
+    await convertMutation.mutateAsync({
+      offerId: selectedOffer._id,
+      data: { userId: userInfo.id, userName: userInfo.name },
+    });
+    await refetch();
+  }, [selectedOffer, userInfo, convertMutation, refetch]);
+
+  const handleRevertOffer = useCallback(async () => {
+    if (!selectedOffer?.conversionInfo?.saleId) return;
+    await revertSaleMutation.mutateAsync(selectedOffer.conversionInfo.saleId);
+    await refetch();
+  }, [selectedOffer, revertSaleMutation, refetch]);
+
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedOffer) return;
+    openPipelinePanel({
+      pipelineRef: selectedOffer.pipelineRef,
+      customerId: selectedOffer.customerId,
+      offerId: selectedOffer._id,
+      title: `Teklif: ${selectedOffer.no || selectedOffer.pipelineRef}`,
+    });
+  }, [selectedOffer, openPipelinePanel]);
+
   const toolbarButtons: ToolbarButtonConfig[] = [
     {
       id: "add",
@@ -119,6 +153,37 @@ export function OffersPage() {
         setEditingOffer(null);
         setIsFormOpen(true);
       },
+    },
+    {
+      id: "logs",
+      label: "Loglar",
+      icon: <MessageSquare size={14} />,
+      onClick: handleOpenLogs,
+      disabled: !selectedOffer,
+    },
+    {
+      id: "convert",
+      label: "Satışa Çevir",
+      icon: <Repeat size={14} />,
+      onClick: handleConvertOffer,
+      variant: "primary",
+      disabled:
+        !selectedOffer ||
+        selectedOffer.status === "converted" ||
+        selectedOffer.status === "lost" ||
+        convertMutation.isPending ||
+        !userInfo,
+    },
+    {
+      id: "revert",
+      label: "Satıştan Geri Al",
+      icon: <Repeat size={14} />,
+      onClick: handleRevertOffer,
+      disabled:
+        !selectedOffer ||
+        selectedOffer.status !== "converted" ||
+        !selectedOffer.conversionInfo?.saleId ||
+        revertSaleMutation.isPending,
     },
     {
       id: "refresh",
@@ -169,6 +234,7 @@ export function OffersPage() {
           loading={isLoading}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
+          onSelectionChanged={setSelectedOffer}
           toolbarButtons={toolbarButtons}
         />
       </div>

@@ -26,6 +26,13 @@ export class SaleResponseDto {
   labels: string[];
   notes: string;
   internalFirm: string;
+  stageHistory?: {
+    fromStatus: string;
+    toStatus: string;
+    changedBy: string;
+    changedAt: Date;
+    durationInStage: number;
+  }[];
   // Populated alt koleksiyonlar
   products?: any[];
   licenses?: any[];

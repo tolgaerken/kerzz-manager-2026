@@ -79,4 +79,10 @@ export class PipelineGatewayController {
       body.userName
     );
   }
+
+  @AuditLog({ module: "pipeline", entityType: "Conversion" })
+  @Post("revert/lead-to-offer/:leadId")
+  async revertLeadToOffer(@Param("leadId") leadId: string) {
+    return this.offersService.revertFromLead(leadId);
+  }
 }

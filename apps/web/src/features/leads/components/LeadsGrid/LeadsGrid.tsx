@@ -9,6 +9,7 @@ interface LeadsGridProps {
   loading: boolean;
   onSortChange?: (field: string, order: "asc" | "desc") => void;
   onRowDoubleClick?: (lead: Lead) => void;
+  onSelectionChanged?: (lead: Lead | null) => void;
   toolbarButtons?: ToolbarButtonConfig[];
 }
 
@@ -17,11 +18,25 @@ export function LeadsGrid({
   loading,
   onSortChange,
   onRowDoubleClick,
+  onSelectionChanged,
   toolbarButtons,
 }: LeadsGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const staleCutoff = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 14);
+    return cutoff;
+  }, []);
+
+  const isStaleLead = useCallback(
+    (lead: Lead) =>
+      ["new", "contacted", "qualified"].includes(lead.status) &&
+      lead.updatedAt &&
+      new Date(lead.updatedAt) <= staleCutoff,
+    [staleCutoff]
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -41,8 +56,9 @@ export function LeadsGrid({
     (row: Lead) => {
       const newId = selectedId === row._id ? null : row._id;
       setSelectedId(newId);
+      onSelectionChanged?.(newId ? row : null);
     },
-    [selectedId],
+    [selectedId, onSelectionChanged],
   );
 
   const handleRowDoubleClick = useCallback(
@@ -76,9 +92,12 @@ export function LeadsGrid({
         typeof col.cellClassName === "function"
           ? col.cellClassName(_value, row)
           : col.cellClassName || "";
+      const staleClass = isStaleLead(row)
+        ? " bg-[var(--color-warning)]/10"
+        : "";
       return selectedId === row._id
-        ? `${original} bg-[var(--color-primary)]/10`.trim()
-        : original;
+        ? `${original}${staleClass} bg-[var(--color-primary)]/10`.trim()
+        : `${original}${staleClass}`.trim();
     },
   }));
 

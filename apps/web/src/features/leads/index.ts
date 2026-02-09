@@ -2,6 +2,7 @@
 export { LeadsGrid } from "./components/LeadsGrid";
 export { LeadFormModal } from "./components/LeadFormModal";
 export { LeadsFilters } from "./components/LeadsFilters";
+export { LossReasonModal } from "./components/LossReasonModal";
 
 // Hooks
 export {

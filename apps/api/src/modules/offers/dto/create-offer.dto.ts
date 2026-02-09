@@ -18,6 +18,29 @@ export class OfferMailRecipientDto {
   name?: string;
 }
 
+export class OfferLossInfoDto {
+  @IsString()
+  @IsOptional()
+  @IsIn(["price", "competitor", "timing", "no-budget", "no-response", "other"])
+  reason?: string;
+
+  @IsString()
+  @IsOptional()
+  competitor?: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @IsDateString()
+  @IsOptional()
+  lostAt?: string;
+
+  @IsString()
+  @IsOptional()
+  lostBy?: string;
+}
+
 export class CreateOfferDto {
   @IsString()
   @IsOptional()
@@ -83,6 +106,11 @@ export class CreateOfferDto {
   @IsString()
   @IsOptional()
   internalFirm?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OfferLossInfoDto)
+  lossInfo?: OfferLossInfoDto;
 
   // Dual write: alt koleksiyonlar body'de gönderilebilir
   @IsArray()

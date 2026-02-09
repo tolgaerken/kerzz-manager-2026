@@ -13,6 +13,7 @@ import {
   PaginatedOffersResponseDto,
   OfferResponseDto,
 } from "./dto/offer-response.dto";
+import { OfferStatsDto } from "./dto/offer-stats.dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import {
   PipelineService,
@@ -121,6 +122,99 @@ export class OffersService {
     };
   }
 
+  async getStats(): Promise<OfferStatsDto> {
+    const openStatuses = ["draft", "sent", "revised", "waiting", "approved"];
+    const weightedStatuses = ["draft", "sent", "revised", "waiting", "approved"];
+
+    const [pipeline, openValueResult, weightedValueResult] = await Promise.all([
+      this.offerModel
+        .aggregate([
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+            },
+          },
+        ])
+        .exec(),
+      this.offerModel
+        .aggregate([
+          { $match: { status: { $in: openStatuses } } },
+          {
+            $group: {
+              _id: null,
+              openValue: {
+                $sum: { $ifNull: ["$totals.overallGrandTotal", 0] },
+              },
+            },
+          },
+        ])
+        .exec(),
+      this.offerModel
+        .aggregate([
+          { $match: { status: { $in: weightedStatuses } } },
+          {
+            $addFields: {
+              weight: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ["$status", "draft"] }, then: 0.3 },
+                    { case: { $eq: ["$status", "sent"] }, then: 0.5 },
+                    { case: { $eq: ["$status", "revised"] }, then: 0.5 },
+                    { case: { $eq: ["$status", "waiting"] }, then: 0.6 },
+                    { case: { $eq: ["$status", "approved"] }, then: 0.8 },
+                  ],
+                  default: 0,
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              weightedValue: {
+                $sum: {
+                  $multiply: [
+                    { $ifNull: ["$totals.overallGrandTotal", 0] },
+                    "$weight",
+                  ],
+                },
+              },
+            },
+          },
+        ])
+        .exec(),
+    ]);
+
+    const stats: OfferStatsDto = {
+      total: 0,
+      draft: 0,
+      sent: 0,
+      revised: 0,
+      waiting: 0,
+      approved: 0,
+      rejected: 0,
+      won: 0,
+      lost: 0,
+      converted: 0,
+      openValue: 0,
+      weightedValue: 0,
+    };
+
+    for (const item of pipeline) {
+      const key = item._id as keyof Omit<OfferStatsDto, "total">;
+      if (key in stats) {
+        (stats as any)[key] = item.count;
+      }
+      stats.total += item.count;
+    }
+
+    stats.openValue = openValueResult[0]?.openValue || 0;
+    stats.weightedValue = weightedValueResult[0]?.weightedValue || 0;
+
+    return stats;
+  }
+
   async create(dto: CreateOfferDto): Promise<OfferResponseDto> {
     const { products, licenses, rentals, payments, ...offerData } = dto;
 
@@ -147,13 +241,26 @@ export class OffersService {
 
   async update(id: string, dto: UpdateOfferDto): Promise<OfferResponseDto> {
     const { products, licenses, rentals, payments, ...offerData } = dto;
+    const existing = await this.offerModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Teklif bulunamadı: ${id}`);
+
+    const updateOps: Record<string, any> = { $set: offerData };
+    const nextStatus = offerData.status;
+
+    if (nextStatus && nextStatus !== existing.status) {
+      updateOps.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          existing,
+          nextStatus,
+          offerData.sellerName || offerData.sellerId || ""
+        ),
+      };
+    }
 
     const offer = await this.offerModel
-      .findByIdAndUpdate(id, offerData, { new: true })
+      .findByIdAndUpdate(id, updateOps, { new: true })
       .lean()
       .exec();
-
-    if (!offer) throw new NotFoundException(`Teklif bulunamadı: ${id}`);
 
     // Dual write
     if (
@@ -186,8 +293,22 @@ export class OffersService {
     id: string,
     status: string
   ): Promise<OfferResponseDto> {
+    const existing = await this.offerModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Teklif bulunamadı: ${id}`);
+
+    const updateOps: Record<string, any> = { $set: { status } };
+    if (status !== existing.status) {
+      updateOps.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          existing,
+          status,
+          existing.sellerName || existing.sellerId || ""
+        ),
+      };
+    }
+
     const offer = await this.offerModel
-      .findByIdAndUpdate(id, { status }, { new: true })
+      .findByIdAndUpdate(id, updateOps, { new: true })
       .lean()
       .exec();
     if (!offer) throw new NotFoundException(`Teklif bulunamadı: ${id}`);
@@ -250,6 +371,33 @@ export class OffersService {
   }
 
   /**
+   * Lead -> Offer dönüşümünü geri alır
+   */
+  async revertFromLead(leadId: string): Promise<void> {
+    const offer = await this.offerModel
+      .findOne({ leadId })
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    if (!offer) {
+      throw new NotFoundException(`Lead için teklif bulunamadı: ${leadId}`);
+    }
+
+    if (offer.status === "converted") {
+      throw new BadRequestException(
+        "Satışa dönüştürülmüş teklif geri alınamaz"
+      );
+    }
+
+    const offerId = offer._id.toString();
+
+    await this.pipelineService.deleteAllItems(offerId, "offer");
+    await this.offerModel.findByIdAndDelete(offerId).exec();
+    await this.leadsService.revertConversion(leadId);
+  }
+
+  /**
    * Offer -> Sale dönüşümü için offer'ı getirir ve validasyon yapar
    */
   async getForConversion(id: string): Promise<Offer> {
@@ -272,18 +420,31 @@ export class OffersService {
     userId: string,
     userName: string
   ): Promise<void> {
-    await this.offerModel
-      .findByIdAndUpdate(id, {
-        status: "converted",
-        conversionInfo: {
-          saleId,
-          converted: true,
-          convertedBy: userId,
-          convertedByName: userName,
-          convertedAt: new Date(),
-        },
-      })
-      .exec();
+    const existing = await this.offerModel.findById(id).lean().exec();
+    if (!existing) throw new NotFoundException(`Teklif bulunamadı: ${id}`);
+
+    const update: any = {
+      status: "converted",
+      conversionInfo: {
+        saleId,
+        converted: true,
+        convertedBy: userId,
+        convertedByName: userName,
+        convertedAt: new Date(),
+      },
+    };
+
+    if (existing.status !== "converted") {
+      update.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          existing,
+          "converted",
+          userName || userId
+        ),
+      };
+    }
+
+    await this.offerModel.findByIdAndUpdate(id, update).exec();
   }
 
   /**
@@ -297,18 +458,28 @@ export class OffersService {
       throw new BadRequestException("Bu teklif dönüştürülmemiş");
     }
 
-    await this.offerModel
-      .findByIdAndUpdate(id, {
-        status: "approved",
-        conversionInfo: {
-          saleId: "",
-          converted: false,
-          convertedBy: "",
-          convertedByName: "",
-          convertedAt: undefined,
-        },
-      })
-      .exec();
+    const update: any = {
+      status: "approved",
+      conversionInfo: {
+        saleId: "",
+        converted: false,
+        convertedBy: "",
+        convertedByName: "",
+        convertedAt: undefined,
+      },
+    };
+
+    if (offer.status !== "approved") {
+      update.$push = {
+        stageHistory: this.buildStageHistoryEntry(
+          offer,
+          "approved",
+          offer.sellerName || offer.sellerId || ""
+        ),
+      };
+    }
+
+    await this.offerModel.findByIdAndUpdate(id, update).exec();
 
     return this.findOne(id);
   }
@@ -351,6 +522,26 @@ export class OffersService {
     );
   }
 
+  private buildStageHistoryEntry(
+    offer: any,
+    toStatus: string,
+    changedBy: string
+  ) {
+    const now = new Date();
+    const lastChangedAt = offer.stageHistory?.length
+      ? offer.stageHistory[offer.stageHistory.length - 1]?.changedAt
+      : offer.createdAt || offer.updatedAt || now;
+    const durationInStage =
+      now.getTime() - new Date(lastChangedAt).getTime();
+    return {
+      fromStatus: offer.status || "",
+      toStatus,
+      changedBy,
+      changedAt: now,
+      durationInStage: Math.max(durationInStage, 0),
+    };
+  }
+
   private mapToResponse(offer: any): OfferResponseDto {
     const conv = offer.conversionInfo || {};
     return {
@@ -375,6 +566,8 @@ export class OffersService {
         convertedByName: conv.convertedByName || "",
         convertedAt: conv.convertedAt,
       },
+      lossInfo: offer.lossInfo || {},
+      stageHistory: offer.stageHistory || [],
       offerNote: offer.offerNote || "",
       mailList: offer.mailList || [],
       labels: offer.labels || [],

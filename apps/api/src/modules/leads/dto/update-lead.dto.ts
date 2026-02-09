@@ -5,7 +5,10 @@ import {
   IsIn,
   IsDateString,
   IsArray,
+  ValidateNested,
 } from "class-validator";
+import { Type } from "class-transformer";
+import { LeadLossInfoDto } from "./create-lead.dto";
 
 export class UpdateLeadDto {
   @IsString()
@@ -69,4 +72,9 @@ export class UpdateLeadDto {
   @IsArray()
   @IsOptional()
   labels?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LeadLossInfoDto)
+  lossInfo?: LeadLossInfoDto;
 }

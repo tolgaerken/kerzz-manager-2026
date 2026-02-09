@@ -5,7 +5,32 @@ import {
   IsIn,
   IsDateString,
   IsArray,
+  ValidateNested,
 } from "class-validator";
+import { Type } from "class-transformer";
+
+export class LeadLossInfoDto {
+  @IsString()
+  @IsOptional()
+  @IsIn(["price", "competitor", "timing", "no-budget", "no-response", "other"])
+  reason?: string;
+
+  @IsString()
+  @IsOptional()
+  competitor?: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @IsDateString()
+  @IsOptional()
+  lostAt?: string;
+
+  @IsString()
+  @IsOptional()
+  lostBy?: string;
+}
 
 export class CreateLeadDto {
   @IsString()
@@ -69,4 +94,9 @@ export class CreateLeadDto {
   @IsArray()
   @IsOptional()
   labels?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LeadLossInfoDto)
+  lossInfo?: LeadLossInfoDto;
 }

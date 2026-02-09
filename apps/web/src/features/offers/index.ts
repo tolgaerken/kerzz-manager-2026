@@ -2,12 +2,14 @@
 export { OffersGrid } from "./components/OffersGrid/OffersGrid";
 export { OffersFilters } from "./components/OffersFilters/OffersFilters";
 export { OfferFormModal } from "./components/OfferFormModal/OfferFormModal";
+export { LossReasonModal } from "./components/LossReasonModal";
 
 // Hooks
 export {
   offerKeys,
   useOffers,
   useOffer,
+  useOfferStats,
   useCreateOffer,
   useUpdateOffer,
   useDeleteOffer,
@@ -26,6 +28,7 @@ export {
   updateOfferStatus,
   calculateOfferTotals,
   revertOfferConversion,
+  fetchOfferStats,
 } from "./api";
 
 // Types
@@ -36,6 +39,7 @@ export type {
   OfferQueryParams,
   PaginationMeta,
   OffersResponse,
+  OfferStats,
   CreateOfferInput,
   UpdateOfferInput,
 } from "./types/offer.types";

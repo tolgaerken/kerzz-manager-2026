@@ -20,6 +20,7 @@ import {
   calculateTotals,
   convertLeadToOffer,
   convertOfferToSale,
+  revertLeadToOffer,
 } from "../api/pipelineApi";
 import type { PipelineProduct, PipelineLicense, PipelineRental, PipelinePayment } from "../types/pipeline.types";
 
@@ -209,6 +210,17 @@ export function useConvertOfferToSale() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [QUERY_KEYS.OFFERS] });
       qc.invalidateQueries({ queryKey: [QUERY_KEYS.SALES] });
+    },
+  });
+}
+
+export function useRevertLeadToOffer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (leadId: string) => revertLeadToOffer(leadId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QUERY_KEYS.LEADS] });
+      qc.invalidateQueries({ queryKey: [QUERY_KEYS.OFFERS] });
     },
   });
 }

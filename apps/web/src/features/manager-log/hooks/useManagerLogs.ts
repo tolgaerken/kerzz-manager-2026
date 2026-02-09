@@ -18,7 +18,7 @@ export function useManagerLogs(params: LogQueryParams = {}) {
     queryFn: () => fetchManagerLogs(params),
     staleTime: 1000 * 60 * 1, // 1 dakika
     gcTime: 1000 * 60 * 10, // 10 dakika
-    enabled: !!(params.customerId && params.contextType && params.contextId),
+    enabled: true,
   });
 }
 
@@ -38,15 +38,17 @@ export function useCreateManagerLog() {
 
   return useMutation<Log, Error, CreateLogInput>({
     mutationFn: createManagerLog,
-    onSuccess: (_, variables) => {
-      // Ilgili context'in log listesini yenile
+    onSuccess: (_data, variables) => {
+      // Tüm log listelerini yenile (limit parametresi farklı olabileceği için)
       queryClient.invalidateQueries({
-        queryKey: managerLogKeys.list({
-          customerId: variables.customerId,
-          contextType: variables.contextType,
-          contextId: variables.contextId,
-        }),
+        queryKey: managerLogKeys.lists(),
       });
+      // Pipeline loglarını da yenile
+      if (variables.pipelineRef) {
+        queryClient.invalidateQueries({
+          queryKey: managerLogKeys.pipeline(variables.pipelineRef),
+        });
+      }
     },
   });
 }

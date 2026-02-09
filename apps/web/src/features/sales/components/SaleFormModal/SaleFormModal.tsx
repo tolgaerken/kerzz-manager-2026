@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { X } from "lucide-react";
+import { X, MessageSquare } from "lucide-react";
 import type { Sale, CreateSaleInput } from "../../types/sale.types";
 import { useSale } from "../../hooks/useSales";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
@@ -10,6 +10,7 @@ import {
   RentalItemsTable,
   PaymentItemsTable,
 } from "../../../pipeline";
+import { useLogPanelStore } from "../../../manager-log";
 
 interface SaleFormModalProps {
   isOpen: boolean;
@@ -68,6 +69,7 @@ export function SaleFormModal({
   const [activeTab, setActiveTab] = useState<TabId>("general");
   const [formData, setFormData] = useState<CreateSaleInput>(initialFormState);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { openPipelinePanel } = useLogPanelStore();
 
   // Edit modunda detaylı veriyi (products, licenses vb.) çek
   const { data: saleDetail } = useSale(editItem?._id || "");
@@ -176,6 +178,16 @@ export function SaleFormModal({
   );
 
   const isEditMode = !!editItem;
+
+  const handleOpenLogs = () => {
+    if (!editItem) return;
+    openPipelinePanel({
+      pipelineRef: editItem.pipelineRef,
+      customerId: editItem.customerId,
+      saleId: editItem._id,
+      title: `Satış: ${editItem.no || editItem.pipelineRef}`,
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -323,45 +335,62 @@ export function SaleFormModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-border)] shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading && (
-                <svg
-                  className="w-4 h-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-border)] shrink-0">
+            {/* Sol taraf - Loglar butonu (sadece edit modunda) */}
+            <div>
+              {isEditMode && editItem?.pipelineRef && (
+                <button
+                  type="button"
+                  onClick={handleOpenLogs}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors"
                 >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    className="opacity-25"
-                  />
-                  <path
-                    d="M4 12a8 8 0 018-8"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    className="opacity-75"
-                  />
-                </svg>
+                  <MessageSquare className="w-4 h-4" />
+                  Loglar
+                </button>
               )}
-              {isEditMode ? "Güncelle" : "Kaydet"}
-            </button>
+            </div>
+            
+            {/* Sağ taraf - İptal ve Kaydet */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading && (
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="opacity-25"
+                    />
+                    <path
+                      d="M4 12a8 8 0 018-8"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      className="opacity-75"
+                    />
+                  </svg>
+                )}
+                {isEditMode ? "Güncelle" : "Kaydet"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

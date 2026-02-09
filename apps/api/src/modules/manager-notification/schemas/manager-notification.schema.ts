@@ -3,7 +3,7 @@ import { Document, Types } from "mongoose";
 
 export type ManagerNotificationDocument = ManagerNotification & Document;
 
-export type ManagerNotificationType = "mention" | "reminder";
+export type ManagerNotificationType = "mention" | "reminder" | "stale";
 
 @Schema({ collection: "manager-notifications", timestamps: true })
 export class ManagerNotification {
@@ -15,7 +15,7 @@ export class ManagerNotification {
   @Prop({ required: true, index: true })
   userId: string;
 
-  @Prop({ required: true, enum: ["mention", "reminder"] })
+  @Prop({ required: true, enum: ["mention", "reminder", "stale"] })
   type: ManagerNotificationType;
 
   @Prop({ required: true })

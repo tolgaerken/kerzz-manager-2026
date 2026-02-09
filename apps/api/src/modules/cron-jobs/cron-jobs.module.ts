@@ -3,14 +3,22 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { MongooseModule } from "@nestjs/mongoose";
 import { InvoiceNotificationCron } from "./invoice-notification.cron";
 import { ContractNotificationCron } from "./contract-notification.cron";
+import { StalePipelineCron } from "./stale-pipeline.cron";
 import { Invoice, InvoiceSchema } from "../invoices/schemas/invoice.schema";
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
+import { Lead, LeadSchema } from "../leads/schemas/lead.schema";
+import { Offer, OfferSchema } from "../offers/schemas/offer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { NotificationSettingsModule } from "../notification-settings";
 import { NotificationDispatchModule } from "../notification-dispatch";
 import { PaymentsModule } from "../payments/payments.module";
 import { SystemLogsModule } from "../system-logs";
+import {
+  ManagerNotification,
+  ManagerNotificationSchema,
+} from "../manager-notification/schemas/manager-notification.schema";
+import { ManagerNotificationModule } from "../manager-notification";
 
 @Module({
   imports: [
@@ -20,15 +28,21 @@ import { SystemLogsModule } from "../system-logs";
         { name: Invoice.name, schema: InvoiceSchema },
         { name: Contract.name, schema: ContractSchema },
         { name: Customer.name, schema: CustomerSchema },
+        { name: Lead.name, schema: LeadSchema },
+        { name: Offer.name, schema: OfferSchema },
       ],
       CONTRACT_DB_CONNECTION
     ),
+    MongooseModule.forFeature([
+      { name: ManagerNotification.name, schema: ManagerNotificationSchema },
+    ]),
     NotificationSettingsModule,
     NotificationDispatchModule,
     PaymentsModule,
     SystemLogsModule,
+    ManagerNotificationModule,
   ],
-  providers: [InvoiceNotificationCron, ContractNotificationCron],
-  exports: [InvoiceNotificationCron, ContractNotificationCron],
+  providers: [InvoiceNotificationCron, ContractNotificationCron, StalePipelineCron],
+  exports: [InvoiceNotificationCron, ContractNotificationCron, StalePipelineCron],
 })
 export class CronJobsModule {}

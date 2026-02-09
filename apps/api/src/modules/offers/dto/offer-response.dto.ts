@@ -6,6 +6,22 @@ export class OfferConversionInfoDto {
   convertedAt: Date;
 }
 
+export class OfferLossInfoDto {
+  reason: string;
+  competitor?: string;
+  notes?: string;
+  lostAt?: Date;
+  lostBy?: string;
+}
+
+export class OfferStageHistoryDto {
+  fromStatus: string;
+  toStatus: string;
+  changedBy: string;
+  changedAt: Date;
+  durationInStage: number;
+}
+
 export class OfferResponseDto {
   _id: string;
   no: number;
@@ -22,6 +38,8 @@ export class OfferResponseDto {
   eurRate: number;
   status: string;
   conversionInfo: OfferConversionInfoDto;
+  lossInfo: OfferLossInfoDto;
+  stageHistory: OfferStageHistoryDto[];
   offerNote: string;
   mailList: { email: string; name: string }[];
   labels: string[];

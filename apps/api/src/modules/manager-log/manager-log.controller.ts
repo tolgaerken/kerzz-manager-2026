@@ -14,6 +14,7 @@ import {
   ManagerLogQueryDto,
   ManagerLogResponseDto,
   PaginatedManagerLogsResponseDto,
+  PipelineLogsResponseDto,
 } from "./dto";
 
 @Controller("manager-logs")
@@ -23,6 +24,11 @@ export class ManagerLogController {
   @Get()
   async findAll(@Query() queryDto: ManagerLogQueryDto): Promise<PaginatedManagerLogsResponseDto> {
     return this.managerLogService.findAll(queryDto);
+  }
+
+  @Get("pipeline/:pipelineRef")
+  async findByPipeline(@Param("pipelineRef") pipelineRef: string): Promise<PipelineLogsResponseDto> {
+    return this.managerLogService.findByPipeline(pipelineRef);
   }
 
   @Get(":id")

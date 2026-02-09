@@ -4,6 +4,7 @@ import type {
   LogsResponse,
   Log,
   CreateLogInput,
+  PipelineLogsResponse,
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = MANAGER_LOG_CONSTANTS;
@@ -35,6 +36,7 @@ export const managerLogKeys = {
   list: (params: LogQueryParams) => [...managerLogKeys.lists(), params] as const,
   details: () => [...managerLogKeys.all, "detail"] as const,
   detail: (id: string) => [...managerLogKeys.details(), id] as const,
+  pipeline: (pipelineRef: string) => [...managerLogKeys.all, "pipeline", pipelineRef] as const,
 };
 
 // Logları getir
@@ -72,6 +74,9 @@ export async function fetchManagerLogById(id: string): Promise<Log> {
 export async function createManagerLog(data: CreateLogInput): Promise<Log> {
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}`;
 
+  console.log("[createManagerLog] URL:", url);
+  console.log("[createManagerLog] Data:", data);
+
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -80,6 +85,8 @@ export async function createManagerLog(data: CreateLogInput): Promise<Log> {
     },
     body: JSON.stringify(data),
   });
+
+  console.log("[createManagerLog] Response status:", response.status);
 
   return handleResponse<Log>(response);
 }
@@ -97,4 +104,19 @@ export async function markManagerLogReminderCompleted(id: string): Promise<Log> 
   });
 
   return handleResponse<Log>(response);
+}
+
+// Pipeline loglarını getir (lead/offer/sale zinciri)
+export async function fetchPipelineLogs(pipelineRef: string): Promise<PipelineLogsResponse> {
+  const url = `${API_BASE_URL}${ENDPOINTS.LOGS}/pipeline/${encodeURIComponent(pipelineRef)}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  });
+
+  return handleResponse<PipelineLogsResponse>(response);
 }

@@ -1,7 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { Sidebar } from "../Sidebar";
 import { Header } from "../Header";
-import { LogPanel } from "../../../features/manager-log";
+import { LogPanel, PipelineLogPanel } from "../../../features/manager-log";
 
 export function DashboardLayout() {
   return (
@@ -18,6 +18,9 @@ export function DashboardLayout() {
 
       {/* Global Log Panel */}
       <LogPanel />
+      
+      {/* Pipeline Log Panel (Lead/Offer/Sale zinciri) */}
+      <PipelineLogPanel />
     </div>
   );
 }

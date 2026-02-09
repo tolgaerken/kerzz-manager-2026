@@ -49,6 +49,9 @@ export class ManagerLog {
   @Prop({ required: true, index: true })
   contextId: string;
 
+  @Prop({ type: String, index: true })
+  pipelineRef?: string; // Pipeline zinciri için ortak referans (lead/offer/sale)
+
   @Prop({ required: true })
   message: string;
 
@@ -84,3 +87,6 @@ ManagerLogSchema.index({ "mentions.userId": 1 });
 
 // Index for reminder queries (finding pending reminders)
 ManagerLogSchema.index({ "reminder.date": 1, "reminder.completed": 1 });
+
+// Index for pipeline queries (lead/offer/sale chain)
+ManagerLogSchema.index({ pipelineRef: 1, contextType: 1 });

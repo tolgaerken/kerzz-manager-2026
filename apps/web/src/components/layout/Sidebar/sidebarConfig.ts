@@ -68,6 +68,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "Potansiyeller", path: "/leads" },
       { label: "Teklifler", path: "/offers" },
       { label: "Satışlar", path: "/pipeline/sales" },
+      { label: "Pipeline Kanban", path: "/pipeline/kanban" },
     ],
   },
   {

@@ -7,4 +7,5 @@ export {
   updateOfferStatus,
   calculateOfferTotals,
   revertOfferConversion,
+  fetchOfferStats,
 } from "./offersApi";

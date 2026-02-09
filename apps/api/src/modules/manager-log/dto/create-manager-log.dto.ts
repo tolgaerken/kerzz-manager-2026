@@ -57,6 +57,10 @@ export class CreateManagerLogDto {
   contextId: string;
 
   @IsString()
+  @IsOptional()
+  pipelineRef?: string;
+
+  @IsString()
   @IsNotEmpty()
   message: string;
 

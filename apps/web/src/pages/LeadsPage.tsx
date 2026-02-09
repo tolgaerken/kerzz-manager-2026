@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Plus, RefreshCw, CalendarDays } from "lucide-react";
+import { CalendarDays, MessageSquare, Plus, RefreshCw, Repeat } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useLeads,
@@ -16,7 +16,8 @@ import type {
   CreateLeadInput,
 } from "../features/leads/types/lead.types";
 import { getMonthRange } from "../features/sales/utils/dateUtils";
-import { useConvertLeadToOffer } from "../features/pipeline/hooks/usePipelineItems";
+import { useConvertLeadToOffer, useRevertLeadToOffer } from "../features/pipeline/hooks/usePipelineItems";
+import { useLogPanelStore } from "../features/manager-log";
 
 export function LeadsPage() {
   const defaultRange = useMemo(() => getMonthRange(), []);
@@ -32,12 +33,15 @@ export function LeadsPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const { data, isLoading, refetch } = useLeads(queryParams);
   const createMutation = useCreateLead();
   const updateMutation = useUpdateLead();
   const deleteMutation = useDeleteLead();
   const convertMutation = useConvertLeadToOffer();
+  const revertMutation = useRevertLeadToOffer();
+  const { openPipelinePanel } = useLogPanelStore();
 
   const handleFilterChange = useCallback(
     (filters: Partial<LeadQueryParams>) => {
@@ -61,6 +65,28 @@ export function LeadsPage() {
     setEditingLead(lead);
     setIsFormOpen(true);
   }, []);
+  const handleConvertLead = useCallback(async () => {
+    if (!selectedLead) return;
+    await convertMutation.mutateAsync({ leadId: selectedLead._id });
+    await refetch();
+  }, [convertMutation, selectedLead, refetch]);
+
+  const handleRevertLead = useCallback(async () => {
+    if (!selectedLead) return;
+    await revertMutation.mutateAsync(selectedLead._id);
+    await refetch();
+  }, [revertMutation, selectedLead, refetch]);
+
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedLead) return;
+    openPipelinePanel({
+      pipelineRef: selectedLead.pipelineRef,
+      customerId: selectedLead.customerId,
+      leadId: selectedLead._id,
+      title: `Lead: ${selectedLead.contactName || selectedLead.companyName || selectedLead.pipelineRef}`,
+    });
+  }, [selectedLead, openPipelinePanel]);
+
 
   const handleCreate = useCallback(async (input: CreateLeadInput) => {
     await createMutation.mutateAsync(input);
@@ -89,6 +115,35 @@ export function LeadsPage() {
         setEditingLead(null);
         setIsFormOpen(true);
       },
+    },
+    {
+      id: "logs",
+      label: "Loglar",
+      icon: <MessageSquare size={14} />,
+      onClick: handleOpenLogs,
+      disabled: !selectedLead,
+    },
+    {
+      id: "convert",
+      label: "Teklife Çevir",
+      icon: <Repeat size={14} />,
+      onClick: handleConvertLead,
+      variant: "primary",
+      disabled:
+        !selectedLead ||
+        selectedLead.status === "converted" ||
+        selectedLead.status === "lost" ||
+        convertMutation.isPending,
+    },
+    {
+      id: "revert",
+      label: "Tekliften Geri Al",
+      icon: <Repeat size={14} />,
+      onClick: handleRevertLead,
+      disabled:
+        !selectedLead ||
+        selectedLead.status !== "converted" ||
+        revertMutation.isPending,
     },
     {
       id: "refresh",
@@ -139,6 +194,7 @@ export function LeadsPage() {
           loading={isLoading}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
+          onSelectionChanged={setSelectedLead}
           toolbarButtons={toolbarButtons}
         />
       </div>

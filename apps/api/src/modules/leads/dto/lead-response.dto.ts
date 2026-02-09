@@ -6,6 +6,22 @@ export class LeadActivityDto {
   type: string;
 }
 
+export class LeadLossInfoDto {
+  reason: string;
+  competitor?: string;
+  notes?: string;
+  lostAt?: Date;
+  lostBy?: string;
+}
+
+export class LeadStageHistoryDto {
+  fromStatus: string;
+  toStatus: string;
+  changedBy: string;
+  changedAt: Date;
+  durationInStage: number;
+}
+
 export class LeadResponseDto {
   _id: string;
   pipelineRef: string;
@@ -25,6 +41,8 @@ export class LeadResponseDto {
   expectedCloseDate: Date;
   labels: string[];
   activities: LeadActivityDto[];
+  lossInfo: LeadLossInfoDto;
+  stageHistory: LeadStageHistoryDto[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,4 +69,6 @@ export class LeadStatsDto {
   unqualified: number;
   converted: number;
   lost: number;
+  openValue: number;
+  weightedValue: number;
 }

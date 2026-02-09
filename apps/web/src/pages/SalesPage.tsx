@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { CalendarDays, Plus, RefreshCw } from "lucide-react";
+import { CalendarDays, MessageSquare, Plus, RefreshCw } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useSales,
@@ -16,6 +16,7 @@ import type {
   CreateSaleInput,
 } from "../features/sales/types/sale.types";
 import { useCustomerLookup } from "../features/lookup";
+import { useLogPanelStore } from "../features/manager-log";
 
 export function SalesPage() {
   const defaultRange = useMemo(() => getMonthRange(), []);
@@ -30,11 +31,13 @@ export function SalesPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   const { data, isLoading, refetch } = useSales(queryParams);
   const createMutation = useCreateSale();
   const updateMutation = useUpdateSale();
   const { getCustomerName } = useCustomerLookup();
+  const { openPipelinePanel } = useLogPanelStore();
 
   const enrichedSales = useMemo(() => {
     if (!data?.data) return [];
@@ -73,6 +76,16 @@ export function SalesPage() {
     setIsFormOpen(true);
   }, []);
 
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedSale) return;
+    openPipelinePanel({
+      pipelineRef: selectedSale.pipelineRef,
+      customerId: selectedSale.customerId,
+      saleId: selectedSale._id,
+      title: `Satış: ${selectedSale.no || selectedSale.pipelineRef}`,
+    });
+  }, [selectedSale, openPipelinePanel]);
+
   const handleCreate = useCallback(
     async (input: CreateSaleInput) => {
       await createMutation.mutateAsync(input);
@@ -103,6 +116,13 @@ export function SalesPage() {
         setEditingSale(null);
         setIsFormOpen(true);
       },
+    },
+    {
+      id: "logs",
+      label: "Loglar",
+      icon: <MessageSquare size={14} />,
+      onClick: handleOpenLogs,
+      disabled: !selectedSale,
     },
     {
       id: "refresh",
@@ -153,6 +173,7 @@ export function SalesPage() {
           loading={isLoading}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
+          onSelectionChanged={setSelectedSale}
           toolbarButtons={toolbarButtons}
         />
       </div>

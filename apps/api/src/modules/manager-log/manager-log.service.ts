@@ -8,6 +8,7 @@ import {
   ManagerLogQueryDto,
   ManagerLogResponseDto,
   PaginatedManagerLogsResponseDto,
+  PipelineLogsResponseDto,
 } from "./dto";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
@@ -123,6 +124,33 @@ export class ManagerLogService {
     return logs.map((doc) => this.mapToResponseDto(doc));
   }
 
+  async findByPipeline(pipelineRef: string): Promise<PipelineLogsResponseDto> {
+    const logs = await this.managerLogModel
+      .find({ pipelineRef })
+      .sort({ createdAt: 1 })
+      .exec();
+
+    const grouped: PipelineLogsResponseDto = {
+      pipelineRef,
+      lead: [],
+      offer: [],
+      sale: [],
+    };
+
+    for (const log of logs) {
+      const dto = this.mapToResponseDto(log);
+      if (log.contextType === "lead") {
+        grouped.lead.push(dto);
+      } else if (log.contextType === "offer") {
+        grouped.offer.push(dto);
+      } else if (log.contextType === "sale") {
+        grouped.sale.push(dto);
+      }
+    }
+
+    return grouped;
+  }
+
   private mapToResponseDto(doc: ManagerLogDocument): ManagerLogResponseDto {
     return {
       _id: doc._id.toString(),
@@ -130,6 +158,7 @@ export class ManagerLogService {
       customerId: doc.customerId,
       contextType: doc.contextType,
       contextId: doc.contextId,
+      pipelineRef: doc.pipelineRef,
       message: doc.message,
       mentions: doc.mentions || [],
       references: doc.references || [],

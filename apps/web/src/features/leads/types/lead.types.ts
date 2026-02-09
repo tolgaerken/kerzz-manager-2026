@@ -16,6 +16,22 @@ export interface LeadActivity {
   type: string;
 }
 
+export interface LeadLossInfo {
+  reason?: "price" | "competitor" | "timing" | "no-budget" | "no-response" | "other";
+  competitor?: string;
+  notes?: string;
+  lostAt?: string;
+  lostBy?: string;
+}
+
+export interface LeadStageHistory {
+  fromStatus: LeadStatus;
+  toStatus: LeadStatus;
+  changedBy?: string;
+  changedAt: string;
+  durationInStage: number;
+}
+
 export interface Lead {
   _id: string;
   pipelineRef: string;
@@ -35,6 +51,8 @@ export interface Lead {
   expectedCloseDate: string;
   labels: string[];
   activities: LeadActivity[];
+  lossInfo?: LeadLossInfo;
+  stageHistory?: LeadStageHistory[];
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +92,8 @@ export interface LeadStats {
   unqualified: number;
   converted: number;
   lost: number;
+  openValue: number;
+  weightedValue: number;
 }
 
 export interface CreateLeadInput {
@@ -92,6 +112,7 @@ export interface CreateLeadInput {
   currency?: string;
   expectedCloseDate?: string;
   labels?: string[];
+  lossInfo?: LeadLossInfo;
 }
 
 export interface UpdateLeadInput extends Partial<CreateLeadInput> {}

@@ -139,6 +139,9 @@ export class InvoiceCreatorService {
       // Odeme planini guncelle
       const now = new Date();
       const dueDate = addDays(now, CONTRACT_DUE_DAYS);
+      const sentGrandTotal = this.safeRound(Number(sentInvoice.grandTotal ?? 0));
+      const sentTaxTotal = this.safeRound(Number(sentInvoice.taxTotal ?? 0));
+      const sentTotal = this.safeRound(sentGrandTotal - sentTaxTotal);
 
       await this.paymentModel.updateOne(
         { id: planId },
@@ -147,7 +150,7 @@ export class InvoiceCreatorService {
             invoiceNo: sentInvoice.invoiceNumber,
             uuid: sentInvoice.uuid,
             invoiceDate: now,
-            invoiceTotal: sentInvoice.grandTotal,
+            invoiceTotal: sentGrandTotal,
             dueDate,
             invoiceError: "",
             editDate: now,
@@ -178,9 +181,9 @@ export class InvoiceCreatorService {
             ...this.toPlainObject(globalInvoice),
             invoiceNumber: sentInvoice.invoiceNumber,
             invoiceUUID: sentInvoice.uuid,
-            grandTotal: sentInvoice.grandTotal,
-            taxTotal: sentInvoice.taxTotal,
-            total: sentInvoice.grandTotal - sentInvoice.taxTotal,
+            grandTotal: sentGrandTotal,
+            taxTotal: sentTaxTotal,
+            total: sentTotal,
             description: invoiceDescription,
           },
         },
@@ -217,17 +220,42 @@ export class InvoiceCreatorService {
   ): Promise<CloudInvoice> {
     const url = `${this.invoiceServiceUrl}/api/invoice/saveinvoicewithobject`;
 
-    const { data } = await firstValueFrom(
-      this.httpService.post<CloudInvoice>(url, invoiceCover, {
-        headers: {
-          "x-api-key": this.invoiceServiceApiKey,
-          "Content-Type": "application/json",
-        },
-        timeout: 30000,
-      }),
-    );
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.post<CloudInvoice>(url, invoiceCover, {
+          headers: {
+            "x-api-key": this.invoiceServiceApiKey,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        }),
+      );
 
-    return data;
+      return data;
+    } catch (error: unknown) {
+      // Axios hata detaylarini logla ve ilet
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { status?: number; data?: unknown };
+          message?: string;
+        };
+        const responseData = axiosError.response?.data;
+        const status = axiosError.response?.status;
+
+        this.logger.error(
+          `Cloudie API hatasi (${status}): ${JSON.stringify(responseData)}`,
+        );
+
+        // Detayli hata mesajini ilet
+        const errorDetail =
+          typeof responseData === "object" && responseData !== null
+            ? JSON.stringify(responseData)
+            : String(responseData || axiosError.message);
+
+        throw new Error(`Fatura servisi hatasi (${status}): ${errorDetail}`);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -264,9 +292,9 @@ export class InvoiceCreatorService {
         taxNumber: customer.taxNo || "",
         taxOffice: customer.taxOffice || "",
         mail: customer.email || "",
-        city: customer.city || "",
-        town: customer.district || "",
-        address: customer.address || "",
+        city: customer.address?.city || "",
+        town: customer.address?.town || customer.address?.district || "",
+        address: customer.address?.address || "",
       },
       branchCode: company.cloudDb,
       branchName: company.cloudDb,

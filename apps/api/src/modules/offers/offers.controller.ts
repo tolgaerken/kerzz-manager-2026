@@ -23,6 +23,11 @@ export class OffersController {
     return this.offersService.findAll(query);
   }
 
+  @Get("stats")
+  async getStats() {
+    return this.offersService.getStats();
+  }
+
   @Get(":id")
   async findOne(@Param("id") id: string) {
     return this.offersService.findOne(id);

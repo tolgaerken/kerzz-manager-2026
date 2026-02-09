@@ -24,6 +24,19 @@ export function OffersGrid({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const staleCutoff = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 14);
+    return cutoff;
+  }, []);
+
+  const isStaleOffer = useCallback(
+    (offer: Offer) =>
+      ["draft", "sent", "revised", "waiting", "approved"].includes(offer.status) &&
+      offer.updatedAt &&
+      new Date(offer.updatedAt) <= staleCutoff,
+    [staleCutoff]
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -69,9 +82,12 @@ export function OffersGrid({
         typeof col.cellClassName === "function"
           ? col.cellClassName(_value, row)
           : col.cellClassName || "";
+      const staleClass = isStaleOffer(row)
+        ? " bg-[var(--color-warning)]/10"
+        : "";
       return selectedId === row._id
-        ? `${original} bg-[var(--color-primary)]/10`.trim()
-        : original;
+        ? `${original}${staleClass} bg-[var(--color-primary)]/10`.trim()
+        : `${original}${staleClass}`.trim();
     },
   }));
 

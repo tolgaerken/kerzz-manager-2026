@@ -8,6 +8,22 @@ export interface OfferConversionInfo {
   convertedAt: string;
 }
 
+export interface OfferLossInfo {
+  reason?: "price" | "competitor" | "timing" | "no-budget" | "no-response" | "other";
+  competitor?: string;
+  notes?: string;
+  lostAt?: string;
+  lostBy?: string;
+}
+
+export interface OfferStageHistory {
+  fromStatus: OfferStatus;
+  toStatus: OfferStatus;
+  changedBy?: string;
+  changedAt: string;
+  durationInStage: number;
+}
+
 export interface Offer {
   _id: string;
   no: number;
@@ -24,6 +40,8 @@ export interface Offer {
   eurRate: number;
   status: OfferStatus;
   conversionInfo: OfferConversionInfo;
+  lossInfo?: OfferLossInfo;
+  stageHistory?: OfferStageHistory[];
   offerNote: string;
   mailList: { email: string; name: string }[];
   labels: string[];
@@ -63,6 +81,21 @@ export interface OffersResponse {
   meta: PaginationMeta;
 }
 
+export interface OfferStats {
+  total: number;
+  draft: number;
+  sent: number;
+  revised: number;
+  waiting: number;
+  approved: number;
+  rejected: number;
+  won: number;
+  lost: number;
+  converted: number;
+  openValue: number;
+  weightedValue: number;
+}
+
 export interface CreateOfferInput {
   pipelineRef?: string;
   leadId?: string;
@@ -79,6 +112,7 @@ export interface CreateOfferInput {
   mailList?: { email: string; name: string }[];
   labels?: string[];
   internalFirm?: string;
+  lossInfo?: OfferLossInfo;
   products?: Partial<import("../../pipeline").PipelineProduct>[];
   licenses?: Partial<import("../../pipeline").PipelineLicense>[];
   rentals?: Partial<import("../../pipeline").PipelineRental>[];

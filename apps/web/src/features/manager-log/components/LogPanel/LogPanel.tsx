@@ -9,7 +9,7 @@ import type { CreateLogInput } from "../../types";
 
 export function LogPanel() {
   const { isOpen, context, closePanel } = useLogPanelStore();
-  const { userInfo } = useAuthStore();
+  const userInfo = useAuthStore((state) => state.userInfo);
 
   const {
     data: logsData,
@@ -52,7 +52,14 @@ export function LogPanel() {
 
   const handleSendMessage = useCallback(
     async (input: Omit<CreateLogInput, "customerId" | "contextType" | "contextId" | "authorId" | "authorName">) => {
-      if (!context || !userInfo) return;
+      console.log("[handleSendMessage] context:", context);
+      console.log("[handleSendMessage] userInfo:", userInfo);
+      console.log("[handleSendMessage] input:", input);
+
+      if (!context || !userInfo) {
+        console.log("[handleSendMessage] Early return - context or userInfo is null");
+        return;
+      }
 
       const logInput: CreateLogInput = {
         customerId: context.customerId,
@@ -63,13 +70,19 @@ export function LogPanel() {
         ...input,
       };
 
+      console.log("[handleSendMessage] logInput:", logInput);
+
       await createLogMutation.mutateAsync(logInput);
       refetch();
     },
     [context, userInfo, createLogMutation, refetch]
   );
 
-  if (!isOpen || !context) return null;
+  if (!isOpen) return null;
+
+  // Genel mod mu yoksa context modunda mı?
+  const isGeneralMode = !context;
+  const panelTitle = context?.title || "Tüm Loglar";
 
   return (
     <>
@@ -81,7 +94,7 @@ export function LogPanel() {
 
       {/* Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-surface z-50 shadow-xl flex flex-col animate-slide-in-right">
-        <LogPanelHeader title={context.title} onClose={closePanel} />
+        <LogPanelHeader title={panelTitle} onClose={closePanel} />
 
         <LogMessageList
           logs={logsData?.data || []}
@@ -90,10 +103,13 @@ export function LogPanel() {
           error={error}
         />
 
-        <LogInput
-          onSend={handleSendMessage}
-          isLoading={createLogMutation.isPending}
-        />
+        {/* Genel modda input gizle - context olmadan log oluşturulamaz */}
+        {!isGeneralMode && (
+          <LogInput
+            onSend={handleSendMessage}
+            isLoading={createLogMutation.isPending}
+          />
+        )}
       </div>
     </>
   );

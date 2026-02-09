@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
-import { OfferMailRecipientDto } from "./create-offer.dto";
+import { OfferLossInfoDto, OfferMailRecipientDto } from "./create-offer.dto";
 
 export class UpdateOfferDto {
   @IsString()
@@ -68,6 +68,11 @@ export class UpdateOfferDto {
   @IsString()
   @IsOptional()
   internalFirm?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OfferLossInfoDto)
+  lossInfo?: OfferLossInfoDto;
 
   // Dual write
   @IsArray()

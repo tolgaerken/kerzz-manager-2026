@@ -6,7 +6,7 @@ export class CreateManagerNotificationDto {
   @IsNotEmpty()
   userId: string;
 
-  @IsEnum(["mention", "reminder"])
+  @IsEnum(["mention", "reminder", "stale"])
   type: ManagerNotificationType;
 
   @IsString()

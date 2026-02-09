@@ -10,6 +10,7 @@ import { SalesDashboardPage } from "./pages/SalesDashboardPage";
 import { LeadsPage } from "./pages/LeadsPage";
 import { OffersPage } from "./pages/OffersPage";
 import { SalesPage } from "./pages/SalesPage";
+import { PipelineKanbanPage } from "./pages/PipelineKanbanPage";
 import { IntegratorPage } from "./pages/IntegratorPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
@@ -35,11 +36,21 @@ import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
 
 // Auth kontrolü
 const checkAuth = () => {
-  const authStatus = useAuthStore.getState().authStatus;
+  const { authStatus, setUserInfo } = useAuthStore.getState();
   
   if (!authStatus) {
     const stored = localStorage.getItem(AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO);
     if (!stored) {
+      throw redirect({ to: "/login" });
+    }
+    
+    // localStorage'dan userInfo'yu store'a yükle
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed?.token) {
+        setUserInfo(parsed.token);
+      }
+    } catch {
       throw redirect({ to: "/login" });
     }
   }
@@ -116,6 +127,13 @@ const pipelineSalesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/pipeline/sales",
   component: SalesPage,
+});
+
+// Pipeline: Kanban page
+const pipelineKanbanRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/pipeline/kanban",
+  component: PipelineKanbanPage,
 });
 
 // Integrator page
@@ -296,6 +314,7 @@ const routeTree = rootRoute.addChildren([
     leadsRoute,
     offersRoute,
     pipelineSalesRoute,
+    pipelineKanbanRoute,
     integratorRoute,
     contractInvoicesRoute,
     invoicesRoute,

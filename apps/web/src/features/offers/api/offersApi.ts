@@ -6,6 +6,7 @@ import type {
   CreateOfferInput,
   UpdateOfferInput,
   OfferStatus,
+  OfferStats,
 } from "../types/offer.types";
 
 const { API_BASE_URL, ENDPOINTS } = OFFERS_CONSTANTS;
@@ -168,4 +169,18 @@ export async function revertOfferConversion(id: string): Promise<Offer> {
   });
 
   return handleResponse<Offer>(response);
+}
+
+export async function fetchOfferStats(): Promise<OfferStats> {
+  const url = `${API_BASE_URL}${ENDPOINTS.OFFERS}/stats`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  });
+
+  return handleResponse<OfferStats>(response);
 }

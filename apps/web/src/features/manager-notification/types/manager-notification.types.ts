@@ -1,4 +1,4 @@
-export type ManagerNotificationType = "mention" | "reminder";
+export type ManagerNotificationType = "mention" | "reminder" | "stale";
 
 export interface ManagerNotification {
   _id: string;

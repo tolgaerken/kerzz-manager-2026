@@ -3,6 +3,24 @@ import { Document, Types } from "mongoose";
 
 export type SaleDocument = Sale & Document;
 
+@Schema({ _id: false })
+export class SaleStageHistory {
+  @Prop({ type: String, default: "" })
+  fromStatus: string;
+
+  @Prop({ type: String, default: "" })
+  toStatus: string;
+
+  @Prop({ type: String, default: "" })
+  changedBy: string;
+
+  @Prop({ type: Date, default: () => new Date() })
+  changedAt: Date;
+
+  @Prop({ type: Number, default: 0 })
+  durationInStage: number;
+}
+
 @Schema({ collection: "sales", timestamps: true })
 export class Sale {
   _id: Types.ObjectId;
@@ -98,6 +116,9 @@ export class Sale {
 
   @Prop({ type: String, default: "" })
   internalFirm: string;
+
+  @Prop({ type: [SaleStageHistory], default: [] })
+  stageHistory: SaleStageHistory[];
 
   @Prop({ type: Date })
   createdAt: Date;

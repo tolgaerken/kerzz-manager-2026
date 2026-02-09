@@ -9,6 +9,7 @@ import {
   updateOfferStatus,
   calculateOfferTotals,
   revertOfferConversion,
+  fetchOfferStats,
 } from "../api/offersApi";
 import type {
   OfferQueryParams,
@@ -17,6 +18,7 @@ import type {
   CreateOfferInput,
   UpdateOfferInput,
   OfferStatus,
+  OfferStats,
 } from "../types/offer.types";
 
 const { QUERY_KEYS } = OFFERS_CONSTANTS;
@@ -27,6 +29,7 @@ export const offerKeys = {
   list: (params: OfferQueryParams) => [...offerKeys.lists(), params] as const,
   details: () => [...offerKeys.all, "detail"] as const,
   detail: (id: string) => [...offerKeys.details(), id] as const,
+  stats: () => [QUERY_KEYS.OFFER_STATS] as const,
 };
 
 export function useOffers(params: OfferQueryParams = {}) {
@@ -48,6 +51,15 @@ export function useOffer(id: string) {
   });
 }
 
+export function useOfferStats() {
+  return useQuery<OfferStats, Error>({
+    queryKey: offerKeys.stats(),
+    queryFn: () => fetchOfferStats(),
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
+  });
+}
+
 export function useCreateOffer() {
   const queryClient = useQueryClient();
 
@@ -55,6 +67,7 @@ export function useCreateOffer() {
     mutationFn: (input: CreateOfferInput) => createOffer(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: offerKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: offerKeys.stats() });
     },
   });
 }
@@ -70,6 +83,7 @@ export function useUpdateOffer() {
       queryClient.invalidateQueries({
         queryKey: offerKeys.detail(variables.id),
       });
+      queryClient.invalidateQueries({ queryKey: offerKeys.stats() });
     },
   });
 }
@@ -81,6 +95,7 @@ export function useDeleteOffer() {
     mutationFn: (id: string) => deleteOffer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: offerKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: offerKeys.stats() });
     },
   });
 }
@@ -96,6 +111,7 @@ export function useUpdateOfferStatus() {
       queryClient.invalidateQueries({
         queryKey: offerKeys.detail(variables.id),
       });
+      queryClient.invalidateQueries({ queryKey: offerKeys.stats() });
     },
   });
 }
@@ -120,6 +136,7 @@ export function useRevertOfferConversion() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: offerKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: offerKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: offerKeys.stats() });
     },
   });
 }

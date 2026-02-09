@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AtSign, Calendar, Circle } from "lucide-react";
+import { AlertTriangle, AtSign, Calendar, Circle } from "lucide-react";
 import type { ManagerNotification } from "../../types";
 
 interface NotificationItemProps {
@@ -31,19 +31,23 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
     <button
       onClick={onClick}
       className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-surface-elevated transition-colors ${
-        !notification.read ? "bg-primary/5" : ""
+        !notification.read ? "bg-[var(--color-primary)]/5" : ""
       }`}
     >
       {/* İkon */}
       <div
         className={`flex-shrink-0 p-2 rounded-full ${
           notification.type === "mention"
-            ? "bg-primary/10 text-primary"
-            : "bg-warning/10 text-warning"
+            ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+            : notification.type === "stale"
+              ? "bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
+              : "bg-[var(--color-info)]/10 text-[var(--color-info)]"
         }`}
       >
         {notification.type === "mention" ? (
           <AtSign className="w-4 h-4" />
+        ) : notification.type === "stale" ? (
+          <AlertTriangle className="w-4 h-4" />
         ) : (
           <Calendar className="w-4 h-4" />
         )}
@@ -54,7 +58,9 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
         <p className="text-sm text-foreground line-clamp-2">
           {notification.type === "mention"
             ? "Sizi bir logda etiketledi"
-            : "Hatırlatma zamanı geldi"}
+            : notification.type === "stale"
+              ? "Hareketsiz kayıt uyarısı"
+              : "Hatırlatma zamanı geldi"}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
           {notification.message}
@@ -64,7 +70,7 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
 
       {/* Okunmamış göstergesi */}
       {!notification.read && (
-        <Circle className="w-2 h-2 text-primary fill-primary flex-shrink-0 mt-2" />
+        <Circle className="w-2 h-2 text-[var(--color-primary)] fill-[var(--color-primary)] flex-shrink-0 mt-2" />
       )}
     </button>
   );

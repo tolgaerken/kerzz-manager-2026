@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { X } from "lucide-react";
-import type { Offer, CreateOfferInput } from "../../types/offer.types";
+import { X, MessageSquare } from "lucide-react";
+import type { Offer, CreateOfferInput, OfferStatus } from "../../types/offer.types";
 import { useOffer } from "../../hooks/useOffers";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
+import { LossReasonModal } from "../LossReasonModal";
 import { useCompanies } from "../../../companies/hooks/useCompanies";
 import {
   ProductItemsTable,
@@ -10,6 +11,7 @@ import {
   RentalItemsTable,
   PaymentItemsTable,
 } from "../../../pipeline";
+import { useLogPanelStore } from "../../../manager-log";
 
 type TabId = "general" | "products" | "licenses" | "rentals" | "payments" | "notes";
 
@@ -44,6 +46,7 @@ const initialFormState: CreateOfferInput = {
   usdRate: 0,
   eurRate: 0,
   internalFirm: "",
+  status: "draft",
   offerNote: "",
   products: [],
   licenses: [],
@@ -57,6 +60,18 @@ const inputClassName =
 const labelClassName =
   "block text-sm font-medium text-[var(--color-foreground)] mb-1.5";
 
+const STATUS_OPTIONS: { value: OfferStatus; label: string }[] = [
+  { value: "draft", label: "Taslak" },
+  { value: "sent", label: "Gönderildi" },
+  { value: "revised", label: "Revize Edildi" },
+  { value: "waiting", label: "Cevap Bekleniyor" },
+  { value: "approved", label: "Onaylandı" },
+  { value: "rejected", label: "Reddedildi" },
+  { value: "won", label: "Kazanıldı" },
+  { value: "lost", label: "Kaybedildi" },
+  { value: "converted", label: "Dönüştürüldü" },
+];
+
 export function OfferFormModal({
   isOpen,
   onClose,
@@ -67,6 +82,9 @@ export function OfferFormModal({
   const [activeTab, setActiveTab] = useState<TabId>("general");
   const [formData, setFormData] = useState<CreateOfferInput>(initialFormState);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLossModalOpen, setIsLossModalOpen] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+  const { openPipelinePanel } = useLogPanelStore();
 
   // Edit modunda detaylı veriyi (products, licenses vb.) çek
   const { data: offerDetail } = useOffer(editItem?._id || "");
@@ -87,17 +105,21 @@ export function OfferFormModal({
           usdRate: editItem.usdRate || 0,
           eurRate: editItem.eurRate || 0,
           internalFirm: editItem.internalFirm || "",
+          status: editItem.status || "draft",
           offerNote: editItem.offerNote || "",
           products: editItem.products || [],
           licenses: editItem.licenses || [],
           rentals: editItem.rentals || [],
           payments: editItem.payments || [],
+          lossInfo: editItem.lossInfo,
         });
       } else {
         setFormData(initialFormState);
       }
       setActiveTab("general");
       setErrors({});
+      setIsLossModalOpen(false);
+      setPendingSubmit(false);
     }
   }, [isOpen, editItem]);
 
@@ -151,6 +173,11 @@ export function OfferFormModal({
       setActiveTab("general");
       return;
     }
+    if (formData.status === "lost" && !formData.lossInfo?.reason) {
+      setIsLossModalOpen(true);
+      setPendingSubmit(true);
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -158,7 +185,13 @@ export function OfferFormModal({
     field: keyof CreateOfferInput,
     value: string | number,
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "status" && value !== "lost") {
+        next.lossInfo = undefined;
+      }
+      return next;
+    });
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -170,18 +203,29 @@ export function OfferFormModal({
 
   const isEditMode = !!editItem;
 
+  const handleOpenLogs = () => {
+    if (!editItem) return;
+    openPipelinePanel({
+      pipelineRef: editItem.pipelineRef,
+      customerId: editItem.customerId,
+      offerId: editItem._id,
+      title: `Teklif: ${editItem.no || editItem.pipelineRef}`,
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
-      />
+    <>
+      <div className="fixed inset-0 z-50 flex flex-col">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 transition-opacity"
+          onClick={onClose}
+        />
 
-      {/* Full-screen modal */}
-      <div className="relative z-10 flex flex-col w-full h-full bg-[var(--color-surface)]">
+        {/* Full-screen modal */}
+        <div className="relative z-10 flex flex-col w-full h-full bg-[var(--color-surface)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] shrink-0">
           <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
@@ -316,49 +360,86 @@ export function OfferFormModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-border)] shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading && (
-                <svg
-                  className="w-4 h-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-border)] shrink-0">
+            {/* Sol taraf - Loglar butonu (sadece edit modunda) */}
+            <div>
+              {isEditMode && editItem?.pipelineRef && (
+                <button
+                  type="button"
+                  onClick={handleOpenLogs}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors"
                 >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    className="opacity-25"
-                  />
-                  <path
-                    d="M4 12a8 8 0 018-8"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    className="opacity-75"
-                  />
-                </svg>
+                  <MessageSquare className="w-4 h-4" />
+                  Loglar
+                </button>
               )}
-              {isEditMode ? "Güncelle" : "Kaydet"}
-            </button>
+            </div>
+            
+            {/* Sağ taraf - İptal ve Kaydet */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading && (
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="opacity-25"
+                    />
+                    <path
+                      d="M4 12a8 8 0 018-8"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      className="opacity-75"
+                    />
+                  </svg>
+                )}
+                {isEditMode ? "Güncelle" : "Kaydet"}
+              </button>
+            </div>
           </div>
         </form>
+        </div>
       </div>
-    </div>
+
+      <LossReasonModal
+        isOpen={isLossModalOpen}
+        initialValue={formData.lossInfo}
+        onClose={() => {
+          setIsLossModalOpen(false);
+          setPendingSubmit(false);
+        }}
+        onSubmit={(value) => {
+          const nextData = { ...formData, lossInfo: value, status: "lost" };
+          setFormData(nextData);
+          setIsLossModalOpen(false);
+          if (pendingSubmit) {
+            onSubmit(nextData);
+            setPendingSubmit(false);
+          }
+        }}
+        isLoading={loading}
+      />
+    </>
   );
 }
 
@@ -410,6 +491,22 @@ function GeneralTab({
           placeholder="Satıcı adı"
           className={inputClassName}
         />
+      </div>
+
+      {/* Durum */}
+      <div>
+        <label className={labelClassName}>Durum</label>
+        <select
+          value={formData.status || "draft"}
+          onChange={(e) => handleChange("status", e.target.value)}
+          className={inputClassName}
+        >
+          {STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Tarihler */}

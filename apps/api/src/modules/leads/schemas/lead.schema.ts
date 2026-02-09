@@ -19,6 +19,42 @@ export class LeadActivity {
   type: string; // note, call, email, meeting
 }
 
+@Schema({ _id: false })
+export class LeadLossInfo {
+  @Prop({ type: String, default: "" })
+  reason: string; // price, competitor, timing, no-budget, no-response, other
+
+  @Prop({ type: String, default: "" })
+  competitor?: string;
+
+  @Prop({ type: String, default: "" })
+  notes?: string;
+
+  @Prop({ type: Date })
+  lostAt?: Date;
+
+  @Prop({ type: String, default: "" })
+  lostBy?: string;
+}
+
+@Schema({ _id: false })
+export class LeadStageHistory {
+  @Prop({ type: String, default: "" })
+  fromStatus: string;
+
+  @Prop({ type: String, default: "" })
+  toStatus: string;
+
+  @Prop({ type: String, default: "" })
+  changedBy: string;
+
+  @Prop({ type: Date, default: () => new Date() })
+  changedAt: Date;
+
+  @Prop({ type: Number, default: 0 })
+  durationInStage: number;
+}
+
 export type LeadDocument = Lead & Document;
 
 @Schema({ collection: "leads", timestamps: true })
@@ -87,6 +123,12 @@ export class Lead {
 
   @Prop({ type: [LeadActivity], default: [] })
   activities: LeadActivity[];
+
+  @Prop({ type: LeadLossInfo, default: () => ({}) })
+  lossInfo: LeadLossInfo;
+
+  @Prop({ type: [LeadStageHistory], default: [] })
+  stageHistory: LeadStageHistory[];
 
   @Prop({ type: Date })
   createdAt: Date;
