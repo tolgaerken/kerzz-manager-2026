@@ -82,8 +82,11 @@ export class ContractInvoiceOrchestratorService {
       return contract.yearly === isYearly;
     });
 
-    // 3) Hafif lookup: balance (ERP) ve block (Licenses)
-    const enrichedPlans = await this.enrichWithDynamicFields(filteredPlans);
+    // 3) Hafif lookup: balance (ERP), block (Licenses), contractNumber (Contracts)
+    const enrichedPlans = await this.enrichWithDynamicFields(
+      filteredPlans,
+      contractMap,
+    );
 
     return { data: enrichedPlans, total: enrichedPlans.length };
   }
@@ -139,11 +142,12 @@ export class ContractInvoiceOrchestratorService {
   }
 
   /**
-   * Odeme planlarina dinamik alanlar ekler (balance, block).
+   * Odeme planlarina dinamik alanlar ekler (balance, block, contractNumber).
    * Toplu sorgularla N+1 problemini onler.
    */
   private async enrichWithDynamicFields(
     plans: ContractPayment[],
+    contractMap: Map<string, Contract>,
   ): Promise<EnrichedPaymentPlan[]> {
     if (plans.length === 0) return [];
 
@@ -222,7 +226,7 @@ export class ContractInvoiceOrchestratorService {
       ref: plan.ref || "",
       taxNo: plan.taxNo || "",
       internalFirm: plan.internalFirm || "",
-      contractNumber: plan.contractNumber || 0,
+      contractNumber: contractMap.get(plan.contractId)?.no || 0,
       segment: plan.segment || "",
       block: blockMap.get(plan.customerId) ?? false,
       editDate: plan.editDate,
