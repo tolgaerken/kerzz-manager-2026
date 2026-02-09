@@ -4,6 +4,7 @@ import { HttpModule } from "@nestjs/axios";
 import { ErpController } from "./erp.controller";
 import { ErpBalanceService } from "./services/erp-balance.service";
 import { NetsisProxyService } from "./services/netsis-proxy.service";
+import { AccountTransactionsService } from "./services/account-transactions.service";
 import { ErpBalanceCron } from "./erp-balance.cron";
 import { ErpBalance, ErpBalanceSchema } from "./schemas/erp-balance.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
@@ -21,7 +22,7 @@ import { SystemLogsModule } from "../system-logs";
     SystemLogsModule,
   ],
   controllers: [ErpController],
-  providers: [ErpBalanceService, NetsisProxyService, ErpBalanceCron],
-  exports: [ErpBalanceService, NetsisProxyService],
+  providers: [ErpBalanceService, NetsisProxyService, AccountTransactionsService, ErpBalanceCron],
+  exports: [ErpBalanceService, NetsisProxyService, AccountTransactionsService],
 })
 export class ErpModule {}

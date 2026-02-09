@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Receipt } from "lucide-react";
 import {
   ContractInvoicesGrid,
   ContractInvoicesToolbar,
@@ -15,6 +15,8 @@ import type {
   PaymentListItem,
 } from "../features/contract-invoices";
 import { useLogPanelStore } from "../features/manager-log";
+import { useCustomerLookup } from "../features/lookup";
+import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function ContractInvoicesPage() {
   // Donem ve tarih state
@@ -55,6 +57,12 @@ export function ContractInvoicesPage() {
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
+
+  // Customer lookup for erpId
+  const { customerMap } = useCustomerLookup();
+
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // Kayitlari getir
   const handleLoadRecords = useCallback(() => {
@@ -178,6 +186,20 @@ export function ContractInvoicesPage() {
     });
   }, [selectedPlan, openEntityPanel]);
 
+  // Cari hareketleri modalını aç
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedPlan) return;
+    const customer = customerMap.get(selectedPlan.customerId);
+    if (!customer?.erpId) return;
+    openAccountTransactionsModal(customer.erpId, selectedPlan.internalFirm || "VERI");
+  }, [selectedPlan, customerMap, openAccountTransactionsModal]);
+
+  // Check if selected plan has erpId via customer
+  const hasErpId = useMemo(() => {
+    if (!selectedPlan) return false;
+    return !!customerMap.get(selectedPlan.customerId)?.erpId;
+  }, [selectedPlan, customerMap]);
+
   // Secili kayitlarin toplamı
   const selectedTotal = useMemo(() => {
     if (!data?.data || selectedIds.length === 0) return 0;
@@ -211,6 +233,15 @@ export function ContractInvoicesPage() {
           >
             <MessageSquare className="w-4 h-4" />
             Loglar
+          </button>
+          <button
+            onClick={handleOpenAccountTransactions}
+            disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Cari Hareketleri"
+          >
+            <Receipt className="w-4 h-4" />
+            Cari Hareketleri
           </button>
         </div>
       </div>
@@ -269,6 +300,9 @@ export function ContractInvoicesPage() {
         onClose={() => setDetailModalOpen(false)}
         items={detailItems}
       />
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }

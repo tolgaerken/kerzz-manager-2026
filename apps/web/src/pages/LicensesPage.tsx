@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Plus, RefreshCw, MessageSquare } from "lucide-react";
+import { Plus, RefreshCw, MessageSquare, Receipt } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   LicensesGrid,
@@ -21,6 +21,8 @@ import type {
   UpdateLicenseInput
 } from "../features/licenses";
 import { useLogPanelStore } from "../features/manager-log";
+import { useCustomerLookup } from "../features/lookup";
+import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function LicensesPage() {
   // Query state - tüm veriyi getirmek için limit yüksek tutuldu (virtual scroll kullanılacak)
@@ -48,6 +50,12 @@ export function LicensesPage() {
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
+
+  // Customer lookup for erpId
+  const { customerMap } = useCustomerLookup();
+
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // Handlers
   const handleSearchChange = useCallback((search: string) => {
@@ -178,8 +186,22 @@ export function LicensesPage() {
     });
   }, [selectedLicense, openEntityPanel]);
 
+  // Cari hareketleri modalını aç
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedLicense) return;
+    const customer = customerMap.get(selectedLicense.customerId);
+    if (!customer?.erpId) return;
+    // License'da internalFirm yok, varsayılan VERI kullan
+    openAccountTransactionsModal(customer.erpId, "VERI");
+  }, [selectedLicense, customerMap, openAccountTransactionsModal]);
+
   // Toolbar buttons
   const toolbarButtons: ToolbarButtonConfig[] = useMemo(() => {
+    // Check if selected license has erpId via customer
+    const hasErpId = selectedLicense
+      ? !!customerMap.get(selectedLicense.customerId)?.erpId
+      : false;
+
     return [
       {
         id: "logs",
@@ -187,9 +209,16 @@ export function LicensesPage() {
         icon: <MessageSquare className="h-4 w-4" />,
         onClick: handleOpenLogs,
         disabled: !selectedLicense
+      },
+      {
+        id: "account-transactions",
+        label: "Cari Hareketleri",
+        icon: <Receipt className="h-4 w-4" />,
+        onClick: handleOpenAccountTransactions,
+        disabled: !selectedLicense || !hasErpId
       }
     ];
-  }, [selectedLicense, handleOpenLogs]);
+  }, [selectedLicense, customerMap, handleOpenLogs, handleOpenAccountTransactions]);
 
   return (
     <div className="flex flex-col h-full">
@@ -276,6 +305,9 @@ export function LicensesPage() {
         message={`"${selectedLicense?.brandName}" lisansını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
         isLoading={deleteMutation.isPending}
       />
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }

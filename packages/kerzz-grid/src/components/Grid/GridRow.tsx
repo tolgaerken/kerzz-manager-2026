@@ -84,13 +84,16 @@ function GridRowInner<TData>({
     [hasPendingChange, columns, rowIndex],
   );
 
-  const handleClick = useCallback(() => {
-    // single modunda satıra tıklandığında seçim yap
-    if (selectionMode === 'single' && rowId && onSelectionToggle) {
-      onSelectionToggle(rowId, false);
-    }
-    onClick?.(row, rowIndex);
-  }, [onClick, row, rowIndex, selectionMode, rowId, onSelectionToggle]);
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      // single veya multiple modunda satıra tıklandığında seçim toggle et
+      if (selectionMode !== 'none' && rowId && onSelectionToggle) {
+        onSelectionToggle(rowId, e.shiftKey);
+      }
+      onClick?.(row, rowIndex);
+    },
+    [onClick, row, rowIndex, selectionMode, rowId, onSelectionToggle],
+  );
 
   const handleDoubleClick = useCallback(() => {
     onDoubleClick?.(row, rowIndex);

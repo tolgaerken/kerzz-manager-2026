@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare } from "lucide-react";
+import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useContracts,
@@ -20,6 +20,8 @@ import {
   type CheckContractResult
 } from "../features/contracts";
 import { useLogPanelStore } from "../features/manager-log";
+import { useCustomerLookup } from "../features/lookup";
+import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function ContractsPage() {
   // Filter states
@@ -96,6 +98,12 @@ export function ContractsPage() {
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
+
+  // Customer lookup for erpId
+  const { customerMap } = useCustomerLookup();
+
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // Handlers
   const handleFlowChange = useCallback((newFlow: ContractFlow) => {
@@ -244,11 +252,24 @@ export function ContractsPage() {
     });
   }, [selectedContract, openEntityPanel]);
 
+  // Cari hareketleri modalını aç
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedContract) return;
+    const customer = customerMap.get(selectedContract.customerId);
+    if (!customer?.erpId) return;
+    openAccountTransactionsModal(customer.erpId, selectedContract.internalFirm || "VERI");
+  }, [selectedContract, customerMap, openAccountTransactionsModal]);
+
   // Toolbar buttons for kerzz-grid
   const toolbarButtons: ToolbarButtonConfig[] = useMemo(() => {
     const hasSelection = selectedIds.length > 0 || selectedContract;
     const isMultipleSelected = selectedIds.length > 1;
     const isProcessing = checkMutation.isPending || batchCheck.progress?.status === "running";
+
+    // Check if selected contract has erpId
+    const hasErpId = selectedContract
+      ? !!customerMap.get(selectedContract.customerId)?.erpId
+      : false;
 
     const handleCheckClick = () => {
       if (isMultipleSelected) {
@@ -280,6 +301,13 @@ export function ContractsPage() {
         disabled: isLoading || !hasSelection || isMultipleSelected
       },
       {
+        id: "account-transactions",
+        label: "Cari Hareketleri",
+        icon: <Receipt className="h-4 w-4" />,
+        onClick: handleOpenAccountTransactions,
+        disabled: isLoading || !hasSelection || isMultipleSelected || !hasErpId
+      },
+      {
         id: "check-payment",
         label: getCheckButtonLabel(),
         icon: isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />,
@@ -293,8 +321,10 @@ export function ContractsPage() {
     checkMutation.isPending,
     batchCheck.progress?.status,
     isLoading,
+    customerMap,
     handleInspect,
     handleOpenLogs,
+    handleOpenAccountTransactions,
     handleCheckContract,
     handleCheckMultipleContracts
   ]);
@@ -453,6 +483,9 @@ export function ContractsPage() {
           onClose={handleBatchClose}
         />
       )}
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }

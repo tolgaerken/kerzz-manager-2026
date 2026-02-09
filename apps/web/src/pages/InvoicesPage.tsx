@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X, MessageSquare } from "lucide-react";
+import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X, MessageSquare, Receipt } from "lucide-react";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import { useCollectPayment } from "../features/automated-payments";
 import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
@@ -22,6 +22,7 @@ import type {
   UpdateInvoiceInput
 } from "../features/invoices";
 import { useLogPanelStore } from "../features/manager-log";
+import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 // Tarih preset hesaplama
 function getDatePresetRange(preset: string): { startDate: string; endDate: string } {
@@ -112,6 +113,9 @@ export function InvoicesPage() {
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
+
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // MongoDB Change Stream - global-invoices degisikliklerini dinle
   useMongoChangeStream("global-invoices", (event) => {
@@ -398,6 +402,12 @@ export function InvoicesPage() {
     });
   }, [selectedInvoice, openEntityPanel]);
 
+  // Cari hareketleri modalını aç
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedInvoice?.erpId) return;
+    openAccountTransactionsModal(selectedInvoice.erpId, selectedInvoice.internalFirm || "VERI");
+  }, [selectedInvoice, openAccountTransactionsModal]);
+
   // Grid toolbar custom buttons
   const toolbarCustomButtons = useMemo(() => {
     const getLabel = () => {
@@ -415,6 +425,13 @@ export function InvoicesPage() {
         disabled: !selectedInvoice || selectedIds.length > 1,
       },
       {
+        id: "account-transactions",
+        label: "Cari Hareketleri",
+        icon: <Receipt className="w-4 h-4" />,
+        onClick: handleOpenAccountTransactions,
+        disabled: !selectedInvoice?.erpId || selectedIds.length > 1,
+      },
+      {
         id: "collect-payment",
         label: getLabel(),
         icon: collectLoading || isBatchRunning
@@ -425,7 +442,7 @@ export function InvoicesPage() {
         variant: "primary" as const,
       },
     ];
-  }, [canCollect, collectLoading, isBatchRunning, collectableInvoices.length, handleCollectPayment, selectedInvoice, selectedIds.length, handleOpenLogs]);
+  }, [canCollect, collectLoading, isBatchRunning, collectableInvoices.length, handleCollectPayment, selectedInvoice, selectedIds.length, handleOpenLogs, handleOpenAccountTransactions]);
 
   return (
     <div className="flex flex-col h-full">
@@ -571,6 +588,9 @@ export function InvoicesPage() {
           onClose={handleBatchClose}
         />
       )}
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }
