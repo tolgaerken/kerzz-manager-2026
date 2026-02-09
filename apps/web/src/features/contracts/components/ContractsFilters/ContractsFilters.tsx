@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, Archive, Clock } from "lucide-react";
+import { Calendar, CalendarDays, Archive, Clock, Gift } from "lucide-react";
 import type { ContractFlow, ContractCounts } from "../../types";
 
 interface PeriodCounts {
@@ -21,7 +21,7 @@ interface FilterButtonProps {
   icon: React.ReactNode;
   label: string;
   count?: number;
-  variant?: "default" | "success" | "warning" | "muted";
+  variant?: "default" | "success" | "warning" | "muted" | "info";
 }
 
 function FilterButton({
@@ -44,7 +44,10 @@ function FilterButton({
       : "border-border-subtle bg-surface-elevated text-muted-foreground hover:border-warning/50 hover:text-warning",
     muted: active
       ? "border-muted bg-muted/10 text-muted-foreground"
-      : "border-border-subtle bg-surface-elevated text-muted-foreground hover:border-border hover:text-foreground"
+      : "border-border-subtle bg-surface-elevated text-muted-foreground hover:border-border hover:text-foreground",
+    info: active
+      ? "border-info bg-info/10 text-info"
+      : "border-border-subtle bg-surface-elevated text-muted-foreground hover:border-info/50 hover:text-info"
   };
 
   return (
@@ -86,6 +89,14 @@ export function ContractsFilters({
           label="Aktif"
           count={counts?.active}
           variant="success"
+        />
+        <FilterButton
+          active={activeFlow === "free"}
+          onClick={() => onFlowChange("free")}
+          icon={<Gift className="h-3.5 w-3.5" />}
+          label="Ücretsiz"
+          count={counts?.free}
+          variant="info"
         />
         <FilterButton
           active={activeFlow === "future"}

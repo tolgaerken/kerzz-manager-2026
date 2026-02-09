@@ -14,6 +14,7 @@ export interface ContractResponseDto {
   total: number;
   enabled: boolean;
   blockedLicance: boolean;
+  isFree: boolean;
   no: number;
   customerId: string;
   internalFirm: string;
@@ -35,6 +36,7 @@ export interface PaginatedContractsResponseDto {
     active: number;
     archive: number;
     future: number;
+    free: number;
     yearly: number;
     monthly: number;
   };

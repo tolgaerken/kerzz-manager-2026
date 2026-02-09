@@ -46,11 +46,15 @@ export class ContractsService {
     // Build filter query
     let filter: Record<string, any> = {};
 
-    // Tarih bazlı flow filtresi
+    // Flow filtresi
     if (flow && flow !== "all") {
-      const dateFilter = this.getDateBasedFilter(flow);
-      if (dateFilter) {
-        filter = { ...filter, ...dateFilter };
+      if (flow === "free") {
+        filter.isFree = true;
+      } else {
+        const dateFilter = this.getDateBasedFilter(flow);
+        if (dateFilter) {
+          filter = { ...filter, ...dateFilter };
+        }
       }
     }
 
@@ -127,7 +131,7 @@ export class ContractsService {
     const { monthStart, monthEnd } = getMonthBoundaries(now);
 
     // Tarih bazlı count'lar
-    const [active, archive, future, yearly, monthly] = await Promise.all([
+    const [active, archive, future, free, yearly, monthly] = await Promise.all([
       // Aktif: startDate <= now && endDate >= now
       this.contractModel
         .countDocuments(getActiveContractFilter(now))
@@ -140,13 +144,15 @@ export class ContractsService {
         .exec(),
       // Gelecek: startDate > ay bitisi
       this.contractModel.countDocuments({ startDate: { $gt: monthEnd } }).exec(),
+      // Ücretsiz
+      this.contractModel.countDocuments({ isFree: true }).exec(),
       // Yıllık
       this.contractModel.countDocuments({ yearly: true }).exec(),
       // Aylık
       this.contractModel.countDocuments({ yearly: false }).exec()
     ]);
 
-    return { active, archive, future, yearly, monthly };
+    return { active, archive, future, free, yearly, monthly };
   }
 
   /**
@@ -304,6 +310,7 @@ export class ContractsService {
       total: contract.total,
       enabled: contract.enabled,
       blockedLicance: contract.blockedLicance,
+      isFree: contract.isFree,
       no: contract.no,
       customerId: contract.customerId,
       internalFirm: contract.internalFirm,

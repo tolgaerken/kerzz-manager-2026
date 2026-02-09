@@ -16,7 +16,7 @@ export class ContractQueryDto {
 
   @IsOptional()
   @IsString()
-  flow?: "active" | "archive" | "future" | "all"; // contractFlow filter
+  flow?: "active" | "archive" | "future" | "free" | "all"; // contractFlow filter
 
   @IsOptional()
   @Transform(({ value }) => value === "true" || value === true)

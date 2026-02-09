@@ -1,4 +1,4 @@
-export type ContractFlow = "active" | "archive" | "future" | "all";
+export type ContractFlow = "active" | "free" | "archive" | "future" | "all";
 
 export interface Contract {
   _id: string;
@@ -16,6 +16,7 @@ export interface Contract {
   total: number;
   enabled: boolean;
   blockedLicance: boolean;
+  isFree: boolean;
   no: number;
   customerId: string;
   internalFirm: string;
@@ -37,6 +38,7 @@ export interface ContractCounts {
   active: number;
   archive: number;
   future: number;
+  free: number;
   yearly: number;
   monthly: number;
 }
