@@ -56,10 +56,13 @@ function Badge({ color, bg, children }: { color: string; bg: string; children: s
 /**
  * Fatura grid sütun tanımlarını oluşturur.
  * @param autoPaymentCustomerIds Otomatik ödeme talimatı kayıtlı müşteri ID'leri
+ * @param pendingPaymentInvoiceNos Ödeme bekleyen fatura numaraları
+ * @param balanceMap erpId (CariKodu) -> CariBakiye eşleştirmesi
  */
 export function createInvoiceColumnDefs(
   autoPaymentCustomerIds: Set<string>,
-  pendingPaymentInvoiceNos: Set<string> = new Set()
+  pendingPaymentInvoiceNos: Set<string> = new Set(),
+  balanceMap: Map<string, number> = new Map()
 ): GridColumnDef<Invoice>[] {
   return [
     {
@@ -207,6 +210,25 @@ export function createInvoiceColumnDefs(
         aggregate: "sum",
         label: "",
         format: (v) => formatCurrency(v)
+      }
+    },
+    {
+      id: "cariBakiye",
+      header: "Cari Bakiye",
+      width: 130,
+      sortable: true,
+      align: "right",
+      accessorFn: (row) => {
+        if (!row.erpId) return null;
+        const balance = balanceMap.get(row.erpId);
+        return balance !== undefined ? balance : null;
+      },
+      cell: (value) => formatCurrency(value as number | null),
+      cellClassName: (value) => {
+        if (value === null || value === undefined) return "text-right";
+        return (value as number) < 0
+          ? "text-[var(--color-error)] font-semibold text-right"
+          : "text-right";
       }
     },
     {

@@ -23,48 +23,42 @@ import type {
 } from "../features/invoices";
 import { useLogPanelStore } from "../features/manager-log";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
+import { useErpBalances } from "../features/erp-balances/hooks";
 
-// Tarih preset hesaplama
-function getDatePresetRange(preset: string): { startDate: string; endDate: string } {
-  const now = new Date();
-  let startDate: Date;
-  let endDate: Date;
-
-  switch (preset) {
-    case "currentMonth":
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      break;
-    case "lastMonth":
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-      break;
-    case "currentQuarter":
-      const quarter = Math.floor(now.getMonth() / 3);
-      startDate = new Date(now.getFullYear(), quarter * 3, 1);
-      endDate = new Date(now.getFullYear(), quarter * 3 + 3, 0);
-      break;
-    case "last30Days":
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      endDate = now;
-      break;
-    case "last90Days":
-      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      endDate = now;
-      break;
-    default:
-      return { startDate: "", endDate: "" };
-  }
-
+// Yıl ve ay'dan tarih aralığı hesapla
+function getDateRangeFromYearMonth(year: number, month: number): { startDate: string; endDate: string } {
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0);
+  
   return {
     startDate: startDate.toISOString().split("T")[0],
     endDate: endDate.toISOString().split("T")[0]
   };
 }
 
+// Preset'ten yıl ve ay hesapla
+function getYearMonthFromPreset(preset: string): { year: number; month: number } {
+  const now = new Date();
+  
+  switch (preset) {
+    case "currentMonth":
+      return { year: now.getFullYear(), month: now.getMonth() };
+    case "lastMonth":
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return { year: lastMonth.getFullYear(), month: lastMonth.getMonth() };
+    default:
+      return { year: now.getFullYear(), month: now.getMonth() };
+  }
+}
+
 export function InvoicesPage() {
+  // Yıl ve ay state - default olarak bu ay
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  
   // Query state - default olarak bu ayı seç
-  const defaultDates = getDatePresetRange("currentMonth");
+  const defaultDates = getDateRangeFromYearMonth(now.getFullYear(), now.getMonth());
   
   const [queryParams, setQueryParams] = useState<InvoiceQueryParams>({
     page: 1,
@@ -116,6 +110,20 @@ export function InvoicesPage() {
 
   // Account transactions store
   const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
+
+  // ERP Bakiye verileri - Cari bakiye için
+  const { data: erpBalancesData } = useErpBalances({ limit: 100000 });
+
+  // erpId (CariKodu) -> CariBakiye eşleştirmesi
+  const balanceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (erpBalancesData?.data) {
+      for (const balance of erpBalancesData.data) {
+        map.set(balance.CariKodu, balance.CariBakiye);
+      }
+    }
+    return map;
+  }, [erpBalancesData]);
 
   // MongoDB Change Stream - global-invoices degisikliklerini dinle
   useMongoChangeStream("global-invoices", (event) => {
@@ -201,16 +209,29 @@ export function InvoicesPage() {
     setQueryParams((prev) => ({ ...prev, internalFirm, page: 1 }));
   }, []);
 
-  const handleStartDateChange = useCallback((startDate: string) => {
-    setQueryParams((prev) => ({ ...prev, startDate, page: 1 }));
+  // Yıl değişikliği - sadece state güncelle, sorgu yapma
+  const handleYearChange = useCallback((year: number) => {
+    setSelectedYear(year);
   }, []);
 
-  const handleEndDateChange = useCallback((endDate: string) => {
-    setQueryParams((prev) => ({ ...prev, endDate, page: 1 }));
+  // Ay değişikliği - sadece state güncelle, sorgu yapma
+  const handleMonthChange = useCallback((month: number) => {
+    setSelectedMonth(month);
   }, []);
 
+  // Yıl/Ay seçimine göre getir
+  const handleFetchByYearMonth = useCallback(() => {
+    const { startDate, endDate } = getDateRangeFromYearMonth(selectedYear, selectedMonth);
+    setQueryParams((prev) => ({ ...prev, startDate, endDate, page: 1 }));
+  }, [selectedYear, selectedMonth]);
+
+  // Preset butonları - hem yıl/ay state'ini güncelle hem de sorgu yap
   const handleDatePresetChange = useCallback((preset: string) => {
-    const { startDate, endDate } = getDatePresetRange(preset);
+    const { year, month } = getYearMonthFromPreset(preset);
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    
+    const { startDate, endDate } = getDateRangeFromYearMonth(year, month);
     setQueryParams((prev) => ({ ...prev, startDate, endDate, page: 1 }));
   }, []);
 
@@ -221,8 +242,6 @@ export function InvoicesPage() {
       invoiceType: "",
       isPaid: undefined,
       internalFirm: "",
-      startDate: "",
-      endDate: "",
       page: 1
     }));
   }, []);
@@ -520,23 +539,24 @@ export function InvoicesPage() {
           invoiceType={(queryParams.invoiceType as InvoiceType) || ""}
           isPaid={queryParams.isPaid}
           internalFirm={queryParams.internalFirm || ""}
-          startDate={queryParams.startDate || ""}
-          endDate={queryParams.endDate || ""}
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
           counts={data?.counts}
           onSearchChange={handleSearchChange}
           onInvoiceTypeChange={handleInvoiceTypeChange}
           onIsPaidChange={handleIsPaidChange}
           onInternalFirmChange={handleInternalFirmChange}
-          onStartDateChange={handleStartDateChange}
-          onEndDateChange={handleEndDateChange}
+          onYearChange={handleYearChange}
+          onMonthChange={handleMonthChange}
           onDatePresetChange={handleDatePresetChange}
+          onFetchByYearMonth={handleFetchByYearMonth}
           onClearFilters={handleClearFilters}
         />
       </div>
 
       {/* Error */}
       {error && (
-        <div className="px-6 py-4 text-red-600 bg-red-50 dark:bg-red-900/20">
+        <div className="px-6 py-4 text-[var(--color-error)] bg-[var(--color-error)]/10">
           Hata: {error.message}
         </div>
       )}
@@ -548,6 +568,7 @@ export function InvoicesPage() {
           loading={isLoading}
           autoPaymentCustomerIds={autoPaymentCustomerIds}
           pendingPaymentInvoiceNos={pendingPaymentInvoiceNos}
+          balanceMap={balanceMap}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
           selectedIds={selectedIds}

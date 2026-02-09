@@ -19,6 +19,8 @@ interface HeaderCellProps<TData> {
   sorting: SortingState;
   activeFilter?: ActiveFilter;
   data: TData[];
+  /** Whether the filter button is enabled/visible (from settings) */
+  filterEnabled?: boolean;
   onSort: (columnId: string) => void;
   onResizeStart: (columnId: string, e: React.MouseEvent | React.TouchEvent) => void;
   onFilterApply: (columnId: string, filter: ActiveFilter) => void;
@@ -39,6 +41,7 @@ function HeaderCellInner<TData>({
   sorting,
   activeFilter,
   data,
+  filterEnabled = true,
   onSort,
   onResizeStart,
   onFilterApply,
@@ -100,7 +103,7 @@ function HeaderCellInner<TData>({
     return { top: rect.bottom + 2, left: rect.left };
   }, [position]);
 
-  const hasFilter = !!column.filter;
+  const hasFilter = !!column.filter && filterEnabled;
   const isFilterActive = !!activeFilter;
 
   const classNames = [

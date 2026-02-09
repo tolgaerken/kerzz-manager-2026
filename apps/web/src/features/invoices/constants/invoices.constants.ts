@@ -31,9 +31,22 @@ export const INVOICES_CONSTANTS = {
   // Preset tarih aralıkları
   DATE_PRESETS: [
     { id: "currentMonth", name: "Bu Ay" },
-    { id: "lastMonth", name: "Geçen Ay" },
-    { id: "currentQuarter", name: "Bu Çeyrek" },
-    { id: "last30Days", name: "Son 30 Gün" },
-    { id: "last90Days", name: "Son 90 Gün" }
+    { id: "lastMonth", name: "Geçen Ay" }
+  ],
+
+  // Ay isimleri
+  MONTHS: [
+    { id: 0, name: "Ocak" },
+    { id: 1, name: "Şubat" },
+    { id: 2, name: "Mart" },
+    { id: 3, name: "Nisan" },
+    { id: 4, name: "Mayıs" },
+    { id: 5, name: "Haziran" },
+    { id: 6, name: "Temmuz" },
+    { id: 7, name: "Ağustos" },
+    { id: 8, name: "Eylül" },
+    { id: 9, name: "Ekim" },
+    { id: 10, name: "Kasım" },
+    { id: 11, name: "Aralık" }
   ]
 } as const;

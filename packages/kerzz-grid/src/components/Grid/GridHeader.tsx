@@ -11,6 +11,8 @@ interface GridHeaderProps<TData> {
   filterData: TData[];
   sorting: SortingState;
   filters: Record<string, ActiveFilter>;
+  /** Header filter visibility per column (from settings) */
+  headerFilters?: Record<string, boolean>;
   getColumnWidth: (columnId: string, defaultWidth?: number) => number;
   totalWidth: number;
   /** Whether selection checkbox column is shown */
@@ -42,6 +44,7 @@ function GridHeaderInner<TData>({
   filterData,
   sorting,
   filters,
+  headerFilters,
   getColumnWidth,
   totalWidth,
   showSelectionCheckbox,
@@ -82,6 +85,7 @@ function GridHeaderInner<TData>({
           sorting={sorting}
           activeFilter={filters[col.id]}
           data={filterData}
+          filterEnabled={headerFilters?.[col.id] !== false}
           onSort={onSort}
           onResizeStart={onResizeStart}
           onFilterApply={onFilterApply}

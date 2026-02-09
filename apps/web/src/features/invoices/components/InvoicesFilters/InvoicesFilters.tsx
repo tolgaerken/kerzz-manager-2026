@@ -7,17 +7,28 @@ interface InvoicesFiltersProps {
   invoiceType: InvoiceType | "";
   isPaid: boolean | undefined;
   internalFirm: string;
-  startDate: string;
-  endDate: string;
+  selectedYear: number;
+  selectedMonth: number;
   counts?: InvoiceCounts;
   onSearchChange: (value: string) => void;
   onInvoiceTypeChange: (value: InvoiceType | "") => void;
   onIsPaidChange: (value: boolean | undefined) => void;
   onInternalFirmChange: (value: string) => void;
-  onStartDateChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
+  onYearChange: (year: number) => void;
+  onMonthChange: (month: number) => void;
   onDatePresetChange: (preset: string) => void;
+  onFetchByYearMonth: () => void;
   onClearFilters: () => void;
+}
+
+// Yıl seçenekleri (son 5 yıl)
+function getYearOptions(): number[] {
+  const currentYear = new Date().getFullYear();
+  const years: number[] = [];
+  for (let i = currentYear; i >= currentYear - 5; i--) {
+    years.push(i);
+  }
+  return years;
 }
 
 export function InvoicesFilters({
@@ -25,20 +36,21 @@ export function InvoicesFilters({
   invoiceType,
   isPaid,
   internalFirm,
-  startDate,
-  endDate,
+  selectedYear,
+  selectedMonth,
   counts,
   onSearchChange,
   onInvoiceTypeChange,
   onIsPaidChange,
   onInternalFirmChange,
-  onStartDateChange,
-  onEndDateChange,
+  onYearChange,
+  onMonthChange,
   onDatePresetChange,
+  onFetchByYearMonth,
   onClearFilters
 }: InvoicesFiltersProps) {
   const hasActiveFilters =
-    search || invoiceType || isPaid !== undefined || internalFirm || startDate || endDate;
+    search || invoiceType || isPaid !== undefined || internalFirm;
 
   // Para formatı
   const formatCurrency = (value: number) => {
@@ -49,6 +61,8 @@ export function InvoicesFilters({
       maximumFractionDigits: 0
     }).format(value);
   };
+
+  const yearOptions = getYearOptions();
 
   return (
     <div className="space-y-4">
@@ -68,7 +82,7 @@ export function InvoicesFilters({
 
         {/* Tarih presetleri */}
         <div className="flex items-center gap-2">
-          {INVOICES_CONSTANTS.DATE_PRESETS.slice(0, 3).map((preset) => (
+          {INVOICES_CONSTANTS.DATE_PRESETS.map((preset) => (
             <button
               key={preset.id}
               onClick={() => onDatePresetChange(preset.id)}
@@ -77,6 +91,39 @@ export function InvoicesFilters({
               {preset.name}
             </button>
           ))}
+        </div>
+
+        {/* Yıl/Ay seçici ve Getir butonu */}
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-[var(--color-foreground-muted)]" />
+          <select
+            value={selectedYear}
+            onChange={(e) => onYearChange(Number(e.target.value))}
+            className="px-3 py-1.5 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+          >
+            {yearOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedMonth}
+            onChange={(e) => onMonthChange(Number(e.target.value))}
+            className="px-3 py-1.5 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+          >
+            {INVOICES_CONSTANTS.MONTHS.map((month) => (
+              <option key={month.id} value={month.id}>
+                {month.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={onFetchByYearMonth}
+            className="px-3 py-1.5 text-sm font-medium rounded-md bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 transition-opacity"
+          >
+            Getir
+          </button>
         </div>
 
         {/* Filtre temizle butonu */}
@@ -91,7 +138,7 @@ export function InvoicesFilters({
         )}
       </div>
 
-      {/* Alt satır - Filtreler ve tarih aralığı */}
+      {/* Alt satır - Filtreler */}
       <div className="flex flex-wrap items-center gap-3">
         <Filter className="w-4 h-4 text-[var(--color-foreground-muted)]" />
 
@@ -137,24 +184,6 @@ export function InvoicesFilters({
           ))}
         </select>
 
-        {/* Tarih aralığı */}
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[var(--color-foreground-muted)]" />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => onStartDateChange(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-          />
-          <span className="text-[var(--color-foreground-muted)]">-</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => onEndDateChange(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-          />
-        </div>
-
         {/* İstatistikler */}
         {counts && (
           <div className="ml-auto flex items-center gap-4 text-sm text-[var(--color-foreground-muted)]">
@@ -162,13 +191,13 @@ export function InvoicesFilters({
               Toplam: <strong className="text-[var(--color-foreground)]">{counts.total}</strong>
             </span>
             <span>
-              Vadesi Geçen: <strong className="text-red-500">{counts.overdue}</strong>
+              Vadesi Geçen: <strong className="text-[var(--color-error)]">{counts.overdue}</strong>
             </span>
             <span>
-              Toplam Tutar: <strong className="text-blue-500">{formatCurrency(counts.totalAmount)}</strong>
+              Toplam Tutar: <strong className="text-[var(--color-info)]">{formatCurrency(counts.totalAmount)}</strong>
             </span>
             <span>
-              Ödenen: <strong className="text-green-500">{formatCurrency(counts.paidAmount)}</strong>
+              Ödenen: <strong className="text-[var(--color-success)]">{formatCurrency(counts.paidAmount)}</strong>
             </span>
           </div>
         )}

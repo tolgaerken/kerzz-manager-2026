@@ -339,6 +339,7 @@ function GridInner<TData>(
           filterData={grid.originalData}
           sorting={grid.sorting}
           filters={grid.filters}
+          headerFilters={grid.state.settings?.headerFilters}
           getColumnWidth={grid.columnResize.getColumnWidth}
           totalWidth={grid.totalWidth}
           showSelectionCheckbox={showSelectionCheckbox}
