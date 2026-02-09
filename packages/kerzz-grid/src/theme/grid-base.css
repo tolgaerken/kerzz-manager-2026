@@ -84,10 +84,13 @@
   justify-content: space-between;
   gap: 8px;
   padding: 6px 8px;
-  background: var(--kz-header-bg);
+  background: var(--kz-bg);
   border-bottom: var(--kz-border-width) solid var(--kz-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
   min-height: 36px;
+  position: relative;
+  z-index: 1;
 }
 
 .kz-toolbar__left {
@@ -422,6 +425,11 @@
 
 .kz-selection-header-cell {
   z-index: 3;
+  background: var(--kz-header-bg);
+}
+
+.kz-selection-footer-cell {
+  background: var(--kz-footer-bg);
 }
 
 /* Striped row'da selection cell */

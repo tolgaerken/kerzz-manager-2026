@@ -5,6 +5,9 @@ import type { ToolbarConfig } from './toolbar.types';
 import type { SelectionMode } from './selection.types';
 import type { SortingState } from '@tanstack/react-table';
 
+// Re-export for consumers
+export type { SortingState };
+
 export interface GridProps<TData = unknown> {
   /** Data array to display */
   data: TData[];
@@ -40,7 +43,7 @@ export interface GridProps<TData = unknown> {
   toolbar?: boolean | ToolbarConfig<TData>;
 
   // Selection
-  /** Selection mode: 'none' | 'single' | 'multiple' (default: 'none') */
+  /** Selection mode: 'none' | 'single' | 'multiple' (default: 'single') */
   selectionMode?: SelectionMode;
   /** Show selection checkbox column (default: true when selectionMode is not 'none') */
   selectionCheckbox?: boolean;

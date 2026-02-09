@@ -1,6 +1,5 @@
 import { useCallback } from "react";
-import { Grid } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
+import { Grid, type SortingState } from "@kerzz/grid";
 import { hardwareProductColumns } from "./columnDefs";
 import type { HardwareProduct } from "../../types";
 
@@ -44,7 +43,6 @@ export function HardwareProductsGrid({
         loading={loading}
         height="100%"
         locale="tr"
-        stripedRows
         stateKey="hardware-products-grid"
         getRowId={(row) => row._id}
         onSortChange={handleSortChange}

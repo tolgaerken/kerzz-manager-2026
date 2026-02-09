@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Grid } from "@kerzz/grid";
-import type { GridColumnDef, ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
+import { Grid, type GridColumnDef, type ToolbarButtonConfig, type ToolbarConfig, type SortingState } from "@kerzz/grid";
 import { salesColumnDefs } from "./columnDefs";
 import type { Sale } from "../../types/sale.types";
 

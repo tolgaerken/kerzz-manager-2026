@@ -55,7 +55,6 @@ export function AutoPaymentTokensGrid({
         getRowId={(row) => row._id}
         selectionMode="multiple"
         onSelectionChange={handleSelectionChange}
-        stripedRows
         toolbar
         stateKey="auto-payment-tokens"
       />

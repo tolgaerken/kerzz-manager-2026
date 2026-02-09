@@ -77,7 +77,6 @@ export function EDocCreditsGrid({
         getRowId={(row) => row._id}
         onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
-        stripedRows
         toolbar
         stateKey="e-doc-credits"
       />

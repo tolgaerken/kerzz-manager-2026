@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2 } from "lucide-react";
+import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useContracts,
@@ -19,6 +19,7 @@ import {
   type CreateContractInput,
   type CheckContractResult
 } from "../features/contracts";
+import { useLogPanelStore } from "../features/manager-log";
 
 export function ContractsPage() {
   // Filter states
@@ -92,6 +93,9 @@ export function ContractsPage() {
 
   // Batch check contracts hook
   const batchCheck = useBatchCheckContracts();
+
+  // Log panel store
+  const { openEntityPanel } = useLogPanelStore();
 
   // Handlers
   const handleFlowChange = useCallback((newFlow: ContractFlow) => {
@@ -229,6 +233,17 @@ export function ContractsPage() {
     refetch();
   }, [batchCheck, refetch]);
 
+  // Log panelini aç
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedContract) return;
+    openEntityPanel({
+      customerId: selectedContract.customerId,
+      activeTab: "contract",
+      contractId: selectedContract._id,
+      title: `Kontrat: ${selectedContract.brand || selectedContract.company || `#${selectedContract.no}`}`,
+    });
+  }, [selectedContract, openEntityPanel]);
+
   // Toolbar buttons for kerzz-grid
   const toolbarButtons: ToolbarButtonConfig[] = useMemo(() => {
     const hasSelection = selectedIds.length > 0 || selectedContract;
@@ -258,6 +273,13 @@ export function ContractsPage() {
         disabled: isLoading || !hasSelection || isMultipleSelected
       },
       {
+        id: "logs",
+        label: "Loglar",
+        icon: <MessageSquare className="h-4 w-4" />,
+        onClick: handleOpenLogs,
+        disabled: isLoading || !hasSelection || isMultipleSelected
+      },
+      {
         id: "check-payment",
         label: getCheckButtonLabel(),
         icon: isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />,
@@ -272,6 +294,7 @@ export function ContractsPage() {
     batchCheck.progress?.status,
     isLoading,
     handleInspect,
+    handleOpenLogs,
     handleCheckContract,
     handleCheckMultipleContracts
   ]);

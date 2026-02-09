@@ -1,6 +1,5 @@
 import { useCallback } from "react";
-import { Grid } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
+import { Grid, type SortingState } from "@kerzz/grid";
 import { customerColumnDefs } from "./columnDefs";
 import type { Customer } from "../../types";
 
@@ -45,7 +44,6 @@ export function CustomersGrid({
         stateKey="customers-grid"
         stateStorage="localStorage"
         getRowId={(row) => row._id}
-        stripedRows
         onSortChange={handleSortChange}
         onRowDoubleClick={handleRowDoubleClick}
         toolbar={{

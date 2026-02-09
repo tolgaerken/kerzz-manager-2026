@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
 import type { NavigationDirection } from '../../types/editing.types';
+import type { SelectionMode } from '../../types/selection.types';
 import { GridCell } from './GridCell';
 import { SelectionCell } from '../Selection/SelectionCell';
 
@@ -15,6 +16,8 @@ interface GridRowProps<TData> {
   onDoubleClick?: (row: TData, index: number) => void;
   /** Whether selection checkbox is shown */
   showSelectionCheckbox?: boolean;
+  /** Selection mode */
+  selectionMode?: SelectionMode;
   /** Whether this row is selected */
   isSelected?: boolean;
   /** Row ID for selection toggle */
@@ -56,6 +59,7 @@ function GridRowInner<TData>({
   onClick,
   onDoubleClick,
   showSelectionCheckbox,
+  selectionMode,
   isSelected,
   rowId,
   onSelectionToggle,
@@ -81,8 +85,12 @@ function GridRowInner<TData>({
   );
 
   const handleClick = useCallback(() => {
+    // single modunda satıra tıklandığında seçim yap
+    if (selectionMode === 'single' && rowId && onSelectionToggle) {
+      onSelectionToggle(rowId, false);
+    }
     onClick?.(row, rowIndex);
-  }, [onClick, row, rowIndex]);
+  }, [onClick, row, rowIndex, selectionMode, rowId, onSelectionToggle]);
 
   const handleDoubleClick = useCallback(() => {
     onDoubleClick?.(row, rowIndex);

@@ -76,7 +76,6 @@ export function EInvoicePricesGrid({
         getRowId={(row) => row._id}
         onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
-        stripedRows
         toolbar
         stateKey="e-invoice-prices"
       />

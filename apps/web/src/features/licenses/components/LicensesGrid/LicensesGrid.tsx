@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Grid } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
+import { Grid, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
 import { createLicenseColumnDefs } from "./columnDefs";
 import type { License } from "../../types";
 import { useCustomerLookup } from "../../../lookup";
@@ -10,13 +9,21 @@ interface LicensesGridProps {
   loading: boolean;
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
   onRowDoubleClick?: (license: License) => void;
+  onRowSelect?: (license: License | null) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
+  selectedIds?: string[];
+  toolbarButtons?: ToolbarButtonConfig[];
 }
 
 export function LicensesGrid({
   data,
   loading,
   onSortChange,
-  onRowDoubleClick
+  onRowDoubleClick,
+  onRowSelect,
+  onSelectionChange,
+  selectedIds,
+  toolbarButtons
 }: LicensesGridProps) {
   const { customerMap } = useCustomerLookup();
 
@@ -41,6 +48,13 @@ export function LicensesGrid({
     [onRowDoubleClick]
   );
 
+  const handleRowClick = useCallback(
+    (row: License) => {
+      onRowSelect?.(row);
+    },
+    [onRowSelect]
+  );
+
   return (
     <div className="h-full w-full flex-1">
       <Grid<License>
@@ -53,14 +67,18 @@ export function LicensesGrid({
         stateKey="licenses-grid"
         stateStorage="localStorage"
         getRowId={(row) => row._id}
-        stripedRows
         onSortChange={handleSortChange}
+        onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
+        selectionMode="multiple"
+        selectedIds={selectedIds}
+        onSelectionChange={onSelectionChange}
         toolbar={{
           showSearch: true,
           showColumnVisibility: true,
           showExcelExport: true,
-          showPdfExport: false
+          showPdfExport: false,
+          customButtons: toolbarButtons
         }}
       />
     </div>

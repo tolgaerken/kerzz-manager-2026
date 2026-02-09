@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X } from "lucide-react";
+import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X, MessageSquare } from "lucide-react";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import { useCollectPayment } from "../features/automated-payments";
 import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
@@ -21,6 +21,7 @@ import type {
   InvoiceType,
   UpdateInvoiceInput
 } from "../features/invoices";
+import { useLogPanelStore } from "../features/manager-log";
 
 // Tarih preset hesaplama
 function getDatePresetRange(preset: string): { startDate: string; endDate: string } {
@@ -108,6 +109,9 @@ export function InvoicesPage() {
   const { data: tokensData } = useAutoPaymentTokens({});
   const collectMutation = useCollectPayment();
   const batchCollect = useBatchCollectPayment();
+
+  // Log panel store
+  const { openEntityPanel } = useLogPanelStore();
 
   // MongoDB Change Stream - global-invoices degisikliklerini dinle
   useMongoChangeStream("global-invoices", (event) => {
@@ -253,7 +257,17 @@ export function InvoicesPage() {
 
   const handleSelectionChange = useCallback((ids: string[]) => {
     setSelectedIds(ids);
-  }, []);
+    // Son seçilen faturayı selectedInvoice olarak ayarla (log için)
+    if (ids.length > 0 && data?.data) {
+      const lastSelectedId = ids[ids.length - 1];
+      const invoice = data.data.find((inv) => inv._id === lastSelectedId);
+      if (invoice) {
+        setSelectedInvoice(invoice);
+      }
+    } else if (ids.length === 0) {
+      setSelectedInvoice(null);
+    }
+  }, [data?.data]);
 
   // Excel export (basit CSV)
   const handleExportExcel = useCallback(() => {
@@ -372,6 +386,18 @@ export function InvoicesPage() {
     queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
   }, [batchCollect, queryClient]);
 
+  // Log panelini aç
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedInvoice) return;
+    openEntityPanel({
+      customerId: selectedInvoice.customerId,
+      activeTab: "invoice",
+      invoiceId: selectedInvoice._id,
+      contractId: selectedInvoice.contractId || undefined,
+      title: `Fatura: ${selectedInvoice.invoiceNumber || selectedInvoice.name}`,
+    });
+  }, [selectedInvoice, openEntityPanel]);
+
   // Grid toolbar custom buttons
   const toolbarCustomButtons = useMemo(() => {
     const getLabel = () => {
@@ -381,6 +407,13 @@ export function InvoicesPage() {
     };
 
     return [
+      {
+        id: "logs",
+        label: "Loglar",
+        icon: <MessageSquare className="w-4 h-4" />,
+        onClick: handleOpenLogs,
+        disabled: !selectedInvoice || selectedIds.length > 1,
+      },
       {
         id: "collect-payment",
         label: getLabel(),
@@ -392,7 +425,7 @@ export function InvoicesPage() {
         variant: "primary" as const,
       },
     ];
-  }, [canCollect, collectLoading, isBatchRunning, collectableInvoices.length, handleCollectPayment]);
+  }, [canCollect, collectLoading, isBatchRunning, collectableInvoices.length, handleCollectPayment, selectedInvoice, selectedIds.length, handleOpenLogs]);
 
   return (
     <div className="flex flex-col h-full">

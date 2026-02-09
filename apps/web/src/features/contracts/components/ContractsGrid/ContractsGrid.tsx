@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
+import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
 import type { Contract } from "../../types";
 
 interface ContractsGridProps {
@@ -285,7 +284,6 @@ export function ContractsGrid({
         loading={loading}
         height="100%"
         locale="tr"
-        stripedRows
         stateKey="contracts-grid"
         getRowId={(row) => row._id}
         onSortChange={handleSortChange}

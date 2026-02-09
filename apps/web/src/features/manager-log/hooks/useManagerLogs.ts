@@ -12,13 +12,13 @@ import type { LogQueryParams, LogsResponse, Log, CreateLogInput } from "../types
 export { managerLogKeys };
 
 // Logları getir
-export function useManagerLogs(params: LogQueryParams = {}) {
+export function useManagerLogs(params: LogQueryParams = {}, enabled = true) {
   return useQuery<LogsResponse, Error>({
     queryKey: managerLogKeys.list(params),
     queryFn: () => fetchManagerLogs(params),
     staleTime: 1000 * 60 * 1, // 1 dakika
     gcTime: 1000 * 60 * 10, // 10 dakika
-    enabled: true,
+    enabled,
   });
 }
 

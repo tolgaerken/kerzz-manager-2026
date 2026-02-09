@@ -29,7 +29,7 @@ function GridInner<TData>(
     loading = false,
     stripedRows = false,
     toolbar,
-    selectionMode = 'none',
+    selectionMode = 'single',
     selectionCheckbox,
     selectedIds,
     defaultSelectedIds,
@@ -66,6 +66,8 @@ function GridInner<TData>(
 
   const showSelectionCheckbox = useMemo(() => {
     if (selectionMode === 'none') return false;
+    // single modunda checkbox gösterme (satıra tıklama ile seçim yapılır)
+    if (selectionMode === 'single') return selectionCheckbox ?? false;
     return selectionCheckbox ?? true;
   }, [selectionMode, selectionCheckbox]);
 
@@ -334,6 +336,7 @@ function GridInner<TData>(
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
           showSelectionCheckbox={showSelectionCheckbox}
+          selectionMode={selectionMode}
           isRowSelected={selection.isSelected}
           getRowId={getRowIdForBody}
           onSelectionToggle={selection.toggleRow}

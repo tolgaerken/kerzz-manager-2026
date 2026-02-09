@@ -39,7 +39,7 @@ export { exportToPrint } from './utils/exportPrint';
 export { getFilterSummary } from './utils/filterHelpers';
 
 // Types
-export type { GridProps, GridState, GridRef } from './types/grid.types';
+export type { GridProps, GridState, GridRef, SortingState } from './types/grid.types';
 export type { GridColumnDef } from './types/column.types';
 export type {
   GridTheme,

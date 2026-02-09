@@ -241,7 +241,6 @@ export function BankTransactionsGrid({
         loading={loading}
         height="100%"
         locale="tr"
-        stripedRows
         stateKey="bank-transactions-grid"
         getRowId={(row) => row.id}
         toolbar={toolbarConfig}

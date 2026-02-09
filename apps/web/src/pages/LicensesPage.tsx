@@ -1,16 +1,15 @@
-import { useState, useCallback } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { Plus, RefreshCw, MessageSquare } from "lucide-react";
+import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   LicensesGrid,
   LicensesFilters,
-  LicensesPagination,
   LicenseFormModal,
   DeleteConfirmModal,
   useLicenses,
   useCreateLicense,
   useUpdateLicense,
-  useDeleteLicense,
-  LICENSES_CONSTANTS
+  useDeleteLicense
 } from "../features/licenses";
 import type {
   License,
@@ -21,12 +20,12 @@ import type {
   CreateLicenseInput,
   UpdateLicenseInput
 } from "../features/licenses";
+import { useLogPanelStore } from "../features/manager-log";
 
 export function LicensesPage() {
-  // Query state
+  // Query state - tüm veriyi getirmek için limit yüksek tutuldu (virtual scroll kullanılacak)
   const [queryParams, setQueryParams] = useState<LicenseQueryParams>({
-    page: 1,
-    limit: LICENSES_CONSTANTS.DEFAULT_PAGE_SIZE,
+    limit: 100000,
     search: "",
     type: "",
     companyType: "",
@@ -39,6 +38,7 @@ export function LicensesPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Queries & Mutations
   const { data, isLoading, error, refetch } = useLicenses(queryParams);
@@ -46,29 +46,32 @@ export function LicensesPage() {
   const updateMutation = useUpdateLicense();
   const deleteMutation = useDeleteLicense();
 
+  // Log panel store
+  const { openEntityPanel } = useLogPanelStore();
+
   // Handlers
   const handleSearchChange = useCallback((search: string) => {
-    setQueryParams((prev) => ({ ...prev, search, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, search }));
   }, []);
 
   const handleTypeChange = useCallback((type: LicenseType | "") => {
-    setQueryParams((prev) => ({ ...prev, type, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, type }));
   }, []);
 
   const handleCompanyTypeChange = useCallback((companyType: CompanyType | "") => {
-    setQueryParams((prev) => ({ ...prev, companyType, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, companyType }));
   }, []);
 
   const handleCategoryChange = useCallback((category: LicenseCategory | "") => {
-    setQueryParams((prev) => ({ ...prev, category, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, category }));
   }, []);
 
   const handleActiveFilterChange = useCallback((active: boolean | undefined) => {
-    setQueryParams((prev) => ({ ...prev, active, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, active }));
   }, []);
 
   const handleBlockFilterChange = useCallback((block: boolean | undefined) => {
-    setQueryParams((prev) => ({ ...prev, block, page: 1 }));
+    setQueryParams((prev) => ({ ...prev, block }));
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -79,17 +82,8 @@ export function LicensesPage() {
       companyType: "",
       category: "",
       active: undefined,
-      block: undefined,
-      page: 1
+      block: undefined
     }));
-  }, []);
-
-  const handlePageChange = useCallback((page: number) => {
-    setQueryParams((prev) => ({ ...prev, page }));
-  }, []);
-
-  const handleLimitChange = useCallback((limit: number) => {
-    setQueryParams((prev) => ({ ...prev, limit, page: 1 }));
   }, []);
 
   const handleSortChange = useCallback(
@@ -153,6 +147,50 @@ export function LicensesPage() {
     setSelectedLicense(null);
   }, []);
 
+  // Row click handler
+  const handleRowSelect = useCallback((license: License | null) => {
+    setSelectedLicense(license);
+  }, []);
+
+  // Selection change handler (multi-select)
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
+    // Son seçilen lisansı selectedLicense olarak ayarla
+    if (ids.length > 0 && data?.data) {
+      const lastSelectedId = ids[ids.length - 1];
+      const license = data.data.find((l) => l._id === lastSelectedId);
+      if (license) {
+        setSelectedLicense(license);
+      }
+    } else if (ids.length === 0) {
+      setSelectedLicense(null);
+    }
+  }, [data?.data]);
+
+  // Log panelini aç
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedLicense) return;
+    openEntityPanel({
+      customerId: selectedLicense.customerId,
+      activeTab: "license",
+      licenseId: selectedLicense._id,
+      title: `Lisans: ${selectedLicense.brandName || `#${selectedLicense.licenseId}`}`,
+    });
+  }, [selectedLicense, openEntityPanel]);
+
+  // Toolbar buttons
+  const toolbarButtons: ToolbarButtonConfig[] = useMemo(() => {
+    return [
+      {
+        id: "logs",
+        label: "Loglar",
+        icon: <MessageSquare className="h-4 w-4" />,
+        onClick: handleOpenLogs,
+        disabled: !selectedLicense
+      }
+    ];
+  }, [selectedLicense, handleOpenLogs]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -206,24 +244,19 @@ export function LicensesPage() {
         </div>
       )}
 
-      {/* Grid */}
+      {/* Grid - Virtual scroll ile tüm veri gösteriliyor */}
       <div className="flex-1 px-6 py-4 min-h-0">
         <LicensesGrid
           data={data?.data || []}
           loading={isLoading}
           onSortChange={handleSortChange}
           onRowDoubleClick={handleRowDoubleClick}
+          onRowSelect={handleRowSelect}
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
+          toolbarButtons={toolbarButtons}
         />
       </div>
-
-      {/* Pagination */}
-      {data?.pagination && (
-        <LicensesPagination
-          pagination={data.pagination}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
-      )}
 
       {/* Form Modal */}
       <LicenseFormModal

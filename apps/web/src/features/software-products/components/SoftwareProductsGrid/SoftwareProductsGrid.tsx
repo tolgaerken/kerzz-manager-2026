@@ -1,6 +1,5 @@
 import { useCallback } from "react";
-import { Grid } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
+import { Grid, type SortingState } from "@kerzz/grid";
 import { softwareProductColumns } from "./columnDefs";
 import type { SoftwareProduct } from "../../types";
 

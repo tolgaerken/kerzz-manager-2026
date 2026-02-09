@@ -230,7 +230,6 @@ export function ContractInvoicesGrid({
         selectionMode="multiple"
         selectedIds={selectedIds}
         onSelectionChange={onSelectionChange}
-        stripedRows
         stateKey="contract-invoices-grid"
         toolbar={{
           exportFileName: "sozlesme_faturalari",

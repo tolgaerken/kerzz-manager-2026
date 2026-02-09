@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import type { LogPanelContext, PipelineLogPanelContext } from "../types";
+import type {
+  LogPanelContext,
+  PipelineLogPanelContext,
+  EntityLogPanelContext,
+} from "../types";
 
 interface LogPanelState {
   isOpen: boolean;
@@ -7,14 +11,19 @@ interface LogPanelState {
   // Pipeline modu için
   isPipelineMode: boolean;
   pipelineContext: PipelineLogPanelContext | null;
+  // Entity modu için (tab'lı panel)
+  isEntityMode: boolean;
+  entityContext: EntityLogPanelContext | null;
 }
 
 interface LogPanelActions {
   openPanel: (context?: LogPanelContext) => void;
   openPipelinePanel: (context: PipelineLogPanelContext) => void;
+  openEntityPanel: (context: EntityLogPanelContext) => void;
   closePanel: () => void;
   setContext: (context: LogPanelContext) => void;
   setPipelineContext: (context: PipelineLogPanelContext) => void;
+  setEntityContext: (context: EntityLogPanelContext) => void;
 }
 
 type LogPanelStore = LogPanelState & LogPanelActions;
@@ -24,6 +33,8 @@ const initialState: LogPanelState = {
   context: null,
   isPipelineMode: false,
   pipelineContext: null,
+  isEntityMode: false,
+  entityContext: null,
 };
 
 export const useLogPanelStore = create<LogPanelStore>((set) => ({
@@ -35,6 +46,8 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
       context: context || null,
       isPipelineMode: false,
       pipelineContext: null,
+      isEntityMode: false,
+      entityContext: null,
     });
   },
 
@@ -44,6 +57,19 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
       context: null,
       isPipelineMode: true,
       pipelineContext: context,
+      isEntityMode: false,
+      entityContext: null,
+    });
+  },
+
+  openEntityPanel: (context: EntityLogPanelContext) => {
+    set({
+      isOpen: true,
+      context: null,
+      isPipelineMode: false,
+      pipelineContext: null,
+      isEntityMode: true,
+      entityContext: context,
     });
   },
 
@@ -54,10 +80,32 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
   },
 
   setContext: (context: LogPanelContext) => {
-    set({ context, isPipelineMode: false, pipelineContext: null });
+    set({
+      context,
+      isPipelineMode: false,
+      pipelineContext: null,
+      isEntityMode: false,
+      entityContext: null,
+    });
   },
 
   setPipelineContext: (context: PipelineLogPanelContext) => {
-    set({ pipelineContext: context, isPipelineMode: true, context: null });
+    set({
+      pipelineContext: context,
+      isPipelineMode: true,
+      context: null,
+      isEntityMode: false,
+      entityContext: null,
+    });
+  },
+
+  setEntityContext: (context: EntityLogPanelContext) => {
+    set({
+      entityContext: context,
+      isEntityMode: true,
+      context: null,
+      isPipelineMode: false,
+      pipelineContext: null,
+    });
   },
 }));

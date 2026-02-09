@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
+import { MessageSquare } from "lucide-react";
 import {
   ContractInvoicesGrid,
   ContractInvoicesToolbar,
@@ -13,6 +14,7 @@ import type {
   EnrichedPaymentPlan,
   PaymentListItem,
 } from "../features/contract-invoices";
+import { useLogPanelStore } from "../features/manager-log";
 
 export function ContractInvoicesPage() {
   // Donem ve tarih state
@@ -22,6 +24,7 @@ export function ContractInvoicesPage() {
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<EnrichedPaymentPlan | null>(null);
 
   // Detail modal state
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -49,6 +52,9 @@ export function ContractInvoicesPage() {
   );
   const createInvoicesMutation = useCreateInvoices();
   const checkContractsMutation = useCheckContracts();
+
+  // Log panel store
+  const { openEntityPanel } = useLogPanelStore();
 
   // Kayitlari getir
   const handleLoadRecords = useCallback(() => {
@@ -148,7 +154,29 @@ export function ContractInvoicesPage() {
   // Selection
   const handleSelectionChange = useCallback((ids: string[]) => {
     setSelectedIds(ids);
-  }, []);
+    // Son seçilen planı selectedPlan olarak ayarla
+    if (ids.length > 0 && data?.data) {
+      const lastSelectedId = ids[ids.length - 1];
+      const plan = data.data.find((p) => p.id === lastSelectedId);
+      if (plan) {
+        setSelectedPlan(plan);
+      }
+    } else if (ids.length === 0) {
+      setSelectedPlan(null);
+    }
+  }, [data?.data]);
+
+  // Log panelini aç
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedPlan) return;
+    openEntityPanel({
+      customerId: selectedPlan.customerId,
+      activeTab: "payment-plan",
+      paymentPlanId: selectedPlan._id,
+      contractId: selectedPlan.contractId || undefined,
+      title: `Ödeme Planı: ${selectedPlan.company || selectedPlan.brand}`,
+    });
+  }, [selectedPlan, openEntityPanel]);
 
   // Secili kayitlarin toplamı
   const selectedTotal = useMemo(() => {
@@ -165,15 +193,26 @@ export function ContractInvoicesPage() {
         <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
           Sözleşme Faturaları
         </h1>
-        {selectedIds.length > 0 && (
-          <span className="text-sm font-medium text-[var(--color-primary)]">
-            Seçili Toplam:{" "}
-            {new Intl.NumberFormat("tr-TR", {
-              style: "currency",
-              currency: "TRY",
-            }).format(selectedTotal)}
-          </span>
-        )}
+        <div className="flex items-center gap-4">
+          {selectedIds.length > 0 && (
+            <span className="text-sm font-medium text-[var(--color-primary)]">
+              Seçili Toplam:{" "}
+              {new Intl.NumberFormat("tr-TR", {
+                style: "currency",
+                currency: "TRY",
+              }).format(selectedTotal)}
+            </span>
+          )}
+          <button
+            onClick={handleOpenLogs}
+            disabled={!selectedPlan || selectedIds.length > 1}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Loglar"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Loglar
+          </button>
+        </div>
       </div>
 
       {/* Notification */}

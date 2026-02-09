@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
-import type { ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
+import type { ToolbarButtonConfig, ToolbarConfig, SortingState } from "@kerzz/grid";
 import { leadColumnDefs } from "./columnDefs";
 import type { Lead } from "../../types/lead.types";
 
@@ -69,8 +69,11 @@ export function LeadsGrid({
   );
 
   const handleSortChange = useCallback(
-    (field: string, order: "asc" | "desc") => {
-      onSortChange?.(field, order);
+    (sorting: SortingState) => {
+      if (sorting.length > 0 && onSortChange) {
+        const { id, desc } = sorting[0];
+        onSortChange(id, desc ? "desc" : "asc");
+      }
     },
     [onSortChange],
   );
@@ -113,7 +116,6 @@ export function LeadsGrid({
         onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
         onSortChange={handleSortChange}
-        stripedRows
         toolbar={toolbarConfig}
         stateKey="leads-grid"
         stateStorage="localStorage"

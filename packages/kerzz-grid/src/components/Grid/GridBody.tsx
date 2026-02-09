@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { GridColumnDef } from '../../types/column.types';
 import type { NavigationDirection } from '../../types/editing.types';
+import type { SelectionMode } from '../../types/selection.types';
 import { GridRow } from './GridRow';
 
 interface GridBodyProps<TData> {
@@ -12,11 +13,13 @@ interface GridBodyProps<TData> {
   totalWidth: number;
   getColumnWidth: (columnId: string, defaultWidth?: number) => number;
   stripedRows: boolean;
-  scrollContainerRef: React.RefObject<HTMLDivElement>;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   onRowClick?: (row: TData, index: number) => void;
   onRowDoubleClick?: (row: TData, index: number) => void;
   /** Whether selection checkbox is shown */
   showSelectionCheckbox?: boolean;
+  /** Selection mode */
+  selectionMode?: SelectionMode;
   /** Function to check if a row is selected */
   isRowSelected?: (rowId: string) => boolean;
   /** Function to get row ID */
@@ -55,6 +58,7 @@ function GridBodyInner<TData>({
   onRowClick,
   onRowDoubleClick,
   showSelectionCheckbox,
+  selectionMode,
   isRowSelected,
   getRowId,
   onSelectionToggle,
@@ -106,6 +110,7 @@ function GridBodyInner<TData>({
               onClick={onRowClick}
               onDoubleClick={onRowDoubleClick}
               showSelectionCheckbox={showSelectionCheckbox}
+              selectionMode={selectionMode}
               isSelected={isSelected}
               rowId={rowId}
               onSelectionToggle={handleSelectionToggle}

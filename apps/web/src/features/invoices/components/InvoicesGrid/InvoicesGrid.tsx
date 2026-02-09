@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Grid } from "@kerzz/grid";
-import type { SortingState } from "@tanstack/react-table";
-import type { ToolbarButtonConfig } from "@kerzz/grid";
+import { Grid, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
 import { createInvoiceColumnDefs } from "./columnDefs";
 import type { Invoice } from "../../types";
 
@@ -84,7 +82,6 @@ export function InvoicesGrid({
         selectionMode="multiple"
         selectedIds={selectedIds}
         onSelectionChange={onSelectionChange}
-        stripedRows
         stateKey="invoices-grid"
         toolbar={{
           exportFileName: "faturalar",
