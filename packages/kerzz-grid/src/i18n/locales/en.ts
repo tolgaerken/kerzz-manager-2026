@@ -67,6 +67,19 @@ export const en: GridLocale = {
   filterSelected: 'selected',
   filterDaysSelected: 'days selected',
 
+  // Settings panel
+  settingsTitle: 'Settings',
+  settingsSelectionMode: 'Selection Mode',
+  settingsHeaderFilters: 'Column Filters',
+  settingsFooterAggregation: 'Footer Aggregation',
+  settingsResetSorting: 'Reset Sorting',
+  settingsResetAll: 'Reset All',
+  selectionNone: 'None',
+  selectionSingle: 'Single',
+  selectionMultiple: 'Multiple',
+  aggregationNone: 'None',
+  toolbarSettings: 'Settings',
+
   // General
   noData: 'No data found',
   loading: 'Loading...',

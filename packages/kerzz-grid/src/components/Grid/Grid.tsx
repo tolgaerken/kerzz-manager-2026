@@ -3,6 +3,8 @@ import type { GridProps, GridRef } from '../../types/grid.types';
 import type { ActiveFilter } from '../../types/filter.types';
 import type { ToolbarConfig } from '../../types/toolbar.types';
 import type { GridColumnDef } from '../../types/column.types';
+import type { SelectionMode } from '../../types/selection.types';
+import type { FooterAggregationSetting } from '../../types/settings.types';
 import { useGridInstance } from '../../core/useGridInstance';
 import { useRowSelection } from '../../core/useRowSelection';
 import { useGridEditing } from '../../core/useGridEditing';
@@ -50,6 +52,10 @@ function GridInner<TData>(
   const locale = useLocale();
   const [pendingNewRows, setPendingNewRows] = useState<TData[]>([]);
   const grid = useGridInstance(props, pendingNewRows.length);
+
+  // Effective selection mode: use settings if available, otherwise use prop
+  const effectiveSelectionMode: SelectionMode = grid.state.settings?.selectionMode ?? selectionMode;
+
   const pendingRowIdSet = useMemo(() => {
     if (!getRowId || pendingNewRows.length === 0) return new Set<string>();
     const ids = pendingNewRows
@@ -65,11 +71,11 @@ function GridInner<TData>(
   }, [grid.filteredData, pendingNewRows]);
 
   const showSelectionCheckbox = useMemo(() => {
-    if (selectionMode === 'none') return false;
+    if (effectiveSelectionMode === 'none') return false;
     // single modunda checkbox gösterme (satıra tıklama ile seçim yapılır)
-    if (selectionMode === 'single') return selectionCheckbox ?? false;
+    if (effectiveSelectionMode === 'single') return selectionCheckbox ?? false;
     return selectionCheckbox ?? true;
-  }, [selectionMode, selectionCheckbox]);
+  }, [effectiveSelectionMode, selectionCheckbox]);
 
   const rowIdMap = useMemo(() => {
     if (getRowId) return null;
@@ -102,7 +108,7 @@ function GridInner<TData>(
   const selection = useRowSelection<TData>({
     data: displayData,
     getRowId: getRowIdFn,
-    mode: selectionMode,
+    mode: effectiveSelectionMode,
     selectedIds,
     defaultSelectedIds,
     onSelectionChange,
@@ -221,6 +227,32 @@ function GridInner<TData>(
 
   const colPanelPos = columnPanelOpen ? getColPanelPos() : { top: 0, left: 0 };
 
+  // Settings handlers
+  const handleSelectionModeChange = useCallback(
+    (mode: SelectionMode) => {
+      grid.stateStore.setSelectionMode(mode);
+    },
+    [grid.stateStore],
+  );
+
+  const handleHeaderFilterChange = useCallback(
+    (columnId: string, enabled: boolean) => {
+      grid.stateStore.setHeaderFilterEnabled(columnId, enabled);
+    },
+    [grid.stateStore],
+  );
+
+  const handleFooterAggregationChange = useCallback(
+    (columnId: string, aggregation: FooterAggregationSetting) => {
+      grid.stateStore.setFooterAggregation(columnId, aggregation);
+    },
+    [grid.stateStore],
+  );
+
+  const handleResetSorting = useCallback(() => {
+    grid.stateStore.setSorting([]);
+  }, [grid.stateStore]);
+
   return (
     <div className="kz-grid" style={gridStyle}>
       {/* Toolbar */}
@@ -241,6 +273,12 @@ function GridInner<TData>(
           onSaveAll={editing.saveAllChanges}
           onCancelAll={handleCancelAll}
           onAddRow={createEmptyRow ? editing.requestAddRow : undefined}
+          settings={grid.state.settings}
+          onSelectionModeChange={handleSelectionModeChange}
+          onHeaderFilterChange={handleHeaderFilterChange}
+          onFooterAggregationChange={handleFooterAggregationChange}
+          onResetSorting={handleResetSorting}
+          onResetAll={grid.resetState}
         />
       )}
 
@@ -304,7 +342,7 @@ function GridInner<TData>(
           getColumnWidth={grid.columnResize.getColumnWidth}
           totalWidth={grid.totalWidth}
           showSelectionCheckbox={showSelectionCheckbox}
-          enableSelectAll={selectionMode === 'multiple'}
+          enableSelectAll={effectiveSelectionMode === 'multiple'}
           isAllSelected={selection.isAllSelected}
           isIndeterminate={selection.isIndeterminate}
           onToggleAll={handleToggleAll}
@@ -336,7 +374,7 @@ function GridInner<TData>(
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
           showSelectionCheckbox={showSelectionCheckbox}
-          selectionMode={selectionMode}
+          selectionMode={effectiveSelectionMode}
           isRowSelected={selection.isSelected}
           getRowId={getRowIdForBody}
           onSelectionToggle={selection.toggleRow}

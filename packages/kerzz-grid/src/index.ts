@@ -96,6 +96,10 @@ export type {
   ToolbarConfig,
   ToolbarButtonConfig,
 } from './types/toolbar.types';
+export type {
+  GridSettings,
+  FooterAggregationSetting,
+} from './types/settings.types';
 
 // CSS import helper
 import './theme/grid-base.css';

@@ -161,7 +161,7 @@ export const AllFeatures: Story = {
     <div>
       <h3 style={{ marginBottom: 8, fontSize: 16 }}>Müşteri Yönetimi - Tüm Özellikler</h3>
       <p style={{ marginBottom: 12, fontSize: 13, color: '#666' }}>
-        Toolbar, Excel/PDF export, custom butonlar, sıralama, dropdown/input/dateTree/numeric filter, kolon taşıma, boyutlandırma, gizle/göster, footer aggregation
+        Toolbar, Excel/PDF export, custom butonlar, sıralama, dropdown/input/dateTree/numeric filter, kolon taşıma, boyutlandırma, gizle/göster, footer aggregation, <strong>Settings Panel</strong>
       </p>
       <Grid<Customer>
         data={data}
@@ -191,6 +191,36 @@ export const AllFeatures: Story = {
         }}
         onRowClick={(row) => console.log('Click:', row)}
         onRowDoubleClick={(row) => console.log('Double click:', row)}
+      />
+    </div>
+  ),
+};
+
+export const WithSettingsPanel: Story = {
+  render: () => (
+    <div>
+      <h3 style={{ marginBottom: 8, fontSize: 16 }}>Settings Panel Demo</h3>
+      <p style={{ marginBottom: 12, fontSize: 13, color: '#666' }}>
+        Toolbar sağ tarafındaki "Ayarlar" butonuna tıklayarak:
+        <br />• Seçim modunu değiştirin (Yok/Tekli/Çoklu)
+        <br />• Sütun filtrelerini açıp kapatın
+        <br />• Footer aggregation tipini değiştirin (Sum/Avg/Count/Min/Max)
+        <br />• Sıralamayı sıfırlayın
+      </p>
+      <Grid<Customer>
+        data={data}
+        columns={columns}
+        locale="tr"
+        height={500}
+        stripedRows
+        selectionMode="multiple"
+        stateKey="settings-panel-demo"
+        toolbar={{
+          exportFileName: 'musteriler',
+          showSettings: true,
+        }}
+        onRowClick={(row) => console.log('Click:', row)}
+        onSelectionChange={(ids) => console.log('Selected:', ids)}
       />
     </div>
   ),

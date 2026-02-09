@@ -274,6 +274,7 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
 
     // State
     state: stateStore.state,
+    stateStore,
     resetState: stateStore.resetState,
 
     // Sorting

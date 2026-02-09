@@ -1,11 +1,14 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
 import type { ToolbarConfig, ToolbarButtonConfig } from '../../types/toolbar.types';
+import type { GridSettings, FooterAggregationSetting } from '../../types/settings.types';
+import type { SelectionMode } from '../../types/selection.types';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSeparator } from './ToolbarSeparator';
 import { ToolbarSearchInput } from './ToolbarSearchInput';
-import { ExcelIcon, PdfIcon, ColumnsIcon, SaveIcon, CancelIcon, AddRowIcon } from './ToolbarIcons';
+import { ExcelIcon, PdfIcon, ColumnsIcon, SaveIcon, CancelIcon, AddRowIcon, SettingsIcon } from './ToolbarIcons';
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
+import { GridSettingsPanel } from '../Settings/GridSettingsPanel';
 import { Portal } from '../Portal/Portal';
 import { useLocale } from '../../i18n/useLocale';
 import { exportToXlsx } from '../../utils/exportXlsx';
@@ -31,6 +34,18 @@ interface GridToolbarProps<TData> {
   onCancelAll?: () => void;
   /** Add a new row (always visible when provided and showAddRow is not false) */
   onAddRow?: () => void;
+  /** Current grid settings */
+  settings?: GridSettings;
+  /** Called when selection mode changes */
+  onSelectionModeChange?: (mode: SelectionMode) => void;
+  /** Called when header filter visibility changes */
+  onHeaderFilterChange?: (columnId: string, enabled: boolean) => void;
+  /** Called when footer aggregation changes */
+  onFooterAggregationChange?: (columnId: string, aggregation: FooterAggregationSetting) => void;
+  /** Called when reset sorting is clicked */
+  onResetSorting?: () => void;
+  /** Called when reset all is clicked */
+  onResetAll?: () => void;
 }
 
 function GridToolbarInner<TData>({
@@ -49,15 +64,24 @@ function GridToolbarInner<TData>({
   onSaveAll,
   onCancelAll,
   onAddRow,
+  settings,
+  onSelectionModeChange,
+  onHeaderFilterChange,
+  onFooterAggregationChange,
+  onResetSorting,
+  onResetAll,
 }: GridToolbarProps<TData>) {
   const locale = useLocale();
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
   const colBtnRef = useRef<HTMLButtonElement>(null);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
   const showSearch = config.showSearch !== false;
   const showExcel = config.showExcelExport !== false;
   const showPdf = config.showPdfExport !== false;
   const showColumns = config.showColumnVisibility !== false;
+  const showSettings = config.showSettings !== false && settings != null;
   const showAddRow = config.showAddRow !== false;
   const customButtons = config.customButtons ?? [];
   const fileName = config.exportFileName ?? 'grid-export';
@@ -93,7 +117,22 @@ function GridToolbarInner<TData>({
 
   const colPanelPos = columnPanelOpen ? getColPanelPos() : { top: 0, left: 0 };
 
-  const hasBuiltInButtons = showExcel || showPdf || showColumns;
+  const getSettingsPanelPos = useCallback(() => {
+    if (!settingsBtnRef.current) return { top: 0, left: 0 };
+    const rect = settingsBtnRef.current.getBoundingClientRect();
+    const panelWidth = 300;
+    let left = rect.right - panelWidth;
+    if (left < 8) left = 8;
+    return { top: rect.bottom + 4, left };
+  }, []);
+
+  const settingsPanelPos = settingsPanelOpen ? getSettingsPanelPos() : { top: 0, left: 0 };
+
+  const handleSettingsToggle = useCallback(() => {
+    setSettingsPanelOpen((prev) => !prev);
+  }, []);
+
+  const hasBuiltInButtons = showExcel || showPdf || showColumns || showSettings;
   const hasCustomButtons = customButtons.length > 0;
 
   return (
@@ -200,6 +239,49 @@ function GridToolbarInner<TData>({
                     onShowAll={onShowAll}
                     onHideAll={onHideAll}
                     onClose={() => setColumnPanelOpen(false)}
+                  />
+                </div>
+              </Portal>
+            )}
+          </>
+        )}
+
+        {showSettings && settings && (
+          <>
+            <button
+              ref={settingsBtnRef}
+              type="button"
+              className="kz-toolbar__btn"
+              onClick={handleSettingsToggle}
+              title={locale.toolbarSettings}
+            >
+              <span className="kz-toolbar__btn-icon"><SettingsIcon /></span>
+              <span className="kz-toolbar__btn-label">{locale.toolbarSettings}</span>
+            </button>
+
+            {settingsPanelOpen && (
+              <Portal>
+                <div
+                  className="kz-grid"
+                  style={{
+                    ...cssVars,
+                    position: 'fixed',
+                    top: settingsPanelPos.top,
+                    left: settingsPanelPos.left,
+                    zIndex: 99999,
+                    border: 'none',
+                    background: 'transparent',
+                  }}
+                >
+                  <GridSettingsPanel
+                    columns={allColumns as GridColumnDef[]}
+                    settings={settings}
+                    onSelectionModeChange={onSelectionModeChange ?? (() => {})}
+                    onHeaderFilterChange={onHeaderFilterChange ?? (() => {})}
+                    onFooterAggregationChange={onFooterAggregationChange ?? (() => {})}
+                    onResetSorting={onResetSorting ?? (() => {})}
+                    onResetAll={onResetAll ?? (() => {})}
+                    onClose={() => setSettingsPanelOpen(false)}
                   />
                 </div>
               </Portal>

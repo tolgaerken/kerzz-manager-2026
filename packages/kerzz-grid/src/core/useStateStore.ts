@@ -2,8 +2,11 @@ import { useCallback, useRef, useEffect, useReducer } from 'react';
 import type { GridState } from '../types/grid.types';
 import type { GridColumnDef } from '../types/column.types';
 import type { FilterState, DisabledFilterState } from '../types/filter.types';
+import type { GridSettings, FooterAggregationSetting } from '../types/settings.types';
+import type { SelectionMode } from '../types/selection.types';
 import type { SortingState } from '@tanstack/react-table';
 import { StateManager } from '../state/StateManager';
+import { DEFAULT_GRID_SETTINGS } from '../types/settings.types';
 
 interface UseStateStoreOptions {
   stateKey?: string;
@@ -20,6 +23,10 @@ interface UseStateStoreReturn {
   setSorting: (sorting: SortingState) => void;
   setFilters: (filters: FilterState) => void;
   setDisabledFilters: (disabledFilters: DisabledFilterState) => void;
+  setSettings: (settings: GridSettings) => void;
+  setSelectionMode: (mode: SelectionMode) => void;
+  setHeaderFilterEnabled: (columnId: string, enabled: boolean) => void;
+  setFooterAggregation: (columnId: string, aggregation: FooterAggregationSetting) => void;
   resetState: () => void;
 }
 
@@ -33,6 +40,10 @@ type StateAction =
   | { type: 'SET_SORTING'; sorting: SortingState }
   | { type: 'SET_FILTERS'; filters: FilterState }
   | { type: 'SET_DISABLED_FILTERS'; disabledFilters: DisabledFilterState }
+  | { type: 'SET_SETTINGS'; settings: GridSettings }
+  | { type: 'SET_SELECTION_MODE'; mode: SelectionMode }
+  | { type: 'SET_HEADER_FILTER_ENABLED'; columnId: string; enabled: boolean }
+  | { type: 'SET_FOOTER_AGGREGATION'; columnId: string; aggregation: FooterAggregationSetting }
   | { type: 'RESET'; defaultState: GridState };
 
 function stateReducer(state: GridState, action: StateAction): GridState {
@@ -54,6 +65,35 @@ function stateReducer(state: GridState, action: StateAction): GridState {
       return { ...state, filters: action.filters };
     case 'SET_DISABLED_FILTERS':
       return { ...state, disabledFilters: action.disabledFilters };
+    case 'SET_SETTINGS':
+      return { ...state, settings: action.settings };
+    case 'SET_SELECTION_MODE':
+      return {
+        ...state,
+        settings: { ...state.settings, selectionMode: action.mode },
+      };
+    case 'SET_HEADER_FILTER_ENABLED':
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          headerFilters: {
+            ...state.settings.headerFilters,
+            [action.columnId]: action.enabled,
+          },
+        },
+      };
+    case 'SET_FOOTER_AGGREGATION':
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          footerAggregation: {
+            ...state.settings.footerAggregation,
+            [action.columnId]: action.aggregation,
+          },
+        },
+      };
     case 'RESET':
       return action.defaultState;
     default:
@@ -92,6 +132,8 @@ export function useStateStore({
       if (stored) {
         // Ensure disabledFilters exists for backward compat
         if (!stored.disabledFilters) stored.disabledFilters = {};
+        // Ensure settings exists for backward compat
+        if (!stored.settings) stored.settings = { ...DEFAULT_GRID_SETTINGS };
         return stored;
       }
     }
@@ -158,6 +200,34 @@ export function useStateStore({
     [],
   );
 
+  const setSettings = useCallback(
+    (settings: GridSettings) => {
+      dispatch({ type: 'SET_SETTINGS', settings });
+    },
+    [],
+  );
+
+  const setSelectionMode = useCallback(
+    (mode: SelectionMode) => {
+      dispatch({ type: 'SET_SELECTION_MODE', mode });
+    },
+    [],
+  );
+
+  const setHeaderFilterEnabled = useCallback(
+    (columnId: string, enabled: boolean) => {
+      dispatch({ type: 'SET_HEADER_FILTER_ENABLED', columnId, enabled });
+    },
+    [],
+  );
+
+  const setFooterAggregation = useCallback(
+    (columnId: string, aggregation: FooterAggregationSetting) => {
+      dispatch({ type: 'SET_FOOTER_AGGREGATION', columnId, aggregation });
+    },
+    [],
+  );
+
   const resetState = useCallback(() => {
     managerRef.current?.remove();
     dispatch({ type: 'RESET', defaultState: createDefaultState() });
@@ -172,6 +242,10 @@ export function useStateStore({
     setSorting,
     setFilters,
     setDisabledFilters,
+    setSettings,
+    setSelectionMode,
+    setHeaderFilterEnabled,
+    setFooterAggregation,
     resetState,
   };
 }

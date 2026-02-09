@@ -1,8 +1,9 @@
 import type { GridState } from '../types/grid.types';
 import type { StorageAdapter } from './adapters/types';
 import { localStorageAdapter } from './adapters/localStorageAdapter';
+import { DEFAULT_GRID_SETTINGS } from '../types/settings.types';
 
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 export class StateManager {
   private adapter: StorageAdapter;
@@ -56,6 +57,10 @@ export class StateManager {
     if (!migrated.disabledFilters) {
       migrated.disabledFilters = {};
     }
+    // Ensure settings exists for older persisted states (v2 migration)
+    if (!migrated.settings) {
+      migrated.settings = { ...DEFAULT_GRID_SETTINGS };
+    }
     return migrated;
   }
 
@@ -67,6 +72,7 @@ export class StateManager {
       sorting: [],
       filters: {},
       disabledFilters: {},
+      settings: { ...DEFAULT_GRID_SETTINGS },
       version: CURRENT_VERSION,
     };
   }

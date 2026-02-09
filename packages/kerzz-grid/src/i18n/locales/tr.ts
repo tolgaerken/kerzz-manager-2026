@@ -67,6 +67,19 @@ export const tr: GridLocale = {
   filterSelected: 'seçili',
   filterDaysSelected: 'gün seçili',
 
+  // Settings panel
+  settingsTitle: 'Ayarlar',
+  settingsSelectionMode: 'Seçim Modu',
+  settingsHeaderFilters: 'Sütun Filtreleri',
+  settingsFooterAggregation: 'Alt Toplam',
+  settingsResetSorting: 'Sıralamayı Sıfırla',
+  settingsResetAll: 'Tümünü Sıfırla',
+  selectionNone: 'Yok',
+  selectionSingle: 'Tekli',
+  selectionMultiple: 'Çoklu',
+  aggregationNone: 'Yok',
+  toolbarSettings: 'Ayarlar',
+
   // General
   noData: 'Veri bulunamadı',
   loading: 'Yükleniyor...',

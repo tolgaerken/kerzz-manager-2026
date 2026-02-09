@@ -3,6 +3,7 @@ import type { FilterState, DisabledFilterState } from './filter.types';
 import type { GridTheme } from './theme.types';
 import type { ToolbarConfig } from './toolbar.types';
 import type { SelectionMode } from './selection.types';
+import type { GridSettings } from './settings.types';
 import type { SortingState } from '@tanstack/react-table';
 
 // Re-export for consumers
@@ -103,6 +104,7 @@ export interface GridState {
   sorting: SortingState;
   filters: FilterState;
   disabledFilters: DisabledFilterState;
+  settings: GridSettings;
   version: number;
 }
 

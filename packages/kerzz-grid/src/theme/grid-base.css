@@ -1447,3 +1447,207 @@
   width: 10px;
   height: 10px;
 }
+
+/* ---- Settings Panel ---- */
+.kz-settings-panel {
+  position: relative;
+  min-width: 280px;
+  max-width: 360px;
+  max-height: 480px;
+  background: var(--kz-filter-bg);
+  border: var(--kz-border-width) solid var(--kz-filter-border);
+  border-radius: var(--kz-border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  font-size: var(--kz-filter-font-size);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.kz-settings-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: var(--kz-border-width) solid var(--kz-filter-border);
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.kz-settings-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  color: var(--kz-text-muted);
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.kz-settings-panel__close:hover {
+  color: var(--kz-text);
+  background: var(--kz-row-hover);
+}
+
+.kz-settings-panel__content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.kz-settings-panel__section {
+  border-bottom: var(--kz-border-width) solid var(--kz-filter-border);
+}
+
+.kz-settings-panel__section:last-child {
+  border-bottom: none;
+}
+
+.kz-settings-panel__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--kz-filter-font-size);
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--kz-text);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.kz-settings-panel__section-header:hover {
+  background: var(--kz-row-hover);
+}
+
+.kz-settings-panel__section-content {
+  padding: 0 12px 12px;
+}
+
+.kz-settings-panel__radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kz-settings-panel__radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.kz-settings-panel__radio input[type='radio'] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--kz-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.kz-settings-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kz-settings-panel__toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.kz-settings-panel__toggle-item:hover {
+  background: var(--kz-row-hover);
+}
+
+.kz-settings-panel__toggle-item input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--kz-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.kz-settings-panel__select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.kz-settings-panel__select-item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kz-settings-panel__select-item select {
+  min-width: 90px;
+  padding: 4px 6px;
+  border: var(--kz-border-width) solid var(--kz-filter-border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  background: var(--kz-bg);
+  color: var(--kz-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.kz-settings-panel__select-item select:focus {
+  border-color: var(--kz-primary);
+}
+
+.kz-settings-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kz-settings-panel__action-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: var(--kz-border-width) solid var(--kz-filter-border);
+  border-radius: 4px;
+  background: var(--kz-bg);
+  color: var(--kz-text);
+  font-size: var(--kz-filter-font-size);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.kz-settings-panel__action-btn:hover {
+  background: var(--kz-row-hover);
+  border-color: var(--kz-text-muted);
+}
+
+.kz-settings-panel__action-btn--danger {
+  color: var(--kz-error);
+  border-color: color-mix(in srgb, var(--kz-error) 30%, var(--kz-border));
+}
+
+.kz-settings-panel__action-btn--danger:hover {
+  background: color-mix(in srgb, var(--kz-error) 8%, var(--kz-bg));
+  border-color: var(--kz-error);
+}

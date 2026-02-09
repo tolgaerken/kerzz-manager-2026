@@ -66,6 +66,19 @@ export interface GridLocale {
   filterSelected: string;
   filterDaysSelected: string;
 
+  // Settings panel
+  settingsTitle: string;
+  settingsSelectionMode: string;
+  settingsHeaderFilters: string;
+  settingsFooterAggregation: string;
+  settingsResetSorting: string;
+  settingsResetAll: string;
+  selectionNone: string;
+  selectionSingle: string;
+  selectionMultiple: string;
+  aggregationNone: string;
+  toolbarSettings: string;
+
   // General
   noData: string;
   loading: string;

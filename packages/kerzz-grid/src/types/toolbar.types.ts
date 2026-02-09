@@ -24,6 +24,8 @@ export interface ToolbarConfig<TData = unknown> {
   showPdfExport?: boolean;
   /** Show column visibility button (default: true) */
   showColumnVisibility?: boolean;
+  /** Show settings button (default: true) */
+  showSettings?: boolean;
   /** Custom buttons to render in the toolbar */
   customButtons?: ToolbarButtonConfig[];
   /** Custom Excel export handler. If omitted, built-in CSV export is used */
