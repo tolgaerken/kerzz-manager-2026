@@ -23,6 +23,10 @@ import {
   SystemLogsService,
   SystemLogAction,
 } from "../system-logs";
+import {
+  calculateRemainingDays,
+  getMonthBoundaries,
+} from "../contracts/utils/contract-date.utils";
 
 @Injectable()
 export class ContractNotificationCron {
@@ -117,7 +121,7 @@ export class ContractNotificationCron {
   }
 
   /**
-   * Bitiş tarihi N gün sonra olan kontratları işler
+   * Bitiş tarihi N gün sonrasının ayına denk gelen kontratları işler
    */
   private async processContractsExpiring(
     today: Date,
@@ -127,16 +131,14 @@ export class ContractNotificationCron {
     // N gün sonraki tarih
     const targetDate = new Date(today);
     targetDate.setDate(targetDate.getDate() + days);
+    const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
 
-    const nextDay = new Date(targetDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-
-    // Bitiş tarihi tam N gün sonra olan kontratlar
+    // Bitiş tarihi hedef ayin icinde olan kontratlar
     // noEndDate === false (belirli bir bitiş tarihi var)
     // noNotification === false (bildirim açık)
     const contracts = await this.contractModel
       .find({
-        endDate: { $gte: targetDate, $lt: nextDay },
+        endDate: { $gte: monthStart, $lte: monthEnd },
         noEndDate: false,
         noNotification: false,
       })
@@ -144,10 +146,10 @@ export class ContractNotificationCron {
       .exec();
 
     console.log(
-      `📋 Bitiş tarihi ${days} gün sonra olan ${contracts.length} kontrat bulundu`
+      `📋 Bitiş tarihi hedef ayda olan ${contracts.length} kontrat bulundu`
     );
 
-    return this.sendNotificationsForContracts(contracts, days, settings);
+    return this.sendNotificationsForContracts(contracts, today, settings);
   }
 
   /**
@@ -155,7 +157,7 @@ export class ContractNotificationCron {
    */
   private async sendNotificationsForContracts(
     contracts: Contract[],
-    remainingDays: number,
+    referenceDate: Date,
     settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
   ): Promise<{ sent: number; failed: number }> {
     let sent = 0;
@@ -163,6 +165,9 @@ export class ContractNotificationCron {
 
     for (const contract of contracts) {
       try {
+        const endDate = contract.endDate ? new Date(contract.endDate) : null;
+        const remainingDays = calculateRemainingDays(endDate, referenceDate);
+
         // Müşteri bilgilerini al (Customer koleksiyonu id alanı üzerinden ilişkilendirilir)
         const customer = await this.customerModel
           .findOne({ id: contract.customerId })

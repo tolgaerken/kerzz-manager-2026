@@ -28,6 +28,10 @@ import {
   formatDate,
 } from "./notification-data.helper";
 import {
+  calculateRemainingDays,
+  getMonthBoundaries,
+} from "../contracts/utils/contract-date.utils";
+import {
   InvoiceQueueQueryDto,
   ContractQueueQueryDto,
   ManualSendDto,
@@ -210,10 +214,10 @@ export class NotificationQueueService {
   }
 
   /**
-   * Ayarlardaki contractExpiryDays esik gunlerine tam denk gelen
+   * Ayarlardaki contractExpiryDays esik gunlerinin isabet ettigi ay icindeki
    * kontratlari musteri bilgileriyle listeler.
-   * Ornegin [30, 15, 7] ise sadece bugunden itibaren tam 30, 15 veya 7 gun
-   * sonra bitecek kontratlar dondurulur.
+   * Ornegin [30, 15, 7] ise bugunden itibaren 30, 15 veya 7 gun sonraki tarihin
+   * ayina denk gelen kontratlar dondurulur.
    */
   async getPendingContracts(
     query: ContractQueueQueryDto
@@ -226,13 +230,12 @@ export class NotificationQueueService {
     const settings = await this.settingsService.getSettings();
     const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
 
-    // Her esik gunu icin tarih araligi olustur (tam gun eslesmesi)
+    // Her esik gunu icin ay araligi olustur
     const dateRanges = expiryDays.map((days) => {
       const targetDate = new Date(today);
       targetDate.setDate(targetDate.getDate() + days);
-      const nextDay = new Date(targetDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      return { endDate: { $gte: targetDate, $lt: nextDay } };
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      return { endDate: { $gte: monthStart, $lte: monthEnd } };
     });
 
     const filter: Record<string, unknown> = {
@@ -277,9 +280,7 @@ export class NotificationQueueService {
 
     const data: QueueContractItemDto[] = contracts.map((cont) => {
       const endDate = cont.endDate ? new Date(cont.endDate) : null;
-      const remainingDays = endDate
-        ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
-        : 0;
+      const remainingDays = calculateRemainingDays(endDate, today);
       const customer = cont.customerId ? customerMap.get(cont.customerId) : null;
       return {
         _id: (cont as { _id: { toString: () => string } })._id.toString(),
@@ -318,13 +319,12 @@ export class NotificationQueueService {
     const settings = await this.settingsService.getSettings();
     const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
 
-    // Her esik gunu icin tarih araligi olustur (tam gun eslesmesi)
+    // Her esik gunu icin ay araligi olustur
     const dateRanges = expiryDays.map((days) => {
       const targetDate = new Date(today);
       targetDate.setDate(targetDate.getDate() + days);
-      const nextDay = new Date(targetDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      return { endDate: { $gte: targetDate, $lt: nextDay } };
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      return { endDate: { $gte: monthStart, $lte: monthEnd } };
     });
 
     // Geriye dönük tarama limiti
@@ -515,9 +515,7 @@ export class NotificationQueueService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
-    const remainingDays = endDate
-      ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
-      : 0;
+    const remainingDays = calculateRemainingDays(endDate, today);
 
     const templateData = buildContractTemplateData(contract, customer, remainingDays);
     const notifications: DispatchNotificationDto[] = [];
@@ -642,9 +640,7 @@ export class NotificationQueueService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
-    const remainingDays = endDate
-      ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
-      : 0;
+    const remainingDays = calculateRemainingDays(endDate, today);
 
     const templateCode = `contract-expiry-${channel}`;
     const templateData = buildContractTemplateData(contract, customer, remainingDays);

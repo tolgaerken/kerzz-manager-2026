@@ -10,6 +10,11 @@ import {
 } from "./dto/contract-response.dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { randomBytes } from "crypto";
+import {
+  getActiveContractFilter,
+  getContractDateFilter,
+  getMonthBoundaries
+} from "./utils/contract-date.utils";
 
 @Injectable()
 export class ContractsService {
@@ -22,28 +27,7 @@ export class ContractsService {
   private getDateBasedFilter(
     flow: string
   ): Record<string, any> | null {
-    const now = new Date();
-
-    switch (flow) {
-      case "active":
-        // Aktif: Başlangıç tarihi geçmiş VE bitiş tarihi gelmemiş
-        return {
-          startDate: { $lte: now },
-          endDate: { $gte: now }
-        };
-      case "archive":
-        // Arşiv: Bitiş tarihi geçmiş
-        return {
-          endDate: { $lt: now }
-        };
-      case "future":
-        // Gelecek: Başlangıç tarihi henüz gelmemiş
-        return {
-          startDate: { $gt: now }
-        };
-      default:
-        return null;
-    }
+    return getContractDateFilter(flow);
   }
 
   async findAll(
@@ -140,24 +124,22 @@ export class ContractsService {
 
   private async getCounts(): Promise<PaginatedContractsResponseDto["counts"]> {
     const now = new Date();
+    const { monthStart, monthEnd } = getMonthBoundaries(now);
 
     // Tarih bazlı count'lar
     const [active, archive, future, yearly, monthly] = await Promise.all([
       // Aktif: startDate <= now && endDate >= now
       this.contractModel
-        .countDocuments({
-          startDate: { $lte: now },
-          endDate: { $gte: now }
-        })
+        .countDocuments(getActiveContractFilter(now))
         .exec(),
-      // Arşiv: endDate < now
+      // Arşiv: endDate < ay baslangici
       this.contractModel
         .countDocuments({
-          endDate: { $lt: now }
+          endDate: { $lt: monthStart }
         })
         .exec(),
-      // Gelecek: startDate > now
-      this.contractModel.countDocuments({ startDate: { $gt: now } }).exec(),
+      // Gelecek: startDate > ay bitisi
+      this.contractModel.countDocuments({ startDate: { $gt: monthEnd } }).exec(),
       // Yıllık
       this.contractModel.countDocuments({ yearly: true }).exec(),
       // Aylık
@@ -178,13 +160,13 @@ export class ContractsService {
     }
 
     const now = new Date();
+    const activeFilter = getActiveContractFilter(now);
 
     // Aktif contract'ları bul (startDate <= now && endDate >= now)
     const activeContracts = await this.contractModel
       .find({
         contractId: { $in: licenseIds },
-        startDate: { $lte: now },
-        endDate: { $gte: now }
+        ...activeFilter
       })
       .select("contractId")
       .lean()
@@ -198,12 +180,12 @@ export class ContractsService {
    */
   async hasActiveContract(licenseId: string): Promise<boolean> {
     const now = new Date();
+    const activeFilter = getActiveContractFilter(now);
 
     const count = await this.contractModel
       .countDocuments({
         contractId: licenseId,
-        startDate: { $lte: now },
-        endDate: { $gte: now }
+        ...activeFilter
       })
       .exec();
 

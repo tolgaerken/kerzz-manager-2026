@@ -6,6 +6,7 @@ import {
   endOfMonth,
   differenceInCalendarMonths,
 } from "date-fns";
+import { getActiveContractFilter } from "../../contracts/utils/contract-date.utils";
 import { InvoiceCalculatorService } from "./invoice-calculator.service";
 import { PlanGeneratorService } from "./plan-generator.service";
 import {
@@ -83,12 +84,12 @@ export class PaymentPlanService {
     errors: Array<{ contractId: string; error: string }>;
   }> {
     const now = new Date();
+    const activeFilter = getActiveContractFilter(now);
 
     // Sadece aktif kontratlari al (startDate <= now && endDate >= now)
     const contracts = await this.contractModel
       .find({
-        startDate: { $lte: now },
-        endDate: { $gte: now },
+        ...activeFilter,
       })
       .lean()
       .exec();
