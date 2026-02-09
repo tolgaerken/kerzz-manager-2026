@@ -35,6 +35,7 @@ export { StateManager } from './state/StateManager';
 // Utils
 export { computeAggregate, getAggregateLabel } from './utils/aggregation';
 export { exportToCsv } from './utils/exportCsv';
+export { exportToXlsx } from './utils/exportXlsx';
 export { exportToPrint } from './utils/exportPrint';
 export { getFilterSummary } from './utils/filterHelpers';
 

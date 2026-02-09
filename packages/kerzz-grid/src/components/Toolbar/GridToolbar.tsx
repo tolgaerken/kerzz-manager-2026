@@ -8,7 +8,7 @@ import { ExcelIcon, PdfIcon, ColumnsIcon, SaveIcon, CancelIcon, AddRowIcon } fro
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
 import { Portal } from '../Portal/Portal';
 import { useLocale } from '../../i18n/useLocale';
-import { exportToCsv } from '../../utils/exportCsv';
+import { exportToXlsx } from '../../utils/exportXlsx';
 import { exportToPrint } from '../../utils/exportPrint';
 
 interface GridToolbarProps<TData> {
@@ -66,7 +66,7 @@ function GridToolbarInner<TData>({
     if (config.onExportExcel) {
       config.onExportExcel(data, columns);
     } else {
-      exportToCsv(data, columns, fileName);
+      exportToXlsx(data, columns, fileName);
     }
   }, [data, columns, config, fileName]);
 

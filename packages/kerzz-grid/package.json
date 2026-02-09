@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.2",
-    "@tanstack/react-virtual": "^3.13.2"
+    "@tanstack/react-virtual": "^3.13.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@storybook/addon-essentials": "^8.5.3",
