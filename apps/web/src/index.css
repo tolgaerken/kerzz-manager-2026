@@ -292,6 +292,9 @@ body {
   --kz-filter-bg: var(--color-surface-elevated) !important;
   --kz-filter-border: var(--color-border) !important;
   --kz-filter-active: var(--color-primary) !important;
+
+  /* Loading overlay */
+  --kz-loading-overlay-bg: color-mix(in srgb, var(--color-surface) 70%, transparent) !important;
   
   /* Diğer */
   --kz-resize-handle: var(--color-border) !important;

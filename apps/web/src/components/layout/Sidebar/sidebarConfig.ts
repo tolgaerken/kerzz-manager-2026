@@ -1,7 +1,6 @@
 import { 
   LayoutDashboard, 
   FileText, 
-  ShoppingCart, 
   Plug,
   Users,
   Key,
@@ -62,14 +61,10 @@ export const sidebarMenuItems: MenuItemProps[] = [
     ],
   },
   {
-    icon: ShoppingCart,
-    label: "Satış",
-    path: "/sales",
-  },
-  {
     icon: TrendingUp,
     label: "Satış Yönetimi",
     subItems: [
+      { label: "Dashboard", path: "/sales" },
       { label: "Potansiyeller", path: "/leads" },
       { label: "Teklifler", path: "/offers" },
       { label: "Satışlar", path: "/pipeline/sales" },

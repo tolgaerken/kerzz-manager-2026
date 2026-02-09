@@ -110,8 +110,9 @@ function getMonthKey(date: Date): string {
 
 // ─── Hook ────────────────────────────────────────────────────
 
-export function useCashRegisterStats() {
-  const { data, isLoading } = useContractCashRegisters(undefined, true);
+export function useCashRegisterStats(contractId?: string) {
+  const shouldFetchAll = !contractId;
+  const { data, isLoading } = useContractCashRegisters(contractId, shouldFetchAll);
   const { data: eftPosModelsData } = useActiveEftPosModels();
 
   const modelMap = useMemo(() => {

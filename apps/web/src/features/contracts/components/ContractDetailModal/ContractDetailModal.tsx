@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   X,
   LayoutDashboard,
@@ -24,6 +24,16 @@ import {
   ContractDocumentsTab,
   ContractPaymentsTab
 } from "./tabs";
+import {
+  useContractCashRegisters,
+  useContractDocuments,
+  useContractItems,
+  useContractPayments,
+  useContractSaas,
+  useContractSupports,
+  useContractUsers,
+  useContractVersions
+} from "../../hooks/useContractDetail";
 import { useLogPanelStore } from "../../../manager-log/store/logPanelStore";
 
 interface ContractDetailModalProps {
@@ -71,6 +81,35 @@ export function ContractDetailModal({
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [loadedTabs, setLoadedTabs] = useState<Record<TabId, boolean>>({ summary: true } as Record<TabId, boolean>);
   const { openPanel } = useLogPanelStore();
+  const { data: usersData } = useContractUsers(contract.id);
+  const { data: supportsData } = useContractSupports(contract.id);
+  const { data: versionsData } = useContractVersions(contract.id);
+  const { data: cashRegistersData } = useContractCashRegisters(contract.id);
+  const { data: saasData } = useContractSaas(contract.id);
+  const { data: itemsData } = useContractItems(contract.id);
+  const { data: documentsData } = useContractDocuments(contract.id);
+  const { data: paymentsData } = useContractPayments(contract.id);
+
+  const tabCounts = useMemo<Record<TabId, number>>(() => ({
+    summary: 0,
+    users: usersData?.total ?? 0,
+    supports: supportsData?.total ?? 0,
+    versions: versionsData?.total ?? 0,
+    "cash-registers": cashRegistersData?.total ?? 0,
+    saas: saasData?.total ?? 0,
+    items: itemsData?.total ?? 0,
+    documents: documentsData?.total ?? 0,
+    payments: paymentsData?.total ?? 0
+  }), [
+    usersData,
+    supportsData,
+    versionsData,
+    cashRegistersData,
+    saasData,
+    itemsData,
+    documentsData,
+    paymentsData
+  ]);
 
   const handleTabChange = useCallback((tabId: TabId) => {
     setActiveTab(tabId);
@@ -168,6 +207,11 @@ export function ContractDetailModal({
             >
               {tab.icon}
               {tab.label}
+              {tab.id !== "summary" && tabCounts[tab.id] > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                  {tabCounts[tab.id]}
+                </span>
+              )}
             </button>
           ))}
         </div>

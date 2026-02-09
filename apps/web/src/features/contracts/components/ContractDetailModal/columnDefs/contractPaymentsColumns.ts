@@ -8,6 +8,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     header: "Fatura No",
     width: 140,
     minWidth: 120,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -17,6 +18,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     header: "Fatura Tarihi",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" },
     valueFormatter: (value) => {
@@ -31,8 +33,19 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     width: 130,
     minWidth: 120,
     align: "right",
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "number" },
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -48,8 +61,19 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     width: 120,
     minWidth: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "number" },
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -65,7 +89,18 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     width: 120,
     minWidth: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: false,
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -80,6 +115,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     header: "Ödendi",
     width: 90,
     minWidth: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "Evet" : "Hayır")
@@ -90,6 +126,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     header: "Ödeme Tarihi",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" },
     valueFormatter: (value) => {
@@ -103,6 +140,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     header: "Yıllık",
     width: 90,
     minWidth: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "Evet" : "Hayır")
@@ -113,6 +151,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
     header: "Düzenleme",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: false,
     valueFormatter: (value) => {
       if (!value) return "";

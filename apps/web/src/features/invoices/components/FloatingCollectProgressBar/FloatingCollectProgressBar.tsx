@@ -46,8 +46,8 @@ export function FloatingCollectProgressBar({
             className={`h-full transition-all duration-300 ${
               isCompleted
                 ? errorCount > 0
-                  ? "bg-amber-500"
-                  : "bg-green-500"
+                  ? "bg-[var(--color-warning)]"
+                  : "bg-[var(--color-success)]"
                 : "bg-primary"
             }`}
             style={{ width: `${percentage}%` }}
@@ -61,12 +61,12 @@ export function FloatingCollectProgressBar({
             {isRunning && (
               <Loader2 className="h-5 w-5 text-primary animate-spin" />
             )}
-            {isPaused && <Pause className="h-5 w-5 text-amber-500" />}
+            {isPaused && <Pause className="h-5 w-5 text-[var(--color-warning)]" />}
             {isCompleted && errorCount === 0 && (
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-[var(--color-success)]" />
             )}
             {isCompleted && errorCount > 0 && (
-              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <AlertCircle className="h-5 w-5 text-[var(--color-warning)]" />
             )}
           </div>
 
@@ -80,7 +80,7 @@ export function FloatingCollectProgressBar({
                 {completedCount}/{totalCount}
               </span>
               {errorCount > 0 && (
-                <span className="text-xs text-red-500">({errorCount} hata)</span>
+                <span className="text-xs text-[var(--color-error)]">({errorCount} hata)</span>
               )}
             </div>
             <div className="text-xs text-muted-foreground truncate">
@@ -106,7 +106,7 @@ export function FloatingCollectProgressBar({
                 {isPaused ? (
                   <button
                     onClick={onResume}
-                    className="rounded-lg p-2 text-green-600 hover:bg-green-500/10 transition-colors"
+                    className="rounded-lg p-2 text-[var(--color-success)] hover:bg-[var(--color-success)]/10 transition-colors"
                     title="Devam et"
                   >
                     <Play className="h-4 w-4" />
@@ -114,7 +114,7 @@ export function FloatingCollectProgressBar({
                 ) : (
                   <button
                     onClick={onPause}
-                    className="rounded-lg p-2 text-amber-600 hover:bg-amber-500/10 transition-colors"
+                    className="rounded-lg p-2 text-[var(--color-warning)] hover:bg-[var(--color-warning)]/10 transition-colors"
                     title="Duraklat"
                   >
                     <Pause className="h-4 w-4" />

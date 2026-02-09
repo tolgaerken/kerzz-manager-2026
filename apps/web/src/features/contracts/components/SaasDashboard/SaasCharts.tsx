@@ -12,9 +12,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import type { CashRegisterStats } from "./useCashRegisterStats";
-
-// ─── Renk ─────────────────────────────────────────────────────
+import type { SaasStats } from "./useSaasStats";
 
 const CHART_COLORS = [
   "var(--color-primary)",
@@ -24,26 +22,14 @@ const CHART_COLORS = [
   "var(--color-error)",
 ];
 
-// ─── Ortak Kart Wrapper ──────────────────────────────────────
-
-function ChartCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <h3 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">
-        {title}
-      </h3>
+      <h3 className="mb-3 text-sm font-semibold text-[var(--color-foreground)]">{title}</h3>
       {children}
     </div>
   );
 }
-
-// ─── Özel Tooltip ────────────────────────────────────────────
 
 function CustomTooltip({
   active,
@@ -59,28 +45,19 @@ function CustomTooltip({
   return (
     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2 shadow-lg">
       {label && (
-        <p className="mb-1 text-xs font-medium text-[var(--color-foreground)]">
-          {label}
-        </p>
+        <p className="mb-1 text-xs font-medium text-[var(--color-foreground)]">{label}</p>
       )}
       {payload.map((entry, idx) => (
         <p key={idx} className="text-xs text-[var(--color-muted-foreground)]">
-          {entry.name}: <span className="font-semibold text-[var(--color-foreground)]">{entry.value}</span>
+          {entry.name}:{" "}
+          <span className="font-semibold text-[var(--color-foreground)]">{entry.value}</span>
         </p>
       ))}
     </div>
   );
 }
 
-// ─── Pie Chart Bileşeni ──────────────────────────────────────
-
-function MiniPieChart({
-  data,
-  title,
-}: {
-  data: { name: string; value: number }[];
-  title: string;
-}) {
+function MiniPieChart({ data, title }: { data: { name: string; value: number }[]; title: string }) {
   const hasData = data.some((d) => d.value > 0);
 
   if (!hasData) {
@@ -110,10 +87,7 @@ function MiniPieChart({
               stroke="none"
             >
               {data.map((_entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={CHART_COLORS[index % CHART_COLORS.length]}
-                />
+                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
@@ -121,9 +95,7 @@ function MiniPieChart({
               verticalAlign="bottom"
               height={28}
               formatter={(value: string) => (
-                <span className="text-xs text-[var(--color-muted-foreground)]">
-                  {value}
-                </span>
+                <span className="text-xs text-[var(--color-muted-foreground)]">{value}</span>
               )}
             />
           </PieChart>
@@ -133,73 +105,44 @@ function MiniPieChart({
   );
 }
 
-// ─── Ana Bileşen ─────────────────────────────────────────────
-
-interface CashRegisterChartsProps {
-  stats: CashRegisterStats;
+interface SaasChartsProps {
+  stats: SaasStats;
 }
 
-export function CashRegisterCharts({ stats }: CashRegisterChartsProps) {
-  // Tür dağılımı (TSM vs GMP)
-  const typeData = useMemo(
-    () => [
-      { name: "TSM", value: stats.tsm },
-      { name: "GMP", value: stats.gmp },
-    ],
-    [stats.tsm, stats.gmp]
+export function SaasCharts({ stats }: SaasChartsProps) {
+  const productData = useMemo(
+    () => stats.productDistribution.slice(0, 8),
+    [stats.productDistribution]
   );
 
-  // Para birimi dağılımı (yıllık + aylık birleşik tutar)
   const currencyData = useMemo(() => {
-    const tl = stats.yearlyByPrice.tl + stats.monthlyByPrice.tl;
-    const usd = stats.yearlyByPrice.usd + stats.monthlyByPrice.usd;
-    const eur = stats.yearlyByPrice.eur + stats.monthlyByPrice.eur;
+    const tl = stats.yearlyByTotal.tl + stats.monthlyByTotal.tl;
+    const usd = stats.yearlyByTotal.usd + stats.monthlyByTotal.usd;
+    const eur = stats.yearlyByTotal.eur + stats.monthlyByTotal.eur;
 
-    const items = [
+    return [
       { name: "TL", value: tl },
       { name: "USD", value: usd },
       { name: "EUR", value: eur },
-    ];
+    ].filter((i) => i.value > 0);
+  }, [stats.yearlyByTotal, stats.monthlyByTotal]);
 
-    return items.filter((i) => i.value > 0);
-  }, [stats.yearlyByPrice, stats.monthlyByPrice]);
-
-  // Model dağılımı (ilk 8)
-  const modelData = useMemo(
-    () => stats.modelDistribution.slice(0, 8),
-    [stats.modelDistribution]
-  );
-
-  // Aylık trend
   const trendData = useMemo(() => stats.monthlyTrend, [stats.monthlyTrend]);
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {/* Tür Dağılımı */}
-      <MiniPieChart data={typeData} title="Tür Dağılımı" />
+      <MiniPieChart data={currencyData} title="Para Birimi Dagilimi (Tutar)" />
 
-      {/* Para Birimi Dağılımı */}
-      <MiniPieChart data={currencyData} title="Para Birimi Dağılımı (Tutar)" />
-
-      {/* Model Bazlı Dağılım */}
-      <ChartCard title="Model Bazlı Dağılım">
-        {modelData.length === 0 ? (
+      <ChartCard title="Urun Bazli Dagilim">
+        {productData.length === 0 ? (
           <div className="flex h-48 items-center justify-center">
             <p className="text-sm text-[var(--color-muted-foreground)]">Veri yok</p>
           </div>
         ) : (
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <BarChart
-                data={modelData}
-                layout="vertical"
-                margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--color-border)"
-                  horizontal={false}
-                />
+              <BarChart data={productData} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
                 <XAxis
                   type="number"
                   tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
@@ -209,7 +152,7 @@ export function CashRegisterCharts({ stats }: CashRegisterChartsProps) {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  width={80}
+                  width={100}
                   tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
                   axisLine={false}
                   tickLine={false}
@@ -228,19 +171,11 @@ export function CashRegisterCharts({ stats }: CashRegisterChartsProps) {
         )}
       </ChartCard>
 
-      {/* Aylık Trend */}
-      <ChartCard title="Aylık Trend (Son 12 Ay)">
+      <ChartCard title="Aylik Trend (Son 12 Ay)">
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <BarChart
-              data={trendData}
-              margin={{ top: 0, right: 8, bottom: 0, left: -16 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="var(--color-border)"
-                vertical={false}
-              />
+            <BarChart data={trendData} margin={{ top: 0, right: 8, bottom: 0, left: -16 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
@@ -256,7 +191,7 @@ export function CashRegisterCharts({ stats }: CashRegisterChartsProps) {
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="count"
-                name="Yeni Kayıt"
+                name="Yeni Kayit"
                 fill="var(--color-success)"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={32}

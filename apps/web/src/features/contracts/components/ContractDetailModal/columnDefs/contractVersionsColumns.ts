@@ -14,6 +14,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Marka",
     width: 150,
     minWidth: 120,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -23,6 +24,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Tip",
     width: 130,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -33,8 +35,19 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     width: 120,
     minWidth: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "number" },
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -49,6 +62,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Döviz",
     width: 90,
     minWidth: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "select",
@@ -62,6 +76,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Aktif",
     width: 90,
     minWidth: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "Evet" : "Hayır")
@@ -72,6 +87,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Süresi Doldu",
     width: 110,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "Evet" : "Hayır")
@@ -82,6 +98,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Düzenleyen",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: false
   },
   {
@@ -90,6 +107,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     header: "Düzenleme",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: false,
     valueFormatter: (value) => {
       if (!value) return "";

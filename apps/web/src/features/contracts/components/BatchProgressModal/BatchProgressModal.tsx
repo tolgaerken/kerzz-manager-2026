@@ -85,8 +85,8 @@ export function BatchProgressModal({
               className={`h-full rounded-full transition-all duration-300 ${
                 isCompleted
                   ? errorCount > 0
-                    ? "bg-amber-500"
-                    : "bg-green-500"
+                    ? "bg-[var(--color-warning)]"
+                    : "bg-[var(--color-success)]"
                   : "bg-primary"
               }`}
               style={{ width: `${percentage}%` }}
@@ -95,7 +95,9 @@ export function BatchProgressModal({
           <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
             <span>
               {completedCount - errorCount} başarılı
-              {errorCount > 0 && <span className="text-red-500 ml-2">{errorCount} hatalı</span>}
+              {errorCount > 0 && (
+                <span className="text-[var(--color-error)] ml-2">{errorCount} hatalı</span>
+              )}
             </span>
             <span>{pendingCount} bekliyor</span>
           </div>
@@ -119,10 +121,10 @@ export function BatchProgressModal({
                     <Loader2 className="h-5 w-5 text-primary animate-spin" />
                   )}
                   {item.status === "completed" && (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <CheckCircle className="h-5 w-5 text-[var(--color-success)]" />
                   )}
                   {item.status === "error" && (
-                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    <AlertCircle className="h-5 w-5 text-[var(--color-error)]" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -138,7 +140,7 @@ export function BatchProgressModal({
                 </div>
                 {item.status === "error" && item.error && (
                   <div className="flex-shrink-0" title={item.error}>
-                    <XCircle className="h-4 w-4 text-red-500" />
+                    <XCircle className="h-4 w-4 text-[var(--color-error)]" />
                   </div>
                 )}
               </div>
@@ -150,11 +152,11 @@ export function BatchProgressModal({
         <div className="flex items-center justify-between border-t border-border px-6 py-4">
           <div className="text-sm text-muted-foreground">
             {isCompleted ? (
-              <span className="text-green-600 font-medium">
+              <span className="text-[var(--color-success)] font-medium">
                 İşlem tamamlandı
               </span>
             ) : isPaused ? (
-              <span className="text-amber-600 font-medium">
+              <span className="text-[var(--color-warning)] font-medium">
                 İşlem duraklatıldı
               </span>
             ) : (
@@ -183,7 +185,7 @@ export function BatchProgressModal({
                 )}
                 <button
                   onClick={onCancel}
-                  className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-500/10 transition-colors"
+                  className="flex items-center gap-2 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 px-4 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
                 >
                   <XCircle className="h-4 w-4" />
                   İptal

@@ -15,6 +15,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "enabled",
     header: "Aktif",
     width: 70,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "✓" : "✗")
@@ -24,6 +25,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "type",
     header: "Segment",
     width: 120,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "select",
@@ -39,6 +41,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "licanceId",
     header: "Lisans",
     width: 250,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "custom",
@@ -58,8 +61,19 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     header: "Fiyat",
     width: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "number" },
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -74,7 +88,18 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     header: "H.Fiyat",
     width: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: false,
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -88,6 +113,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "currency",
     header: "Döviz",
     width: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "select",
@@ -103,6 +129,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "yearly",
     header: "Yıllık",
     width: 70,
+    filter: { type: "dropdown" },
     editable: false,
     cell: (value) => (value ? "Evet" : "Hayır")
   },
@@ -112,6 +139,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     header: "Gün?",
     width: 70,
     align: "right",
+    filter: { type: "dropdown" },
     editable: false
   },
   {
@@ -119,6 +147,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "blocked",
     header: "Blok?",
     width: 70,
+    filter: { type: "dropdown" },
     editable: false,
     cell: (value) => (value ? "✓" : "✗")
   },
@@ -127,6 +156,7 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     accessorKey: "editDate",
     header: "Düzenleme",
     width: 100,
+    filter: { type: "dropdown" },
     editable: false,
     valueFormatter: (value) => {
       if (!value) return "";

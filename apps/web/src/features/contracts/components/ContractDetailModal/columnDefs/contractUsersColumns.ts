@@ -15,6 +15,7 @@ export const contractUsersColumns: GridColumnDef<ContractUser>[] = [
     header: "Ad Soyad",
     width: 200,
     minWidth: 150,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -24,6 +25,7 @@ export const contractUsersColumns: GridColumnDef<ContractUser>[] = [
     header: "E-posta",
     width: 220,
     minWidth: 180,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -33,6 +35,7 @@ export const contractUsersColumns: GridColumnDef<ContractUser>[] = [
     header: "Telefon",
     width: 140,
     minWidth: 120,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -42,6 +45,7 @@ export const contractUsersColumns: GridColumnDef<ContractUser>[] = [
     header: "Rol",
     width: 140,
     minWidth: 120,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "select",
@@ -58,6 +62,7 @@ export const contractUsersColumns: GridColumnDef<ContractUser>[] = [
     header: "Düzenleme",
     width: 120,
     minWidth: 120,
+    filter: { type: "dropdown" },
     editable: false,
     valueFormatter: (value) => {
       if (!value) return "";

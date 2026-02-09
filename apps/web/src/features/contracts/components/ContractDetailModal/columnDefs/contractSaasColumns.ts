@@ -17,6 +17,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     accessorKey: "enabled",
     header: "Aktif",
     width: 70,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "✓" : "✗")
@@ -26,6 +27,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     accessorKey: "licanceId",
     header: "Lisans",
     width: 250,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "custom",
@@ -44,6 +46,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     accessorKey: "productId",
     header: "Ürün",
     width: 200,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "custom",
@@ -63,6 +66,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     header: "Açıklama",
     width: 200,
     minWidth: 150,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -72,8 +76,12 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     header: "Adet",
     width: 70,
     align: "right",
+    filter: { type: "dropdown" },
     editable: true,
-    cellEditor: { type: "number" }
+    cellEditor: { type: "number" },
+    footer: {
+      aggregate: "sum"
+    }
   },
   {
     id: "price",
@@ -81,8 +89,19 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     header: "Fiyat",
     width: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "number" },
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -97,7 +116,18 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     header: "Toplam",
     width: 100,
     align: "right",
+    filter: { type: "dropdown" },
     editable: false,
+    footer: {
+      aggregate: "sum",
+      format: (value) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("tr-TR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
+      }
+    },
     valueFormatter: (value) => {
       if (value == null) return "";
       return new Intl.NumberFormat("tr-TR", {
@@ -111,6 +141,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     accessorKey: "yearly",
     header: "Yıllık",
     width: 70,
+    filter: { type: "dropdown" },
     editable: false,
     cell: (value) => (value ? "Evet" : "Hayır")
   },
@@ -119,6 +150,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     accessorKey: "currency",
     header: "Döviz",
     width: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: {
       type: "select",
@@ -134,6 +166,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     accessorKey: "editDate",
     header: "Düzenleme",
     width: 100,
+    filter: { type: "dropdown" },
     editable: false,
     valueFormatter: (value) => {
       if (!value) return "";

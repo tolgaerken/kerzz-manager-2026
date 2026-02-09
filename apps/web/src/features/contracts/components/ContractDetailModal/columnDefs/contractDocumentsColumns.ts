@@ -8,6 +8,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Dosya Adı",
     width: 200,
     minWidth: 150,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -17,6 +18,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Açıklama",
     width: 220,
     minWidth: 180,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -26,6 +28,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Tip",
     width: 130,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -35,6 +38,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Versiyon",
     width: 90,
     minWidth: 80,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" }
   },
@@ -44,6 +48,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Belge Tarihi",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "text" },
     valueFormatter: (value) => {
@@ -57,6 +62,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Yükleyen",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: false
   },
   {
@@ -65,6 +71,7 @@ export const contractDocumentsColumns: GridColumnDef<ContractDocument>[] = [
     header: "Düzenleme",
     width: 120,
     minWidth: 100,
+    filter: { type: "dropdown" },
     editable: false,
     valueFormatter: (value) => {
       if (!value) return "";

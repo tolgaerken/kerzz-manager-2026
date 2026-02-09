@@ -4,8 +4,12 @@ import { StatCards } from "./StatCards";
 import { TimeBasedCards } from "./TimeBasedCards";
 import { CashRegisterCharts } from "./CashRegisterCharts";
 
-export function CashRegisterDashboard() {
-  const { stats, isLoading } = useCashRegisterStats();
+interface CashRegisterDashboardProps {
+  contractId?: string;
+}
+
+export function CashRegisterDashboard({ contractId }: CashRegisterDashboardProps) {
+  const { stats, isLoading } = useCashRegisterStats(contractId);
 
   if (isLoading) {
     return (
