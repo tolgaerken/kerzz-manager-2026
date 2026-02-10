@@ -79,6 +79,7 @@ export const tr: GridLocale = {
   selectionMultiple: 'Çoklu',
   aggregationNone: 'Yok',
   toolbarSettings: 'Ayarlar',
+  toolbarSelectedRows: 'Seçili',
 
   // General
   noData: 'Veri bulunamadı',

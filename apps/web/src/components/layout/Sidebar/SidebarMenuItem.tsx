@@ -4,6 +4,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Tooltip } from "../../ui";
 import { useSidebarStore } from "../../../store/sidebarStore";
 import { SidebarPopover } from "./SidebarPopover";
+import { useIsMobile } from "../../../hooks/useIsMobile";
 
 export interface SubMenuItem {
   label: string;
@@ -19,8 +20,11 @@ export interface MenuItemProps {
 
 export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
   const location = useLocation();
   const isCollapsed = useSidebarStore((state) => state.isCollapsed);
+  const setMobileOpen = useSidebarStore((state) => state.setMobileOpen);
+  const shouldCollapse = isCollapsed && !isMobile;
   
   const hasSubItems = subItems && subItems.length > 0;
   const isActive = path ? location.pathname === path : false;
@@ -32,13 +36,17 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
     }
   };
 
+  const handleNavigation = () => {
+    setMobileOpen(false);
+  };
+
   const baseClasses = "flex w-full items-center rounded-lg text-sm font-medium transition-colors";
-  const paddingClasses = isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5";
+  const paddingClasses = shouldCollapse ? "justify-center p-2.5" : "gap-3 px-3 py-2.5";
   const activeClasses = "bg-surface-hover text-foreground";
   const inactiveClasses = "text-muted-foreground hover:bg-surface-elevated hover:text-foreground";
 
   // Collapsed state with sub-items - show flyout popover
-  if (isCollapsed && hasSubItems) {
+  if (shouldCollapse && hasSubItems) {
     return (
       <SidebarPopover label={label} subItems={subItems}>
         <button
@@ -51,11 +59,12 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
   }
 
   // Collapsed state without sub-items
-  if (isCollapsed) {
+  if (shouldCollapse) {
     return (
       <Tooltip content={label} position="right">
         <Link
           to={path ?? "/"}
+          onClick={handleNavigation}
           className={`${baseClasses} ${paddingClasses} ${isActive ? activeClasses : inactiveClasses}`}
         >
           <Icon className="h-5 w-5 shrink-0" />
@@ -87,6 +96,7 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleNavigation}
                 className={`${baseClasses} gap-3 px-3 py-2.5 text-sm ${
                   location.pathname === item.path ? activeClasses : inactiveClasses
                 }`}
@@ -104,6 +114,7 @@ export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemP
   return (
     <Link
       to={path ?? "/"}
+      onClick={handleNavigation}
       className={`${baseClasses} ${paddingClasses} ${isActive ? activeClasses : inactiveClasses}`}
     >
       <Icon className="h-5 w-5 shrink-0" />

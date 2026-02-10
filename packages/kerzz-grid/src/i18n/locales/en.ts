@@ -79,6 +79,7 @@ export const en: GridLocale = {
   selectionMultiple: 'Multiple',
   aggregationNone: 'None',
   toolbarSettings: 'Settings',
+  toolbarSelectedRows: 'Selected',
 
   // General
   noData: 'No data found',

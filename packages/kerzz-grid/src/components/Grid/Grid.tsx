@@ -253,6 +253,18 @@ function GridInner<TData>(
     grid.stateStore.setSorting([]);
   }, [grid.stateStore]);
 
+  // Scroll to first selected row in displayData
+  const handleScrollToFirstSelected = useCallback(() => {
+    if (selection.selectedCount === 0) return;
+    // Find the first displayData index whose rowId is in selectedIds
+    const firstIndex = displayData.findIndex((row) =>
+      selection.selectedIds.has(getRowIdFn(row)),
+    );
+    if (firstIndex >= 0) {
+      grid.rowVirtualizer.scrollToIndex(firstIndex, { align: 'center', behavior: 'smooth' });
+    }
+  }, [selection.selectedCount, selection.selectedIds, displayData, getRowIdFn, grid.rowVirtualizer]);
+
   return (
     <div className="kz-grid" style={gridStyle}>
       {/* Toolbar */}
@@ -279,6 +291,8 @@ function GridInner<TData>(
           onFooterAggregationChange={handleFooterAggregationChange}
           onResetSorting={handleResetSorting}
           onResetAll={grid.resetState}
+          selectedCount={selection.selectedCount}
+          onSelectedCountClick={handleScrollToFirstSelected}
         />
       )}
 

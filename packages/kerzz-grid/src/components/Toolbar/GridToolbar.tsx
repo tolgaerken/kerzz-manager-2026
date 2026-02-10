@@ -46,6 +46,10 @@ interface GridToolbarProps<TData> {
   onResetSorting?: () => void;
   /** Called when reset all is clicked */
   onResetAll?: () => void;
+  /** Number of currently selected rows */
+  selectedCount?: number;
+  /** Called when the selected count indicator is clicked (scroll to first selected) */
+  onSelectedCountClick?: () => void;
 }
 
 function GridToolbarInner<TData>({
@@ -70,6 +74,8 @@ function GridToolbarInner<TData>({
   onFooterAggregationChange,
   onResetSorting,
   onResetAll,
+  selectedCount = 0,
+  onSelectedCountClick,
 }: GridToolbarProps<TData>) {
   const locale = useLocale();
   const [columnPanelOpen, setColumnPanelOpen] = useState(false);
@@ -137,11 +143,24 @@ function GridToolbarInner<TData>({
 
   return (
     <div className="kz-toolbar">
-      {/* Left: Search + Custom buttons + Edit mode actions */}
+      {/* Left: Search + Selected count + Custom buttons + Edit mode actions */}
       <div className="kz-toolbar__left">
         {showSearch && (
           <ToolbarSearchInput value={searchTerm} onChange={onSearchChange} />
         )}
+
+        {/* Selected row count indicator */}
+        {selectedCount > 0 && (
+          <>
+            {showSearch && <ToolbarSeparator />}
+            <ToolbarButton
+              label={`${locale.toolbarSelectedRows}: ${selectedCount}`}
+              onClick={onSelectedCountClick ?? (() => {})}
+              disabled={!onSelectedCountClick}
+            />
+          </>
+        )}
+
         {customButtons.map((btn: ToolbarButtonConfig) => (
           <ToolbarButton
             key={btn.id}

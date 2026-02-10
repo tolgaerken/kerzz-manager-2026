@@ -78,6 +78,8 @@ export interface GridLocale {
   selectionMultiple: string;
   aggregationNone: string;
   toolbarSettings: string;
+  /** Label for selected row count in toolbar (e.g. "Selected") */
+  toolbarSelectedRows: string;
 
   // General
   noData: string;
