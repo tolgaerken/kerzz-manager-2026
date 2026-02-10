@@ -58,12 +58,22 @@ echo -e "${YELLOW}[7/7] Nginx yeniden başlatılıyor (docker-compose)...${NC}"
 ssh $SERVER << 'ENDSSH'
 cd /root/nginx
 
-# Nginx container'ı docker-compose ile yeniden başlat
-docker-compose down 2>/dev/null || docker stop nginx && docker rm nginx 2>/dev/null || true
-docker-compose up -d
+# Sunucuda docker compose v2/v1 uyumluluğu
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD="docker-compose"
+else
+  echo "HATA: Ne 'docker compose' ne de 'docker-compose' bulundu."
+  exit 1
+fi
+
+# Nginx container'ı compose ile yeniden başlat
+$COMPOSE_CMD down 2>/dev/null || true
+$COMPOSE_CMD up -d
 
 # Config test
-docker-compose exec -T nginx nginx -t
+$COMPOSE_CMD exec -T nginx nginx -t
 ENDSSH
 
 echo -e "${GREEN}✅ Deploy tamamlandı!${NC}"
