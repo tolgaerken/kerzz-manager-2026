@@ -18,7 +18,7 @@
   --kz-footer-bg: #f1f5f9;
   --kz-footer-fg: #334155;
   --kz-scrollbar-thumb: #cbd5e1;
-  --kz-scrollbar-track: #f1f5f9;
+  --kz-scrollbar-track: #e2e8f0;
   --kz-filter-bg: #ffffff;
   --kz-filter-border: #e2e8f0;
   --kz-filter-active: #3b82f6;
@@ -38,6 +38,7 @@
   --kz-border-width: 1px;
   --kz-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
+  --kz-grid-padding: 8px;
 
   position: relative;
   display: flex;
@@ -50,6 +51,7 @@
   color: var(--kz-text);
   overflow: hidden;
   box-sizing: border-box;
+  padding: var(--kz-grid-padding);
 }
 
 .kz-grid *,
@@ -59,22 +61,26 @@
 }
 
 /* ---- Scrollbar ---- */
-.kz-grid ::-webkit-scrollbar {
+.kz-grid ::-webkit-scrollbar,
+.kz-grid-body::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.kz-grid ::-webkit-scrollbar-track {
+.kz-grid ::-webkit-scrollbar-track,
+.kz-grid-body::-webkit-scrollbar-track {
   background: var(--kz-scrollbar-track);
 }
 
-.kz-grid ::-webkit-scrollbar-thumb {
+.kz-grid ::-webkit-scrollbar-thumb,
+.kz-grid-body::-webkit-scrollbar-thumb {
   background: var(--kz-scrollbar-thumb);
   border-radius: 4px;
 }
 
-.kz-grid ::-webkit-scrollbar-thumb:hover {
-  background: var(--kz-text-muted);
+.kz-grid ::-webkit-scrollbar-thumb:hover,
+.kz-grid-body::-webkit-scrollbar-thumb:hover {
+  background: var(--kz-scrollbar-thumb-hover, var(--kz-text-muted));
 }
 
 /* ---- Toolbar ---- */
@@ -513,6 +519,14 @@
 
 .kz-footer-cell:last-child {
   border-right: none;
+}
+
+.kz-footer-cell--align-center {
+  justify-content: center;
+}
+
+.kz-footer-cell--align-right {
+  justify-content: flex-end;
 }
 
 .kz-footer-cell__label {

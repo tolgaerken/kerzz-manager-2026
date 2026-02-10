@@ -121,7 +121,14 @@ function HeaderCellInner<TData>({
   return (
     <div
       className={classNames}
-      style={{ width, minWidth: column.minWidth ?? 50 }}
+      style={{
+        width,
+        minWidth: column.minWidth ?? 50,
+        maxWidth: width,
+        flexBasis: width,
+        flexGrow: 0,
+        flexShrink: 0,
+      }}
       draggable={column.draggable !== false}
       onDragStart={(e) => onDragStart(column.id, e)}
       onDragOver={(e) => onDragOver(column.id, e)}

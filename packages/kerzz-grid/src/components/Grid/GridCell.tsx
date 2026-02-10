@@ -139,7 +139,14 @@ function GridCellInner<TData>({
     return (
       <div
         className={`kz-grid-cell kz-grid-cell--editing ${alignClass} ${className}`.trim()}
-        style={{ width, minWidth: column.minWidth ?? 50 }}
+        style={{
+          width,
+          minWidth: column.minWidth ?? 50,
+          maxWidth: width,
+          flexBasis: width,
+          flexGrow: 0,
+          flexShrink: 0,
+        }}
       >
         {editor}
       </div>
@@ -168,7 +175,14 @@ function GridCellInner<TData>({
   return (
     <div
       className={cellClasses}
-      style={{ width, minWidth: column.minWidth ?? 50 }}
+      style={{
+        width,
+        minWidth: column.minWidth ?? 50,
+        maxWidth: width,
+        flexBasis: width,
+        flexGrow: 0,
+        flexShrink: 0,
+      }}
       onDoubleClick={handleDoubleClick}
       onClick={handleClick}
     >

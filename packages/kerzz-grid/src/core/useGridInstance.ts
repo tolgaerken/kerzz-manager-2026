@@ -252,13 +252,15 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
   );
 
   // Total row width (accounts for minWidth overriding width)
+  // columnWidths dependency ensures recalculation when any column is resized
   const totalWidth = useMemo(() => {
+    const columnWidths = stateStore.state.columnWidths;
     return orderedColumns.reduce((sum, col) => {
-      const w = columnResize.getColumnWidth(col.id, col.width ?? 150);
+      const w = columnWidths[col.id] ?? col.width ?? 150;
       const min = col.minWidth ?? 50;
       return sum + Math.max(w, min);
     }, 0);
-  }, [orderedColumns, columnResize]);
+  }, [orderedColumns, stateStore.state.columnWidths]);
 
   return {
     // Data

@@ -65,7 +65,7 @@ function GridHeaderInner<TData>({
   onDragEnd,
 }: GridHeaderProps<TData>) {
   return (
-    <div className="kz-grid-header" style={{ minWidth: totalWidth }}>
+    <div className="kz-grid-header" style={{ width: totalWidth }}>
       {showSelectionCheckbox && (
         enableSelectAll ? (
           <SelectionHeaderCell

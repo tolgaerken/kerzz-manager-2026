@@ -284,9 +284,12 @@ body {
   --kz-footer-bg: var(--color-surface-elevated) !important;
   --kz-footer-fg: var(--color-foreground) !important;
   
-  /* Scrollbar */
-  --kz-scrollbar-thumb: var(--color-border) !important;
+  /* Scrollbar
+   * Footer ile aynı tona düşmemesi için thumb'u muted-foreground'tan alıyoruz.
+   */
+  --kz-scrollbar-thumb: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent) !important;
   --kz-scrollbar-track: var(--color-surface) !important;
+  --kz-scrollbar-thumb-hover: color-mix(in srgb, var(--color-muted-foreground) 45%, transparent) !important;
   
   /* Filter */
   --kz-filter-bg: var(--color-surface-elevated) !important;

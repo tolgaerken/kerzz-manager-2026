@@ -17,7 +17,7 @@ export const lightTheme: ResolvedGridTheme = {
     footerBg: '#f1f5f9',
     footerFg: '#334155',
     scrollbarThumb: '#cbd5e1',
-    scrollbarTrack: '#f1f5f9',
+    scrollbarTrack: '#e2e8f0',
     filterBg: '#ffffff',
     filterBorder: '#e2e8f0',
     filterActive: '#3b82f6',

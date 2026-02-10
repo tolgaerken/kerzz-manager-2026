@@ -13,7 +13,7 @@ interface GridFooterProps<TData> {
   showSelectionCheckbox?: boolean;
 }
 
-function GridFooterInner<TData>({
+export function GridFooter<TData>({
   columns,
   aggregation,
   getColumnWidth,
@@ -24,7 +24,7 @@ function GridFooterInner<TData>({
   if (!hasFooter) return null;
 
   return (
-    <div className="kz-grid-footer" style={{ minWidth: totalWidth }}>
+    <div className="kz-grid-footer" style={{ width: totalWidth }}>
       {showSelectionCheckbox && <SelectionFooterCell />}
       {columns.map((col) => (
         <FooterCell
@@ -38,5 +38,3 @@ function GridFooterInner<TData>({
     </div>
   );
 }
-
-export const GridFooter = React.memo(GridFooterInner) as typeof GridFooterInner;
