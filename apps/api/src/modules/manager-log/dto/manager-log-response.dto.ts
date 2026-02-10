@@ -40,3 +40,10 @@ export class PaginatedManagerLogsResponseDto {
     totalPages: number;
   };
 }
+
+export class PipelineLogsResponseDto {
+  pipelineRef: string;
+  lead: ManagerLogResponseDto[];
+  offer: ManagerLogResponseDto[];
+  sale: ManagerLogResponseDto[];
+}

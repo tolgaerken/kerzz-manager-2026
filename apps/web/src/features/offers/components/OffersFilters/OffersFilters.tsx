@@ -1,22 +1,23 @@
 import { Search, X } from "lucide-react";
 import { OFFERS_CONSTANTS } from "../../constants/offers.constants";
+import type { OfferQueryParams, OfferStatus } from "../../types/offer.types";
 
-interface OffersFiltersProps {
-  search: string;
-  status: string;
-  onSearchChange: (value: string) => void;
-  onStatusChange: (value: string) => void;
-  onClearFilters: () => void;
+export interface OffersFiltersProps {
+  filters: OfferQueryParams;
+  onFilterChange: (filters: Partial<OfferQueryParams>) => void;
 }
 
 export function OffersFilters({
-  search,
-  status,
-  onSearchChange,
-  onStatusChange,
-  onClearFilters,
+  filters,
+  onFilterChange,
 }: OffersFiltersProps) {
+  const search = filters.search || "";
+  const status = filters.status;
   const hasFilters = !!search || (!!status && status !== "all");
+
+  const onSearchChange = (value: string) => onFilterChange({ search: value });
+  const onStatusChange = (value: string) => onFilterChange({ status: (value || undefined) as OfferStatus | "all" | undefined });
+  const onClearFilters = () => onFilterChange({ search: "", status: undefined });
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -34,7 +35,7 @@ export function OffersFilters({
 
       {/* Durum Filtresi */}
       <select
-        value={status}
+        value={status || ""}
         onChange={(e) => onStatusChange(e.target.value)}
         className="px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
       >

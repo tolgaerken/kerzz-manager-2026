@@ -1,6 +1,6 @@
 export { CreateSystemLogDto } from "./create-system-log.dto";
 export { SystemLogQueryDto } from "./system-log-query.dto";
-export {
+export type {
   SystemLogResponseDto,
   PaginatedSystemLogsResponseDto,
   SystemLogStatsDto,

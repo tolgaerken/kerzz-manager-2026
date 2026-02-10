@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, SortOrder } from "mongoose";
+import { Model, SortOrder, PipelineStage } from "mongoose";
 import { License, LicenseDocument } from "./schemas/license.schema";
 import { LicenseQueryDto } from "./dto/license-query.dto";
 import {
@@ -111,6 +111,8 @@ export class LicensesService {
     // Build sort
     const sort: Record<string, SortOrder> = {};
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
+    const pipelineSort: Record<string, 1 | -1> = {};
+    pipelineSort[sortField] = sortOrder === "asc" ? 1 : -1;
 
     // Minimal query: Mongoose'un id virtual çakışmasını bypass etmek için
     // aggregation pipeline kullanıyoruz. Bu projection'ı doğrudan MongoDB'ye gönderir.
@@ -120,9 +122,9 @@ export class LicensesService {
         projectionStage[field] = 1;
       }
 
-      const pipeline: Record<string, unknown>[] = [
+      const pipeline: PipelineStage[] = [
         { $match: filter },
-        { $sort: sort },
+        { $sort: pipelineSort },
         { $skip: skip },
         { $limit: numericLimit },
         { $project: projectionStage }
@@ -136,7 +138,7 @@ export class LicensesService {
       const totalPages = Math.ceil(total / numericLimit);
 
       return {
-        data: data.map((doc) => this.mapToMinimalResponseDto(doc)),
+        data: data.map((doc) => this.mapToMinimalResponseDto(doc)) as unknown as (LicenseResponseDto | Record<string, unknown>)[],
         pagination: {
           page: numericPage,
           limit: numericLimit,

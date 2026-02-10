@@ -43,6 +43,11 @@ function buildDateRange(
 
   switch (period) {
     case "daily":
+      // Günlük için bugünün tarihini kullan
+      start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
       break;
     case "weekly": {
       const day = reference.getDay() || 7;

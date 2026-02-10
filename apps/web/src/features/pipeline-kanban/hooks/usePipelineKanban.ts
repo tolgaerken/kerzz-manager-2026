@@ -1,11 +1,13 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { fetchLeads, useUpdateLead, leadKeys } from "../../leads";
+import type { LeadStatus } from "../../leads";
 import { fetchOffers, useUpdateOffer, offerKeys } from "../../offers";
+import type { OfferStatus } from "../../offers";
 import { fetchSales } from "../../sales";
 import { SALES_CONSTANTS } from "../../sales/constants/sales.constants";
 import { KANBAN_COLUMNS } from "../constants/kanban.constants";
-import type { KanbanColumnConfig } from "../constants/kanban.constants";
+import type { KanbanColumnConfig, KanbanColumnId } from "../constants/kanban.constants";
 import type { KanbanItem } from "../types/kanban.types";
 
 const LARGE_LIMIT = 99999;
@@ -40,19 +42,24 @@ export function usePipelineKanban() {
   const [leadsQuery, offersQuery, salesQuery] = results;
 
   const items = useMemo<KanbanItem[]>(() => {
-    const leadItems =
+    const getLeadColumnId = (status: string): KanbanColumnId => {
+      if (status === "new") return "lead-new";
+      if (status === "contacted") return "lead-contacted";
+      return "lead-qualified";
+    };
+
+    const getOfferColumnId = (status: string): KanbanColumnId => {
+      return status === "draft" ? "offer-draft" : "offer-sent";
+    };
+
+    const leadItems: KanbanItem[] =
       leadsQuery.data?.data
         ?.filter((lead) =>
           ["new", "contacted", "qualified"].includes(lead.status)
         )
         .map((lead) => ({
           id: lead._id,
-          columnId:
-            lead.status === "new"
-              ? "lead-new"
-              : lead.status === "contacted"
-                ? "lead-contacted"
-                : "lead-qualified",
+          columnId: getLeadColumnId(lead.status),
           entityType: "lead" as const,
           title: lead.companyName || lead.contactName || "Lead",
           subtitle: lead.assignedUserName || lead.contactName || "",
@@ -61,12 +68,12 @@ export function usePipelineKanban() {
           raw: lead,
         })) || [];
 
-    const offerItems =
+    const offerItems: KanbanItem[] =
       offersQuery.data?.data
         ?.filter((offer) => ["draft", "sent"].includes(offer.status))
         .map((offer) => ({
           id: offer._id,
-          columnId: offer.status === "draft" ? "offer-draft" : "offer-sent",
+          columnId: getOfferColumnId(offer.status),
           entityType: "offer" as const,
           title: offer.customerName || "Teklif",
           subtitle: offer.sellerName || "",
@@ -75,15 +82,15 @@ export function usePipelineKanban() {
           raw: offer,
         })) || [];
 
-    const saleItems =
+    const saleItems: KanbanItem[] =
       salesQuery.data?.data?.map((sale) => ({
         id: sale._id,
-        columnId: "sale-won" as const,
+        columnId: "sale-won" as KanbanColumnId,
         entityType: "sale" as const,
         title: sale.customerName || "Satış",
         subtitle: sale.sellerName || "",
         value: sale.grandTotal || 0,
-        status: sale.status,
+        status: Array.isArray(sale.status) ? sale.status[0] : sale.status,
         raw: sale,
       })) || [];
 
@@ -117,14 +124,14 @@ export function usePipelineKanban() {
     if (item.entityType === "lead") {
       await updateLead.mutateAsync({
         id: item.id,
-        data: { status: column.status },
+        data: { status: column.status as LeadStatus },
       });
     }
 
     if (item.entityType === "offer") {
       await updateOffer.mutateAsync({
         id: item.id,
-        input: { status: column.status },
+        input: { status: column.status as OfferStatus },
       });
     }
   };

@@ -10,7 +10,9 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "test": "turbo test"
+    "test": "turbo test",
+    "typecheck": "tsc --noEmit",
+    "precommit": "npm run typecheck"
   },
   "devDependencies": {
     "turbo": "^2.4.0"

@@ -79,7 +79,7 @@ export function BankTransactionsPage() {
   const filteredTransactions = useMemo(() => {
     if (!transactionsData?.data) return [];
     return transactionsData.data.filter(
-      (t) => !EXCLUDED_BANK_ACC_IDS.includes(t.bankAccId),
+      (t) => !(EXCLUDED_BANK_ACC_IDS as readonly string[]).includes(t.bankAccId),
     );
   }, [transactionsData?.data]);
 

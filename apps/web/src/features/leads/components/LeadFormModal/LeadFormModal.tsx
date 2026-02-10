@@ -461,7 +461,7 @@ export function LeadFormModal({
           setPendingSubmit(false);
         }}
         onSubmit={(value) => {
-          const nextData = { ...formData, lossInfo: value, status: "lost" };
+          const nextData = { ...formData, lossInfo: value, status: "lost" as const };
           setFormData(nextData);
           setIsLossModalOpen(false);
           if (pendingSubmit) {

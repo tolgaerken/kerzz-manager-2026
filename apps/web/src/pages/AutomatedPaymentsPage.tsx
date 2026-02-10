@@ -128,6 +128,13 @@ export function AutomatedPaymentsPage() {
   // Secili satiri tahsil et
   const handleCollectItem = useCallback(async () => {
     if (!selectedCustomer || !selectedPlan) return;
+    if (selectedPlan.invoiceTotal <= 0) {
+      setPaymentNotification({
+        type: "error",
+        message: "Tahsilat tutarı 0 TL veya negatif olamaz",
+      });
+      return;
+    }
     setItemLoading(true);
     try {
       const result = await collectMutation.mutateAsync({

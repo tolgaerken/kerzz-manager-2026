@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, FilterQuery } from "mongoose";
+import { Model } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import {
   NotificationLog,
@@ -174,7 +174,7 @@ export class NotificationDispatchService {
     } = queryDto;
 
     const skip = (page - 1) * limit;
-    const filter: FilterQuery<NotificationLogDocument> = {};
+    const filter: Record<string, unknown> = {};
 
     if (channel) filter.channel = channel;
     if (status) filter.status = status;
@@ -187,9 +187,10 @@ export class NotificationDispatchService {
 
     // Tarih aralığı filtresi
     if (startDate || endDate) {
-      filter.sentAt = {};
-      if (startDate) filter.sentAt.$gte = new Date(startDate);
-      if (endDate) filter.sentAt.$lte = new Date(endDate);
+      const sentAtFilter: { $gte?: Date; $lte?: Date } = {};
+      if (startDate) sentAtFilter.$gte = new Date(startDate);
+      if (endDate) sentAtFilter.$lte = new Date(endDate);
+      filter.sentAt = sentAtFilter;
     }
 
     // Metin arama
@@ -237,7 +238,7 @@ export class NotificationDispatchService {
    * İstatistikleri hesaplar
    */
   private async getStats(
-    baseFilter: FilterQuery<NotificationLogDocument>
+    baseFilter: Record<string, unknown>
   ): Promise<{
     total: number;
     sent: number;

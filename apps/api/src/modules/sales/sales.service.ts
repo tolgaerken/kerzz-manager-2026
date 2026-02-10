@@ -166,6 +166,10 @@ export class SalesService {
       .lean()
       .exec();
 
+    if (!sale) {
+      throw new NotFoundException(`Satış bulunamadı: ${id}`);
+    }
+
     if (
       products !== undefined ||
       licenses !== undefined ||
@@ -184,8 +188,8 @@ export class SalesService {
   }
 
   async remove(id: string): Promise<void> {
-    const sale = await this.saleModel.findById(id).exec();
-    if (!sale) throw new NotFoundException(`Satış bulunamadı: ${id}`);
+    const saleToRemove = await this.saleModel.findById(id).exec();
+    if (!saleToRemove) throw new NotFoundException(`Satış bulunamadı: ${id}`);
 
     await this.pipelineService.deleteAllItems(id, "sale");
     await this.saleModel.findByIdAndDelete(id).exec();

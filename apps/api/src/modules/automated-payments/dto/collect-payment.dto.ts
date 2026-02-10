@@ -18,7 +18,7 @@ export class CollectPaymentDto {
   customerId: string;
 
   @IsNumber()
-  @Min(0.01)
+  @Min(0.01, { message: "Tahsilat tutarı 0 TL veya negatif olamaz" })
   @Type(() => Number)
   amount: number;
 

@@ -5,7 +5,8 @@ import {
   OnModuleDestroy,
 } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { Connection, ChangeStream } from "mongoose";
+import { Connection } from "mongoose";
+import type { ChangeStream } from "mongodb";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { MongoWsGateway } from "./mongo-ws.gateway";
 import type {
@@ -57,7 +58,7 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
     // Tum change stream'leri kapat
     for (const [name, stream] of this.streams) {
       this.logger.log(`Change stream kapatiliyor: ${name}`);
-      stream.close().catch((err) => {
+      stream.close().catch((err: unknown) => {
         this.logger.error(`Stream kapatma hatasi (${name}): ${err}`);
       });
     }

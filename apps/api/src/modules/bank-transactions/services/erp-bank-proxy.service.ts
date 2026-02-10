@@ -3,19 +3,19 @@ import { ConfigService } from "@nestjs/config";
 import { HttpService } from "@nestjs/axios";
 import { firstValueFrom } from "rxjs";
 
-interface BankAccount {
+export interface BankAccount {
   bankAccId: string;
   bankAccName: string;
   erpCompanyId: string;
   erpMuhCode: string;
 }
 
-interface ErpAccount {
+export interface ErpAccount {
   accountCode: string;
   accountName: string;
 }
 
-interface ErpGlAccount {
+export interface ErpGlAccount {
   glCode: string;
   glName: string;
 }

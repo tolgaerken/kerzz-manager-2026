@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, SortOrder } from "mongoose";
+import { Model, SortOrder, PipelineStage } from "mongoose";
 import { Customer, CustomerDocument } from "./schemas/customer.schema";
 import { CustomerQueryDto } from "./dto/customer-query.dto";
 import {
@@ -74,6 +74,8 @@ export class CustomersService {
     // Build sort
     const sort: Record<string, SortOrder> = {};
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
+    const pipelineSort: Record<string, 1 | -1> = {};
+    pipelineSort[sortField] = sortOrder === "asc" ? 1 : -1;
 
     // Minimal query: aggregation pipeline ile sadece istenen alanları döndür
     if (isMinimalQuery) {
@@ -82,9 +84,9 @@ export class CustomersService {
         projectionStage[field] = 1;
       }
 
-      const pipeline: Record<string, unknown>[] = [
+      const pipeline: PipelineStage[] = [
         { $match: filter },
-        { $sort: sort },
+        { $sort: pipelineSort },
         { $skip: skip },
         { $limit: numericLimit },
         { $project: projectionStage }
@@ -98,7 +100,7 @@ export class CustomersService {
       const totalPages = Math.ceil(total / numericLimit);
 
       return {
-        data: data.map((doc) => this.mapToMinimalResponseDto(doc)),
+        data: data.map((doc) => this.mapToMinimalResponseDto(doc)) as unknown as CustomerResponseDto[],
         meta: {
           total,
           page: numericPage,

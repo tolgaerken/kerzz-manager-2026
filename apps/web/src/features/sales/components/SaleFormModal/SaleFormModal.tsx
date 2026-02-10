@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, MessageSquare } from "lucide-react";
-import type { Sale, CreateSaleInput } from "../../types/sale.types";
+import type { Sale, CreateSaleInput, SaleStatus } from "../../types/sale.types";
 import { useSale } from "../../hooks/useSales";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
 import { useCompanies } from "../../../companies/hooks/useCompanies";
@@ -96,7 +96,7 @@ export function SaleFormModal({
           offerId: editItem.offerId || "",
           leadId: editItem.leadId || "",
           sellerId: editItem.sellerId || "",
-          status: editItem.status,
+          status: (Array.isArray(editItem.status) ? editItem.status[0] : editItem.status) as SaleStatus | undefined,
           products: editItem.products || [],
           licenses: editItem.licenses || [],
           rentals: editItem.rentals || [],

@@ -80,6 +80,42 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         { invoiceNo: item.invoice.invoiceNumber, customerId: item.invoice.customerId, amount: item.invoice.grandTotal }
       );
 
+      // 0 TL veya negatif tutar kontrolü
+      if (item.invoice.grandTotal <= 0) {
+        console.log(
+          `[BatchCollect] ATLANDI [${nextIndex + 1}/${currentProgress.totalCount}] - Geçersiz tutar`,
+          { invoiceNo: item.invoice.invoiceNumber, amount: item.invoice.grandTotal }
+        );
+
+        updateProgress((prev) => {
+          if (!prev) return null;
+          const newItems = [...prev.items];
+          newItems[nextIndex] = {
+            ...newItems[nextIndex],
+            status: "error",
+            error: "Tahsilat tutarı 0 TL veya negatif olamaz"
+          };
+
+          const completedCount = newItems.filter(
+            (i) => i.status === "completed" || i.status === "error"
+          ).length;
+          const errorCount = newItems.filter((i) => i.status === "error").length;
+
+          return {
+            ...prev,
+            items: newItems,
+            completedCount,
+            errorCount
+          };
+        });
+
+        // Sonraki item'a geç
+        if (processNextItemRef.current) {
+          await processNextItemRef.current();
+        }
+        return;
+      }
+
       // Item durumunu "processing" olarak güncelle
       updateProgress((prev) => {
         if (!prev) return null;

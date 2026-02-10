@@ -59,9 +59,8 @@ export function ContractEditFormModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    if (customerData?.data) {
-      const customer = customerData.data;
-      setSelectedCustomerName(customer.name || customer.companyName || "");
+    if (customerData) {
+      setSelectedCustomerName(customerData.name || customerData.companyName || "");
     } else if (contract.customerId) {
       setSelectedCustomerName(contract.customerId);
     }

@@ -10,6 +10,16 @@ interface LossReasonModalProps {
   onSubmit: (value: OfferLossInfo) => void;
 }
 
+type LossReason = OfferLossInfo["reason"];
+
+interface FormState {
+  reason: LossReason | "";
+  competitor: string;
+  notes: string;
+  lostAt: string;
+  lostBy: string;
+}
+
 const REASON_OPTIONS = [
   { value: "", label: "Neden seçin" },
   { value: "price", label: "Fiyat" },
@@ -33,7 +43,7 @@ export function LossReasonModal({
   onClose,
   onSubmit,
 }: LossReasonModalProps) {
-  const [formData, setFormData] = useState<OfferLossInfo>({
+  const [formData, setFormData] = useState<FormState>({
     reason: "",
     competitor: "",
     notes: "",
@@ -45,13 +55,13 @@ export function LossReasonModal({
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        reason: initialValue?.reason || "",
-        competitor: initialValue?.competitor || "",
-        notes: initialValue?.notes || "",
+        reason: initialValue?.reason ?? "",
+        competitor: initialValue?.competitor ?? "",
+        notes: initialValue?.notes ?? "",
         lostAt: initialValue?.lostAt
           ? initialValue.lostAt.split("T")[0]
           : new Date().toISOString().slice(0, 10),
-        lostBy: initialValue?.lostBy || "",
+        lostBy: initialValue?.lostBy ?? "",
       });
       setErrors({});
     }
@@ -78,7 +88,7 @@ export function LossReasonModal({
     event.preventDefault();
     if (!validate()) return;
     onSubmit({
-      reason: formData.reason,
+      reason: formData.reason || undefined,
       competitor: formData.competitor?.trim(),
       notes: formData.notes?.trim(),
       lostAt: formData.lostAt,
@@ -100,7 +110,7 @@ export function LossReasonModal({
             className={inputClassName}
             value={formData.reason}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, reason: e.target.value }))
+              setFormData((prev) => ({ ...prev, reason: e.target.value as FormState["reason"] }))
             }
           >
             {REASON_OPTIONS.map((option) => (

@@ -262,6 +262,10 @@ export class OffersService {
       .lean()
       .exec();
 
+    if (!offer) {
+      throw new NotFoundException(`Offer with ID ${id} not found`);
+    }
+
     // Dual write
     if (
       products !== undefined ||

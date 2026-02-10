@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /root/nginx/certs:/etc/nginx/certs:ro
+      - /root/nginx/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /var/www/ota-bundles:/var/www/ota-bundles:ro
+      - /var/www/io.kerzz.com:/var/www/io.kerzz.com:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

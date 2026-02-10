@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, FilterQuery } from "mongoose";
+import { Model } from "mongoose";
 import {
   SystemLog,
   SystemLogDocument,
@@ -125,7 +125,7 @@ export class SystemLogsService {
     } = queryDto;
 
     const skip = (page - 1) * limit;
-    const filter: FilterQuery<SystemLogDocument> = {};
+    const filter: Record<string, unknown> = {};
 
     if (category) filter.category = category;
     if (action) filter.action = action;
@@ -135,9 +135,10 @@ export class SystemLogsService {
 
     // Tarih aralığı filtresi
     if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
+      const createdAtFilter: { $gte?: Date; $lte?: Date } = {};
+      if (startDate) createdAtFilter.$gte = new Date(startDate);
+      if (endDate) createdAtFilter.$lte = new Date(endDate);
+      filter.createdAt = createdAtFilter;
     }
 
     // Metin arama
@@ -190,7 +191,7 @@ export class SystemLogsService {
    * İstatistikleri hesapla
    */
   private async getStats(
-    baseFilter: FilterQuery<SystemLogDocument>
+    baseFilter: Record<string, unknown>
   ): Promise<SystemLogStatsDto> {
     const [byCategoryAgg, byStatusAgg, byModuleAgg] = await Promise.all([
       this.systemLogModel.aggregate([

@@ -6,11 +6,14 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from "@nestjs/websockets";
-import { Server, Socket } from "socket.io";
 import type {
   MongoChangeEvent,
   CollectionSubscription,
 } from "./mongo-ws.types";
+
+// Socket.io types - using any to avoid version conflicts
+type Server = any;
+type Socket = any;
 
 /**
  * Global WebSocket gateway.

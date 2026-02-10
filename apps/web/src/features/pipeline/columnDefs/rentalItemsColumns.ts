@@ -152,17 +152,16 @@ export const rentalItemsColumns: GridColumnDef<Partial<PipelineRental>>[] = [
   },
   {
     id: "discountedMonthlyPrice",
-    accessorKey: "discountedMonthlyPrice",
     header: "İskontolu Aylık Fiyat",
     width: 150,
     align: "right",
     editable: false,
-    cell: (_value, row) => {
+    accessorFn: (row) => {
       const price = row.price || 0;
       const discountRate = row.discountRate || 0;
-      const discountedPrice = price * (1 - discountRate / 100);
-      return currencyFormatter(discountedPrice);
+      return price * (1 - discountRate / 100);
     },
+    valueFormatter: currencyFormatter,
   },
   {
     id: "grandTotal",

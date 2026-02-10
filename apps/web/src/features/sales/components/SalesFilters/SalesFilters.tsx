@@ -1,6 +1,6 @@
 import { Search, X } from "lucide-react";
 import { SALES_CONSTANTS } from "../../constants/sales.constants";
-import type { SaleQueryParams } from "../../types/sale.types";
+import type { SaleQueryParams, SaleStatus } from "../../types/sale.types";
 
 export interface SalesFiltersProps {
   filters: SaleQueryParams;
@@ -12,12 +12,12 @@ export function SalesFilters({
   onFilterChange,
 }: SalesFiltersProps) {
   const search = filters.search || "";
-  const status = filters.status || "";
+  const status = filters.status;
   const hasFilters = !!search || !!status;
 
   const onSearchChange = (value: string) => onFilterChange({ search: value });
-  const onStatusChange = (value: string) => onFilterChange({ status: value });
-  const onClearFilters = () => onFilterChange({ search: "", status: "" });
+  const onStatusChange = (value: string) => onFilterChange({ status: (value || undefined) as SaleStatus | "all" | undefined });
+  const onClearFilters = () => onFilterChange({ search: "", status: undefined });
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -35,7 +35,7 @@ export function SalesFilters({
 
       {/* Durum Filtresi */}
       <select
-        value={status}
+        value={status || ""}
         onChange={(e) => onStatusChange(e.target.value)}
         className="px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
       >

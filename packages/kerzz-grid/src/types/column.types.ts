@@ -52,4 +52,6 @@ export interface GridColumnDef<TData = unknown> {
   cellEditor?: CellEditorConfig<TData>;
   /** Format the raw value for display (used instead of cell when no custom renderer needed) */
   valueFormatter?: (value: unknown, row: TData) => string;
+  /** Whether to render cell content as HTML (use with caution) */
+  enableHtml?: boolean;
 }

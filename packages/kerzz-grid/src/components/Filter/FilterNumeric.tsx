@@ -45,7 +45,7 @@ function FilterNumericInner({
 }: FilterNumericProps) {
   const locale = useLocale();
   const panelRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof window.setTimeout> | undefined>(undefined);
   const conditions = filterConfig.conditions ?? defaultConditions;
   const debounceMs = filterConfig.debounceMs ?? 300;
 

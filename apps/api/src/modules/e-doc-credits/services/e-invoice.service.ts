@@ -51,7 +51,7 @@ export class EInvoiceService {
 
       return invoiceCover.invoice;
     } catch (error) {
-      this.logger.error(`Fatura gönderilirken hata oluştu: ${error.message}`);
+      this.logger.error(`Fatura gönderilirken hata oluştu: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }

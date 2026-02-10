@@ -14,7 +14,7 @@ interface UseStateStoreOptions {
   columns: GridColumnDef[];
 }
 
-interface UseStateStoreReturn {
+export interface UseStateStoreReturn {
   state: GridState;
   setColumnWidths: (widths: Record<string, number>) => void;
   setColumnWidth: (columnId: string, width: number) => void;

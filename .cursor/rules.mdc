@@ -104,3 +104,37 @@ Bir iş ancak şu şartlarla DONE olur:
 - Correctness > Speed
 - Maintainability > Ego
 - Minimal change > Big rewrite
+
+
+## TYPE SAFETY – NON NEGOTIABLE
+
+- All code MUST compile with `tsc --noEmit`
+- Any code that introduces:
+  - `any`
+  - `unknown`
+  - `as any`
+  - `@ts-ignore`
+  is FORBIDDEN unless explicitly requested.
+
+- Every function MUST have:
+  - Explicit return type
+  - Fully typed parameters
+
+- All async functions MUST return `Promise<T>`
+
+- Interfaces and types MUST be reused from existing domain types.
+  NEVER redefine similar types.
+
+- If a type is missing:
+  STOP.
+  ASK.
+  DO NOT GUESS.
+- Do NOT use Partial<T> for API responses
+- Do NOT assert types to fix errors
+- Optional fields MUST be null-checked
+
+Before producing code:
+- Run a mental `tsc --noEmit`
+- Validate all types against existing domain models
+- If any type is unclear, STOP and ask
+- Do not use type assertions to silence errors

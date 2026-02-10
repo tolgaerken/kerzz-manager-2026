@@ -98,6 +98,7 @@ export class NotificationSettingsService implements OnModuleInit {
       id: doc.id,
       invoiceDueReminderDays: doc.invoiceDueReminderDays,
       invoiceOverdueDays: doc.invoiceOverdueDays,
+      invoiceLookbackDays: doc.invoiceLookbackDays ?? 30,
       contractExpiryDays: doc.contractExpiryDays,
       emailEnabled: doc.emailEnabled,
       smsEnabled: doc.smsEnabled,

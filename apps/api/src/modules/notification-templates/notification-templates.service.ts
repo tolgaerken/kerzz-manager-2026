@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, FilterQuery } from "mongoose";
+import { Model } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import * as Handlebars from "handlebars";
 import {
@@ -65,7 +65,7 @@ export class NotificationTemplatesService implements OnModuleInit {
     const { page = 1, limit = 50, channel, isActive, search } = queryDto;
     const skip = (page - 1) * limit;
 
-    const filter: FilterQuery<NotificationTemplateDocument> = {};
+    const filter: Record<string, unknown> = {};
 
     if (channel) filter.channel = channel;
     if (isActive !== undefined) filter.isActive = isActive;
