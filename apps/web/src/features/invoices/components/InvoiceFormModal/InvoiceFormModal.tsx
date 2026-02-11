@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { Modal } from "../../../../components/ui";
 import { INVOICES_CONSTANTS } from "../../constants/invoices.constants";
 import type { Invoice, UpdateInvoiceInput } from "../../types";
@@ -69,68 +69,54 @@ export function InvoiceFormModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Fatura Detayı" size="lg">
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
-            Fatura Detayı
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[var(--color-surface-elevated)] transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-4 sm:space-y-6">
             {/* Fatura Bilgileri - Salt okunur */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--color-surface-elevated)] rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-[var(--color-surface-elevated)] rounded-lg">
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Fatura No</label>
-                <p className="font-medium">{invoice.invoiceNumber || "-"}</p>
+                <p className="font-medium text-sm sm:text-base">{invoice.invoiceNumber || "-"}</p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Müşteri</label>
-                <p className="font-medium">{invoice.name || "-"}</p>
+                <p className="font-medium text-sm sm:text-base break-words">{invoice.name || "-"}</p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Fatura Tarihi</label>
-                <p className="font-medium">{formatDate(invoice.invoiceDate)}</p>
+                <p className="font-medium text-sm sm:text-base">{formatDate(invoice.invoiceDate)}</p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Son Ödeme Tarihi</label>
-                <p className="font-medium">{formatDate(invoice.dueDate)}</p>
+                <p className="font-medium text-sm sm:text-base">{formatDate(invoice.dueDate)}</p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Fatura Tipi</label>
-                <p className="font-medium">
+                <p className="font-medium text-sm sm:text-base">
                   {INVOICES_CONSTANTS.INVOICE_TYPES.find((t) => t.id === invoice.invoiceType)?.name || invoice.invoiceType}
                 </p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Firma</label>
-                <p className="font-medium">{invoice.internalFirm || "-"}</p>
+                <p className="font-medium text-sm sm:text-base">{invoice.internalFirm || "-"}</p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">Toplam</label>
-                <p className="font-medium">{formatCurrency(invoice.total)}</p>
+                <p className="font-medium text-sm sm:text-base">{formatCurrency(invoice.total)}</p>
               </div>
               <div>
                 <label className="text-xs text-[var(--color-foreground-muted)]">KDV</label>
-                <p className="font-medium">{formatCurrency(invoice.taxTotal)}</p>
+                <p className="font-medium text-sm sm:text-base">{formatCurrency(invoice.taxTotal)}</p>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="text-xs text-[var(--color-foreground-muted)]">Genel Toplam</label>
-                <p className="text-xl font-bold text-blue-600">{formatCurrency(invoice.grandTotal)}</p>
+                <p className="text-lg sm:text-xl font-bold text-[var(--color-info)]">{formatCurrency(invoice.grandTotal)}</p>
               </div>
             </div>
 
             {/* Düzenlenebilir alanlar */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-[var(--color-foreground)]">Ödeme Bilgileri</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="font-medium text-sm sm:text-base text-[var(--color-foreground)]">Ödeme Bilgileri</h3>
               
               {/* Ödeme durumu */}
               <div className="flex items-center gap-3">
@@ -161,7 +147,7 @@ export function InvoiceFormModal({
                     type="date"
                     value={formData.paymentSuccessDate || ""}
                     onChange={(e) => handleChange("paymentSuccessDate", e.target.value)}
-                    className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
                 </div>
               )}
@@ -175,7 +161,7 @@ export function InvoiceFormModal({
                   value={formData.description || ""}
                   onChange={(e) => handleChange("description", e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                 />
               </div>
 
@@ -188,7 +174,7 @@ export function InvoiceFormModal({
                   type="text"
                   value={formData.reference || ""}
                   onChange={(e) => handleChange("reference", e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
               </div>
             </div>
@@ -196,18 +182,18 @@ export function InvoiceFormModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-border)]">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-[var(--color-border)] mt-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium rounded-md border border-[var(--color-border)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+            className="px-4 py-2.5 sm:py-2 text-sm font-medium rounded-md border border-[var(--color-border)] hover:bg-[var(--color-surface-elevated)] transition-colors"
           >
             İptal
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 disabled:opacity-50 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 disabled:opacity-50 transition-colors"
           >
             <Save className="w-4 h-4" />
             {isLoading ? "Kaydediliyor..." : "Kaydet"}
