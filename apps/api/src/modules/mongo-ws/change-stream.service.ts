@@ -21,6 +21,10 @@ import type {
  * Herhangi bir collection icin change stream baslatir.
  * Degisiklik aldiginda MongoWsGateway uzerinden ilgili room'a yayinlar.
  *
+ * Birden fazla veritabani baglantisini destekler:
+ *   - "contract" (varsayilan): CONTRACT_DB_CONNECTION
+ *   - "default": Isimsiz (varsayilan) Mongoose baglantisi
+ *
  * Kullanim:
  *   - Baslangicta varsayilan collection'lar otomatik dinlenir.
  *   - Baska moduller `registerCollection()` ile runtime'da yeni collection ekleyebilir.
@@ -34,23 +38,32 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @InjectConnection(CONTRACT_DB_CONNECTION)
-    private readonly connection: Connection,
+    private readonly contractConnection: Connection,
+    @InjectConnection()
+    private readonly defaultConnection: Connection,
     private readonly gateway: MongoWsGateway
   ) {}
 
   async onModuleInit() {
     this.logger.log("ChangeStreamService baslatiliyor...");
     this.logger.log(
-      `DB baglanti durumu: ${this.connection.readyState === 1 ? "bagli" : "baglantiyor"}`
+      `Contract DB baglanti durumu: ${this.contractConnection.readyState === 1 ? "bagli" : "baglantiyor"}`
     );
-    // Varsayilan collection'lari dinlemeye basla
+    this.logger.log(
+      `Default DB baglanti durumu: ${this.defaultConnection.readyState === 1 ? "bagli" : "baglantiyor"}`
+    );
+    // Contract DB collection'lari
     this.registerCollection("contract-payments");
     this.registerCollection("bank-transactions");
     this.registerCollection("global-invoices");
     this.registerCollection("online-payments");
     this.registerCollection("customers");
     this.registerCollection("licenses", {
-      ignoredFields: ["lastOnline", "lastIp", "lastVersion"]
+      ignoredFields: ["lastOnline", "lastIp", "lastVersion"],
+    });
+    // Default DB collection'lari
+    this.registerCollection("manager-notifications", {
+      connectionName: "default",
     });
   }
 
@@ -85,21 +98,32 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
       this.ignoredFieldsMap.set(collectionName, new Set(options.ignoredFields));
     }
 
+    const connLabel = options?.connectionName === "default" ? "default" : "contract";
     this.logger.log(
-      `Collection kayit ediliyor: ${collectionName} (pipeline: ${options?.pipeline ? "ozel" : "yok"}, fullDocument: ${options?.fullDocument ?? "updateLookup"}, ignoredFields: ${options?.ignoredFields?.join(", ") || "yok"})`
+      `Collection kayit ediliyor: ${collectionName} (connection: ${connLabel}, pipeline: ${options?.pipeline ? "ozel" : "yok"}, fullDocument: ${options?.fullDocument ?? "updateLookup"}, ignoredFields: ${options?.ignoredFields?.join(", ") || "yok"})`
     );
     this.watchCollection(collectionName, options);
+  }
+
+  /**
+   * connectionName'e gore dogru Connection nesnesini dondurur.
+   */
+  private getConnection(connectionName?: "default" | "contract"): Connection {
+    return connectionName === "default"
+      ? this.defaultConnection
+      : this.contractConnection;
   }
 
   private watchCollection(
     collectionName: string,
     options?: WatchOptions
   ): void {
-    const db = this.connection.db;
+    const connection = this.getConnection(options?.connectionName);
+    const db = connection.db;
 
     if (!db) {
       this.logger.error(
-        "Veritabani baglantisi henuz hazir degil, change stream baslatilamiyor"
+        `Veritabani baglantisi henuz hazir degil (${options?.connectionName ?? "contract"}), change stream baslatilamiyor: ${collectionName}`
       );
       return;
     }

@@ -35,6 +35,12 @@ export interface WatchOptions {
    * degisirse event yayinlanmaz.
    */
   ignoredFields?: string[];
+  /**
+   * Hangi veritabani baglantisini kullanacagini belirtir.
+   * Varsayilan: "contract" (CONTRACT_DB_CONNECTION).
+   * "default" ise varsayilan (isimsiz) Mongoose baglantisi kullanilir.
+   */
+  connectionName?: "default" | "contract";
 }
 
 /** Client tarafindan gonderilen subscribe/unsubscribe mesaji. */

@@ -34,7 +34,7 @@ export function useManagerNotificationUnreadCount(userId: string | null) {
     queryFn: () => fetchManagerNotificationUnreadCount(userId!),
     enabled: !!userId,
     staleTime: 1000 * 30, // 30 saniye
-    refetchInterval: 1000 * 60, // Her 1 dakikada bir yenile
+    refetchInterval: 1000 * 60 * 5, // 5 dakika (WebSocket fallback için)
   });
 }
 
