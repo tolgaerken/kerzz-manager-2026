@@ -98,7 +98,7 @@ export function AccountTransactionsModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center md:p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 transition-opacity"
@@ -106,12 +106,12 @@ export function AccountTransactionsModal() {
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-6xl mx-4 bg-[var(--color-surface)] rounded-lg shadow-xl flex flex-col max-h-[90vh]">
+      <div className="relative z-10 w-full max-w-6xl md:mx-4 bg-[var(--color-surface)] md:rounded-lg shadow-xl flex flex-col h-full md:h-auto md:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-3">
-            <FileSpreadsheet className="w-5 h-5 text-[var(--color-primary)]" />
-            <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border)]">
+          <div className="flex items-center gap-2 md:gap-3">
+            <FileSpreadsheet className="w-4 h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />
+            <h2 className="text-base md:text-lg font-semibold text-[var(--color-foreground)]">
               Cari Hesap Hareketleri
             </h2>
           </div>
@@ -124,9 +124,9 @@ export function AccountTransactionsModal() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col p-6">
-          {/* Filters - Yıl ve Cari Hesap yan yana */}
-          <div className="flex gap-4 mb-4 flex-shrink-0">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col p-4 md:p-6">
+          {/* Filters - Mobilde dikey, masaüstünde yatay */}
+          <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-3 md:mb-4 flex-shrink-0">
             <YearSelector year={year} onYearChange={handleYearChange} />
             <AccountSelector
               accounts={accounts}
@@ -146,7 +146,7 @@ export function AccountTransactionsModal() {
 
           {/* Transactions Table */}
           {erpId ? (
-            <div className="mt-4">
+            <div className="mt-3 md:mt-4">
               <TransactionsTable
                 transactions={transactions}
                 loading={transactionsLoading}
@@ -156,28 +156,30 @@ export function AccountTransactionsModal() {
                     : null
                 }
                 onRowClick={handleRowClick}
-                height="calc(90vh - 320px)"
+                height="calc(100vh - 280px) md:calc(90vh - 320px)"
               />
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-[var(--color-foreground-muted)]">
+            <div className="flex-1 flex items-center justify-center text-[var(--color-foreground-muted)] px-4">
               {accountsLoading ? (
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Cari hesaplar yükleniyor...</span>
+                  <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                  <span className="text-sm md:text-base">Cari hesaplar yükleniyor...</span>
                 </div>
               ) : (
-                <span>Hareketleri görüntülemek için bir cari hesap seçin</span>
+                <span className="text-sm md:text-base text-center">
+                  Hareketleri görüntülemek için bir cari hesap seçin
+                </span>
               )}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 md:py-4 border-t border-[var(--color-border)]">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-elevated)]/80 transition-colors"
+            className="w-full md:w-auto px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-elevated)]/80 transition-colors"
           >
             Kapat
           </button>

@@ -13,15 +13,15 @@ export function YearSelector({ year, onYearChange }: YearSelectorProps) {
   }, []);
 
   return (
-    <div className="w-32">
-      <label className="flex items-center gap-2 text-sm text-[var(--color-foreground-muted)] mb-1">
-        <Calendar className="w-4 h-4" />
+    <div className="w-full md:w-32">
+      <label className="flex items-center gap-2 text-xs md:text-sm text-[var(--color-foreground-muted)] mb-1">
+        <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" />
         Yıl
       </label>
       <select
         value={year}
         onChange={(e) => onYearChange(Number(e.target.value))}
-        className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+        className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-sm md:text-base text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
       >
         {years.map((y) => (
           <option key={y} value={y}>

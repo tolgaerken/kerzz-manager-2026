@@ -55,8 +55,8 @@ export function AccountSelector({
   if (loading) {
     return (
       <div className="flex-1">
-        <label className="flex items-center gap-2 text-sm text-[var(--color-foreground-muted)] mb-1">
-          <User className="w-4 h-4" />
+        <label className="flex items-center gap-2 text-xs md:text-sm text-[var(--color-foreground-muted)] mb-1">
+          <User className="w-3.5 h-3.5 md:w-4 md:h-4" />
           Cari Hesap
         </label>
         <div className="w-full h-10 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg animate-pulse" />
@@ -66,8 +66,8 @@ export function AccountSelector({
 
   return (
     <div className="flex-1" ref={dropdownRef}>
-      <label className="flex items-center gap-2 text-sm text-[var(--color-foreground-muted)] mb-1">
-        <User className="w-4 h-4" />
+      <label className="flex items-center gap-2 text-xs md:text-sm text-[var(--color-foreground-muted)] mb-1">
+        <User className="w-3.5 h-3.5 md:w-4 md:h-4" />
         Cari Hesap
       </label>
 
@@ -75,15 +75,15 @@ export function AccountSelector({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-left text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent flex items-center justify-between"
+          className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-left text-sm md:text-base text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent flex items-center justify-between"
         >
-          <span className={selectedAccount ? "" : "text-[var(--color-foreground-muted)]"}>
+          <span className={`truncate ${selectedAccount ? "" : "text-[var(--color-foreground-muted)]"}`}>
             {selectedAccount
               ? `${selectedAccount.ID} - ${selectedAccount.name}`
               : "Cari hesap seçin..."}
           </span>
           <ChevronDown
-            className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`w-4 h-4 flex-shrink-0 ml-2 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </button>
 
