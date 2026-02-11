@@ -13,11 +13,31 @@ import { warmupAudioContext } from "../../utils";
 import { useLogPanelStore } from "../../../manager-log/store/logPanelStore";
 import { useAuthStore } from "../../../auth/store/authStore";
 import type { ManagerNotification } from "../../types";
+import type { EntityTabType } from "../../../manager-log/types";
+
+// contextType -> panel modu eşleştirmesi
+const ENTITY_TYPES = ["contract", "license", "invoice", "payment-plan"] as const;
+const PIPELINE_TYPES = ["lead", "offer", "sale"] as const;
+
+// Entity tab başlıkları
+const ENTITY_TITLES: Record<string, string> = {
+  contract: "Kontrat Logları",
+  license: "Lisans Logları",
+  invoice: "Fatura Logları",
+  "payment-plan": "Ödeme Planı Logları",
+};
+
+// Pipeline tab başlıkları
+const PIPELINE_TITLES: Record<string, string> = {
+  lead: "Lead Logları",
+  offer: "Teklif Logları",
+  sale: "Satış Logları",
+};
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const { userInfo } = useAuthStore();
-  const { openPanel } = useLogPanelStore();
+  const { openPanel, openEntityPanel, openPipelinePanel } = useLogPanelStore();
   const { isSoundEnabled, toggleSound, playSound } = useNotificationSound();
 
   const userId = userInfo?.id || "";
@@ -51,20 +71,68 @@ export function NotificationBell() {
         });
       }
 
-      // Log panelini aç
-      openPanel({
-        customerId: notification.customerId,
-        contextType: notification.contextType,
-        contextId: notification.contextId,
-        title:
-          notification.contextType === "contract"
-            ? "Kontrat Logları"
-            : "Loglar",
-      });
+      const { contextType, contextId, customerId, logId, pipelineRef } = notification;
+
+      // Entity türleri için EntityLogPanel aç
+      if (ENTITY_TYPES.includes(contextType as typeof ENTITY_TYPES[number])) {
+        // contextType'a göre doğru ID alanını belirle
+        const idFieldMap: Record<string, string> = {
+          contract: "contractId",
+          license: "licenseId",
+          invoice: "invoiceId",
+          "payment-plan": "paymentPlanId",
+        };
+        const idField = idFieldMap[contextType];
+
+        openEntityPanel(
+          {
+            customerId,
+            activeTab: contextType as EntityTabType,
+            [idField]: contextId,
+            title: ENTITY_TITLES[contextType] || "Loglar",
+          },
+          logId
+        );
+      }
+      // Pipeline türleri için PipelineLogPanel aç (pipelineRef varsa)
+      else if (
+        PIPELINE_TYPES.includes(contextType as typeof PIPELINE_TYPES[number]) &&
+        pipelineRef
+      ) {
+        // contextType'a göre doğru ID alanını belirle
+        const idFieldMap: Record<string, string> = {
+          lead: "leadId",
+          offer: "offerId",
+          sale: "saleId",
+        };
+        const idField = idFieldMap[contextType];
+
+        openPipelinePanel(
+          {
+            pipelineRef,
+            customerId,
+            [idField]: contextId,
+            title: PIPELINE_TITLES[contextType] || "Pipeline Logları",
+          },
+          logId
+        );
+      }
+      // Fallback: mevcut openPanel davranışı
+      else {
+        openPanel(
+          {
+            customerId,
+            contextType,
+            contextId,
+            title: "Loglar",
+          },
+          logId
+        );
+      }
 
       setIsOpen(false);
     },
-    [markAsReadMutation, openPanel, userId]
+    [markAsReadMutation, openPanel, openEntityPanel, openPipelinePanel, userId]
   );
 
   const handleMarkAllAsRead = useCallback(async () => {

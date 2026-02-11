@@ -10,6 +10,7 @@ export interface ManagerNotification {
   contextType: string;
   contextId: string;
   message: string;
+  pipelineRef?: string;
   read: boolean;
   createdAt: string;
   updatedAt: string;

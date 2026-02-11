@@ -32,6 +32,16 @@ export function useManagerLog(id: string | null) {
   });
 }
 
+// Bildirimden log detayı getir (sadece expand edildiğinde fetch edilir)
+export function useManagerLogForNotification(logId: string | null, enabled = true) {
+  return useQuery<Log, Error>({
+    queryKey: managerLogKeys.detail(logId || ""),
+    queryFn: () => fetchManagerLogById(logId!),
+    enabled: !!logId && enabled,
+    staleTime: 1000 * 60 * 5, // 5 dakika cache
+  });
+}
+
 // Log oluştur
 export function useCreateManagerLog() {
   const queryClient = useQueryClient();

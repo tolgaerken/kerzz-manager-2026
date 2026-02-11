@@ -9,6 +9,8 @@ interface PipelineLogSectionProps {
   logs: Log[];
   currentUserId: string;
   defaultExpanded?: boolean;
+  highlightLogId?: string | null;
+  onHighlightSeen?: () => void;
 }
 
 const SECTION_CONFIG = {
@@ -41,8 +43,14 @@ export function PipelineLogSection({
   logs,
   currentUserId,
   defaultExpanded = true,
+  highlightLogId,
+  onHighlightSeen,
 }: PipelineLogSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  // Highlight edilecek log bu section'da mı kontrol et
+  const hasHighlightedLog = highlightLogId ? logs.some(log => log._id === highlightLogId) : false;
+  
+  // Highlight edilecek log varsa section'ı aç
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded || hasHighlightedLog);
   const config = SECTION_CONFIG[type];
   const Icon = config.icon;
 
@@ -86,6 +94,8 @@ export function PipelineLogSection({
                   key={log._id}
                   log={log}
                   isOwn={log.authorId === currentUserId}
+                  highlighted={highlightLogId === log._id}
+                  onHighlightSeen={onHighlightSeen}
                 />
               ))}
             </div>

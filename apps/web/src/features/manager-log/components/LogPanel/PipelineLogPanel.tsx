@@ -17,7 +17,7 @@ interface ActiveContext {
 }
 
 export function PipelineLogPanel() {
-  const { isOpen, isPipelineMode, pipelineContext, closePanel } = useLogPanelStore();
+  const { isOpen, isPipelineMode, pipelineContext, closePanel, highlightLogId, clearHighlight } = useLogPanelStore();
   const userInfo = useAuthStore((state) => state.userInfo);
   
   // Aktif context - hangi entity'ye log ekleneceğini belirler
@@ -268,6 +268,8 @@ export function PipelineLogPanel() {
           logs={pipelineData.lead}
           currentUserId={userInfo?.id || ""}
           defaultExpanded={pipelineData.lead.length > 0}
+          highlightLogId={highlightLogId}
+          onHighlightSeen={clearHighlight}
         />
 
         {/* Offer Section */}
@@ -277,6 +279,8 @@ export function PipelineLogPanel() {
           logs={pipelineData.offer}
           currentUserId={userInfo?.id || ""}
           defaultExpanded={pipelineData.offer.length > 0}
+          highlightLogId={highlightLogId}
+          onHighlightSeen={clearHighlight}
         />
 
         {/* Sale Section */}
@@ -286,6 +290,8 @@ export function PipelineLogPanel() {
           logs={pipelineData.sale}
           currentUserId={userInfo?.id || ""}
           defaultExpanded={pipelineData.sale.length > 0}
+          highlightLogId={highlightLogId}
+          onHighlightSeen={clearHighlight}
         />
       </div>
     );

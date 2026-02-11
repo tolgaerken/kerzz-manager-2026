@@ -62,6 +62,7 @@ export class ManagerLogService {
         contextType: createManagerLogDto.contextType,
         contextId: createManagerLogDto.contextId,
         message: this.truncateMessage(createManagerLogDto.message, 100),
+        pipelineRef: createManagerLogDto.pipelineRef,
       })
     );
 

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum } from "class-validator";
+import { IsString, IsNotEmpty, IsEnum, IsOptional } from "class-validator";
 import { ManagerNotificationType } from "../schemas/manager-notification.schema";
 
 export class CreateManagerNotificationDto {
@@ -28,4 +28,8 @@ export class CreateManagerNotificationDto {
   @IsString()
   @IsNotEmpty()
   message: string;
+
+  @IsString()
+  @IsOptional()
+  pipelineRef?: string;
 }

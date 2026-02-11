@@ -8,7 +8,7 @@ import { useAuthStore } from "../../../auth/store/authStore";
 import type { CreateLogInput } from "../../types";
 
 export function LogPanel() {
-  const { isOpen, context, closePanel } = useLogPanelStore();
+  const { isOpen, context, closePanel, highlightLogId, clearHighlight } = useLogPanelStore();
   const userInfo = useAuthStore((state) => state.userInfo);
 
   const {
@@ -101,6 +101,8 @@ export function LogPanel() {
           currentUserId={userInfo?.id || ""}
           isLoading={isLoading}
           error={error}
+          highlightLogId={highlightLogId}
+          onHighlightSeen={clearHighlight}
         />
 
         {/* Genel modda input gizle - context olmadan log oluşturulamaz */}

@@ -10,6 +10,7 @@ export class ManagerNotificationResponseDto {
   contextType: string;
   contextId: string;
   message: string;
+  pipelineRef?: string;
   read: boolean;
   createdAt: Date;
   updatedAt: Date;

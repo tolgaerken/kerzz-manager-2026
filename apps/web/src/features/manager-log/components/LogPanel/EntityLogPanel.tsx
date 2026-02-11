@@ -64,7 +64,7 @@ function getContextId(
 }
 
 export function EntityLogPanel() {
-  const { isOpen, isEntityMode, entityContext, closePanel } = useLogPanelStore();
+  const { isOpen, isEntityMode, entityContext, closePanel, highlightLogId, clearHighlight } = useLogPanelStore();
 
   // Aktif tab state - context'ten gelen activeTab ile başla
   const [activeTab, setActiveTab] = useState<EntityTabType>("contract");
@@ -168,6 +168,8 @@ export function EntityLogPanel() {
                   ? "Teknik destek logları yakında eklenecek"
                   : "Bu özellik yakında eklenecek"
           }
+          highlightLogId={highlightLogId}
+          onHighlightSeen={clearHighlight}
         />
       </div>
     </>

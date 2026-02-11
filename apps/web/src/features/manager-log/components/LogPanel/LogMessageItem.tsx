@@ -1,13 +1,39 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { Calendar, Clock } from "lucide-react";
 import type { Log } from "../../types";
 
 interface LogMessageItemProps {
   log: Log;
   isOwn: boolean;
+  highlighted?: boolean;
+  onHighlightSeen?: () => void;
 }
 
-export function LogMessageItem({ log, isOwn }: LogMessageItemProps) {
+export function LogMessageItem({ log, isOwn, highlighted, onHighlightSeen }: LogMessageItemProps) {
+  const itemRef = useRef<HTMLDivElement>(null);
+
+  // Highlight edilmiş log'a scroll yap
+  useEffect(() => {
+    if (highlighted && itemRef.current) {
+      // Kısa bir gecikme ile scroll yap (panel açılma animasyonu için)
+      const timer = setTimeout(() => {
+        itemRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 300);
+
+      // 3 saniye sonra highlight'ı temizle
+      const clearTimer = setTimeout(() => {
+        onHighlightSeen?.();
+      }, 3000);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [highlighted, onHighlightSeen]);
   const formattedDate = useMemo(() => {
     const date = new Date(log.createdAt);
     const today = new Date();
@@ -60,13 +86,22 @@ export function LogMessageItem({ log, isOwn }: LogMessageItemProps) {
   };
 
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-3`}>
+    <div
+      ref={itemRef}
+      className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-3 transition-all duration-500 ${
+        highlighted ? "scale-[1.02]" : ""
+      }`}
+    >
       <div
         className={`max-w-[80%] ${
           isOwn
             ? "bg-primary text-primary-foreground rounded-tl-xl rounded-tr-xl rounded-bl-xl"
             : "bg-surface-elevated text-foreground rounded-tl-xl rounded-tr-xl rounded-br-xl"
-        } px-4 py-2.5 shadow-sm`}
+        } px-4 py-2.5 shadow-sm transition-all duration-500 ${
+          highlighted
+            ? "ring-2 ring-[var(--color-primary)] ring-offset-2 ring-offset-[var(--color-surface)]"
+            : ""
+        }`}
       >
         {/* Yazar bilgisi (sadece başkalarının mesajlarında) */}
         {!isOwn && (

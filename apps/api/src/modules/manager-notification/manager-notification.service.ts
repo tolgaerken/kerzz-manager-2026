@@ -105,6 +105,7 @@ export class ManagerNotificationService {
       contextType: doc.contextType,
       contextId: doc.contextId,
       message: doc.message,
+      pipelineRef: doc.pipelineRef,
       read: doc.read,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,

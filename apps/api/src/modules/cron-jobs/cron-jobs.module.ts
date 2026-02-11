@@ -4,6 +4,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { InvoiceNotificationCron } from "./invoice-notification.cron";
 import { ContractNotificationCron } from "./contract-notification.cron";
 import { StalePipelineCron } from "./stale-pipeline.cron";
+import { ManagerLogReminderCron } from "./manager-log-reminder.cron";
 import { Invoice, InvoiceSchema } from "../invoices/schemas/invoice.schema";
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
@@ -19,6 +20,7 @@ import {
   ManagerNotificationSchema,
 } from "../manager-notification/schemas/manager-notification.schema";
 import { ManagerNotificationModule } from "../manager-notification";
+import { ManagerLogModule } from "../manager-log/manager-log.module";
 
 @Module({
   imports: [
@@ -41,8 +43,19 @@ import { ManagerNotificationModule } from "../manager-notification";
     PaymentsModule,
     SystemLogsModule,
     ManagerNotificationModule,
+    ManagerLogModule,
   ],
-  providers: [InvoiceNotificationCron, ContractNotificationCron, StalePipelineCron],
-  exports: [InvoiceNotificationCron, ContractNotificationCron, StalePipelineCron],
+  providers: [
+    InvoiceNotificationCron,
+    ContractNotificationCron,
+    StalePipelineCron,
+    ManagerLogReminderCron,
+  ],
+  exports: [
+    InvoiceNotificationCron,
+    ContractNotificationCron,
+    StalePipelineCron,
+    ManagerLogReminderCron,
+  ],
 })
 export class CronJobsModule {}

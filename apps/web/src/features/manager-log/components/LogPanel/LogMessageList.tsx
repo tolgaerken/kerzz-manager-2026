@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { Loader2, MessageSquareOff } from "lucide-react";
 import { LogMessageItem } from "./LogMessageItem";
 import type { Log } from "../../types";
@@ -8,6 +8,8 @@ interface LogMessageListProps {
   currentUserId: string;
   isLoading: boolean;
   error: Error | null;
+  highlightLogId?: string | null;
+  onHighlightSeen?: () => void;
 }
 
 export function LogMessageList({
@@ -15,6 +17,8 @@ export function LogMessageList({
   currentUserId,
   isLoading,
   error,
+  highlightLogId,
+  onHighlightSeen,
 }: LogMessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -24,6 +28,12 @@ export function LogMessageList({
       listRef.current.scrollTop = 0;
     }
   }, [logs.length]);
+
+  // Highlight görüldüğünde çağrılacak callback
+  // Hook'lar her zaman aynı sırada çağrılmalı, early return'lerden önce tanımlanmalı
+  const handleHighlightSeen = useCallback(() => {
+    onHighlightSeen?.();
+  }, [onHighlightSeen]);
 
   if (isLoading) {
     return (
@@ -68,6 +78,8 @@ export function LogMessageList({
           key={log._id}
           log={log}
           isOwn={log.authorId === currentUserId}
+          highlighted={highlightLogId === log._id}
+          onHighlightSeen={handleHighlightSeen}
         />
       ))}
     </div>

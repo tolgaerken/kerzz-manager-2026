@@ -14,16 +14,19 @@ interface LogPanelState {
   // Entity modu için (tab'lı panel)
   isEntityMode: boolean;
   entityContext: EntityLogPanelContext | null;
+  // Highlight edilecek log ID'si (notification'dan gelir)
+  highlightLogId: string | null;
 }
 
 interface LogPanelActions {
-  openPanel: (context?: LogPanelContext) => void;
-  openPipelinePanel: (context: PipelineLogPanelContext) => void;
-  openEntityPanel: (context: EntityLogPanelContext) => void;
+  openPanel: (context?: LogPanelContext, highlightLogId?: string) => void;
+  openPipelinePanel: (context: PipelineLogPanelContext, highlightLogId?: string) => void;
+  openEntityPanel: (context: EntityLogPanelContext, highlightLogId?: string) => void;
   closePanel: () => void;
   setContext: (context: LogPanelContext) => void;
   setPipelineContext: (context: PipelineLogPanelContext) => void;
   setEntityContext: (context: EntityLogPanelContext) => void;
+  clearHighlight: () => void;
 }
 
 type LogPanelStore = LogPanelState & LogPanelActions;
@@ -35,12 +38,13 @@ const initialState: LogPanelState = {
   pipelineContext: null,
   isEntityMode: false,
   entityContext: null,
+  highlightLogId: null,
 };
 
 export const useLogPanelStore = create<LogPanelStore>((set) => ({
   ...initialState,
 
-  openPanel: (context?: LogPanelContext) => {
+  openPanel: (context?: LogPanelContext, highlightLogId?: string) => {
     set({
       isOpen: true,
       context: context || null,
@@ -48,10 +52,11 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
       pipelineContext: null,
       isEntityMode: false,
       entityContext: null,
+      highlightLogId: highlightLogId || null,
     });
   },
 
-  openPipelinePanel: (context: PipelineLogPanelContext) => {
+  openPipelinePanel: (context: PipelineLogPanelContext, highlightLogId?: string) => {
     set({
       isOpen: true,
       context: null,
@@ -59,10 +64,11 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
       pipelineContext: context,
       isEntityMode: false,
       entityContext: null,
+      highlightLogId: highlightLogId || null,
     });
   },
 
-  openEntityPanel: (context: EntityLogPanelContext) => {
+  openEntityPanel: (context: EntityLogPanelContext, highlightLogId?: string) => {
     set({
       isOpen: true,
       context: null,
@@ -70,12 +76,14 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
       pipelineContext: null,
       isEntityMode: true,
       entityContext: context,
+      highlightLogId: highlightLogId || null,
     });
   },
 
   closePanel: () => {
     set({
       isOpen: false,
+      highlightLogId: null,
     });
   },
 
@@ -107,5 +115,9 @@ export const useLogPanelStore = create<LogPanelStore>((set) => ({
       isPipelineMode: false,
       pipelineContext: null,
     });
+  },
+
+  clearHighlight: () => {
+    set({ highlightLogId: null });
   },
 }));

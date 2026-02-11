@@ -33,6 +33,9 @@ export class ManagerNotification {
   @Prop({ required: true })
   message: string;
 
+  @Prop({ type: String })
+  pipelineRef?: string;
+
   @Prop({ default: false, index: true })
   read: boolean;
 

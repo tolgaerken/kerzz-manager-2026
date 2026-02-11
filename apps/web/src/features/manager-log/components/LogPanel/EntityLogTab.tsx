@@ -12,6 +12,8 @@ interface EntityLogTabProps {
   contextId: string | undefined;
   isPlaceholder?: boolean;
   placeholderMessage?: string;
+  highlightLogId?: string | null;
+  onHighlightSeen?: () => void;
 }
 
 export function EntityLogTab({
@@ -20,6 +22,8 @@ export function EntityLogTab({
   contextId,
   isPlaceholder = false,
   placeholderMessage = "Bu özellik yakında eklenecek",
+  highlightLogId,
+  onHighlightSeen,
 }: EntityLogTabProps) {
   const userInfo = useAuthStore((state) => state.userInfo);
 
@@ -85,6 +89,8 @@ export function EntityLogTab({
         currentUserId={userInfo?.id || ""}
         isLoading={isLoading}
         error={error}
+        highlightLogId={highlightLogId}
+        onHighlightSeen={onHighlightSeen}
       />
 
       {/* contextId varsa log oluşturma aktif, yoksa sadece görüntüleme */}
