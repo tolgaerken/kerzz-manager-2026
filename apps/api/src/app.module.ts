@@ -54,6 +54,7 @@ import { LeadsModule } from "./modules/leads";
 import { OffersModule } from "./modules/offers";
 import { SalesModule } from "./modules/sales";
 import { PipelineGatewayModule } from "./modules/pipeline-gateway";
+import { VersionModule } from "./modules/version";
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { PipelineGatewayModule } from "./modules/pipeline-gateway";
     ContractDatabaseModule,
     HelpersDatabaseModule,
     HealthModule,
+    VersionModule,
     ContractsModule,
     CustomersModule,
     LicensesModule,

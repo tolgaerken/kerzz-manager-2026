@@ -6,12 +6,14 @@ import { sidebarMenuItems } from "./sidebarConfig";
 import { useSidebarStore } from "../../../store/sidebarStore";
 import { Tooltip } from "../../ui";
 import { useIsMobile } from "../../../hooks/useIsMobile";
+import { useVersion } from "../../../features/version";
 
 export function Sidebar() {
   const isMobile = useIsMobile();
   const location = useLocation();
   const { isCollapsed, isMobileOpen, toggleCollapsed, setMobileOpen } = useSidebarStore();
   const shouldCollapse = isCollapsed && !isMobile;
+  const { data: versionData } = useVersion();
 
   useEffect(() => {
     if (isMobile) {
@@ -77,6 +79,24 @@ export function Sidebar() {
             </button>
           </Tooltip>
         </div>
+
+        {/* Version Info */}
+        {versionData && (
+          <div className={`border-t border-border ${shouldCollapse ? "p-2" : "p-4"}`}>
+            <div className={`text-xs text-muted-foreground ${shouldCollapse ? "text-center" : ""}`}>
+              {shouldCollapse ? (
+                <Tooltip content={`v${versionData.version}`} position="right">
+                  <span>v{versionData.version}</span>
+                </Tooltip>
+              ) : (
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-foreground">{versionData.name}</span>
+                  <span>Versiyon: {versionData.version}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </aside>
     </>
   );
