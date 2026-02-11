@@ -14,6 +14,7 @@ interface InvoiceMobileListProps {
   pendingPaymentInvoiceNos: Set<string>;
   balanceMap: Map<string, number>;
   onCardClick: (invoice: Invoice) => void;
+  onCardDetailClick: (invoice: Invoice) => void;
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
   customButtons?: ToolbarButtonConfig[];
   selectedIds?: string[];
@@ -27,6 +28,7 @@ export const InvoiceMobileList = memo(function InvoiceMobileList({
   pendingPaymentInvoiceNos,
   balanceMap,
   onCardClick,
+  onCardDetailClick,
   onScrollDirectionChange,
   customButtons = [],
   selectedIds = [],
@@ -82,9 +84,14 @@ export const InvoiceMobileList = memo(function InvoiceMobileList({
     } else {
       onSelectionChange?.([...selectedIds, invoice._id]);
     }
-    // Also trigger the original click handler
+    // Also trigger the original click handler for selection
     onCardClick(invoice);
   }, [selectedIds, onSelectionChange, onCardClick]);
+
+  const handleDetailClick = useCallback((invoice: Invoice) => {
+    // Open detail modal
+    onCardDetailClick(invoice);
+  }, [onCardDetailClick]);
 
   if (loading) {
     return (
@@ -158,6 +165,7 @@ export const InvoiceMobileList = memo(function InvoiceMobileList({
                 <InvoiceCard
                   invoice={invoice}
                   onClick={handleCardClick}
+                  onDetailClick={handleDetailClick}
                   hasAutoPayment={hasAutoPayment}
                   isPendingPayment={isPendingPayment}
                   balance={balance}

@@ -1,10 +1,11 @@
 import { memo } from "react";
-import { Calendar, Building2, CreditCard, ChevronRight, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { Calendar, Building2, CreditCard, ChevronRight, Clock, CheckCircle2, Loader2, Eye } from "lucide-react";
 import type { Invoice } from "../../types";
 
 interface InvoiceCardProps {
   invoice: Invoice;
   onClick: (invoice: Invoice) => void;
+  onDetailClick: (invoice: Invoice) => void;
   hasAutoPayment: boolean;
   isPendingPayment: boolean;
   balance?: number;
@@ -69,12 +70,18 @@ function isOverdue(dueDate: string | undefined, isPaid: boolean): boolean {
 export const InvoiceCard = memo(function InvoiceCard({
   invoice,
   onClick,
+  onDetailClick,
   hasAutoPayment,
   isPendingPayment,
   balance
 }: InvoiceCardProps) {
   const handleClick = () => {
     onClick(invoice);
+  };
+
+  const handleDetailClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card selection
+    onDetailClick(invoice);
   };
 
   const overdue = isOverdue(invoice.dueDate, invoice.isPaid);
@@ -90,13 +97,13 @@ export const InvoiceCard = memo(function InvoiceCard({
           handleClick();
         }
       }}
-      className={`relative rounded-lg border p-2.5 transition-all hover:bg-[var(--color-surface-hover)] active:scale-[0.98] ${
+      className={`relative rounded-lg border p-2.5 transition-all hover:bg-[var(--color-surface-hover)] active:scale-[0.98] cursor-pointer ${
         overdue
           ? "border-[var(--color-error)]/30 bg-[var(--color-error)]/5"
           : "border-[var(--color-border)] bg-[var(--color-surface)]"
       }`}
     >
-      {/* Header: Invoice Number, Status, Auto Payment */}
+      {/* Header: Invoice Number, Status, Auto Payment, Detail Button */}
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="mb-0.5 flex items-center gap-2">
@@ -109,7 +116,13 @@ export const InvoiceCard = memo(function InvoiceCard({
             {invoice.name || "-"}
           </h3>
         </div>
-        <ChevronRight className="h-4 w-4 text-[var(--color-muted-foreground)] flex-shrink-0 mt-1" />
+        <button
+          onClick={handleDetailClick}
+          className="flex-shrink-0 rounded-md p-1.5 hover:bg-[var(--color-surface-elevated)] transition-colors"
+          aria-label="Detayı Görüntüle"
+        >
+          <Eye className="h-4 w-4 text-[var(--color-primary)]" />
+        </button>
       </div>
 
       {/* Company/Firm Info */}

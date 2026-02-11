@@ -75,7 +75,7 @@ export function InvoicesGrid({
     [onRowDoubleClick]
   );
 
-  // Mobile view - single tap opens modal, no multiselect
+  // Mobile view - card click for selection, detail button for modal
   if (isMobile) {
     return (
       <div className="flex flex-1 flex-col min-h-0">
@@ -86,6 +86,10 @@ export function InvoicesGrid({
           pendingPaymentInvoiceNos={pendingPaymentInvoiceNos}
           balanceMap={balanceMap}
           onCardClick={(invoice) => {
+            // Just update selection, don't open modal
+          }}
+          onCardDetailClick={(invoice) => {
+            // Open detail modal
             onRowDoubleClick?.(invoice);
           }}
           onScrollDirectionChange={onScrollDirectionChange}
