@@ -3,6 +3,7 @@ import { Grid } from "@kerzz/grid";
 import type { GridColumnDef } from "@kerzz/grid";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { InvoicePlanMobileList } from "./InvoicePlanMobileList";
+import { LogBadge } from "../../../components/ui";
 import type { EnrichedPaymentPlan } from "../types";
 import { SEGMENT_COLORS } from "../types";
 
@@ -41,7 +42,10 @@ function SegmentBadge({ segment }: { segment: string }) {
   );
 }
 
-function createColumnDefs(): GridColumnDef<EnrichedPaymentPlan>[] {
+function createColumnDefs(
+  lastLogDatesByPlanId?: Record<string, string>,
+  onOpenLogs?: (plan: EnrichedPaymentPlan) => void
+): GridColumnDef<EnrichedPaymentPlan>[] {
   return [
     {
       id: "contractNumber",
@@ -153,6 +157,20 @@ function createColumnDefs(): GridColumnDef<EnrichedPaymentPlan>[] {
       cell: (value) => (value ? "🔒" : ""),
     },
     {
+      id: "log",
+      header: "",
+      accessorKey: "_id",
+      width: 44,
+      align: "center",
+      cell: (_, row) => (
+        <LogBadge
+          lastLogAt={lastLogDatesByPlanId?.[row.contractId]}
+          onClick={() => onOpenLogs?.(row)}
+          size="md"
+        />
+      ),
+    },
+    {
       id: "invoiceError",
       header: "Hata",
       accessorKey: "invoiceError",
@@ -196,6 +214,10 @@ interface ContractInvoicesGridProps {
   onRowDoubleClick?: (row: EnrichedPaymentPlan) => void;
   /** Mobil scroll yönü callback'i (collapsible header ile entegrasyon) */
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
+  /** Son log tarihleri map'i (planId -> ISO date string) */
+  lastLogDatesByPlanId?: Record<string, string>;
+  /** Log panelini açmak için callback */
+  onOpenLogs?: (plan: EnrichedPaymentPlan) => void;
 }
 
 export function ContractInvoicesGrid({
@@ -205,6 +227,8 @@ export function ContractInvoicesGrid({
   onSelectionChange,
   onRowDoubleClick,
   onScrollDirectionChange,
+  lastLogDatesByPlanId,
+  onOpenLogs,
 }: ContractInvoicesGridProps) {
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -224,7 +248,10 @@ export function ContractInvoicesGrid({
     return () => observer.disconnect();
   }, []);
 
-  const columns = useMemo(() => createColumnDefs(), []);
+  const columns = useMemo(
+    () => createColumnDefs(lastLogDatesByPlanId, onOpenLogs),
+    [lastLogDatesByPlanId, onOpenLogs]
+  );
 
   // Mobil görünüm
   if (isMobile) {
@@ -237,6 +264,8 @@ export function ContractInvoicesGrid({
           onCardClick={(plan) => onRowDoubleClick?.(plan)}
           onSelectionChange={onSelectionChange}
           onScrollDirectionChange={onScrollDirectionChange}
+          lastLogDatesByPlanId={lastLogDatesByPlanId}
+          onOpenLogs={onOpenLogs}
         />
       </div>
     );

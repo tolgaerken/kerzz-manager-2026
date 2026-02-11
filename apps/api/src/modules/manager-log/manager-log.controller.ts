@@ -15,6 +15,8 @@ import {
   ManagerLogResponseDto,
   PaginatedManagerLogsResponseDto,
   PipelineLogsResponseDto,
+  LastByContextsDto,
+  LastByContextsResponseDto,
 } from "./dto";
 
 @Controller("manager-logs")
@@ -52,5 +54,26 @@ export class ManagerLogController {
       throw new NotFoundException(`ManagerLog with ID ${id} not found`);
     }
     return log;
+  }
+
+  /**
+   * Birden fazla context için son log tarihlerini batch olarak getirir.
+   * Çoklu context tipi ve legacy log desteği sağlar.
+   *
+   * Body: {
+   *   contexts: [{ type: "payment-plan", ids: ["id1", "id2"] }, { type: "contract", ids: ["cid1"] }],
+   *   legacyContractIds?: string[],
+   *   legacyCustomerIds?: string[],
+   *   includeLegacy?: boolean,
+   *   groupByField?: "contractId" | "customerId"
+   * }
+   *
+   * Response: { [entityId]: ISO date string }
+   */
+  @Post("last-by-contexts")
+  async findLastByContexts(
+    @Body() dto: LastByContextsDto
+  ): Promise<LastByContextsResponseDto> {
+    return this.managerLogService.findLastLogDatesByContexts(dto);
   }
 }

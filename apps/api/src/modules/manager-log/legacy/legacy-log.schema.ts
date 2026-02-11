@@ -60,3 +60,12 @@ export class LegacyLog {
 }
 
 export const LegacyLogSchema = SchemaFactory.createForClass(LegacyLog);
+
+// Index for contractId queries (used by last-by-contexts)
+LegacyLogSchema.index({ contractId: 1, date: -1 });
+
+// Index for customerId queries (used by last-by-contexts)
+LegacyLogSchema.index({ customerId: 1, date: -1 });
+
+// Compound index for common query patterns
+LegacyLogSchema.index({ customerId: 1, logType: 1, date: -1 });

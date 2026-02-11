@@ -90,4 +90,96 @@ export class LegacyLogRepository {
 
     return mapping[contextType] ?? null;
   }
+
+  /**
+   * Son 5 gün için tarih filtresi oluşturur.
+   * Badge için 5+ gün öncesi zaten "5+" olarak gösterildiğinden
+   * daha eski logları sorgulamaya gerek yok.
+   */
+  private getRecentDateFilter(): Date {
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    fiveDaysAgo.setHours(0, 0, 0, 0);
+    return fiveDaysAgo;
+  }
+
+  /**
+   * Birden fazla contractId için son log tarihlerini batch olarak getirir.
+   * Performans için sadece son 5 günü sorgular.
+   * @returns Record<contractId, Date>
+   */
+  async findLastLogDatesByContractIds(
+    contractIds: string[]
+  ): Promise<Record<string, Date>> {
+    if (!contractIds || contractIds.length === 0) {
+      return {};
+    }
+
+    const recentDate = this.getRecentDateFilter();
+
+    const results = await this.legacyLogModel.aggregate<{
+      _id: string;
+      lastLogAt: Date;
+    }>([
+      {
+        $match: {
+          contractId: { $in: contractIds },
+          date: { $gte: recentDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$contractId",
+          lastLogAt: { $max: "$date" },
+        },
+      },
+    ]);
+
+    const response: Record<string, Date> = {};
+    for (const item of results) {
+      response[item._id] = item.lastLogAt;
+    }
+
+    return response;
+  }
+
+  /**
+   * Birden fazla customerId için son log tarihlerini batch olarak getirir.
+   * Performans için sadece son 5 günü sorgular.
+   * @returns Record<customerId, Date>
+   */
+  async findLastLogDatesByCustomerIds(
+    customerIds: string[]
+  ): Promise<Record<string, Date>> {
+    if (!customerIds || customerIds.length === 0) {
+      return {};
+    }
+
+    const recentDate = this.getRecentDateFilter();
+
+    const results = await this.legacyLogModel.aggregate<{
+      _id: string;
+      lastLogAt: Date;
+    }>([
+      {
+        $match: {
+          customerId: { $in: customerIds },
+          date: { $gte: recentDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$customerId",
+          lastLogAt: { $max: "$date" },
+        },
+      },
+    ]);
+
+    const response: Record<string, Date> = {};
+    for (const item of results) {
+      response[item._id] = item.lastLogAt;
+    }
+
+    return response;
+  }
 }

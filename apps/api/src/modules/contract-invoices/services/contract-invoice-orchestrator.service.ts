@@ -6,18 +6,6 @@ import {
   ContractPayment,
   ContractPaymentDocument,
 } from "../../contract-payments/schemas/contract-payment.schema";
-import {
-  Contract,
-  ContractDocument,
-} from "../../contracts/schemas/contract.schema";
-import {
-  ErpBalance,
-  ErpBalanceDocument,
-} from "../../erp/schemas/erp-balance.schema";
-import {
-  License,
-  LicenseDocument,
-} from "../../licenses/schemas/license.schema";
 import { PaymentPlanService } from "../../contract-payments/services/payment-plan.service";
 import { InvoiceCreatorService } from "./invoice-creator.service";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
@@ -32,19 +20,13 @@ export class ContractInvoiceOrchestratorService {
   constructor(
     @InjectModel(ContractPayment.name, CONTRACT_DB_CONNECTION)
     private paymentModel: Model<ContractPaymentDocument>,
-    @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
-    private contractModel: Model<ContractDocument>,
-    @InjectModel(ErpBalance.name, CONTRACT_DB_CONNECTION)
-    private erpBalanceModel: Model<ErpBalanceDocument>,
-    @InjectModel(License.name, CONTRACT_DB_CONNECTION)
-    private licenseModel: Model<LicenseDocument>,
     private readonly paymentPlanService: PaymentPlanService,
     private readonly invoiceCreatorService: InvoiceCreatorService,
   ) {}
 
   /**
    * Belirli bir donem ve tarih icin odeme planlarini getirir.
-   * Dinamik alanlar (balance, block) hafif lookup ile eklenir.
+   * Aggregation pipeline ile tum filtreleme ve join islemleri database seviyesinde yapilir.
    */
   async getPaymentPlans(
     period: string,
@@ -53,40 +35,134 @@ export class ContractInvoiceOrchestratorService {
     const monthFilter = buildPayDateMonthFilter(date);
     const isYearly = period === "yearly";
 
-    // 1) Hedef ay icindeki odeme planlarini cek
-    // MongoDB $expr ile timezone-aware filtreleme — payDate hangi timezone'da
-    // olusturulmus olursa olsun (UTC, UTC+2, UTC+3) dogru ay eslesir.
-    const paymentPlans = await this.paymentModel
-      .find(monthFilter)
-      .sort({ company: 1 })
-      .lean()
+    // Aggregation pipeline ile tum islemleri database'de yap
+    const results = await this.paymentModel
+      .aggregate([
+        // 1) Tarih filtresi (timezone-aware)
+        { $match: monthFilter },
+
+        // 2) Contract bilgilerini join et
+        {
+          $lookup: {
+            from: "contracts",
+            localField: "contractId",
+            foreignField: "id",
+            as: "contract",
+          },
+        },
+        { $unwind: { path: "$contract", preserveNullAndEmptyArrays: true } },
+
+        // 3) Contract filtreleri (isFree, yearly)
+        {
+          $match: {
+            "contract.isFree": { $ne: true },
+            "contract.yearly": isYearly,
+          },
+        },
+
+        // 4) ERP Balance bilgilerini join et
+        {
+          $lookup: {
+            from: "erp-balances",
+            localField: "companyId",
+            foreignField: "CariKodu",
+            as: "erpBalance",
+          },
+        },
+
+        // 5) License bilgilerini join et (block durumu icin)
+        {
+          $lookup: {
+            from: "licenses",
+            localField: "customerId",
+            foreignField: "customerId",
+            as: "licenses",
+          },
+        },
+
+        // 6) Alanlari zenginlestir ve formatla
+        {
+          $project: {
+            _id: { $toString: "$_id" },
+            id: 1,
+            contractId: 1,
+            company: { $ifNull: ["$company", ""] },
+            brand: {
+              $ifNull: ["$brand", { $ifNull: ["$contract.brand", ""] }],
+            },
+            customerId: { $ifNull: ["$customerId", ""] },
+            licanceId: { $ifNull: ["$licanceId", ""] },
+            invoiceNo: { $ifNull: ["$invoiceNo", ""] },
+            paid: { $ifNull: ["$paid", false] },
+            payDate: 1,
+            paymentDate: 1,
+            invoiceDate: 1,
+            total: { $ifNull: ["$total", 0] },
+            invoiceTotal: { $ifNull: ["$invoiceTotal", 0] },
+            // ERP Balance
+            balance: {
+              $ifNull: [
+                { $arrayElemAt: ["$erpBalance.ToplamGecikme", 0] },
+                -100,
+              ],
+            },
+            list: { $ifNull: ["$list", []] },
+            yearly: { $ifNull: ["$yearly", false] },
+            eInvoice: { $ifNull: ["$eInvoice", false] },
+            uuid: { $ifNull: ["$uuid", ""] },
+            ref: { $ifNull: ["$ref", ""] },
+            taxNo: { $ifNull: ["$taxNo", ""] },
+            internalFirm: {
+              $ifNull: [
+                "$internalFirm",
+                { $ifNull: ["$contract.internalFirm", ""] },
+              ],
+            },
+            contractNumber: { $ifNull: ["$contract.no", 0] },
+            segment: { $ifNull: ["$segment", ""] },
+            // Block durumu: Tum lisanslar bloklu ise true
+            block: {
+              $cond: {
+                if: { $gt: [{ $size: "$licenses" }, 0] },
+                then: {
+                  $let: {
+                    vars: {
+                      blockedCount: {
+                        $size: {
+                          $filter: {
+                            input: "$licenses",
+                            as: "lic",
+                            cond: { $eq: ["$$lic.block", true] },
+                          },
+                        },
+                      },
+                      totalCount: { $size: "$licenses" },
+                    },
+                    in: {
+                      $and: [
+                        { $gt: ["$$blockedCount", 0] },
+                        { $eq: ["$$blockedCount", "$$totalCount"] },
+                      ],
+                    },
+                  },
+                },
+                else: false,
+              },
+            },
+            editDate: 1,
+            editUser: { $ifNull: ["$editUser", ""] },
+            companyId: { $ifNull: ["$companyId", ""] },
+            dueDate: 1,
+            invoiceError: { $ifNull: ["$invoiceError", ""] },
+          },
+        },
+
+        // 7) Sirala
+        { $sort: { company: 1 } },
+      ])
       .exec();
 
-    // 2) Sadece ilgili kontrat tipini filtrele (aylik/yillik)
-    const contractIds = [
-      ...new Set(paymentPlans.map((p) => p.contractId)),
-    ];
-    const contracts = await this.contractModel
-      .find({ id: { $in: contractIds } })
-      .lean()
-      .exec();
-
-    const contractMap = new Map(contracts.map((c) => [c.id, c]));
-
-    const filteredPlans = paymentPlans.filter((plan) => {
-      const contract = contractMap.get(plan.contractId);
-      if (!contract) return false;
-      if (contract.isFree) return false;
-      return contract.yearly === isYearly;
-    });
-
-    // 3) Hafif lookup: balance (ERP), block (Licenses), contractNumber (Contracts)
-    const enrichedPlans = await this.enrichWithDynamicFields(
-      filteredPlans,
-      contractMap,
-    );
-
-    return { data: enrichedPlans, total: enrichedPlans.length };
+    return { data: results as EnrichedPaymentPlan[], total: results.length };
   }
 
   /**
@@ -137,101 +213,5 @@ export class ContractInvoiceOrchestratorService {
     }
 
     return results;
-  }
-
-  /**
-   * Odeme planlarina dinamik alanlar ekler (balance, block, contractNumber).
-   * Toplu sorgularla N+1 problemini onler.
-   */
-  private async enrichWithDynamicFields(
-    plans: ContractPayment[],
-    contractMap: Map<string, Contract>,
-  ): Promise<EnrichedPaymentPlan[]> {
-    if (plans.length === 0) return [];
-
-    // Benzersiz companyId'leri ve customerId'leri topla
-    const companyIds = [
-      ...new Set(plans.map((p) => p.companyId).filter(Boolean)),
-    ];
-    const customerIds = [
-      ...new Set(plans.map((p) => p.customerId).filter(Boolean)),
-    ];
-
-    // Toplu sorgular (paralel)
-    const [erpBalances, licenses] = await Promise.all([
-      companyIds.length > 0
-        ? this.erpBalanceModel
-            .find({ CariKodu: { $in: companyIds } })
-            .lean()
-            .exec()
-        : [],
-      customerIds.length > 0
-        ? this.licenseModel
-            .find({ customerId: { $in: customerIds } })
-            .lean()
-            .exec()
-        : [],
-    ]);
-
-    // Hizli erisim icin Map olustur
-    const balanceMap = new Map(
-      erpBalances.map((b) => [b.CariKodu, b.ToplamGecikme ?? 0]),
-    );
-
-    // Musteri basina lisans blok durumu: tum lisanslari bloklu ise true
-    const blockMap = new Map<string, boolean>();
-    const licensesGrouped = new Map<string, License[]>();
-
-    for (const license of licenses) {
-      const existing = licensesGrouped.get(license.customerId) || [];
-      existing.push(license);
-      licensesGrouped.set(license.customerId, existing);
-    }
-
-    for (const [customerId, customerLicenses] of licensesGrouped) {
-      if (customerLicenses.length === 0) {
-        blockMap.set(customerId, false);
-        continue;
-      }
-      const blockedCount = customerLicenses.filter((l) => l.block).length;
-      blockMap.set(
-        customerId,
-        blockedCount > 0 && blockedCount === customerLicenses.length,
-      );
-    }
-
-    // Planlari zenginlestir
-    return plans.map((plan) => ({
-      _id: plan._id?.toString() || "",
-      id: plan.id,
-      contractId: plan.contractId,
-      company: plan.company || "",
-      brand: plan.brand || contractMap.get(plan.contractId)?.brand || "",
-      customerId: plan.customerId || "",
-      licanceId: plan.licanceId || "",
-      invoiceNo: plan.invoiceNo || "",
-      paid: plan.paid || false,
-      payDate: plan.payDate,
-      paymentDate: plan.paymentDate,
-      invoiceDate: plan.invoiceDate,
-      total: plan.total || 0,
-      invoiceTotal: plan.invoiceTotal || 0,
-      balance: balanceMap.get(plan.companyId) ?? -100,
-      list: plan.list || [],
-      yearly: plan.yearly || false,
-      eInvoice: plan.eInvoice || false,
-      uuid: plan.uuid || "",
-      ref: plan.ref || "",
-      taxNo: plan.taxNo || "",
-      internalFirm: plan.internalFirm || contractMap.get(plan.contractId)?.internalFirm || "",
-      contractNumber: contractMap.get(plan.contractId)?.no || 0,
-      segment: plan.segment || "",
-      block: blockMap.get(plan.customerId) ?? false,
-      editDate: plan.editDate,
-      editUser: plan.editUser || "",
-      companyId: plan.companyId || "",
-      dueDate: plan.dueDate,
-      invoiceError: (plan as any).invoiceError || "",
-    }));
   }
 }

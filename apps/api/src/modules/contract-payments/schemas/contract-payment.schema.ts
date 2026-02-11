@@ -111,5 +111,12 @@ export class ContractPayment {
 }
 
 export const ContractPaymentSchema = SchemaFactory.createForClass(ContractPayment);
+
+// Temel indexler
 ContractPaymentSchema.index({ contractId: 1 });
 ContractPaymentSchema.index({ payDate: -1 });
+
+// Compound indexler - performans optimizasyonu
+ContractPaymentSchema.index({ payDate: -1, contractId: 1 });
+ContractPaymentSchema.index({ payDate: -1, paid: 1 });
+ContractPaymentSchema.index({ contractId: 1, payDate: -1 });

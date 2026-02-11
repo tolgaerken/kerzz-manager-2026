@@ -16,7 +16,7 @@ import type {
   EnrichedPaymentPlan,
   PaymentListItem,
 } from "../features/contract-invoices";
-import { useLogPanelStore } from "../features/manager-log";
+import { useLogPanelStore, useLastLogDatesByContexts } from "../features/manager-log";
 import { useCustomerLookup } from "../features/lookup";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
@@ -61,6 +61,95 @@ export function ContractInvoicesPage() {
   );
   const createInvoicesMutation = useCreateInvoices();
   const checkContractsMutation = useCheckContracts();
+
+  // Plan ve Contract ID'lerini topla (son log tarihleri için)
+  const {
+    planIds,
+    contractIds,
+    legacyContractNumbers,
+    customerIds,
+    contractNumberToContractIdMap,
+    customerIdToContractIdMap,
+  } = useMemo(() => {
+    const plans = data?.data ?? [];
+
+    // contractNumber -> contractId mapping (legacy sonuçlarını dönüştürmek için)
+    const numberToIdMap = new Map<string, string>();
+    // customerId -> contractId mapping (legacy customerId sonuçlarını dönüştürmek için)
+    const customerToContractMap = new Map<string, string>();
+
+    for (const p of plans) {
+      if (p.contractNumber && p.contractNumber > 0 && p.contractId) {
+        numberToIdMap.set(String(p.contractNumber), p.contractId);
+      }
+      // Her customerId için en son contractId'yi sakla
+      if (p.customerId && p.contractId) {
+        customerToContractMap.set(p.customerId, p.contractId);
+      }
+    }
+
+    return {
+      planIds: plans.map((p) => p._id),
+      contractIds: [...new Set(plans.map((p) => p.contractId).filter(Boolean))],
+      // Legacy log sisteminde contractId olarak contractNumber (no) kullanılıyor
+      legacyContractNumbers: [
+        ...new Set(
+          plans
+            .map((p) => p.contractNumber)
+            .filter((n) => n && n > 0)
+            .map((n) => String(n))
+        ),
+      ],
+      // Legacy log sisteminde customerId ile de log tutulmuş olabilir
+      customerIds: [...new Set(plans.map((p) => p.customerId).filter(Boolean))],
+      contractNumberToContractIdMap: numberToIdMap,
+      customerIdToContractIdMap: customerToContractMap,
+    };
+  }, [data?.data]);
+
+  // Son log tarihlerini batch olarak getir (yeni + legacy)
+  const { data: rawLastLogDates } = useLastLogDatesByContexts({
+    contexts: [
+      { type: "payment-plan", ids: planIds },
+      { type: "contract", ids: contractIds },
+    ],
+    // Legacy için hem contractNumber hem customerId gönder
+    legacyContractIds: legacyContractNumbers,
+    legacyCustomerIds: customerIds,
+    includeLegacy: true,
+    groupByField: "contractId",
+  });
+
+  // Legacy sonuçlarını contractId'ye dönüştür
+  const lastLogDatesByContractId = useMemo(() => {
+    if (!rawLastLogDates) return undefined;
+    const result: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(rawLastLogDates)) {
+      // 1. Eğer key bir contractNumber ise, contractId'ye dönüştür
+      const contractIdFromNumber = contractNumberToContractIdMap.get(key);
+      if (contractIdFromNumber) {
+        if (!result[contractIdFromNumber] || value > result[contractIdFromNumber]) {
+          result[contractIdFromNumber] = value;
+        }
+      }
+
+      // 2. Eğer key bir customerId ise, ilgili contractId'ye dönüştür
+      const contractIdFromCustomer = customerIdToContractIdMap.get(key);
+      if (contractIdFromCustomer) {
+        if (!result[contractIdFromCustomer] || value > result[contractIdFromCustomer]) {
+          result[contractIdFromCustomer] = value;
+        }
+      }
+
+      // 3. Orijinal key'i de koru (yeni log sistemi için)
+      if (!result[key] || value > result[key]) {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }, [rawLastLogDates, contractNumberToContractIdMap, customerIdToContractIdMap]);
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
@@ -181,7 +270,7 @@ export function ContractInvoicesPage() {
     }
   }, [data?.data]);
 
-  // Log panelini aç
+  // Log panelini aç (toolbar butonu için)
   const handleOpenLogs = useCallback(() => {
     if (!selectedPlan) return;
     openEntityPanel({
@@ -192,6 +281,20 @@ export function ContractInvoicesPage() {
       title: `Ödeme Planı: ${selectedPlan.company || selectedPlan.brand}`,
     });
   }, [selectedPlan, openEntityPanel]);
+
+  // Log panelini aç (grid satırındaki ikon için)
+  const handleOpenLogsForPlan = useCallback(
+    (plan: EnrichedPaymentPlan) => {
+      openEntityPanel({
+        customerId: plan.customerId,
+        activeTab: "payment-plan",
+        paymentPlanId: plan._id,
+        contractId: plan.contractId || undefined,
+        title: `Ödeme Planı: ${plan.company || plan.brand}`,
+      });
+    },
+    [openEntityPanel]
+  );
 
   // Cari hareketleri modalını aç
   const handleOpenAccountTransactions = useCallback(() => {
@@ -363,6 +466,8 @@ export function ContractInvoicesPage() {
             onSelectionChange={handleSelectionChange}
             onRowDoubleClick={handleRowDoubleClick}
             onScrollDirectionChange={collapsible.handleScrollDirectionChange}
+            lastLogDatesByPlanId={lastLogDatesByContractId}
+            onOpenLogs={handleOpenLogsForPlan}
           />
         </div>
       </div>

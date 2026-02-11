@@ -13,6 +13,10 @@ interface InvoicePlanMobileListProps {
   onCardClick: (plan: EnrichedPaymentPlan) => void;
   onSelectionChange: (ids: string[]) => void;
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
+  /** Son log tarihleri map'i (planId -> ISO date string) */
+  lastLogDatesByPlanId?: Record<string, string>;
+  /** Log panelini açmak için callback */
+  onOpenLogs?: (plan: EnrichedPaymentPlan) => void;
 }
 
 export const InvoicePlanMobileList = memo(function InvoicePlanMobileList({
@@ -21,7 +25,9 @@ export const InvoicePlanMobileList = memo(function InvoicePlanMobileList({
   selectedIds,
   onCardClick,
   onSelectionChange,
-  onScrollDirectionChange
+  onScrollDirectionChange,
+  lastLogDatesByPlanId,
+  onOpenLogs
 }: InvoicePlanMobileListProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -108,6 +114,8 @@ export const InvoicePlanMobileList = memo(function InvoicePlanMobileList({
             onClick={onCardClick}
             selected={selectedIds.includes(plan.id)}
             onSelect={handleSelect}
+            lastLogAt={lastLogDatesByPlanId?.[plan.contractId]}
+            onOpenLogs={onOpenLogs}
           />
         ))}
       </div>

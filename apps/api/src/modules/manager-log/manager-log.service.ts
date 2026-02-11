@@ -9,6 +9,8 @@ import {
   ManagerLogResponseDto,
   PaginatedManagerLogsResponseDto,
   PipelineLogsResponseDto,
+  LastByContextsResponseDto,
+  LastByContextsDto,
 } from "./dto";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
@@ -80,7 +82,12 @@ export class ManagerLogService {
     if (contextType) filter.contextType = contextType;
     if (contextId) filter.contextId = contextId;
 
-    if (!includeLegacy) {
+    // Filter boşsa veya legacy dahil edilmeyecekse, sadece yeni logları getir
+    // Legacy sorgusu çok yavaş olabilir (index olmadan tüm koleksiyonu tarar)
+    const hasFilter = customerId || contextType || contextId;
+    const shouldIncludeLegacy = includeLegacy && hasFilter;
+
+    if (!shouldIncludeLegacy) {
       const [data, total] = await Promise.all([
         this.managerLogModel
           .find(filter)
@@ -204,6 +211,156 @@ export class ManagerLogService {
       return await this.legacyLogRepository.findAllByQuery(queryDto);
     } catch {
       return [];
+    }
+  }
+
+  /**
+   * Birden fazla context için son log tarihlerini batch olarak getirir.
+   * Çoklu context tipi ve legacy log desteği sağlar.
+   *
+   * @param dto - Sorgu parametreleri
+   * @returns Record<entityId, ISO date string> - Her entity için en son log tarihi
+   */
+  async findLastLogDatesByContexts(
+    dto: LastByContextsDto
+  ): Promise<LastByContextsResponseDto> {
+    const {
+      contexts,
+      legacyContractIds,
+      legacyCustomerIds,
+      includeLegacy = true,
+      groupByField = "contractId",
+    } = dto;
+
+    // Sonuçları birleştirmek için Map kullan (entityId -> Date)
+    const resultMap = new Map<string, Date>();
+
+    // 1. Yeni manager-logs koleksiyonundan sorgula
+    await this.queryNewLogs(contexts, resultMap);
+
+    // 2. Legacy logları sorgula (opsiyonel)
+    if (includeLegacy) {
+      await this.queryLegacyLogs(
+        legacyContractIds,
+        legacyCustomerIds,
+        groupByField,
+        resultMap
+      );
+    }
+
+    // 3. Map'i Record<string, string>'e dönüştür
+    const response: LastByContextsResponseDto = {};
+    for (const [entityId, date] of resultMap) {
+      response[entityId] = date.toISOString();
+    }
+
+    return response;
+  }
+
+  /**
+   * Son 5 gün için tarih filtresi oluşturur.
+   * Badge için 5+ gün öncesi zaten "5+" olarak gösterildiğinden
+   * daha eski logları sorgulamaya gerek yok.
+   */
+  private getRecentDateFilter(): Date {
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    fiveDaysAgo.setHours(0, 0, 0, 0);
+    return fiveDaysAgo;
+  }
+
+  /**
+   * Yeni manager-logs koleksiyonundan çoklu context için son log tarihlerini sorgular.
+   * Performans için sadece son 5 günü sorgular.
+   */
+  private async queryNewLogs(
+    contexts: Array<{ type: string; ids: string[] }>,
+    resultMap: Map<string, Date>
+  ): Promise<void> {
+    if (!contexts || contexts.length === 0) {
+      return;
+    }
+
+    const recentDate = this.getRecentDateFilter();
+
+    // Her context tipi için ayrı sorgu yap ve sonuçları birleştir
+    for (const context of contexts) {
+      if (!context.ids || context.ids.length === 0) {
+        continue;
+      }
+
+      const results = await this.managerLogModel.aggregate<{
+        _id: string;
+        lastLogAt: Date;
+      }>([
+        {
+          $match: {
+            contextType: context.type,
+            contextId: { $in: context.ids },
+            createdAt: { $gte: recentDate },
+          },
+        },
+        {
+          $group: {
+            _id: "$contextId",
+            lastLogAt: { $max: "$createdAt" },
+          },
+        },
+      ]);
+
+      // Sonuçları Map'e ekle (daha yeni tarih varsa güncelle)
+      for (const item of results) {
+        const existing = resultMap.get(item._id);
+        if (!existing || item.lastLogAt > existing) {
+          resultMap.set(item._id, item.lastLogAt);
+        }
+      }
+    }
+  }
+
+  /**
+   * Legacy loglardan contractId ve customerId ile son log tarihlerini sorgular.
+   * Her iki alanı da sorgular çünkü legacy sistemde log'lar bazen sadece
+   * customerId ile, bazen sadece contractId ile tutulmuş olabilir.
+   */
+  private async queryLegacyLogs(
+    legacyContractIds: string[] | undefined,
+    legacyCustomerIds: string[] | undefined,
+    _groupByField: "contractId" | "customerId",
+    resultMap: Map<string, Date>
+  ): Promise<void> {
+    try {
+      // contractId ile sorgula
+      if (legacyContractIds && legacyContractIds.length > 0) {
+        const contractResults =
+          await this.legacyLogRepository.findLastLogDatesByContractIds(
+            legacyContractIds
+          );
+
+        for (const [contractId, date] of Object.entries(contractResults)) {
+          const existing = resultMap.get(contractId);
+          if (!existing || date > existing) {
+            resultMap.set(contractId, date);
+          }
+        }
+      }
+
+      // customerId ile de sorgula (her zaman, groupByField'dan bağımsız)
+      if (legacyCustomerIds && legacyCustomerIds.length > 0) {
+        const customerResults =
+          await this.legacyLogRepository.findLastLogDatesByCustomerIds(
+            legacyCustomerIds
+          );
+
+        for (const [customerId, date] of Object.entries(customerResults)) {
+          const existing = resultMap.get(customerId);
+          if (!existing || date > existing) {
+            resultMap.set(customerId, date);
+          }
+        }
+      }
+    } catch {
+      // Legacy sorgusu başarısız olursa sessizce devam et
     }
   }
 }

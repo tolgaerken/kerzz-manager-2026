@@ -2,12 +2,15 @@ import { memo } from "react";
 import { Calendar, Building2, CheckCircle2, XCircle, ChevronRight, Lock, AlertTriangle } from "lucide-react";
 import type { EnrichedPaymentPlan } from "../types";
 import { SEGMENT_COLORS } from "../types";
+import { LogBadge } from "../../../components/ui";
 
 interface InvoicePlanCardProps {
   plan: EnrichedPaymentPlan;
   onClick: (plan: EnrichedPaymentPlan) => void;
   selected?: boolean;
   onSelect?: (plan: EnrichedPaymentPlan) => void;
+  lastLogAt?: string;
+  onOpenLogs?: (plan: EnrichedPaymentPlan) => void;
 }
 
 // Date formatter
@@ -46,11 +49,14 @@ function SegmentBadge({ segment }: { segment: string }) {
   );
 }
 
+
 export const InvoicePlanCard = memo(function InvoicePlanCard({
   plan,
   onClick,
   selected,
-  onSelect
+  onSelect,
+  lastLogAt,
+  onOpenLogs
 }: InvoicePlanCardProps) {
   const handleClick = () => {
     onClick(plan);
@@ -59,6 +65,10 @@ export const InvoicePlanCard = memo(function InvoicePlanCard({
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect?.(plan);
+  };
+
+  const handleOpenLogs = () => {
+    onOpenLogs?.(plan);
   };
 
   // Bakiye durumu
@@ -100,6 +110,12 @@ export const InvoicePlanCard = memo(function InvoicePlanCard({
                 <AlertTriangle className="h-3 w-3" />
               </span>
             )}
+            {/* Log badge */}
+            <LogBadge
+              lastLogAt={lastLogAt}
+              onClick={handleOpenLogs}
+              size="sm"
+            />
           </div>
           <h3 className="text-sm font-semibold text-[var(--color-foreground)] truncate">
             {plan.brand || "-"}
