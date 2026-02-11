@@ -89,6 +89,9 @@ export function InvoicesGrid({
             onRowDoubleClick?.(invoice);
           }}
           onScrollDirectionChange={onScrollDirectionChange}
+          customButtons={customButtons}
+          selectedIds={selectedIds}
+          onSelectionChange={onSelectionChange}
         />
       </div>
     );
