@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Package } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   SoftwareProductsGrid,
   SoftwareProductsFilters,
@@ -30,13 +31,16 @@ export function SoftwareProductsPage() {
     sortOrder: "asc"
   });
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   // Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SoftwareProduct | null>(null);
 
   // Queries & Mutations
-  const { data, isLoading, error, refetch } = useSoftwareProducts(queryParams);
+  const { data, isLoading, isFetching, refetch } = useSoftwareProducts(queryParams);
   const createMutation = useCreateSoftwareProduct();
   const updateMutation = useUpdateSoftwareProduct();
   const deleteMutation = useDeleteSoftwareProduct();
@@ -138,73 +142,95 @@ export function SoftwareProductsPage() {
     setSelectedProduct(null);
   }, []);
 
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <Package className="h-5 w-5" />,
+    title: "Yazılım Ürünleri",
+    count: data?.pagination?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          onClick={handleCreateClick}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Ürün
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          onClick={handleCreateClick}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
+      </div>
+    ),
+    children: (
+      <SoftwareProductsFilters
+        search={queryParams.search || ""}
+        saleActiveFilter={queryParams.saleActive}
+        isSaasFilter={queryParams.isSaas}
+        typeFilter={queryParams.type || ""}
+        counts={data?.counts}
+        onSearchChange={handleSearchChange}
+        onSaleActiveFilterChange={handleSaleActiveFilterChange}
+        onIsSaasFilterChange={handleIsSaasFilterChange}
+        onTypeFilterChange={handleTypeFilterChange}
+        onClearFilters={handleClearFilters}
+      />
+    ),
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Yazılım Ürünleri
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Yenile"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            onClick={handleCreateClick}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Yeni Ürün
-          </button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
+      </div>
+
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <SoftwareProductsGrid
+            data={data?.data || []}
+            loading={isLoading}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+          />
         </div>
+
+        {/* Pagination */}
+        {data?.pagination && (
+          <SoftwareProductsPagination
+            pagination={data.pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        )}
       </div>
-
-      {/* Filters */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <SoftwareProductsFilters
-          search={queryParams.search || ""}
-          saleActiveFilter={queryParams.saleActive}
-          isSaasFilter={queryParams.isSaas}
-          typeFilter={queryParams.type || ""}
-          counts={data?.counts}
-          onSearchChange={handleSearchChange}
-          onSaleActiveFilterChange={handleSaleActiveFilterChange}
-          onIsSaasFilterChange={handleIsSaasFilterChange}
-          onTypeFilterChange={handleTypeFilterChange}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="px-6 py-4 text-red-600 bg-red-50 dark:bg-red-900/20">
-          Hata: {error.message}
-        </div>
-      )}
-
-      {/* Grid */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <SoftwareProductsGrid
-          data={data?.data || []}
-          loading={isLoading}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
-        />
-      </div>
-
-      {/* Pagination */}
-      {data?.pagination && (
-        <SoftwareProductsPagination
-          pagination={data.pagination}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
-      )}
 
       {/* Form Modal */}
       <SoftwareProductFormModal

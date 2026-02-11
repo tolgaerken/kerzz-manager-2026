@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, RefreshCw } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   CustomersGrid,
   CustomersFilters,
@@ -29,16 +30,77 @@ export function CustomersPage() {
     sortOrder: "asc"
   });
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   // Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   // Queries & Mutations
-  const { data, isLoading, error } = useCustomers(queryParams);
+  const { data, isLoading, error, refetch, isFetching } = useCustomers(queryParams);
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
   const deleteMutation = useDeleteCustomer();
+
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <Users className="h-5 w-5" />,
+    title: "Müşteriler",
+    count: data?.meta.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          onClick={() => {
+            setSelectedCustomer(null);
+            setIsFormModalOpen(true);
+          }}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Müşteri
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          onClick={() => {
+            setSelectedCustomer(null);
+            setIsFormModalOpen(true);
+          }}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
+      </div>
+    ),
+    children: (
+      <CustomersFilters
+        search={queryParams.search || ""}
+        onSearchChange={(search) => setQueryParams((prev) => ({ ...prev, search, page: 1 }))}
+      />
+    ),
+  });
 
   // Handlers
   const handleSearchChange = useCallback((search: string) => {
@@ -62,11 +124,6 @@ export function CustomersPage() {
 
   const handleRowDoubleClick = useCallback((customer: Customer) => {
     setSelectedCustomer(customer);
-    setIsFormModalOpen(true);
-  }, []);
-
-  const handleCreateClick = useCallback(() => {
-    setSelectedCustomer(null);
     setIsFormModalOpen(true);
   }, []);
 
@@ -125,69 +182,65 @@ export function CustomersPage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Müşteriler
-        </h1>
-        <button
-          onClick={handleCreateClick}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-4 h-4" />
-          Yeni Müşteri
-        </button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {/* Filters */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <CustomersFilters
-          search={queryParams.search || ""}
-          onSearchChange={handleSearchChange}
-        />
-      </div>
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Error State */}
+        {error && (
+          <div className="flex flex-shrink-0 items-center gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-error">
+            <div>
+              <p className="font-medium">Veri yüklenirken hata oluştu</p>
+              <p className="text-sm opacity-80">{error.message}</p>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="ml-auto rounded-lg border border-error/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-error/20"
+            >
+              Tekrar Dene
+            </button>
+          </div>
+        )}
 
-      {/* Error */}
-      {error && (
-        <div className="px-6 py-4 text-red-600 bg-red-50">
-          Hata: {error.message}
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <CustomersGrid
+            data={data?.data || []}
+            loading={isLoading}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+          />
         </div>
-      )}
 
-      {/* Grid */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <CustomersGrid
-          data={data?.data || []}
-          loading={isLoading}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
+        {/* Pagination */}
+        <CustomersPagination
+          currentPage={queryParams.page || 1}
+          totalPages={data?.meta.totalPages || 0}
+          total={data?.meta.total || 0}
+          pageSize={queryParams.limit || CUSTOMERS_CONSTANTS.DEFAULT_PAGE_SIZE}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </div>
-
-      {/* Pagination */}
-      <CustomersPagination
-        currentPage={queryParams.page || 1}
-        totalPages={data?.meta.totalPages || 0}
-        total={data?.meta.total || 0}
-        pageSize={queryParams.limit || CUSTOMERS_CONSTANTS.DEFAULT_PAGE_SIZE}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
 
       {/* Quick Actions - Show when hovering a row (simplified version) */}
       {selectedCustomer && !isFormModalOpen && !isDeleteModalOpen && (
         <div className="fixed bottom-20 right-6 flex gap-2">
           <button
             onClick={() => handleEditClick(selectedCustomer)}
-            className="p-2 bg-[var(--color-primary)] text-white rounded-full shadow-lg hover:opacity-90 transition-opacity"
+            className="p-2 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary-hover transition-colors"
             title="Düzenle"
           >
             <Pencil className="w-5 h-5" />
           </button>
           <button
             onClick={() => handleDeleteClick(selectedCustomer)}
-            className="p-2 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition-colors"
+            className="p-2 bg-[var(--color-error)] text-[var(--color-error-foreground)] rounded-full shadow-lg hover:opacity-90 transition-opacity"
             title="Sil"
           >
             <Trash2 className="w-5 h-5" />

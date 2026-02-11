@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Trash2, X, AlertTriangle, CheckCircle } from "lucide-react";
+import { RefreshCw, Trash2, X, AlertTriangle, CheckCircle, Repeat } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   AutoPaymentTokensGrid,
   PaymentPlanGrid,
@@ -28,6 +29,9 @@ export function AutomatedPaymentsPage() {
     sortOrder: "desc",
   });
 
+  // ── Collapsible Section State ──
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   // ── Selection State ──
   const [selectedTokens, setSelectedTokens] = useState<
     AutoPaymentTokenItem[]
@@ -42,7 +46,7 @@ export function AutomatedPaymentsPage() {
 
   // ── Queries ──
   const queryClient = useQueryClient();
-  const { data, isLoading, refetch } = useAutoPaymentTokens(queryParams);
+  const { data, isLoading, isFetching, refetch } = useAutoPaymentTokens(queryParams);
   const { data: paymentPlans, isLoading: plansLoading } =
     usePaymentPlans(selectedErpId);
 
@@ -246,43 +250,81 @@ export function AutomatedPaymentsPage() {
   // ERP cari bakiyesi (gercek bakiye)
   const customerBalance = selectedCustomer?.balance ?? 0;
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Otomatik Ödemeler
-        </h1>
-        <div className="flex items-center gap-2">
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <Repeat className="h-5 w-5" />,
+    title: "Otomatik Ödemeler",
+    count: data?.pagination?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        {selectedTokens.length > 0 && (
           <button
             type="button"
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Yenile"
+            onClick={handleDeleteSelected}
+            className="flex items-center justify-center gap-1.5 rounded-md bg-[var(--color-error)]/10 px-3 py-1.5 text-xs font-medium text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/20"
           >
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
+            <Trash2 className="h-3.5 w-3.5" />
+            {selectedTokens.length} Sil
           </button>
-          {selectedTokens.length > 0 && (
-            <button
-              type="button"
-              onClick={handleDeleteSelected}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-              title="Seçilenleri Sil"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>{selectedTokens.length} Sil</span>
-            </button>
-          )}
-        </div>
+        )}
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
+        {selectedTokens.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDeleteSelected}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--color-error)]/10 px-3 py-2 text-xs font-medium text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/20"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {selectedTokens.length}
+          </button>
+        )}
+      </div>
+    ),
+    children: (
+      <AutoPaymentFilters
+        search={queryParams.search || ""}
+        companyId={queryParams.companyId || ""}
+        onSearchChange={handleSearchChange}
+        onCompanyChange={handleCompanyChange}
+        onClearFilters={handleClearFilters}
+      />
+    ),
+  });
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
       {/* Payment Notification */}
       {paymentNotification && (
         <div
-          className="flex items-center gap-3 px-6 py-3 border-b border-[var(--color-border)] text-sm"
+          className="flex items-center gap-3 mx-0 mb-3 px-4 py-3 rounded-lg text-sm"
           style={{
             backgroundColor:
               paymentNotification.type === "error"
@@ -292,6 +334,8 @@ export function AutomatedPaymentsPage() {
               paymentNotification.type === "error"
                 ? "var(--color-error-foreground)"
                 : "var(--color-success-foreground)",
+            borderWidth: "1px",
+            borderStyle: "solid",
             borderColor:
               paymentNotification.type === "error"
                 ? "color-mix(in oklch, var(--color-error) 30%, var(--color-border))"
@@ -320,19 +364,8 @@ export function AutomatedPaymentsPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="px-6 py-3 border-b border-[var(--color-border)]">
-        <AutoPaymentFilters
-          search={queryParams.search || ""}
-          companyId={queryParams.companyId || ""}
-          onSearchChange={handleSearchChange}
-          onCompanyChange={handleCompanyChange}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
-
       {/* Action Bar */}
-      <div className="px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+      <div className="mb-3 px-4 py-3 rounded-lg border border-border bg-surface-elevated">
         <CollectionActionBar
           selectedCustomerId={selectedCustomer?.customerId || null}
           balance={customerBalance}
@@ -349,18 +382,18 @@ export function AutomatedPaymentsPage() {
       </div>
 
       {/* Split Panel */}
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex min-h-0 gap-3">
         {/* Sol Panel: Token Listesi */}
-        <div className="flex-[3] min-w-0 border-r border-[var(--color-border)]">
-          <div className="px-4 py-2 text-xs font-medium uppercase text-[var(--color-muted-foreground)] border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="flex-[3] min-w-0 flex flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <div className="px-4 py-2 text-xs font-medium uppercase text-muted-foreground border-b border-border bg-surface-elevated">
             Kayıtlı Kart Tokenleri
             {data?.pagination && (
-              <span className="ml-2 text-[var(--color-foreground)]">
+              <span className="ml-2 text-foreground">
                 ({data.pagination.total})
               </span>
             )}
           </div>
-          <div className="h-[calc(100%-33px)]">
+          <div className="flex-1 min-h-0">
             <AutoPaymentTokensGrid
               data={data?.data ?? []}
               loading={isLoading}
@@ -370,16 +403,16 @@ export function AutomatedPaymentsPage() {
         </div>
 
         {/* Sag Panel: Odeme Planlari */}
-        <div className="flex-[2] min-w-0">
-          <div className="px-4 py-2 text-xs font-medium uppercase text-[var(--color-muted-foreground)] border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="flex-[2] min-w-0 flex flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <div className="px-4 py-2 text-xs font-medium uppercase text-muted-foreground border-b border-border bg-surface-elevated">
             Ödeme Planları
             {selectedCustomer && (
-              <span className="ml-2 text-[var(--color-foreground)]">
+              <span className="ml-2 text-foreground">
                 - {selectedCustomer.customerName || selectedCustomer.erpId || selectedCustomer.customerId}
               </span>
             )}
           </div>
-          <div className="h-[calc(100%-33px)]">
+          <div className="flex-1 min-h-0">
             {selectedErpId ? (
               <PaymentPlanGrid
                 data={paymentPlans ?? []}
@@ -387,7 +420,7 @@ export function AutomatedPaymentsPage() {
                 onSelectionChanged={handlePlanSelectionChanged}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-sm text-[var(--color-muted-foreground)]">
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                 Ödeme planlarını görmek için sol taraftan bir token seçin
               </div>
             )}

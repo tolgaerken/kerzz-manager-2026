@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Plus, Pencil, Trash2 } from "lucide-react";
+import { RefreshCw, Plus, Pencil, Trash2, FileCheck } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   EDocMembersGrid,
   EDocMemberFormModal,
@@ -28,6 +29,9 @@ export function EDocMembersPage() {
     sortField: "createdAt",
     sortOrder: "desc",
   });
+
+  // -- Collapsible Section State --
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
   // -- Selection State --
   const [selectedItem, setSelectedItem] = useState<EDocMemberItem | null>(null);
@@ -134,67 +138,94 @@ export function EDocMembersPage() {
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-            E-Belge Üye Yönetimi
-          </h1>
-          <p className="mt-0.5 text-sm text-[var(--color-muted-foreground)]">
-            E-belge üyelerini ve kontör bakiyelerini yönetin
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isLoading || isRefetching}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] transition-colors disabled:opacity-50"
-            title="Yenile"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading || isRefetching ? "animate-spin" : ""}`}
-            />
-          </button>
-
-          {selectedItem && (
-            <>
-              <button
-                type="button"
-                onClick={handleEdit}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
-                title="Düzenle"
-              >
-                <Pencil className="w-4 h-4" />
-                <span>Düzenle</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteClick}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-error)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
-                title="Sil"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Sil</span>
-              </button>
-            </>
-          )}
-
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Yeni Üye</span>
-          </button>
-        </div>
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <FileCheck className="h-5 w-5" />,
+    title: "E-Belge Üye Yönetimi",
+    count: data?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isLoading || isRefetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isRefetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        {selectedItem && (
+          <>
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Düzenle
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="flex items-center justify-center gap-1.5 rounded-md bg-[var(--color-error)]/10 px-3 py-1.5 text-xs font-medium text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/20"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Sil
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Üye
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isLoading || isRefetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isRefetching ? "animate-spin" : ""}`} />
+        </button>
+        {selectedItem && (
+          <>
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--color-error)]/10 px-3 py-2 text-xs font-medium text-[var(--color-error)] transition-colors hover:bg-[var(--color-error)]/20"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
       </div>
-
-      {/* Filters */}
-      <div className="px-6 py-3 border-b border-[var(--color-border)]">
+    ),
+    children: (
+      <>
         <EDocMemberFilters
           search={queryParams.search || ""}
           contractType={queryParams.contractType || ""}
@@ -206,22 +237,19 @@ export function EDocMembersPage() {
           onActiveChange={handleActiveChange}
           onClearFilters={handleClearFilters}
         />
-      </div>
-
-      {/* Stats Bar + Legend */}
-      <div className="px-6 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
-        <div className="flex items-center justify-between">
+        {/* Stats Bar + Legend */}
+        <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-6 text-sm">
-            <span className="text-[var(--color-muted-foreground)]">
+            <span className="text-muted-foreground">
               Toplam Kayıt:{" "}
-              <span className="font-semibold text-[var(--color-foreground)]">
+              <span className="font-semibold text-foreground">
                 {data?.total ?? 0}
               </span>
             </span>
             {selectedItem && (
-              <span className="text-[var(--color-muted-foreground)]">
+              <span className="text-muted-foreground">
                 Seçili:{" "}
-                <span className="font-semibold text-[var(--color-foreground)]">
+                <span className="font-semibold text-foreground">
                   {selectedItem.customerName || selectedItem.erpId}
                 </span>
               </span>
@@ -229,16 +257,29 @@ export function EDocMembersPage() {
           </div>
           <CreditBalanceLegend />
         </div>
+      </>
+    ),
+  });
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 min-h-0">
-        <EDocMembersGrid
-          data={data?.data ?? []}
-          loading={isLoading}
-          onSelectionChanged={handleSelectionChanged}
-          onRowDoubleClick={handleRowDoubleClick}
-        />
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <EDocMembersGrid
+            data={data?.data ?? []}
+            loading={isLoading}
+            onSelectionChanged={handleSelectionChanged}
+            onRowDoubleClick={handleRowDoubleClick}
+          />
+        </div>
       </div>
 
       {/* Form Modal */}
@@ -260,12 +301,12 @@ export function EDocMembersPage() {
             className="fixed inset-0 bg-black/50"
             onClick={() => setIsDeleteConfirmOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-md mx-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md shadow-xl">
+          <div className="relative z-10 w-full max-w-md mx-4 bg-surface border border-border rounded-md shadow-xl">
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 Üyeyi Sil
               </h3>
-              <p className="text-sm text-[var(--color-muted-foreground)] mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Bu e-belge üyesini silmek istediğinizden emin misiniz? Bu işlem
                 geri alınamaz.
               </p>
@@ -274,7 +315,7 @@ export function EDocMembersPage() {
                   type="button"
                   onClick={() => setIsDeleteConfirmOpen(false)}
                   disabled={deleteMutation.isPending}
-                  className="px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-foreground bg-surface-elevated border border-border rounded-md hover:bg-surface-hover transition-colors disabled:opacity-50"
                 >
                   İptal
                 </button>

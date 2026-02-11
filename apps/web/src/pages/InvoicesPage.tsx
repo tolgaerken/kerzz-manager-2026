@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X, MessageSquare, Receipt } from "lucide-react";
+import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X, MessageSquare, Receipt, FileText } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import { useCollectPayment } from "../features/automated-payments";
 import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
@@ -70,6 +71,9 @@ export function InvoicesPage() {
     startDate: defaultDates.startDate,
     endDate: defaultDates.endDate
   });
+
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
   // Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -463,38 +467,85 @@ export function InvoicesPage() {
     ];
   }, [canCollect, collectLoading, isBatchRunning, collectableInvoices.length, handleCollectPayment, selectedInvoice, selectedIds.length, handleOpenLogs, handleOpenAccountTransactions]);
 
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <FileText className="h-5 w-5" />,
+    title: "Faturalar",
+    count: data?.data?.length,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          onClick={handleExportExcel}
+          disabled={isLoading || !data?.data?.length}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <FileSpreadsheet className="h-3.5 w-3.5" />
+          Excel
+        </button>
+        <button
+          onClick={handleRefresh}
+          disabled={isLoading || isRefetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isRefetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleExportExcel}
+          disabled={isLoading || !data?.data?.length}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <FileSpreadsheet className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={handleRefresh}
+          disabled={isLoading || isRefetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isRefetching ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+    ),
+    children: (
+      <InvoicesFilters
+        search={queryParams.search || ""}
+        invoiceType={(queryParams.invoiceType as InvoiceType) || ""}
+        isPaid={queryParams.isPaid}
+        internalFirm={queryParams.internalFirm || ""}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        counts={data?.counts}
+        onSearchChange={handleSearchChange}
+        onInvoiceTypeChange={handleInvoiceTypeChange}
+        onIsPaidChange={handleIsPaidChange}
+        onInternalFirmChange={handleInternalFirmChange}
+        onYearChange={handleYearChange}
+        onMonthChange={handleMonthChange}
+        onDatePresetChange={handleDatePresetChange}
+        onFetchByYearMonth={handleFetchByYearMonth}
+        onClearFilters={handleClearFilters}
+      />
+    ),
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Faturalar
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportExcel}
-            disabled={isLoading || !data?.data?.length}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Excel'e Aktar"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            Excel
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading || isRefetching}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Yenile"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading || isRefetching ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
       {/* Payment Notification */}
       {paymentNotification && (
         <div
-          className="flex items-center gap-3 px-6 py-3 border-b border-[var(--color-border)] text-sm"
+          className="flex items-center gap-3 mx-0 mb-3 px-4 py-3 rounded-lg text-sm"
           style={{
             backgroundColor:
               paymentNotification.type === "error"
@@ -504,6 +555,8 @@ export function InvoicesPage() {
               paymentNotification.type === "error"
                 ? "var(--color-error-foreground)"
                 : "var(--color-success-foreground)",
+            borderWidth: "1px",
+            borderStyle: "solid",
             borderColor:
               paymentNotification.type === "error"
                 ? "color-mix(in oklch, var(--color-error) 30%, var(--color-border))"
@@ -532,49 +585,39 @@ export function InvoicesPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <InvoicesFilters
-          search={queryParams.search || ""}
-          invoiceType={(queryParams.invoiceType as InvoiceType) || ""}
-          isPaid={queryParams.isPaid}
-          internalFirm={queryParams.internalFirm || ""}
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          counts={data?.counts}
-          onSearchChange={handleSearchChange}
-          onInvoiceTypeChange={handleInvoiceTypeChange}
-          onIsPaidChange={handleIsPaidChange}
-          onInternalFirmChange={handleInternalFirmChange}
-          onYearChange={handleYearChange}
-          onMonthChange={handleMonthChange}
-          onDatePresetChange={handleDatePresetChange}
-          onFetchByYearMonth={handleFetchByYearMonth}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Error State */}
+        {error && (
+          <div className="flex flex-shrink-0 items-center gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-error">
+            <div>
+              <p className="font-medium">Veri yüklenirken hata oluştu</p>
+              <p className="text-sm opacity-80">{error.message}</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className="ml-auto rounded-lg border border-error/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-error/20"
+            >
+              Tekrar Dene
+            </button>
+          </div>
+        )}
 
-      {/* Error */}
-      {error && (
-        <div className="px-6 py-4 text-[var(--color-error)] bg-[var(--color-error)]/10">
-          Hata: {error.message}
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <InvoicesGrid
+            data={data?.data || []}
+            loading={isLoading}
+            autoPaymentCustomerIds={autoPaymentCustomerIds}
+            pendingPaymentInvoiceNos={pendingPaymentInvoiceNos}
+            balanceMap={balanceMap}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+            selectedIds={selectedIds}
+            onSelectionChange={handleSelectionChange}
+            customButtons={toolbarCustomButtons}
+          />
         </div>
-      )}
-
-      {/* Grid */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <InvoicesGrid
-          data={data?.data || []}
-          loading={isLoading}
-          autoPaymentCustomerIds={autoPaymentCustomerIds}
-          pendingPaymentInvoiceNos={pendingPaymentInvoiceNos}
-          balanceMap={balanceMap}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
-          customButtons={toolbarCustomButtons}
-        />
       </div>
 
       {/* Form Modal */}

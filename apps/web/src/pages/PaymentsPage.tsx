@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, CreditCard } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   PaymentLinksGrid,
   PaymentLinksFilters,
@@ -30,6 +31,9 @@ export function PaymentsPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   const resolvedParams = useMemo((): PaymentLinkQueryParams => {
     const p = { ...queryParams };
     if (dateRangeDays !== null) {
@@ -42,7 +46,7 @@ export function PaymentsPage() {
     return p;
   }, [queryParams, dateRangeDays]);
 
-  const { data, isLoading, error, refetch } = usePaymentLinks(resolvedParams);
+  const { data, isLoading, isFetching, refetch } = usePaymentLinks(resolvedParams);
   const createMutation = useCreatePaymentLink();
   const notifyMutation = useSendPaymentLinkNotification();
 
@@ -120,68 +124,97 @@ export function PaymentsPage() {
     notifyMutation.mutate(item.linkId);
   }, [notifyMutation]);
 
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <CreditCard className="h-5 w-5" />,
+    title: "Online Ödemeler",
+    count: data?.pagination?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          type="button"
+          onClick={handleCreateClick}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Ödeme Linki
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          type="button"
+          onClick={handleCreateClick}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
+      </div>
+    ),
+    children: (
+      <PaymentLinksFilters
+        search={queryParams.search || ""}
+        dateRangeDays={dateRangeDays}
+        status={queryParams.status || ""}
+        onSearchChange={handleSearchChange}
+        onDateRangeChange={handleDateRangeChange}
+        onStatusChange={handleStatusChange}
+        onClearFilters={handleClearFilters}
+      />
+    ),
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Online Ödemeler
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Yenile"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            type="button"
-            onClick={handleCreateClick}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Yeni Ödeme Linki
-          </button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
+      </div>
+
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <PaymentLinksGrid
+            data={data?.data ?? []}
+            loading={isLoading}
+            onSortChange={handleSortChange}
+            onCopyLink={handleCopyLink}
+            onResendNotify={handleResendNotify}
+          />
         </div>
+
+        {/* Pagination */}
+        {data?.pagination && (
+          <PaymentLinksPagination
+            pagination={data.pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        )}
       </div>
-
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <PaymentLinksFilters
-          search={queryParams.search || ""}
-          dateRangeDays={dateRangeDays}
-          status={queryParams.status || ""}
-          onSearchChange={handleSearchChange}
-          onDateRangeChange={handleDateRangeChange}
-          onStatusChange={handleStatusChange}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
-
-      {error && (
-        <div className="px-6 py-4 text-red-600 bg-red-50 dark:bg-red-900/20">
-          Hata: {error.message}
-        </div>
-      )}
-
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <PaymentLinksGrid
-          data={data?.data ?? []}
-          loading={isLoading}
-          onSortChange={handleSortChange}
-          onCopyLink={handleCopyLink}
-          onResendNotify={handleResendNotify}
-        />
-      </div>
-
-      {data?.pagination && (
-        <PaymentLinksPagination
-          pagination={data.pagination}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
-      )}
 
       <CreatePaymentLinkModal
         isOpen={isFormModalOpen}

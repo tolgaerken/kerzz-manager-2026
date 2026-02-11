@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ScrollText } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   SystemLogsFilters,
   SystemLogsGrid,
@@ -33,12 +34,15 @@ export function SystemLogsPage() {
     sortOrder: "desc",
   });
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   // Detail modal state
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Query
-  const { data, isLoading, error, refetch } = useSystemLogs(queryParams);
+  const { data, isLoading, isFetching, refetch } = useSystemLogs(queryParams);
 
   // Modül listesini stats'tan çıkar
   const availableModules = useMemo(() => {
@@ -107,33 +111,39 @@ export function SystemLogsPage() {
     setSelectedLog(null);
   }, []);
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Sistem Logları
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Yenile"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            Yenile
-          </button>
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <ScrollText className="h-5 w-5" />,
+    title: "Sistem Logları",
+    count: data?.pagination?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <button
+        onClick={() => refetch()}
+        disabled={isLoading || isFetching}
+        className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        Yenile
+      </button>
+    ),
+    mobileActions: (
+      <button
+        onClick={() => refetch()}
+        disabled={isLoading || isFetching}
+        className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+      </button>
+    ),
+    children: (
+      <>
+        {/* Stats */}
+        <div className="mb-4">
+          <SystemLogsStats stats={data?.stats} />
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <SystemLogsStats stats={data?.stats} />
-      </div>
-
-      {/* Filters */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
+        {/* Filters */}
         <SystemLogsFilters
           search={queryParams.search || ""}
           category={(queryParams.category as SystemLogCategory) || ""}
@@ -152,32 +162,38 @@ export function SystemLogsPage() {
           onEndDateChange={handleEndDateChange}
           onClearFilters={handleClearFilters}
         />
+      </>
+    ),
+  });
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="px-6 py-4 text-red-600 bg-red-50 dark:bg-red-900/20">
-          Hata: {error.message}
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <SystemLogsGrid
+            data={data?.data || []}
+            loading={isLoading}
+            onRowClick={handleRowClick}
+          />
         </div>
-      )}
 
-      {/* Grid */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <SystemLogsGrid
-          data={data?.data || []}
-          loading={isLoading}
-          onRowClick={handleRowClick}
-        />
+        {/* Pagination */}
+        {data?.pagination && (
+          <SystemLogsPagination
+            pagination={data.pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        )}
       </div>
-
-      {/* Pagination */}
-      {data?.pagination && (
-        <SystemLogsPagination
-          pagination={data.pagination}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
-      )}
 
       {/* Detail Modal */}
       <SystemLogDetailModal

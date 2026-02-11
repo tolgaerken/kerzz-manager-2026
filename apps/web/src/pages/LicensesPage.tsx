@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { Plus, RefreshCw, MessageSquare, Receipt } from "lucide-react";
+import { Plus, RefreshCw, MessageSquare, Receipt, Key } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   LicensesGrid,
@@ -36,6 +37,9 @@ export function LicensesPage() {
     sortOrder: "desc"
   });
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   // Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -43,7 +47,7 @@ export function LicensesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Queries & Mutations
-  const { data, isLoading, error, refetch } = useLicenses(queryParams);
+  const { data, isLoading, isFetching, refetch } = useLicenses(queryParams);
   const createMutation = useCreateLicense();
   const updateMutation = useUpdateLicense();
   const deleteMutation = useDeleteLicense();
@@ -220,71 +224,93 @@ export function LicensesPage() {
     ];
   }, [selectedLicense, customerMap, handleOpenLogs, handleOpenAccountTransactions]);
 
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <Key className="h-5 w-5" />,
+    title: "Lisanslar",
+    count: data?.data?.length,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          onClick={handleCreateClick}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Lisans
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          onClick={handleCreateClick}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
+      </div>
+    ),
+    children: (
+      <LicensesFilters
+        search={queryParams.search || ""}
+        type={(queryParams.type as LicenseType) || ""}
+        companyType={(queryParams.companyType as CompanyType) || ""}
+        category={(queryParams.category as LicenseCategory) || ""}
+        activeFilter={queryParams.active}
+        blockFilter={queryParams.block}
+        counts={data?.counts}
+        onSearchChange={handleSearchChange}
+        onTypeChange={handleTypeChange}
+        onCompanyTypeChange={handleCompanyTypeChange}
+        onCategoryChange={handleCategoryChange}
+        onActiveFilterChange={handleActiveFilterChange}
+        onBlockFilterChange={handleBlockFilterChange}
+        onClearFilters={handleClearFilters}
+      />
+    ),
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Lisanslar
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
-            title="Yenile"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            onClick={handleCreateClick}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Yeni Lisans
-          </button>
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {/* Filters */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <LicensesFilters
-          search={queryParams.search || ""}
-          type={(queryParams.type as LicenseType) || ""}
-          companyType={(queryParams.companyType as CompanyType) || ""}
-          category={(queryParams.category as LicenseCategory) || ""}
-          activeFilter={queryParams.active}
-          blockFilter={queryParams.block}
-          counts={data?.counts}
-          onSearchChange={handleSearchChange}
-          onTypeChange={handleTypeChange}
-          onCompanyTypeChange={handleCompanyTypeChange}
-          onCategoryChange={handleCategoryChange}
-          onActiveFilterChange={handleActiveFilterChange}
-          onBlockFilterChange={handleBlockFilterChange}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="px-6 py-4 text-red-600 bg-red-50 dark:bg-red-900/20">
-          Hata: {error.message}
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <LicensesGrid
+            data={data?.data || []}
+            loading={isLoading}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+            onRowSelect={handleRowSelect}
+            selectedIds={selectedIds}
+            onSelectionChange={handleSelectionChange}
+            toolbarButtons={toolbarButtons}
+          />
         </div>
-      )}
-
-      {/* Grid - Virtual scroll ile tüm veri gösteriliyor */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <LicensesGrid
-          data={data?.data || []}
-          loading={isLoading}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
-          onRowSelect={handleRowSelect}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
-          toolbarButtons={toolbarButtons}
-        />
       </div>
 
       {/* Form Modal */}
