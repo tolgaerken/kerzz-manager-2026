@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { InvoiceMobileList } from "./InvoiceMobileList";
 import { createInvoiceColumnDefs } from "./columnDefs";
 import type { Invoice } from "../../types";
 
@@ -14,20 +16,23 @@ interface InvoicesGridProps {
   selectedIds?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
   customButtons?: ToolbarButtonConfig[];
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 export function InvoicesGrid({
   data,
   loading,
   autoPaymentCustomerIds,
-  pendingPaymentInvoiceNos,
+  pendingPaymentInvoiceNos = new Set(),
   balanceMap = new Map(),
   onSortChange,
   onRowDoubleClick,
   selectedIds,
   onSelectionChange,
-  customButtons
+  customButtons,
+  onScrollDirectionChange
 }: InvoicesGridProps) {
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(500);
 
@@ -70,6 +75,26 @@ export function InvoicesGrid({
     [onRowDoubleClick]
   );
 
+  // Mobile view - single tap opens modal, no multiselect
+  if (isMobile) {
+    return (
+      <div className="flex flex-1 flex-col min-h-0">
+        <InvoiceMobileList
+          data={data}
+          loading={loading}
+          autoPaymentCustomerIds={autoPaymentCustomerIds}
+          pendingPaymentInvoiceNos={pendingPaymentInvoiceNos}
+          balanceMap={balanceMap}
+          onCardClick={(invoice) => {
+            onRowDoubleClick?.(invoice);
+          }}
+          onScrollDirectionChange={onScrollDirectionChange}
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div ref={containerRef} className="h-full w-full flex-1">
       <Grid<Invoice>
