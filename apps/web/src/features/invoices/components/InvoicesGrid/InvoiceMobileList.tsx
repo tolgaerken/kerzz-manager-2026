@@ -102,28 +102,28 @@ export const InvoiceMobileList = memo(function InvoiceMobileList({
     );
   }
 
-  // Filter visible (enabled) buttons
-  const visibleButtons = customButtons.filter(btn => !btn.disabled);
+  // Filter visible buttons - show all buttons, even if disabled
+  const visibleButtons = customButtons;
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
       {/* Toolbar - sticky at top */}
       {visibleButtons.length > 0 && (
         <div className="sticky top-0 z-20 bg-[var(--color-surface)] border-b border-[var(--color-border)] px-2 py-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto">
             {visibleButtons.map((button) => (
               <button
                 key={button.id}
                 onClick={button.onClick}
                 disabled={button.disabled}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   button.variant === "primary"
-                    ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90"
-                    : "border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)]"
+                    ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 disabled:hover:opacity-40"
+                    : "border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)] disabled:hover:bg-[var(--color-surface-elevated)]"
                 }`}
               >
-                {button.icon}
-                <span className="truncate">{button.label}</span>
+                <span className="flex-shrink-0">{button.icon}</span>
+                <span className="truncate text-[10px] sm:text-xs">{button.label}</span>
               </button>
             ))}
           </div>
