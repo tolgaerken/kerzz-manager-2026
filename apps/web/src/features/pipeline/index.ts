@@ -12,3 +12,9 @@ export { ProductItemsTable } from "./components/ProductItemsTable/ProductItemsTa
 export { LicenseItemsTable } from "./components/LicenseItemsTable/LicenseItemsTable";
 export { RentalItemsTable } from "./components/RentalItemsTable/RentalItemsTable";
 export { PaymentItemsTable } from "./components/PaymentItemsTable/PaymentItemsTable";
+export {
+  ProductItemFormModal,
+  LicenseItemFormModal,
+  RentalItemFormModal,
+  PaymentItemFormModal,
+} from "./components/ItemFormModals";

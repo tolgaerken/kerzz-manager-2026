@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
 import type { ToolbarButtonConfig, ToolbarConfig, SortingState } from "@kerzz/grid";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { LeadMobileList } from "./LeadMobileList";
 import { leadColumnDefs } from "./columnDefs";
 import type { Lead } from "../../types/lead.types";
 
@@ -11,6 +13,7 @@ interface LeadsGridProps {
   onRowDoubleClick?: (lead: Lead) => void;
   onSelectionChanged?: (lead: Lead | null) => void;
   toolbarButtons?: ToolbarButtonConfig[];
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 export function LeadsGrid({
@@ -20,7 +23,9 @@ export function LeadsGrid({
   onRowDoubleClick,
   onSelectionChanged,
   toolbarButtons,
+  onScrollDirectionChange,
 }: LeadsGridProps) {
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -104,6 +109,24 @@ export function LeadsGrid({
     },
   }));
 
+  // Mobile view - single tap opens modal, no multiselect
+  if (isMobile) {
+    return (
+      <div className="flex flex-1 flex-col min-h-0">
+        <LeadMobileList
+          data={data}
+          loading={loading}
+          onCardClick={(lead) => {
+            onSelectionChanged?.(lead);
+            onRowDoubleClick?.(lead);
+          }}
+          onScrollDirectionChange={onScrollDirectionChange}
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div ref={containerRef} className="h-full w-full flex-1">
       <Grid<Lead>

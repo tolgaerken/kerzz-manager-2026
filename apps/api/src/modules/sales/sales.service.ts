@@ -482,8 +482,14 @@ export class SalesService {
       : sale.createdAt || sale.updatedAt || now;
     const durationInStage =
       now.getTime() - new Date(lastChangedAt).getTime();
+    
+    // fromStatus array olabilir, string'e dönüştür
+    const fromStatusValue = Array.isArray(sale.status)
+      ? sale.status[0] || ""
+      : sale.status || "";
+    
     return {
-      fromStatus: sale.status || "",
+      fromStatus: fromStatusValue,
       toStatus,
       changedBy,
       changedAt: now,

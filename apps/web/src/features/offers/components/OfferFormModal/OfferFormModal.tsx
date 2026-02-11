@@ -227,20 +227,20 @@ export function OfferFormModal({
         {/* Full-screen modal */}
         <div className="relative z-10 flex flex-col w-full h-full bg-[var(--color-surface)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] shrink-0">
-          <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border)] shrink-0">
+          <h2 className="text-base md:text-lg font-semibold text-[var(--color-foreground)]">
             {isEditMode ? "Teklif Düzenle" : "Yeni Teklif"}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md hover:bg-[var(--color-surface-elevated)] transition-colors"
+            className="p-1.5 md:p-1 rounded-md hover:bg-[var(--color-surface-elevated)] transition-colors"
           >
             <X className="w-5 h-5 text-[var(--color-muted-foreground)]" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[var(--color-border)] px-6 shrink-0 overflow-x-auto">
+        <div className="flex border-b border-[var(--color-border)] px-3 md:px-6 shrink-0 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => {
             const countMap: Partial<Record<TabId, number>> = {
               products: formData.products?.length || 0,
@@ -255,7 +255,7 @@ export function OfferFormModal({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
+                className={`px-2.5 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 md:gap-1.5 ${
                   activeTab === tab.id
                     ? "border-[var(--color-primary)] text-[var(--color-primary)]"
                     : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
@@ -264,7 +264,7 @@ export function OfferFormModal({
                 {tab.label}
                 {count != null && count > 0 && (
                   <span
-                    className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full ${
+                    className={`inline-flex items-center justify-center min-w-[18px] md:min-w-[20px] h-4 md:h-5 px-1 md:px-1.5 text-[10px] md:text-xs font-semibold rounded-full ${
                       activeTab === tab.id
                         ? "bg-[var(--color-primary)] text-white"
                         : "bg-[var(--color-border)] text-[var(--color-muted-foreground)]"
@@ -283,7 +283,7 @@ export function OfferFormModal({
           <div className="flex-1 flex flex-col min-h-0">
             {/* Genel Tab */}
             {activeTab === "general" && (
-              <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6">
                 <GeneralTab
                   formData={formData}
                   errors={errors}
@@ -296,7 +296,7 @@ export function OfferFormModal({
 
             {/* Ürünler Tab */}
             {activeTab === "products" && (
-              <div className="flex-1 min-h-0 px-4 py-3">
+              <div className="flex-1 min-h-0 px-2 md:px-4 py-2 md:py-3">
                 <ProductItemsTable
                   items={formData.products || []}
                   onItemsChange={(items) =>
@@ -308,7 +308,7 @@ export function OfferFormModal({
 
             {/* Lisanslar Tab */}
             {activeTab === "licenses" && (
-              <div className="flex-1 min-h-0 px-4 py-3">
+              <div className="flex-1 min-h-0 px-2 md:px-4 py-2 md:py-3">
                 <LicenseItemsTable
                   items={formData.licenses || []}
                   onItemsChange={(items) =>
@@ -320,7 +320,7 @@ export function OfferFormModal({
 
             {/* Kiralamalar Tab */}
             {activeTab === "rentals" && (
-              <div className="flex-1 min-h-0 px-4 py-3">
+              <div className="flex-1 min-h-0 px-2 md:px-4 py-2 md:py-3">
                 <RentalItemsTable
                   items={formData.rentals || []}
                   onItemsChange={(items) =>
@@ -332,7 +332,7 @@ export function OfferFormModal({
 
             {/* Ödemeler Tab */}
             {activeTab === "payments" && (
-              <div className="flex-1 min-h-0 px-4 py-3">
+              <div className="flex-1 min-h-0 px-2 md:px-4 py-2 md:py-3">
                 <PaymentItemsTable
                   items={formData.payments || []}
                   onItemsChange={(items) =>
@@ -344,7 +344,7 @@ export function OfferFormModal({
 
             {/* Notlar Tab */}
             {activeTab === "notes" && (
-              <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6">
                 <div className="max-w-4xl">
                   <label className={labelClassName}>Teklif Notu</label>
                   <textarea
@@ -360,9 +360,9 @@ export function OfferFormModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-border)] shrink-0">
-            {/* Sol taraf - Loglar butonu (sadece edit modunda) */}
-            <div>
+          <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-between gap-3 px-4 md:px-6 py-3 md:py-4 border-t border-[var(--color-border)] shrink-0">
+            {/* Sol taraf - Loglar butonu (sadece edit modunda, desktop) */}
+            <div className="hidden md:block">
               {isEditMode && editItem?.pipelineRef && (
                 <button
                   type="button"
@@ -376,19 +376,19 @@ export function OfferFormModal({
             </div>
             
             {/* Sağ taraf - İptal ve Kaydet */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 order-2 md:order-1"
               >
                 İptal
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 order-1 md:order-2"
               >
                 {loading && (
                   <svg
@@ -416,6 +416,18 @@ export function OfferFormModal({
                 {isEditMode ? "Güncelle" : "Kaydet"}
               </button>
             </div>
+
+            {/* Mobilde Loglar butonu (sadece edit modunda) */}
+            {isEditMode && editItem?.pipelineRef && (
+              <button
+                type="button"
+                onClick={handleOpenLogs}
+                className="flex md:hidden items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Loglar
+              </button>
+            )}
           </div>
         </form>
         </div>
@@ -463,7 +475,7 @@ function GeneralTab({
   const { data: companies } = useCompanies();
 
   return (
-    <div className="max-w-4xl space-y-5">
+    <div className="max-w-4xl space-y-4 md:space-y-5">
       {/* Müşteri Seçimi */}
       <CustomerAutocomplete
         value={formData.customerId}
@@ -481,36 +493,36 @@ function GeneralTab({
         error={errors.customerId}
       />
 
-      {/* Satıcı */}
-      <div>
-        <label className={labelClassName}>Satıcı Adı</label>
-        <input
-          type="text"
-          value={formData.sellerName || ""}
-          onChange={(e) => handleChange("sellerName", e.target.value)}
-          placeholder="Satıcı adı"
-          className={inputClassName}
-        />
-      </div>
-
-      {/* Durum */}
-      <div>
-        <label className={labelClassName}>Durum</label>
-        <select
-          value={formData.status || "draft"}
-          onChange={(e) => handleChange("status", e.target.value)}
-          className={inputClassName}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      {/* Satıcı & Durum - Mobilde tek sütun, desktop'ta iki sütun */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <div>
+          <label className={labelClassName}>Satıcı Adı</label>
+          <input
+            type="text"
+            value={formData.sellerName || ""}
+            onChange={(e) => handleChange("sellerName", e.target.value)}
+            placeholder="Satıcı adı"
+            className={inputClassName}
+          />
+        </div>
+        <div>
+          <label className={labelClassName}>Durum</label>
+          <select
+            value={formData.status || "draft"}
+            onChange={(e) => handleChange("status", e.target.value)}
+            className={inputClassName}
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Tarihler */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         <div>
           <label className={labelClassName}>Teklif Tarihi</label>
           <input
@@ -537,7 +549,7 @@ function GeneralTab({
       </div>
 
       {/* Kurlar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         <div>
           <label className={labelClassName}>USD Kuru</label>
           <input

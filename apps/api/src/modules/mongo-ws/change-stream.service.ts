@@ -141,9 +141,6 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
     );
 
     changeStream.on("change", (change: any) => {
-      this.logger.log(
-        `[${collectionName}] Degisiklik algilandi: op=${change.operationType}, docId=${change.documentKey?._id?.toString() ?? "?"}`
-      );
       this.handleChange(collectionName, change);
     });
 
@@ -180,22 +177,19 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
 
     const updatedFields = change.updateDescription?.updatedFields;
     if (updatedFields) {
-      this.logger.log(
-        `[${collectionName}] Guncellenen alanlar: ${Object.keys(updatedFields).join(", ")}`
-      );
-
       // ignoredFields kontrolu: sadece yok sayilan alanlar degistiyse event'i atla
       const ignoredFields = this.ignoredFieldsMap.get(collectionName);
       if (ignoredFields && operationType === "update") {
         const changedKeys = Object.keys(updatedFields);
         const allIgnored = changedKeys.every((key) => ignoredFields.has(key));
         if (allIgnored) {
-          this.logger.debug(
-            `[${collectionName}] Sadece yok sayilan alanlar degisti (${changedKeys.join(", ")}), event atlanıyor`
-          );
           return;
         }
       }
+
+      this.logger.log(
+        `[${collectionName}] Guncellenen alanlar: ${Object.keys(updatedFields).join(", ")}`
+      );
     }
 
     const event: MongoChangeEvent = {

@@ -1,6 +1,7 @@
 import { Search, X } from "lucide-react";
 import { SALES_CONSTANTS } from "../../constants/sales.constants";
 import type { SaleQueryParams, SaleStatus } from "../../types/sale.types";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
 
 export interface SalesFiltersProps {
   filters: SaleQueryParams;
@@ -11,6 +12,7 @@ export function SalesFilters({
   filters,
   onFilterChange,
 }: SalesFiltersProps) {
+  const isMobile = useIsMobile();
   const search = filters.search || "";
   const status = filters.status;
   const hasFilters = !!search || !!status;
@@ -21,23 +23,25 @@ export function SalesFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* Arama */}
-      <div className="relative flex-1 min-w-[200px] max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-foreground)]" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Müşteri, satıcı, referans ile ara..."
-          className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
-        />
-      </div>
+      {/* Arama - Mobilde gizle (ayrı search input kullanılıyor) */}
+      {!isMobile && (
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-foreground)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Müşteri, satıcı, referans ile ara..."
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+          />
+        </div>
+      )}
 
       {/* Durum Filtresi */}
       <select
         value={status || ""}
         onChange={(e) => onStatusChange(e.target.value)}
-        className="px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+        className={`px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 ${isMobile ? "flex-1" : ""}`}
       >
         <option value="">Tüm Durumlar</option>
         {SALES_CONSTANTS.SALE_STATUSES.map((opt) => (

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, FolderOpen } from "lucide-react";
+import { Trash2, FolderOpen, Key, Plus, Pencil } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import type { PipelineLicense } from "../../types/pipeline.types";
 import { recalculateItem, generateTempId } from "../../utils/lineItemCalculations";
@@ -8,6 +8,8 @@ import { CatalogSelectModal, type CatalogItem } from "../CatalogSelectModal/Cata
 import { useSoftwareProducts } from "../../../software-products";
 import type { SoftwareProduct } from "../../../software-products";
 import type { PipelineProductOption } from "../cellEditors/PipelineProductAutocompleteEditor";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { LicenseItemFormModal } from "../ItemFormModals";
 
 type LicenseItem = Partial<PipelineLicense>;
 
@@ -24,7 +26,10 @@ export function LicenseItemsTable({
   onItemsChange,
   readOnly = false,
 }: LicenseItemsTableProps) {
+  const isMobile = useIsMobile();
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<LicenseItem | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: productsData } = useSoftwareProducts({
     isSaas: false,
@@ -195,6 +200,93 @@ export function LicenseItemsTable({
     };
   }, [readOnly, handleDelete, selectedId]);
 
+  // Form submit handler
+  const handleFormSubmit = useCallback(
+    (item: LicenseItem) => {
+      if (editingItem) {
+        onItemsChange(items.map((i) => (i._id === item._id ? item : i)));
+      } else {
+        onItemsChange([...items, item]);
+      }
+      setEditingItem(null);
+    },
+    [items, onItemsChange, editingItem]
+  );
+
+  // Mobil kart görünümü
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Mobil toolbar */}
+        {!readOnly && (
+          <div className="flex gap-2 pb-3 shrink-0">
+            <button
+              onClick={() => setIsCatalogOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-muted-foreground)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Katalog
+            </button>
+            <button
+              onClick={() => {
+                setEditingItem(null);
+                setIsFormOpen(true);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-muted-foreground)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Manuel Ekle
+            </button>
+          </div>
+        )}
+
+        {/* Mobil kart listesi */}
+        <div className="flex-1 overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Key className="h-8 w-8 text-[var(--color-muted-foreground)] mb-2" />
+              <p className="text-sm text-[var(--color-muted-foreground)]">Lisans bulunamadı</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 pb-2">
+              {items.map((item) => (
+                <LicenseMobileCard
+                  key={item._id}
+                  item={item}
+                  onEdit={readOnly ? undefined : () => {
+                    setEditingItem(item);
+                    setIsFormOpen(true);
+                  }}
+                  onDelete={readOnly ? undefined : () => {
+                    onItemsChange(items.filter((i) => i._id !== item._id));
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <CatalogSelectModal
+          isOpen={isCatalogOpen}
+          onClose={() => setIsCatalogOpen(false)}
+          catalogType="software-license"
+          onSelect={handleCatalogSelect}
+        />
+
+        <LicenseItemFormModal
+          isOpen={isFormOpen}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingItem(null);
+          }}
+          onSubmit={handleFormSubmit}
+          editItem={editingItem}
+        />
+      </div>
+    );
+  }
+
+  // Desktop grid görünümü
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0">
@@ -221,6 +313,94 @@ export function LicenseItemsTable({
         catalogType="software-license"
         onSelect={handleCatalogSelect}
       />
+    </div>
+  );
+}
+
+// Mobil lisans kartı bileşeni
+interface LicenseMobileCardProps {
+  item: Partial<PipelineLicense>;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}
+
+function LicenseMobileCard({ item, onEdit, onDelete }: LicenseMobileCardProps) {
+  const formatCurrency = (value: number | undefined, currency?: string) => {
+    if (value === undefined || value === null) return "-";
+    const curr = currency?.toUpperCase() || "TRY";
+    return new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: curr === "TL" ? "TRY" : curr,
+      minimumFractionDigits: 2,
+    }).format(value);
+  };
+
+  return (
+    <div 
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+      onClick={onEdit}
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="rounded-full bg-[var(--color-info)]/10 p-1.5 shrink-0">
+            <Key className="h-3.5 w-3.5 text-[var(--color-info)]" />
+          </div>
+          <span className="font-medium text-sm text-[var(--color-foreground)] truncate">
+            {item.name || "-"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {onEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-1.5 rounded-md text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="p-1.5 rounded-md text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {item.type && (
+        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)] mb-2">
+          {item.type}
+        </span>
+      )}
+      
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="flex flex-col">
+          <span className="text-[var(--color-muted-foreground)]">Miktar</span>
+          <span className="text-[var(--color-foreground)] font-medium">
+            {item.qty || 0} {item.unit || ""}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[var(--color-muted-foreground)]">Birim Fiyat</span>
+          <span className="text-[var(--color-foreground)] font-medium">
+            {formatCurrency(item.price, item.currency)}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[var(--color-muted-foreground)]">KDV %</span>
+          <span className="text-[var(--color-foreground)] font-medium">
+            {item.vatRate || 0}%
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[var(--color-muted-foreground)]">Toplam</span>
+          <span className="text-[var(--color-info)] font-semibold">
+            {formatCurrency(item.grandTotal, item.currency)}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid, type GridColumnDef, type ToolbarButtonConfig, type ToolbarConfig, type SortingState } from "@kerzz/grid";
 import { salesColumnDefs } from "./columnDefs";
 import type { Sale } from "../../types/sale.types";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { SaleMobileList } from "./SaleMobileList";
 
 export interface SalesGridProps {
   data: Sale[];
@@ -10,6 +12,7 @@ export interface SalesGridProps {
   onSelectionChanged?: (item: Sale | null) => void;
   onSortChange?: (field: string, order: "asc" | "desc") => void;
   toolbarButtons?: ToolbarButtonConfig[];
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 export function SalesGrid({
@@ -19,7 +22,9 @@ export function SalesGrid({
   onSelectionChanged,
   onSortChange,
   toolbarButtons,
+  onScrollDirectionChange,
 }: SalesGridProps) {
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -84,6 +89,19 @@ export function SalesGrid({
     },
   }));
 
+  // Mobil görünüm
+  if (isMobile) {
+    return (
+      <SaleMobileList
+        data={data}
+        loading={loading}
+        onRowDoubleClick={onRowDoubleClick}
+        onScrollDirectionChange={onScrollDirectionChange}
+      />
+    );
+  }
+
+  // Desktop görünüm
   return (
     <div ref={containerRef} className="h-full w-full flex-1">
       <Grid<Sale>

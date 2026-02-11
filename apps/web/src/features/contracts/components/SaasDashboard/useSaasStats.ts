@@ -6,7 +6,9 @@ import type {
   MonthlyTrend,
   TimePeriodStats,
 } from "../shared/dashboard/types";
+import type { ProductDistributionDto } from "../../types";
 
+// Frontend'te kullanılan product distribution tipi
 export interface ProductDistributionItem {
   name: string;
   count: number;
@@ -84,7 +86,7 @@ export function useSaasStats(contractId?: string) {
     }
 
     // Backend'den gelen product ID'leri için isim mapping
-    const productDistribution: ProductDistributionItem[] = data.productDistribution.map((p) => ({
+    const productDistribution: ProductDistributionItem[] = data.productDistribution.map((p: ProductDistributionDto) => ({
       name: productMap.get(p.productId) || p.productId,
       count: p.count
     }));

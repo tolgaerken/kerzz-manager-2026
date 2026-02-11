@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
 import type { GridColumnDef, ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { OfferMobileList } from "./OfferMobileList";
 import { offerColumnDefs } from "./columnDefs";
 import type { Offer } from "../../types/offer.types";
 
@@ -11,6 +13,7 @@ interface OffersGridProps {
   onSelectionChanged?: (item: Offer | null) => void;
   onSortChange?: (field: string, order: "asc" | "desc") => void;
   toolbarButtons?: ToolbarButtonConfig[];
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 export function OffersGrid({
@@ -20,7 +23,9 @@ export function OffersGrid({
   onSelectionChanged,
   onSortChange,
   toolbarButtons,
+  onScrollDirectionChange,
 }: OffersGridProps) {
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -91,6 +96,24 @@ export function OffersGrid({
     },
   }));
 
+  // Mobile view - single tap opens modal, no multiselect
+  if (isMobile) {
+    return (
+      <div className="flex flex-1 flex-col min-h-0">
+        <OfferMobileList
+          data={data}
+          loading={loading}
+          onCardClick={(offer) => {
+            onSelectionChanged?.(offer);
+            onRowDoubleClick?.(offer);
+          }}
+          onScrollDirectionChange={onScrollDirectionChange}
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div ref={containerRef} className="h-full w-full flex-1">
       <Grid<Offer>

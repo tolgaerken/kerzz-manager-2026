@@ -9,11 +9,11 @@ import type {
   ContractItem,
   ContractDocument,
   ContractPayment,
-  ContractDetailListResponse
+  ContractDetailListResponse,
+  CashRegisterStatsDto,
+  SaasStatsDto
 } from "../types";
-import type { CashRegisterStats } from "../components/CashRegisterDashboard/useCashRegisterStats";
 import type { SupportsStats } from "../components/SupportsDashboard/useSupportsStats";
-import type { SaasStats } from "../components/SaasDashboard/useSaasStats";
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACTS_CONSTANTS;
 
@@ -104,7 +104,7 @@ export async function deleteContractSaas(id: string): Promise<void> {
 
 export async function fetchContractSaasStats(
   contractId?: string
-): Promise<SaasStats> {
+): Promise<SaasStatsDto> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/stats${params}`;
   return apiGet(url);
@@ -138,7 +138,7 @@ export async function deleteContractCashRegister(id: string): Promise<void> {
 
 export async function fetchContractCashRegisterStats(
   contractId?: string
-): Promise<CashRegisterStats> {
+): Promise<CashRegisterStatsDto> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/stats${params}`;
   return apiGet(url);

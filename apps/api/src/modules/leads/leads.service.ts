@@ -333,8 +333,14 @@ export class LeadsService {
       : lead.createdAt || lead.updatedAt || now;
     const durationInStage =
       now.getTime() - new Date(lastChangedAt).getTime();
+    
+    // fromStatus array olabilir, string'e dönüştür
+    const fromStatusValue = Array.isArray(lead.status)
+      ? lead.status[0] || ""
+      : lead.status || "";
+    
     return {
-      fromStatus: lead.status || "",
+      fromStatus: fromStatusValue,
       toStatus,
       changedBy,
       changedAt: now,

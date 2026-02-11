@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { CalendarDays, MessageSquare, Plus, RefreshCw, Repeat, FileText } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   useOffers,
@@ -10,6 +11,7 @@ import {
 import { OffersGrid } from "../features/offers/components/OffersGrid/OffersGrid";
 import { OffersFilters } from "../features/offers/components/OffersFilters/OffersFilters";
 import { OfferFormModal } from "../features/offers/components/OfferFormModal/OfferFormModal";
+import { OfferSearchInput } from "../features/offers/components/OfferSearchInput/OfferSearchInput";
 import type {
   Offer,
   OfferQueryParams,
@@ -38,6 +40,9 @@ const getDefaultDateRange = () => {
 };
 
 export function OffersPage() {
+  // Mobile detection
+  const isMobile = useIsMobile();
+
   // No pagination - fetch all data for virtual scroll
   const [queryParams, setQueryParams] = useState<OfferQueryParams>(() => ({
     sortField: "createdAt",
@@ -46,6 +51,9 @@ export function OffersPage() {
     ...getDefaultDateRange(),
   }));
 
+  // Mobile search state
+  const [mobileSearch, setMobileSearch] = useState("");
+
   // Collapsible section state
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
@@ -53,7 +61,40 @@ export function OffersPage() {
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
-  const { data, isLoading, isFetching, refetch } = useOffers(queryParams);
+  const { data: rawData, isLoading, isFetching, refetch } = useOffers(queryParams);
+
+  // Frontend'de mobil arama filtrelemesi
+  const filteredOffers = useMemo(() => {
+    if (!rawData?.data) return [];
+    
+    const normalizedSearch = mobileSearch.trim().toLocaleLowerCase("tr-TR");
+    if (!isMobile || normalizedSearch.length === 0) {
+      return rawData.data;
+    }
+
+    return rawData.data.filter((offer) => {
+      const no = String(offer.no || "").toLocaleLowerCase("tr-TR");
+      const pipelineRef = (offer.pipelineRef || "").toLocaleLowerCase("tr-TR");
+      const customerName = (offer.customerName || "").toLocaleLowerCase("tr-TR");
+      const sellerName = (offer.sellerName || "").toLocaleLowerCase("tr-TR");
+
+      return (
+        no.includes(normalizedSearch) ||
+        pipelineRef.includes(normalizedSearch) ||
+        customerName.includes(normalizedSearch) ||
+        sellerName.includes(normalizedSearch)
+      );
+    });
+  }, [rawData?.data, isMobile, mobileSearch]);
+
+  // data objesini oluştur (eski yapıyla uyumlu)
+  const data = useMemo(() => {
+    if (!rawData) return undefined;
+    return {
+      ...rawData,
+      data: filteredOffers
+    };
+  }, [rawData, filteredOffers]);
   const createMutation = useCreateOffer();
   const updateMutation = useUpdateOffer();
   const convertMutation = useConvertOfferToSale();
@@ -268,7 +309,12 @@ export function OffersPage() {
       </div>
     ),
     children: (
-      <OffersFilters filters={queryParams} onFilterChange={handleFilterChange} />
+      <>
+        <OffersFilters filters={queryParams} onFilterChange={handleFilterChange} />
+        {isMobile && (
+          <OfferSearchInput value={mobileSearch} onChange={setMobileSearch} />
+        )}
+      </>
     ),
   });
 
@@ -291,6 +337,7 @@ export function OffersPage() {
             onRowDoubleClick={handleRowDoubleClick}
             onSelectionChanged={setSelectedOffer}
             toolbarButtons={toolbarButtons}
+            onScrollDirectionChange={collapsible.handleScrollDirectionChange}
           />
         </div>
 

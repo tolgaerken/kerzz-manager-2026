@@ -537,8 +537,14 @@ export class OffersService {
       : offer.createdAt || offer.updatedAt || now;
     const durationInStage =
       now.getTime() - new Date(lastChangedAt).getTime();
+    
+    // fromStatus array olabilir, string'e dönüştür
+    const fromStatusValue = Array.isArray(offer.status)
+      ? offer.status[0] || ""
+      : offer.status || "";
+    
     return {
-      fromStatus: offer.status || "",
+      fromStatus: fromStatusValue,
       toStatus,
       changedBy,
       changedAt: now,

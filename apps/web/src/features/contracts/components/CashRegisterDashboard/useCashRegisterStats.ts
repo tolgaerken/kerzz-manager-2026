@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useContractCashRegisterStats } from "../../hooks/useContractDetail";
 import { useActiveEftPosModels } from "../../hooks/useEftPosModels";
+import type { ModelStatDto } from "../../types";
 
 // ─── Tip Tanımları ───────────────────────────────────────────
 
@@ -22,6 +23,7 @@ export interface TimePeriodStats {
   currencyTotals: CurrencyBreakdown;
 }
 
+// Frontend'te kullanılan model stat tipi
 export interface ModelStat {
   name: string;
   count: number;
@@ -121,7 +123,7 @@ export function useCashRegisterStats(contractId?: string) {
     }
 
     // Backend'den gelen model ID'leri için isim mapping
-    const modelDistribution: ModelStat[] = data.modelDistribution.map((m) => ({
+    const modelDistribution: ModelStat[] = data.modelDistribution.map((m: ModelStatDto) => ({
       name: modelMap.get(m.modelId) || m.modelId,
       count: m.count
     }));

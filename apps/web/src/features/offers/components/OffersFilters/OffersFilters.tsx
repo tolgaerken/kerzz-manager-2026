@@ -20,9 +20,9 @@ export function OffersFilters({
   const onClearFilters = () => onFilterChange({ search: "", status: undefined });
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      {/* Arama */}
-      <div className="relative flex-1 min-w-[200px] max-w-sm">
+    <div className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
+      {/* Arama - Desktop'ta göster, mobilde gizle (ayrı OfferSearchInput var) */}
+      <div className="relative hidden flex-1 min-w-[200px] max-w-sm md:block">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-foreground)]" />
         <input
           type="text"
@@ -33,11 +33,11 @@ export function OffersFilters({
         />
       </div>
 
-      {/* Durum Filtresi */}
+      {/* Durum Filtresi - Mobilde tam genişlik */}
       <select
         value={status || ""}
         onChange={(e) => onStatusChange(e.target.value)}
-        className="px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+        className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 md:w-auto"
       >
         {OFFERS_CONSTANTS.OFFER_STATUSES.map((opt) => (
           <option key={opt.id} value={opt.id}>
@@ -51,7 +51,7 @@ export function OffersFilters({
         <button
           type="button"
           onClick={onClearFilters}
-          className="flex items-center gap-1 px-3 py-2 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+          className="flex items-center justify-center gap-1 px-3 py-2 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors md:justify-start"
         >
           <X className="w-4 h-4" />
           Temizle

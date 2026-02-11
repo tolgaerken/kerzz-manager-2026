@@ -1,7 +1,10 @@
 // Components
 export { OffersGrid } from "./components/OffersGrid/OffersGrid";
+export { OfferCard } from "./components/OffersGrid/OfferCard";
+export { OfferMobileList } from "./components/OffersGrid/OfferMobileList";
 export { OffersFilters } from "./components/OffersFilters/OffersFilters";
 export { OfferFormModal } from "./components/OfferFormModal/OfferFormModal";
+export { OfferSearchInput } from "./components/OfferSearchInput/OfferSearchInput";
 export { LossReasonModal } from "./components/LossReasonModal";
 
 // Hooks

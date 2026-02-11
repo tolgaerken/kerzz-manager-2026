@@ -179,9 +179,9 @@ export function LeadFormModal({
       title={isEditMode ? "Lead Düzenle" : "Yeni Lead"}
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
         {/* İletişim Adı & Firma Adı */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
               İletişim Adı{" "}
@@ -221,7 +221,7 @@ export function LeadFormModal({
         </div>
 
         {/* Telefon & E-posta */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
               Telefon
@@ -274,7 +274,7 @@ export function LeadFormModal({
         </div>
 
         {/* Kaynak & Öncelik */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
               Kaynak
@@ -312,7 +312,7 @@ export function LeadFormModal({
         </div>
 
         {/* Tahmini Değer, Para Birimi & Beklenen Kapanış */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
               Tahmini Değer
@@ -348,7 +348,7 @@ export function LeadFormModal({
               ))}
             </select>
           </div>
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
               Beklenen Kapanış
             </label>
@@ -394,9 +394,9 @@ export function LeadFormModal({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
+        <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 md:pt-2 border-t border-[var(--color-border)]">
           {/* Sol taraf - Loglar butonu (sadece edit modunda) */}
-          <div>
+          <div className="hidden md:block">
             {isEditMode && lead?.pipelineRef && (
               <button
                 type="button"
@@ -410,19 +410,19 @@ export function LeadFormModal({
           </div>
           
           {/* Sağ taraf - İptal ve Kaydet */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 order-2 md:order-1"
             >
               İptal
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 order-1 md:order-2"
             >
               {isLoading && (
                 <svg
@@ -450,6 +450,18 @@ export function LeadFormModal({
               {isEditMode ? "Güncelle" : "Kaydet"}
             </button>
           </div>
+
+          {/* Mobilde Loglar butonu (sadece edit modunda) */}
+          {isEditMode && lead?.pipelineRef && (
+            <button
+              type="button"
+              onClick={handleOpenLogs}
+              className="flex md:hidden items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Loglar
+            </button>
+          )}
         </div>
       </form>
 

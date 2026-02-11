@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { CalendarDays, MessageSquare, Plus, RefreshCw, Repeat, UserPlus } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   useLeads,
@@ -11,6 +12,7 @@ import {
 import { LeadsGrid } from "../features/leads/components/LeadsGrid/LeadsGrid";
 import { LeadsFilters } from "../features/leads/components/LeadsFilters/LeadsFilters";
 import { LeadFormModal } from "../features/leads/components/LeadFormModal/LeadFormModal";
+import { LeadSearchInput } from "../features/leads/components/LeadSearchInput/LeadSearchInput";
 import type {
   Lead,
   LeadQueryParams,
@@ -21,6 +23,9 @@ import { useConvertLeadToOffer, useRevertLeadToOffer } from "../features/pipelin
 import { useLogPanelStore } from "../features/manager-log";
 
 export function LeadsPage() {
+  // Mobile detection
+  const isMobile = useIsMobile();
+
   const defaultRange = useMemo(() => getMonthRange(), []);
 
   const [queryParams, setQueryParams] = useState<LeadQueryParams>({
@@ -32,6 +37,9 @@ export function LeadsPage() {
     endDate: defaultRange.endDate,
   });
 
+  // Mobile search state
+  const [mobileSearch, setMobileSearch] = useState("");
+
   // Collapsible section state
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
@@ -39,7 +47,40 @@ export function LeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-  const { data, isLoading, isFetching, refetch } = useLeads(queryParams);
+  const { data: rawData, isLoading, isFetching, refetch } = useLeads(queryParams);
+
+  // Frontend'de mobil arama filtrelemesi
+  const filteredData = useMemo(() => {
+    if (!rawData?.data) return [];
+    
+    const normalizedSearch = mobileSearch.trim().toLocaleLowerCase("tr-TR");
+    if (!isMobile || normalizedSearch.length === 0) {
+      return rawData.data;
+    }
+
+    return rawData.data.filter((lead) => {
+      const contactName = (lead.contactName || "").toLocaleLowerCase("tr-TR");
+      const companyName = (lead.companyName || "").toLocaleLowerCase("tr-TR");
+      const contactEmail = (lead.contactEmail || "").toLocaleLowerCase("tr-TR");
+      const contactPhone = (lead.contactPhone || "").toLocaleLowerCase("tr-TR");
+
+      return (
+        contactName.includes(normalizedSearch) ||
+        companyName.includes(normalizedSearch) ||
+        contactEmail.includes(normalizedSearch) ||
+        contactPhone.includes(normalizedSearch)
+      );
+    });
+  }, [rawData?.data, isMobile, mobileSearch]);
+
+  // data objesini oluştur (eski yapıyla uyumlu)
+  const data = useMemo(() => {
+    if (!rawData) return undefined;
+    return {
+      ...rawData,
+      data: filteredData
+    };
+  }, [rawData, filteredData]);
   const createMutation = useCreateLead();
   const updateMutation = useUpdateLead();
   const deleteMutation = useDeleteLead();
@@ -229,7 +270,12 @@ export function LeadsPage() {
       </div>
     ),
     children: (
-      <LeadsFilters filters={queryParams} onFilterChange={handleFilterChange} />
+      <>
+        <LeadsFilters filters={queryParams} onFilterChange={handleFilterChange} />
+        {isMobile && (
+          <LeadSearchInput value={mobileSearch} onChange={setMobileSearch} />
+        )}
+      </>
     ),
   });
 
@@ -252,11 +298,12 @@ export function LeadsPage() {
             onRowDoubleClick={handleRowDoubleClick}
             onSelectionChanged={setSelectedLead}
             toolbarButtons={toolbarButtons}
+            onScrollDirectionChange={collapsible.handleScrollDirectionChange}
           />
         </div>
 
-        {/* Pagination */}
-        {data?.meta && (
+        {/* Pagination - Sadece desktop'ta göster (mobilde "Daha fazla göster" var) */}
+        {!isMobile && data?.meta && (
           <div className="flex items-center justify-between px-1">
             <span className="text-sm text-muted-foreground">
               Toplam: {data.meta.total} kayıt

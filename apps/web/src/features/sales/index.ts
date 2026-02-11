@@ -5,3 +5,6 @@ export * from "./hooks/useSales";
 export * from "./utils/dateUtils";
 export { SalesGrid } from "./components/SalesGrid/SalesGrid";
 export { SalesFilters } from "./components/SalesFilters/SalesFilters";
+export { SaleCard } from "./components/SalesGrid/SaleCard";
+export { SaleMobileList } from "./components/SalesGrid/SaleMobileList";
+export { SaleSearchInput } from "./components/SaleSearchInput/SaleSearchInput";

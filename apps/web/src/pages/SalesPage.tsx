@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { CalendarDays, MessageSquare, Plus, RefreshCw, ShoppingCart } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   useSales,
@@ -10,6 +11,7 @@ import {
 import { SalesGrid } from "../features/sales/components/SalesGrid/SalesGrid";
 import { SalesFilters } from "../features/sales/components/SalesFilters/SalesFilters";
 import { SaleFormModal } from "../features/sales/components/SaleFormModal/SaleFormModal";
+import { SaleSearchInput } from "../features/sales/components/SaleSearchInput/SaleSearchInput";
 import { getMonthRange } from "../features/sales/utils/dateUtils";
 import type {
   Sale,
@@ -20,6 +22,8 @@ import { useCustomerLookup } from "../features/lookup";
 import { useLogPanelStore } from "../features/manager-log";
 
 export function SalesPage() {
+  // Mobile detection
+  const isMobile = useIsMobile();
   const defaultRange = useMemo(() => getMonthRange(), []);
 
   // No pagination - fetch all data for virtual scroll
@@ -30,6 +34,9 @@ export function SalesPage() {
     endDate: defaultRange.endDate,
   });
 
+  // Mobile search state
+  const [mobileSearch, setMobileSearch] = useState("");
+
   // Collapsible section state
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
@@ -37,7 +44,41 @@ export function SalesPage() {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
-  const { data, isLoading, isFetching, refetch } = useSales(queryParams);
+  const { data: rawData, isLoading, isFetching, refetch } = useSales(queryParams);
+
+  // Frontend'de mobil arama filtrelemesi
+  const filteredSales = useMemo(() => {
+    if (!rawData?.data) return [];
+    
+    const normalizedSearch = mobileSearch.trim().toLocaleLowerCase("tr-TR");
+    if (!isMobile || normalizedSearch.length === 0) {
+      return rawData.data;
+    }
+
+    return rawData.data.filter((sale) => {
+      const no = String(sale.no || "").toLocaleLowerCase("tr-TR");
+      const pipelineRef = (sale.pipelineRef || "").toLocaleLowerCase("tr-TR");
+      const customerName = (sale.customerName || "").toLocaleLowerCase("tr-TR");
+      const sellerName = (sale.sellerName || "").toLocaleLowerCase("tr-TR");
+
+      return (
+        no.includes(normalizedSearch) ||
+        pipelineRef.includes(normalizedSearch) ||
+        customerName.includes(normalizedSearch) ||
+        sellerName.includes(normalizedSearch)
+      );
+    });
+  }, [rawData?.data, isMobile, mobileSearch]);
+
+  // data objesini oluştur (eski yapıyla uyumlu)
+  const data = useMemo(() => {
+    if (!rawData) return undefined;
+    return {
+      ...rawData,
+      data: filteredSales
+    };
+  }, [rawData, filteredSales]);
+
   const createMutation = useCreateSale();
   const updateMutation = useUpdateSale();
   const { getCustomerName } = useCustomerLookup();
@@ -207,7 +248,12 @@ export function SalesPage() {
       </div>
     ),
     children: (
-      <SalesFilters filters={queryParams} onFilterChange={handleFilterChange} />
+      <>
+        <SalesFilters filters={queryParams} onFilterChange={handleFilterChange} />
+        {isMobile && (
+          <SaleSearchInput value={mobileSearch} onChange={setMobileSearch} />
+        )}
+      </>
     ),
   });
 
@@ -230,6 +276,7 @@ export function SalesPage() {
             onRowDoubleClick={handleRowDoubleClick}
             onSelectionChanged={setSelectedSale}
             toolbarButtons={toolbarButtons}
+            onScrollDirectionChange={collapsible.handleScrollDirectionChange}
           />
         </div>
 
