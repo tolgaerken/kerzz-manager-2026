@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, FileSpreadsheet, CreditCard, Loader2, AlertTriangle, CheckCircle, X, MessageSquare, Receipt, FileText } from "lucide-react";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { useAutoPaymentTokens } from "../features/automated-payments/hooks/useAutoPaymentTokens";
 import { useCollectPayment } from "../features/automated-payments";
 import { useMongoChangeStream } from "../hooks/useMongoChangeStream";
@@ -53,6 +54,9 @@ function getYearMonthFromPreset(preset: string): { year: number; month: number }
 }
 
 export function InvoicesPage() {
+  // Mobile detection
+  const isMobile = useIsMobile();
+  
   // Yıl ve ay state - default olarak bu ay
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
