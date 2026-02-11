@@ -12,7 +12,12 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "typecheck": "tsc --noEmit",
-    "precommit": "npm run typecheck"
+    "precommit": "npm run typecheck",
+    "version:bump": "node scripts/bump-version.js",
+    "version:patch": "node scripts/version.js patch",
+    "version:minor": "node scripts/version.js minor",
+    "version:major": "node scripts/version.js major",
+    "version": "node scripts/version.js"
   },
   "devDependencies": {
     "turbo": "^2.4.0"

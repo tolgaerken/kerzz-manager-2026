@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
 import type { GridColumnDef } from "@kerzz/grid";
+import { useIsMobile } from "../../../hooks/useIsMobile";
+import { InvoicePlanMobileList } from "./InvoicePlanMobileList";
 import type { EnrichedPaymentPlan } from "../types";
 import { SEGMENT_COLORS } from "../types";
 
@@ -189,6 +191,8 @@ interface ContractInvoicesGridProps {
   selectedIds: string[];
   onSelectionChange: (ids: string[]) => void;
   onRowDoubleClick?: (row: EnrichedPaymentPlan) => void;
+  /** Mobil scroll yönü callback'i (collapsible header ile entegrasyon) */
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 export function ContractInvoicesGrid({
@@ -197,7 +201,9 @@ export function ContractInvoicesGrid({
   selectedIds,
   onSelectionChange,
   onRowDoubleClick,
+  onScrollDirectionChange,
 }: ContractInvoicesGridProps) {
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(500);
 
@@ -217,6 +223,23 @@ export function ContractInvoicesGrid({
 
   const columns = useMemo(() => createColumnDefs(), []);
 
+  // Mobil görünüm
+  if (isMobile) {
+    return (
+      <div ref={containerRef} className="h-full w-full flex-1 flex flex-col">
+        <InvoicePlanMobileList
+          data={data}
+          loading={loading}
+          selectedIds={selectedIds}
+          onCardClick={(plan) => onRowDoubleClick?.(plan)}
+          onSelectionChange={onSelectionChange}
+          onScrollDirectionChange={onScrollDirectionChange}
+        />
+      </div>
+    );
+  }
+
+  // Desktop görünüm
   return (
     <div ref={containerRef} className="h-full w-full flex-1">
       <Grid<EnrichedPaymentPlan>

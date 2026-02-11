@@ -14,6 +14,7 @@ interface ContractsGridProps {
   onSelectionChange?: (selectedIds: string[]) => void;
   selectedIds?: string[];
   toolbarButtons?: ToolbarButtonConfig[];
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 // Date formatter
@@ -56,7 +57,8 @@ export function ContractsGrid({
   onRowSelect,
   onSelectionChange,
   selectedIds = [],
-  toolbarButtons
+  toolbarButtons,
+  onScrollDirectionChange
 }: ContractsGridProps) {
   const isMobile = useIsMobile();
   // Column definitions for kerzz-grid
@@ -290,6 +292,7 @@ export function ContractsGrid({
             onRowSelect?.(contract);
             onRowDoubleClick?.(contract);
           }}
+          onScrollDirectionChange={onScrollDirectionChange}
         />
       </div>
     );

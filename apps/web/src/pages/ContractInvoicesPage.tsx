@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { MessageSquare, Receipt } from "lucide-react";
+import { FileText, MessageSquare, Receipt, RefreshCw, FileCheck, CheckCircle } from "lucide-react";
+import { useIsMobile } from "../hooks/useIsMobile";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   ContractInvoicesGrid,
   ContractInvoicesToolbar,
@@ -19,10 +21,15 @@ import { useCustomerLookup } from "../features/lookup";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function ContractInvoicesPage() {
+  const isMobile = useIsMobile();
+
   // Donem ve tarih state
   const [period, setPeriod] = useState<PeriodType>("monthly");
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM"));
   const [shouldFetch, setShouldFetch] = useState(false);
+
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -208,48 +215,127 @@ export function ContractInvoicesPage() {
       .reduce((sum, p) => sum + (p.total || 0), 0);
   }, [data, selectedIds]);
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Sözleşme Faturaları
-        </h1>
-        <div className="flex items-center gap-4">
-          {selectedIds.length > 0 && (
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <FileText className="h-5 w-5" />,
+    title: "Sözleşme Faturaları",
+    count: data?.data?.length,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <div className="flex items-center gap-2">
+        {selectedIds.length > 0 && (
+          <span className="text-sm font-medium text-[var(--color-primary)]">
+            Seçili Toplam:{" "}
+            {new Intl.NumberFormat("tr-TR", {
+              style: "currency",
+              currency: "TRY",
+            }).format(selectedTotal)}
+          </span>
+        )}
+        <button
+          onClick={handleOpenLogs}
+          disabled={!selectedPlan || selectedIds.length > 1}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Loglar"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          Loglar
+        </button>
+        <button
+          onClick={handleOpenAccountTransactions}
+          disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Cari Hareketleri"
+        >
+          <Receipt className="w-3.5 h-3.5" />
+          Cari Hareketleri
+        </button>
+      </div>
+    ),
+    mobileActions: (
+      <div className="flex flex-col gap-2">
+        {/* Seçili toplam - mobil */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-center rounded-md bg-[var(--color-primary)]/10 px-3 py-2">
             <span className="text-sm font-medium text-[var(--color-primary)]">
-              Seçili Toplam:{" "}
-              {new Intl.NumberFormat("tr-TR", {
+              Seçili: {selectedIds.length} | {new Intl.NumberFormat("tr-TR", {
                 style: "currency",
                 currency: "TRY",
               }).format(selectedTotal)}
             </span>
-          )}
+          </div>
+        )}
+        {/* Aksiyon butonları - mobil */}
+        <div className="flex items-center gap-2">
           <button
             onClick={handleOpenLogs}
             disabled={!selectedPlan || selectedIds.length > 1}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             title="Loglar"
           >
-            <MessageSquare className="w-4 h-4" />
-            Loglar
+            <MessageSquare className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleOpenAccountTransactions}
             disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             title="Cari Hareketleri"
           >
-            <Receipt className="w-4 h-4" />
-            Cari Hareketleri
+            <Receipt className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleCreateInvoices}
+            disabled={selectedIds.length === 0 || createInvoicesMutation.isPending}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--color-success)] px-3 py-2 text-xs font-medium text-[var(--color-success-foreground)] transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Fatura Oluştur"
+          >
+            <FileCheck className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleCheckContracts}
+            disabled={selectedIds.length === 0 || checkContractsMutation.isPending}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Kontrat Kontrol"
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
           </button>
         </div>
+      </div>
+    ),
+    children: (
+      <>
+        {/* Toolbar - hem mobil hem desktop */}
+        <ContractInvoicesToolbar
+          period={period}
+          date={date}
+          selectedCount={selectedIds.length}
+          loading={isLoading || isRefetching}
+          onPeriodChange={handlePeriodChange}
+          onDateChange={handleDateChange}
+          onLoadRecords={handleLoadRecords}
+          onCreateInvoices={handleCreateInvoices}
+          onCheckContracts={handleCheckContracts}
+          isCreating={createInvoicesMutation.isPending}
+          isChecking={checkContractsMutation.isPending}
+          isMobile={isMobile}
+        />
+      </>
+    ),
+  });
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
       {/* Notification */}
       {notification && (
         <div
-          className="flex items-center gap-3 px-6 py-3 border-b border-[var(--color-border)] text-sm cursor-pointer"
+          className="flex items-center gap-3 mx-3 mb-3 px-4 py-3 rounded-lg text-sm cursor-pointer"
           onClick={() => setNotification(null)}
           style={{
             backgroundColor:
@@ -266,32 +352,19 @@ export function ContractInvoicesPage() {
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <ContractInvoicesToolbar
-          period={period}
-          date={date}
-          selectedCount={selectedIds.length}
-          loading={isLoading || isRefetching}
-          onPeriodChange={handlePeriodChange}
-          onDateChange={handleDateChange}
-          onLoadRecords={handleLoadRecords}
-          onCreateInvoices={handleCreateInvoices}
-          onCheckContracts={handleCheckContracts}
-          isCreating={createInvoicesMutation.isPending}
-          isChecking={checkContractsMutation.isPending}
-        />
-      </div>
-
-      {/* Grid */}
-      <div className="flex-1 px-6 py-4 min-h-0">
-        <ContractInvoicesGrid
-          data={data?.data || []}
-          loading={isLoading}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
-          onRowDoubleClick={handleRowDoubleClick}
-        />
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden mx-3 mb-3">
+          <ContractInvoicesGrid
+            data={data?.data || []}
+            loading={isLoading}
+            selectedIds={selectedIds}
+            onSelectionChange={handleSelectionChange}
+            onRowDoubleClick={handleRowDoubleClick}
+            onScrollDirectionChange={collapsible.handleScrollDirectionChange}
+          />
+        </div>
       </div>
 
       {/* Detail Modal */}

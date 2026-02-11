@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt, X } from "lucide-react";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useContracts,
@@ -35,6 +36,9 @@ export function ContractsPage() {
   const [mobileSearch, setMobileSearch] = useState("");
   const [sortField, setSortField] = useState("no");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
   // Detail modal states
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
@@ -126,15 +130,68 @@ export function ContractsPage() {
   // Account transactions store
   const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <FileText className="h-5 w-5" />,
+    title: "Kontrat Yönetimi",
+    count: data?.data?.length,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <button
+          onClick={() => refetch({ cancelRefetch: true })}
+          disabled={isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          onClick={() => setIsFormModalOpen(true)}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Kontrat
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => refetch({ cancelRefetch: true })}
+          disabled={isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          onClick={() => setIsFormModalOpen(true)}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
+      </div>
+    ),
+    children: (
+      <>
+        <ContractsFilters
+          activeFlow={flow}
+          yearlyFilter={yearly}
+          counts={data?.counts}
+          periodCounts={periodCounts}
+          onFlowChange={setFlow}
+          onYearlyChange={setYearly}
+        />
+        {isMobile && (
+          <ContractSearchInput value={mobileSearch} onChange={setMobileSearch} />
+        )}
+      </>
+    ),
+  });
+
   // Handlers
-  const handleFlowChange = useCallback((newFlow: ContractFlow) => {
-    setFlow(newFlow);
-  }, []);
-
-  const handleYearlyChange = useCallback((newYearly: boolean | undefined) => {
-    setYearly(newYearly);
-  }, []);
-
   const handleSortChange = useCallback((field: string, order: "asc" | "desc") => {
     setSortField(field);
     setSortOrder(order);
@@ -175,10 +232,6 @@ export function ContractsPage() {
 
   const handleContractUpdated = useCallback((updatedContract: Contract) => {
     setSelectedContract(updatedContract);
-  }, []);
-
-  const handleCreateClick = useCallback(() => {
-    setIsFormModalOpen(true);
   }, []);
 
   const handleFormModalClose = useCallback(() => {
@@ -351,90 +404,49 @@ export function ContractsPage() {
   ]);
 
   return (
-    <div className="flex h-full flex-col gap-3">
-      {/* Filters & Actions Container */}
-      <div className="flex-shrink-0 rounded-lg border border-border bg-surface p-3 md:p-4">
-        <div className="flex flex-col gap-3 md:gap-4">
-          {/* Header Row - Title & Actions */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            {/* Title & Count */}
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              <h1 className="text-base md:text-lg font-semibold text-foreground">Kontrat Yönetimi</h1>
-              {data?.data && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                  {data.data.length}
-                </span>
-              )}
-            </div>
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => refetch({ cancelRefetch: true })}
-                disabled={isFetching}
-                className="flex flex-1 md:flex-none items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 md:py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                {!isMobile && "Yenile"}
-              </button>
-              <button
-                onClick={handleCreateClick}
-                className="flex flex-1 md:flex-none items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 md:py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {isMobile ? "Yeni" : "Yeni Kontrat"}
-              </button>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <ContractsFilters
-            activeFlow={flow}
-            yearlyFilter={yearly}
-            counts={data?.counts}
-            periodCounts={periodCounts}
-            onFlowChange={handleFlowChange}
-            onYearlyChange={handleYearlyChange}
-          />
-
-          {isMobile && (
-            <ContractSearchInput value={mobileSearch} onChange={setMobileSearch} />
-          )}
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {/* Error State */}
-      {isError && (
-        <div className="flex flex-shrink-0 items-center gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-error">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <div>
-            <p className="font-medium">Veri yüklenirken hata oluştu</p>
-            <p className="text-sm opacity-80">
-              {error instanceof Error ? error.message : "Bilinmeyen hata"}
-            </p>
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Error State */}
+        {isError && (
+          <div className="flex flex-shrink-0 items-center gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-error">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Veri yüklenirken hata oluştu</p>
+              <p className="text-sm opacity-80">
+                {error instanceof Error ? error.message : "Bilinmeyen hata"}
+              </p>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="ml-auto rounded-lg border border-error/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-error/20"
+            >
+              Tekrar Dene
+            </button>
           </div>
-          <button
-            onClick={() => refetch()}
-            className="ml-auto rounded-lg border border-error/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-error/20"
-          >
-            Tekrar Dene
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Grid Container - Flex grow to fill remaining space */}
-      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
-        <ContractsGrid
-          data={data?.data ?? []}
-          loading={isLoading}
-          yearlyFilter={yearly}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
-          onRowSelect={handleRowSelect}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
-          toolbarButtons={toolbarButtons}
-        />
+        {/* Grid Container - Flex grow to fill remaining space */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <ContractsGrid
+            data={data?.data ?? []}
+            loading={isLoading}
+            yearlyFilter={yearly}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+            onRowSelect={handleRowSelect}
+            selectedIds={selectedIds}
+            onSelectionChange={handleSelectionChange}
+            toolbarButtons={toolbarButtons}
+            onScrollDirectionChange={collapsible.handleScrollDirectionChange}
+          />
+        </div>
       </div>
 
       {/* Contract Detail Modal */}

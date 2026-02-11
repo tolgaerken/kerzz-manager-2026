@@ -1,24 +1,28 @@
-import { memo, useState, useMemo, useRef, useEffect, useCallback, type UIEvent } from "react";
+import { memo, useState, useMemo, useRef, useCallback, type UIEvent } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
-import { ContractCard } from "./ContractCard";
-import type { Contract } from "../../types";
+import { InvoicePlanCard } from "./InvoicePlanCard";
+import type { EnrichedPaymentPlan } from "../types";
 
 const PAGE_SIZE = 20;
 const SCROLL_THRESHOLD = 4;
 
-interface ContractMobileListProps {
-  data: Contract[];
+interface InvoicePlanMobileListProps {
+  data: EnrichedPaymentPlan[];
   loading: boolean;
-  onCardClick: (contract: Contract) => void;
+  selectedIds: string[];
+  onCardClick: (plan: EnrichedPaymentPlan) => void;
+  onSelectionChange: (ids: string[]) => void;
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
-export const ContractMobileList = memo(function ContractMobileList({
+export const InvoicePlanMobileList = memo(function InvoicePlanMobileList({
   data,
   loading,
+  selectedIds,
   onCardClick,
+  onSelectionChange,
   onScrollDirectionChange
-}: ContractMobileListProps) {
+}: InvoicePlanMobileListProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -35,12 +39,6 @@ export const ContractMobileList = memo(function ContractMobileList({
   };
 
   const lastScrollTopRef = useRef(0);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    lastScrollTopRef.current = container.scrollTop;
-  }, []);
 
   const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
     if (!onScrollDirectionChange) return;
@@ -61,6 +59,16 @@ export const ContractMobileList = memo(function ContractMobileList({
     }
   }, [onScrollDirectionChange]);
 
+  // Selection handler
+  const handleSelect = useCallback((plan: EnrichedPaymentPlan) => {
+    const isSelected = selectedIds.includes(plan.id);
+    if (isSelected) {
+      onSelectionChange(selectedIds.filter((id) => id !== plan.id));
+    } else {
+      onSelectionChange([...selectedIds, plan.id]);
+    }
+  }, [selectedIds, onSelectionChange]);
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center py-12">
@@ -72,7 +80,7 @@ export const ContractMobileList = memo(function ContractMobileList({
   if (data.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-        <p className="text-sm text-[var(--color-muted-foreground)]">Kontrat bulunamadı</p>
+        <p className="text-sm text-[var(--color-muted-foreground)]">Ödeme planı bulunamadı</p>
       </div>
     );
   }
@@ -82,17 +90,24 @@ export const ContractMobileList = memo(function ContractMobileList({
       {/* Count indicator */}
       <div className="sticky top-0 z-10 mb-2 rounded-md bg-[var(--color-surface)] px-2 py-1.5">
         <p className="text-xs text-[var(--color-muted-foreground)] text-center">
-          {visibleData.length} / {data.length} kontrat gösteriliyor
+          {visibleData.length} / {data.length} ödeme planı gösteriliyor
+          {selectedIds.length > 0 && (
+            <span className="ml-2 text-[var(--color-primary)]">
+              ({selectedIds.length} seçili)
+            </span>
+          )}
         </p>
       </div>
 
       {/* Cards */}
       <div className="flex flex-col gap-2">
-        {visibleData.map((contract) => (
-          <ContractCard
-            key={contract._id}
-            contract={contract}
+        {visibleData.map((plan) => (
+          <InvoicePlanCard
+            key={plan.id}
+            plan={plan}
             onClick={onCardClick}
+            selected={selectedIds.includes(plan.id)}
+            onSelect={handleSelect}
           />
         ))}
       </div>
