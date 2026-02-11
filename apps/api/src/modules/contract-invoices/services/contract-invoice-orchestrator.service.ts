@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { buildPayDateMonthFilter } from "../utils/date.utils";
 import {
   ContractPayment,
   ContractPaymentDocument,
@@ -50,16 +50,14 @@ export class ContractInvoiceOrchestratorService {
     period: string,
     date: string,
   ): Promise<{ data: EnrichedPaymentPlan[]; total: number }> {
-    const targetDate = new Date(date);
-    const monthStart = startOfMonth(targetDate);
-    const monthEnd = endOfMonth(targetDate);
+    const monthFilter = buildPayDateMonthFilter(date);
     const isYearly = period === "yearly";
 
     // 1) Hedef ay icindeki odeme planlarini cek
+    // MongoDB $expr ile timezone-aware filtreleme — payDate hangi timezone'da
+    // olusturulmus olursa olsun (UTC, UTC+2, UTC+3) dogru ay eslesir.
     const paymentPlans = await this.paymentModel
-      .find({
-        payDate: { $gte: monthStart, $lte: monthEnd },
-      })
+      .find(monthFilter)
       .sort({ company: 1 })
       .lean()
       .exec();

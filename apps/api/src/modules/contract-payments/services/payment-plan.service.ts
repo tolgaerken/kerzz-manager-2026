@@ -2,10 +2,10 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, isValidObjectId } from "mongoose";
 import {
-  startOfMonth,
-  endOfMonth,
-  differenceInCalendarMonths,
-} from "date-fns";
+  utcStartOfMonth,
+  utcEndOfMonth,
+  utcDifferenceInCalendarMonths,
+} from "../../contract-invoices/utils/date.utils";
 import { getActiveContractFilter } from "../../contracts/utils/contract-date.utils";
 import { InvoiceCalculatorService } from "./invoice-calculator.service";
 import { PlanGeneratorService } from "./plan-generator.service";
@@ -190,12 +190,12 @@ export class PaymentPlanService {
     const { invoiceSummary, subTotals } =
       await this.invoiceCalculator.calculateAll(contract.id);
 
-    // Ay sayisini hesapla
-    const start = startOfMonth(contract.startDate);
-    const end = endOfMonth(contract.endDate);
+    // Ay sayisini hesapla (UTC bazli — timezone bagimsiz)
+    const start = utcStartOfMonth(contract.startDate);
+    const end = utcEndOfMonth(contract.endDate);
     const monthCount = contract.yearly
       ? 1
-      : differenceInCalendarMonths(end, start) + 1;
+      : utcDifferenceInCalendarMonths(end, start) + 1;
 
     // Plan olustur ve senkronize et - donen planlar memory'de tutulur
     const plans = await this.planGenerator.generateAndSyncPlans(

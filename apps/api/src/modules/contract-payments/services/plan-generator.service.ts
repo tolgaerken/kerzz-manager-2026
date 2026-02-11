@@ -1,7 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, AnyBulkWriteOperation } from "mongoose";
-import { addMonths, startOfMonth, getMonth, getYear } from "date-fns";
+import {
+  utcAddMonths,
+  utcStartOfMonth,
+  utcGetMonth,
+  utcGetYear,
+} from "../../contract-invoices/utils/date.utils";
 import {
   ContractPayment,
   ContractPaymentDocument,
@@ -69,12 +74,12 @@ export class PlanGeneratorService {
     const plans: Partial<ContractPayment>[] = [];
 
     for (let ix = 0; ix < monthCount; ix++) {
-      const date = addMonths(start, ix);
+      const date = utcAddMonths(start, ix);
 
       const plan: Partial<ContractPayment> = {
         id: generatePaymentId(),
         contractId: contract.id,
-        payDate: startOfMonth(date),
+        payDate: utcStartOfMonth(date),
         total: invoiceSummary.total,
         paid: false,
         invoiceNo: "",
@@ -141,7 +146,7 @@ export class PlanGeneratorService {
       finalPlans.push(updatedPlan as ContractPayment);
 
       const invoicedDate = new Date(invoicedPlan.payDate);
-      const monthKey = `${invoicedDate.getFullYear()}-${invoicedDate.getMonth()}`;
+      const monthKey = `${invoicedDate.getUTCFullYear()}-${invoicedDate.getUTCMonth()}`;
       invoicedMonths.add(monthKey);
     }
 
@@ -149,7 +154,7 @@ export class PlanGeneratorService {
     const remainingNewPlans = newPlans.filter((np) => {
       if (!np.payDate) return true;
       const npDate = new Date(np.payDate);
-      const monthKey = `${npDate.getFullYear()}-${npDate.getMonth()}`;
+      const monthKey = `${npDate.getUTCFullYear()}-${npDate.getUTCMonth()}`;
       return !invoicedMonths.has(monthKey);
     });
 
@@ -193,14 +198,12 @@ export class PlanGeneratorService {
     plans: ContractPayment[],
   ): MonthlyPaymentStatus[] {
     return plans.map((payment) => ({
-      year: getYear(payment.payDate).toString(),
-      month: (getMonth(payment.payDate) + 1).toString(),
+      year: utcGetYear(payment.payDate).toString(),
+      month: (utcGetMonth(payment.payDate) + 1).toString(),
       invoice: !!payment.invoiceNo && payment.invoiceNo !== "",
       payment: payment.paid || false,
       payDate: new Date(
-        getYear(payment.payDate),
-        getMonth(payment.payDate),
-        1,
+        Date.UTC(utcGetYear(payment.payDate), utcGetMonth(payment.payDate), 1),
       ),
       invoiceDate: payment.invoiceDate,
     }));

@@ -74,6 +74,7 @@ export class InvoiceCreatorService {
 
   /**
    * Tek bir odeme planindan fatura olusturur.
+   * Fatura numarasi zaten varsa Cloudie API'ye gondermez, sadece global invoice kaydini gunceller.
    */
   private async createSingleInvoice(
     planId: string,
@@ -116,86 +117,25 @@ export class InvoiceCreatorService {
         };
       }
 
-      // Firma bilgisi (cloudDb icin)
-      const company = await this.companiesService.findByIdc(
-        contract.internalFirm,
-      );
+      const hasExistingInvoice = !!paymentPlan.invoiceNo;
 
-      // Cloud fatura olustur ve gonder
-      const cloudInvoice = this.buildCloudInvoice(
+      // Fatura numarasi yoksa Cloudie API'ye gonder
+      if (!hasExistingInvoice) {
+        return this.createNewInvoice(
+          planId,
+          paymentPlan as ContractPayment,
+          customer as Customer,
+          contract as Contract,
+        );
+      }
+
+      // Fatura numarasi varsa sadece global invoice kaydini guncelle
+      return this.updateGlobalInvoiceOnly(
+        planId,
         paymentPlan as ContractPayment,
         customer as Customer,
         contract as Contract,
-        company,
       );
-
-      const invoiceCover: CloudInvoiceCover = {
-        licanceId: company.cloudDb,
-        invoice: cloudInvoice,
-      };
-
-      const sentInvoice = await this.sendToCloudieApi(invoiceCover);
-
-      // Odeme planini guncelle
-      const now = new Date();
-      const dueDate = addDays(now, CONTRACT_DUE_DAYS);
-      const sentGrandTotal = this.safeRound(Number(sentInvoice.grandTotal ?? 0));
-      const sentTaxTotal = this.safeRound(Number(sentInvoice.taxTotal ?? 0));
-      const sentTotal = this.safeRound(sentGrandTotal - sentTaxTotal);
-
-      await this.paymentModel.updateOne(
-        { id: planId },
-        {
-          $set: {
-            invoiceNo: sentInvoice.invoiceNumber,
-            uuid: sentInvoice.uuid,
-            invoiceDate: now,
-            invoiceTotal: sentGrandTotal,
-            dueDate,
-            invoiceError: "",
-            editDate: now,
-          },
-        },
-      );
-
-      // Global invoice olustur / guncelle
-      const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
-        {
-          ...paymentPlan,
-          invoiceNo: sentInvoice.invoiceNumber,
-          uuid: sentInvoice.uuid,
-          invoiceDate: now,
-          dueDate,
-        } as ContractPayment,
-        customer.erpId || "",
-        contract.internalFirm || "",
-      );
-
-      // Global invoice'i description ile guncelle
-      const invoiceDescription = `Kontrat Faturasi ${format(now, "dd.MM.yyyy")}`;
-
-      await this.invoiceModel.updateOne(
-        { id: globalInvoice.id },
-        {
-          $set: {
-            ...this.toPlainObject(globalInvoice),
-            invoiceNumber: sentInvoice.invoiceNumber,
-            invoiceUUID: sentInvoice.uuid,
-            grandTotal: sentGrandTotal,
-            taxTotal: sentTaxTotal,
-            total: sentTotal,
-            description: invoiceDescription,
-          },
-        },
-        { upsert: true },
-      );
-
-      return {
-        planId,
-        success: true,
-        invoiceNo: sentInvoice.invoiceNumber,
-        uuid: sentInvoice.uuid,
-      };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -210,6 +150,157 @@ export class InvoiceCreatorService {
 
       return { planId, success: false, error: errorMessage };
     }
+  }
+
+  /**
+   * Yeni fatura olusturur: Cloudie API'ye gonderir ve global invoice kaydini yapar.
+   */
+  private async createNewInvoice(
+    planId: string,
+    paymentPlan: ContractPayment,
+    customer: Customer,
+    contract: Contract,
+  ): Promise<CreateInvoiceResult> {
+    const company = await this.companiesService.findByIdc(
+      contract.internalFirm,
+    );
+
+    const cloudInvoice = this.buildCloudInvoice(
+      paymentPlan,
+      customer,
+      contract,
+      company,
+    );
+
+    const invoiceCover: CloudInvoiceCover = {
+      licanceId: company.cloudDb,
+      invoice: cloudInvoice,
+    };
+
+    const sentInvoice = await this.sendToCloudieApi(invoiceCover);
+
+    const now = new Date();
+    const invoiceDate = now;
+    const dueDate = addDays(invoiceDate, CONTRACT_DUE_DAYS);
+
+    // Global invoice olustur (mapper'dan hesaplanan degerler)
+    const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
+      {
+        ...paymentPlan,
+        invoiceNo: sentInvoice.invoiceNumber,
+        uuid: sentInvoice.uuid,
+        invoiceDate,
+        dueDate,
+      } as ContractPayment,
+      customer.erpId || "",
+      contract.internalFirm || "",
+    );
+
+    // Cloudie API'den donen degerleri kontrol et
+    const sentGrandTotal = this.safeRound(Number(sentInvoice.grandTotal ?? 0));
+    const sentTaxTotal = this.safeRound(Number(sentInvoice.taxTotal ?? 0));
+    const sentTotal = this.safeRound(sentGrandTotal - sentTaxTotal);
+
+    // Fallback: Cloudie degerleri 0 ise mapper'in hesapladigi degerleri kullan
+    const finalGrandTotal = sentGrandTotal > 0 ? sentGrandTotal : globalInvoice.grandTotal;
+    const finalTaxTotal = sentTaxTotal > 0 ? sentTaxTotal : globalInvoice.taxTotal;
+    const finalTotal = sentTotal > 0 ? sentTotal : globalInvoice.total;
+
+    await this.paymentModel.updateOne(
+      { id: planId },
+      {
+        $set: {
+          invoiceNo: sentInvoice.invoiceNumber,
+          uuid: sentInvoice.uuid,
+          invoiceDate,
+          invoiceTotal: finalGrandTotal,
+          dueDate,
+          invoiceError: "",
+          editDate: now,
+        },
+      },
+    );
+
+    const invoiceDescription = `Kontrat Faturasi ${format(invoiceDate, "dd.MM.yyyy")}`;
+
+    await this.invoiceModel.updateOne(
+      { id: globalInvoice.id },
+      {
+        $set: {
+          ...this.toPlainObject(globalInvoice),
+          invoiceNumber: sentInvoice.invoiceNumber,
+          invoiceUUID: sentInvoice.uuid,
+          grandTotal: finalGrandTotal,
+          taxTotal: finalTaxTotal,
+          total: finalTotal,
+          description: invoiceDescription,
+        },
+      },
+      { upsert: true },
+    );
+
+    return {
+      planId,
+      success: true,
+      invoiceNo: sentInvoice.invoiceNumber,
+      uuid: sentInvoice.uuid,
+    };
+  }
+
+  /**
+   * Fatura numarasi olan odeme plani icin sadece global invoice kaydini gunceller.
+   * Cloudie API'ye tekrar gonderim yapmaz.
+   */
+  private async updateGlobalInvoiceOnly(
+    planId: string,
+    paymentPlan: ContractPayment,
+    customer: Customer,
+    contract: Contract,
+  ): Promise<CreateInvoiceResult> {
+    const now = new Date();
+    const invoiceDate = paymentPlan.invoiceDate
+      ? new Date(paymentPlan.invoiceDate)
+      : now;
+    const dueDate = paymentPlan.dueDate
+      ? new Date(paymentPlan.dueDate)
+      : addDays(invoiceDate, CONTRACT_DUE_DAYS);
+
+    const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
+      {
+        ...paymentPlan,
+        invoiceDate,
+        dueDate,
+      } as ContractPayment,
+      customer.erpId || "",
+      contract.internalFirm || "",
+    );
+
+    const invoiceDescription = `Kontrat Faturasi ${format(invoiceDate, "dd.MM.yyyy")}`;
+
+    await this.invoiceModel.updateOne(
+      { id: globalInvoice.id },
+      {
+        $set: {
+          ...this.toPlainObject(globalInvoice),
+          grandTotal: globalInvoice.grandTotal,
+          taxTotal: globalInvoice.taxTotal,
+          total: globalInvoice.total,
+          description: invoiceDescription,
+        },
+      },
+      { upsert: true },
+    );
+
+    this.logger.log(
+      `Fatura no mevcut (${paymentPlan.invoiceNo}), sadece global invoice guncellendi (plan: ${planId})`,
+    );
+
+    return {
+      planId,
+      success: true,
+      invoiceNo: paymentPlan.invoiceNo,
+      uuid: paymentPlan.uuid,
+    };
   }
 
   /**
