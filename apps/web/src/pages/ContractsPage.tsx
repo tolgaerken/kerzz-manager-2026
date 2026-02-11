@@ -14,6 +14,7 @@ import {
   CheckContractResultModal,
   BatchProgressModal,
   FloatingProgressBar,
+  ContractSearchInput,
   type ContractFlow,
   type ContractQueryParams,
   type Contract,
@@ -31,6 +32,7 @@ export function ContractsPage() {
   // Filter states
   const [flow, setFlow] = useState<ContractFlow>("active");
   const [yearly, setYearly] = useState<boolean | undefined>(false);
+  const [mobileSearch, setMobileSearch] = useState("");
   const [sortField, setSortField] = useState("no");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -72,15 +74,30 @@ export function ContractsPage() {
     const monthlyCount = allData.filter((c) => !c.yearly).length;
 
     // yearly filtresi undefined ise tüm veriyi göster
-    const filtered = yearly === undefined 
-      ? allData 
+    const periodFiltered = yearly === undefined
+      ? allData
       : allData.filter((c) => c.yearly === yearly);
 
+    const normalizedSearch = mobileSearch.trim().toLocaleLowerCase("tr-TR");
+    const searchFiltered = isMobile && normalizedSearch.length > 0
+      ? periodFiltered.filter((contract) => {
+        const contractNo = String(contract.no).toLocaleLowerCase("tr-TR");
+        const company = contract.company.toLocaleLowerCase("tr-TR");
+        const brand = contract.brand.toLocaleLowerCase("tr-TR");
+
+        return (
+          contractNo.includes(normalizedSearch) ||
+          company.includes(normalizedSearch) ||
+          brand.includes(normalizedSearch)
+        );
+      })
+      : periodFiltered;
+
     return {
-      filteredData: filtered,
+      filteredData: searchFiltered,
       periodCounts: { yearly: yearlyCount, monthly: monthlyCount }
     };
-  }, [rawData?.data, yearly]);
+  }, [rawData?.data, yearly, isMobile, mobileSearch]);
 
   // data objesini oluştur (eski yapıyla uyumlu)
   const data = useMemo(() => {
@@ -379,6 +396,10 @@ export function ContractsPage() {
             onFlowChange={handleFlowChange}
             onYearlyChange={handleYearlyChange}
           />
+
+          {isMobile && (
+            <ContractSearchInput value={mobileSearch} onChange={setMobileSearch} />
+          )}
         </div>
       </div>
 

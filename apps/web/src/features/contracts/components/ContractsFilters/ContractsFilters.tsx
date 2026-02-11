@@ -22,6 +22,7 @@ interface FilterButtonProps {
   label: string;
   count?: number;
   variant?: "default" | "success" | "warning" | "muted" | "info";
+  className?: string;
 }
 
 function FilterButton({
@@ -30,7 +31,8 @@ function FilterButton({
   icon,
   label,
   count,
-  variant = "default"
+  variant = "default",
+  className = ""
 }: FilterButtonProps) {
   const variantClasses = {
     default: active
@@ -53,7 +55,7 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${variantClasses[variant]}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${variantClasses[variant]} ${className}`}
     >
       {icon}
       <span>{label}</span>
@@ -79,9 +81,9 @@ export function ContractsFilters({
   onYearlyChange
 }: ContractsFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 md:gap-4">
+    <div className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-4">
       {/* Flow Filters */}
-      <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
+      <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto md:flex-wrap md:items-center md:gap-1.5">
         <FilterButton
           active={activeFlow === "active"}
           onClick={() => onFlowChange("active")}
@@ -89,6 +91,7 @@ export function ContractsFilters({
           label="Aktif"
           count={counts?.active}
           variant="success"
+          className="w-full md:w-auto"
         />
         <FilterButton
           active={activeFlow === "free"}
@@ -97,6 +100,7 @@ export function ContractsFilters({
           label="Ücretsiz"
           count={counts?.free}
           variant="info"
+          className="w-full md:w-auto"
         />
         <FilterButton
           active={activeFlow === "future"}
@@ -105,6 +109,7 @@ export function ContractsFilters({
           label="Gelecek"
           count={counts?.future}
           variant="warning"
+          className="w-full md:w-auto"
         />
         <FilterButton
           active={activeFlow === "archive"}
@@ -113,6 +118,7 @@ export function ContractsFilters({
           label="Arşiv"
           count={counts?.archive}
           variant="muted"
+          className="w-full md:w-auto"
         />
       </div>
 
@@ -120,7 +126,7 @@ export function ContractsFilters({
       <div className="hidden md:block h-6 w-px bg-border-subtle" />
 
       {/* Period Filters */}
-      <div className="flex items-center gap-1 md:gap-1.5">
+      <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto md:items-center md:gap-1.5">
         <span className="hidden md:inline text-xs text-muted-foreground mr-1">Periyot:</span>
         <FilterButton
           active={yearlyFilter === true}
@@ -128,6 +134,7 @@ export function ContractsFilters({
           icon={<Calendar className="h-3.5 w-3.5" />}
           label="Yıllık"
           count={periodCounts.yearly}
+          className="w-full md:w-auto"
         />
         <FilterButton
           active={yearlyFilter === false}
@@ -135,6 +142,7 @@ export function ContractsFilters({
           icon={<CalendarDays className="h-3.5 w-3.5" />}
           label="Aylık"
           count={periodCounts.monthly}
+          className="w-full md:w-auto"
         />
       </div>
     </div>

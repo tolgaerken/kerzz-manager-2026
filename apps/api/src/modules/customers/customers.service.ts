@@ -140,7 +140,7 @@ export class CustomersService {
   }
 
   async findOne(id: string): Promise<CustomerResponseDto> {
-    const customer = await this.customerModel.findById(id).lean().exec();
+    const customer = await this.findCustomerByIdentifier(id);
     if (!customer) {
       throw new NotFoundException(`Müşteri bulunamadı: ${id}`);
     }
@@ -151,13 +151,7 @@ export class CustomersService {
    * Müşteriyi _id, id veya erpId alanına göre bulur
    */
   async findByAnyId(identifier: string): Promise<CustomerResponseDto> {
-    let customer = await this.customerModel.findById(identifier).lean().exec().catch(() => null);
-    if (!customer) {
-      customer = await this.customerModel.findOne({ erpId: identifier }).lean().exec();
-    }
-    if (!customer) {
-      customer = await this.customerModel.findOne({ id: identifier }).lean().exec();
-    }
+    const customer = await this.findCustomerByIdentifier(identifier);
     if (!customer) {
       throw new NotFoundException(`Müşteri bulunamadı: ${identifier}`);
     }
@@ -187,6 +181,24 @@ export class CustomersService {
     if (!result) {
       throw new NotFoundException(`Müşteri bulunamadı: ${id}`);
     }
+  }
+
+  private async findCustomerByIdentifier(identifier: string): Promise<Customer | null> {
+    const byBusinessId = await this.customerModel.findOne({ id: identifier }).lean().exec();
+    if (byBusinessId) {
+      return byBusinessId;
+    }
+
+    const byErpId = await this.customerModel.findOne({ erpId: identifier }).lean().exec();
+    if (byErpId) {
+      return byErpId;
+    }
+
+    if (!/^[a-f0-9]{24}$/i.test(identifier)) {
+      return null;
+    }
+
+    return this.customerModel.findById(identifier).lean().exec();
   }
 
   private parseFields(fields: unknown): string[] {

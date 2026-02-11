@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Monitor, Store, CircleDollarSign, CheckCircle2, XCircle, CreditCard, Hash } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractCashRegisters } from "../../../hooks/useContractDetail";
 import {
   useCreateContractCashRegister,
@@ -11,12 +12,28 @@ import { useActiveEftPosModels } from "../../../hooks/useEftPosModels";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractCashRegister } from "../../../types";
 import { contractCashRegistersColumns } from "../columnDefs";
+import { MobileCardList } from "./shared";
 
 interface ContractCashRegistersTabProps {
   contractId: string;
 }
 
+const formatCurrency = (value: number, currency: string = "tl") => {
+  const currencyMap: Record<string, string> = { tl: "TRY", usd: "USD", eur: "EUR" };
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: currencyMap[currency] || "TRY"
+  }).format(value);
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  tsm: "TSM",
+  eft: "EFT",
+  pos: "POS"
+};
+
 export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTabProps) {
+  const isMobile = useIsMobile();
   const [selectedRow, setSelectedRow] = useState<ContractCashRegister | null>(null);
 
   // Data hooks
@@ -187,6 +204,85 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
 
   const cashRegisters = data?.data || [];
 
+  // Mobile card renderer
+  const renderCashRegisterCard = useCallback((cr: ContractCashRegister) => (
+    <div
+      key={cr.id || cr._id}
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-[var(--color-primary)]/10 p-1.5">
+            <Monitor className="h-3.5 w-3.5 text-[var(--color-primary)]" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm text-[var(--color-foreground)] truncate">
+              {cr.brand || "-"}
+            </p>
+            <p className="text-[10px] text-[var(--color-muted-foreground)]">
+              {cr.model || TYPE_LABELS[cr.type] || cr.type}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          {cr.enabled ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-success)]" />
+          ) : (
+            <XCircle className="h-3.5 w-3.5 text-[var(--color-error)]" />
+          )}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+        <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+          <Store className="h-3 w-3" />
+          <span className="truncate">Lisans: {cr.licanceId || "-"}</span>
+        </div>
+        <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+          <Hash className="h-3 w-3" />
+          <span className="truncate">Legal: {cr.legalId || "-"}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+            cr.yearly 
+              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" 
+              : "bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)]"
+          }`}>
+            {cr.yearly ? "Yıllık" : "Aylık"}
+          </span>
+          {cr.eftPosActive && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] flex items-center gap-1">
+              <CreditCard className="h-2.5 w-2.5" />
+              EFT-POS
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 font-medium text-sm text-[var(--color-foreground)]">
+          <CircleDollarSign className="h-3.5 w-3.5" />
+          <span>{formatCurrency(cr.price, cr.currency)}</span>
+        </div>
+      </div>
+    </div>
+  ), []);
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <MobileCardList
+          data={cashRegisters}
+          loading={isLoading}
+          renderCard={renderCashRegisterCard}
+          emptyMessage="Yazar kasa kaydı bulunamadı"
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0">

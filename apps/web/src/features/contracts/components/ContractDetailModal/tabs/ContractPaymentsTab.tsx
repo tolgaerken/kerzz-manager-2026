@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Receipt, Calendar, CheckCircle2, XCircle, CircleDollarSign, FileText } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractPayments } from "../../../hooks/useContractDetail";
 import {
   useCreateContractPayment,
@@ -9,12 +10,26 @@ import {
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractPayment } from "../../../types";
 import { contractPaymentsColumns } from "../columnDefs";
+import { MobileCardList } from "./shared";
 
 interface ContractPaymentsTabProps {
   contractId: string;
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY"
+  }).format(value);
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("tr-TR");
+};
+
 export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
+  const isMobile = useIsMobile();
   const [selectedRow, setSelectedRow] = useState<ContractPayment | null>(null);
 
   const { data, isLoading } = useContractPayments(contractId);
@@ -119,6 +134,88 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
 
   const payments = data?.data || [];
 
+  // Mobile card renderer
+  const renderPaymentCard = useCallback((payment: ContractPayment) => (
+    <div
+      key={payment.id || payment._id}
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <div className={`rounded-full p-1.5 ${
+            payment.paid 
+              ? "bg-[var(--color-success)]/10" 
+              : "bg-[var(--color-warning)]/10"
+          }`}>
+            <Receipt className={`h-3.5 w-3.5 ${
+              payment.paid 
+                ? "text-[var(--color-success)]" 
+                : "text-[var(--color-warning)]"
+            }`} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm text-[var(--color-foreground)] truncate">
+              {payment.invoiceNo || "Fatura No Yok"}
+            </p>
+            <p className="text-[10px] text-[var(--color-muted-foreground)]">
+              {payment.brand || payment.company || "-"}
+            </p>
+          </div>
+        </div>
+        {payment.paid ? (
+          <CheckCircle2 className="h-4 w-4 text-[var(--color-success)] shrink-0" />
+        ) : (
+          <XCircle className="h-4 w-4 text-[var(--color-warning)] shrink-0" />
+        )}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+        <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+          <Calendar className="h-3 w-3" />
+          <span>Fatura: {formatDate(payment.invoiceDate)}</span>
+        </div>
+        <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+          <Calendar className="h-3 w-3" />
+          <span>Ödeme: {formatDate(payment.payDate)}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
+        <div className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
+          <FileText className="h-3 w-3" />
+          <span>Toplam: {formatCurrency(payment.invoiceTotal)}</span>
+        </div>
+        <div className="flex items-center gap-1 text-sm font-medium text-[var(--color-foreground)]">
+          <CircleDollarSign className="h-3.5 w-3.5" />
+          <span>{formatCurrency(payment.total)}</span>
+        </div>
+      </div>
+
+      {payment.balance !== 0 && (
+        <div className="mt-2 text-xs text-right">
+          <span className={payment.balance > 0 ? "text-[var(--color-error)]" : "text-[var(--color-success)]"}>
+            Bakiye: {formatCurrency(payment.balance)}
+          </span>
+        </div>
+      )}
+    </div>
+  ), []);
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <MobileCardList
+          data={payments}
+          loading={isLoading}
+          renderCard={renderPaymentCard}
+          emptyMessage="Ödeme kaydı bulunamadı"
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0">

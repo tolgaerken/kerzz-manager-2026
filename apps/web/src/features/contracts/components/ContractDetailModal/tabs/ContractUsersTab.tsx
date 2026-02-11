@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, User, Mail, Phone, Briefcase } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractUsers } from "../../../hooks/useContractDetail";
 import {
   useCreateContractUser,
@@ -9,12 +10,21 @@ import {
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractUser } from "../../../types";
 import { contractUsersColumns } from "../columnDefs";
+import { MobileCardList } from "./shared";
 
 interface ContractUsersTabProps {
   contractId: string;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Sahip",
+  admin: "Yönetici",
+  user: "Kullanıcı",
+  other: "Diğer"
+};
+
 export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
+  const isMobile = useIsMobile();
   const [selectedRow, setSelectedRow] = useState<ContractUser | null>(null);
 
   const { data, isLoading } = useContractUsers(contractId);
@@ -101,6 +111,58 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
 
   const users = data?.data || [];
 
+  // Mobile card renderer
+  const renderUserCard = useCallback((user: ContractUser) => (
+    <div
+      key={user.id || user._id}
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-[var(--color-primary)]/10 p-1.5">
+            <User className="h-3.5 w-3.5 text-[var(--color-primary)]" />
+          </div>
+          <span className="font-medium text-sm text-[var(--color-foreground)]">
+            {user.name || "-"}
+          </span>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)]">
+          {ROLE_LABELS[user.role] || user.role}
+        </span>
+      </div>
+      
+      <div className="space-y-1.5 text-xs text-[var(--color-muted-foreground)]">
+        {user.email && (
+          <div className="flex items-center gap-2">
+            <Mail className="h-3 w-3 shrink-0" />
+            <span className="truncate">{user.email}</span>
+          </div>
+        )}
+        {user.gsm && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-3 w-3 shrink-0" />
+            <span>{user.gsm}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  ), []);
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <MobileCardList
+          data={users}
+          loading={isLoading}
+          renderCard={renderUserCard}
+          emptyMessage="Kullanıcı bulunamadı"
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0">

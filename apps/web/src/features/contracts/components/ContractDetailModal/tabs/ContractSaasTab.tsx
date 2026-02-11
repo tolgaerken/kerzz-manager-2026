@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Cloud, Store, CircleDollarSign, CheckCircle2, XCircle, AlertCircle, Package, Hash } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractSaas } from "../../../hooks/useContractDetail";
 import {
   useCreateContractSaas,
@@ -11,12 +12,22 @@ import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import { useSoftwareProducts } from "../../../../software-products";
 import type { ContractSaas } from "../../../types";
 import { contractSaasColumns } from "../columnDefs";
+import { MobileCardList } from "./shared";
 
 interface ContractSaasTabProps {
   contractId: string;
 }
 
+const formatCurrency = (value: number, currency: string = "tl") => {
+  const currencyMap: Record<string, string> = { tl: "TRY", usd: "USD", eur: "EUR" };
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: currencyMap[currency] || "TRY"
+  }).format(value);
+};
+
 export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
+  const isMobile = useIsMobile();
   const [selectedRow, setSelectedRow] = useState<ContractSaas | null>(null);
 
   // Data hooks
@@ -196,6 +207,94 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
 
   const saasList = data?.data || [];
 
+  // Mobile card renderer
+  const renderSaasCard = useCallback((saas: ContractSaas) => {
+    const product = products.find(p => p.id === saas.productId);
+    
+    return (
+      <div
+        key={saas.id || saas._id}
+        className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+      >
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <div className="rounded-full bg-[var(--color-primary)]/10 p-1.5">
+              <Cloud className="h-3.5 w-3.5 text-[var(--color-primary)]" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm text-[var(--color-foreground)] truncate">
+                {saas.brand || "-"}
+              </p>
+              {saas.description && (
+                <p className="text-[10px] text-[var(--color-muted-foreground)] truncate">
+                  {saas.description}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {saas.enabled ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-success)]" />
+            ) : (
+              <XCircle className="h-3.5 w-3.5 text-[var(--color-error)]" />
+            )}
+            {saas.blocked && (
+              <AlertCircle className="h-3.5 w-3.5 text-[var(--color-warning)]" />
+            )}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+          <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+            <Store className="h-3 w-3" />
+            <span className="truncate">Lisans: {saas.licanceId || "-"}</span>
+          </div>
+          <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+            <Package className="h-3 w-3" />
+            <span className="truncate">{product?.friendlyName || product?.name || "-"}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+              saas.yearly 
+                ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" 
+                : "bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)]"
+            }`}>
+              {saas.yearly ? "Yıllık" : "Aylık"}
+            </span>
+            {saas.qty > 1 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] flex items-center gap-1">
+                <Hash className="h-2.5 w-2.5" />
+                {saas.qty} adet
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 font-medium text-sm text-[var(--color-foreground)]">
+            <CircleDollarSign className="h-3.5 w-3.5" />
+            <span>{formatCurrency(saas.total || saas.price * saas.qty, saas.currency)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }, [products]);
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <MobileCardList
+          data={saasList}
+          loading={isLoading}
+          renderCard={renderSaasCard}
+          emptyMessage="SaaS kaydı bulunamadı"
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0">

@@ -47,9 +47,9 @@ export const ContractMobileList = memo(function ContractMobileList({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 pb-3">
+    <div className="flex-1 overflow-y-auto p-2">
       {/* Count indicator */}
-      <div className="sticky top-0 z-10 bg-[var(--color-surface)] py-2 mb-2 border-b border-[var(--color-border)]/50">
+      <div className="sticky top-0 z-10 mb-2 rounded-md bg-[var(--color-surface)] px-2 py-1.5">
         <p className="text-xs text-[var(--color-muted-foreground)] text-center">
           {visibleData.length} / {data.length} kontrat gösteriliyor
         </p>
@@ -70,7 +70,7 @@ export const ContractMobileList = memo(function ContractMobileList({
       {hasMore && (
         <button
           onClick={handleLoadMore}
-          className="w-full mt-4 py-3 flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-sm font-medium text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)] transition-colors"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] py-2.5 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-surface-hover)]"
         >
           <ChevronDown className="h-4 w-4" />
           Daha fazla göster ({remainingCount} kaldı)

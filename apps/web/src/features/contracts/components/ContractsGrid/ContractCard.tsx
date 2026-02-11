@@ -85,12 +85,12 @@ export const ContractCard = memo(function ContractCard({
           handleClick();
         }
       }}
-      className="relative rounded-lg border p-3 transition-all active:scale-[0.98] border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)]"
+      className="relative rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 transition-all hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)] active:scale-[0.98]"
     >
       {/* Header: No, Brand, Status */}
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="mb-1.5 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="mb-0.5 flex items-center gap-2">
             <span className="text-xs font-medium text-[var(--color-muted-foreground)]">#{contract.no}</span>
             <FlowBadge flow={contract.contractFlow} />
           </div>
@@ -102,19 +102,19 @@ export const ContractCard = memo(function ContractCard({
       </div>
 
       {/* Company */}
-      <div className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] mb-2">
+      <div className="mb-1.5 flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
         <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
         <span className="truncate">{contract.company || "-"}</span>
       </div>
 
       {/* Date Range */}
-      <div className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] mb-3">
+      <div className="mb-2 flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
         <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
         <span>{formatDate(contract.startDate)} - {formatDate(contract.endDate)}</span>
       </div>
 
       {/* Footer: Amount & Status */}
-      <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)]/50">
+      <div className="flex items-center justify-between border-t border-[var(--color-border)]/50 pt-1.5">
         <div>
           <span className="text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">{periodLabel}</span>
           <p className="text-sm font-semibold text-[var(--color-foreground)]">{formatCurrency(displayTotal)}</p>

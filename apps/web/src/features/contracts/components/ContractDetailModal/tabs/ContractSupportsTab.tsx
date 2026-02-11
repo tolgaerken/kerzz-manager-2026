@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Headphones, Store, CircleDollarSign, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractSupports } from "../../../hooks/useContractDetail";
 import {
   useCreateContractSupport,
@@ -10,12 +11,22 @@ import {
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractSupport } from "../../../types";
 import { contractSupportsColumns } from "../columnDefs";
+import { MobileCardList } from "./shared";
 
 interface ContractSupportsTabProps {
   contractId: string;
 }
 
+const formatCurrency = (value: number, currency: string = "tl") => {
+  const currencyMap: Record<string, string> = { tl: "TRY", usd: "USD", eur: "EUR" };
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: currencyMap[currency] || "TRY"
+  }).format(value);
+};
+
 export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
+  const isMobile = useIsMobile();
   const [selectedRow, setSelectedRow] = useState<ContractSupport | null>(null);
 
   // Data hooks
@@ -173,6 +184,81 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
 
   const supports = data?.data || [];
 
+  // Mobile card renderer
+  const renderSupportCard = useCallback((support: ContractSupport) => (
+    <div
+      key={support.id || support._id}
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-[var(--color-info)]/10 p-1.5">
+            <Headphones className="h-3.5 w-3.5 text-[var(--color-info)]" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm text-[var(--color-foreground)] truncate">
+              {support.brand || "-"}
+            </p>
+            {support.type && (
+              <p className="text-[10px] text-[var(--color-muted-foreground)]">{support.type}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          {support.enabled ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-success)]" />
+          ) : (
+            <XCircle className="h-3.5 w-3.5 text-[var(--color-error)]" />
+          )}
+          {support.blocked && (
+            <AlertCircle className="h-3.5 w-3.5 text-[var(--color-warning)]" />
+          )}
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
+          <Store className="h-3 w-3" />
+          <span>Lisans: {support.licanceId || "-"}</span>
+        </div>
+        <div className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
+          <CircleDollarSign className="h-3 w-3" />
+          <span>{formatCurrency(support.price, support.currency)}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--color-border)]">
+        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+          support.yearly 
+            ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" 
+            : "bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)]"
+        }`}>
+          {support.yearly ? "Yıllık" : "Aylık"}
+        </span>
+        {support.expired && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-error)]/10 text-[var(--color-error)]">
+            Süresi Dolmuş
+          </span>
+        )}
+      </div>
+    </div>
+  ), []);
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <MobileCardList
+          data={supports}
+          loading={isLoading}
+          renderCard={renderSupportCard}
+          emptyMessage="Destek kaydı bulunamadı"
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0">

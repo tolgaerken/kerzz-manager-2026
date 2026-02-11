@@ -11,3 +11,4 @@ export * from "./ContractSubItemPageLayout";
 export * from "./SupportsDashboard";
 export * from "./VersionsDashboard";
 export * from "./SaasDashboard";
+export * from "./ContractSearchInput";
