@@ -4,7 +4,7 @@ import { ContractCard } from "./ContractCard";
 import type { Contract } from "../../types";
 
 const PAGE_SIZE = 20;
-const SCROLL_THRESHOLD = 4;
+const SCROLL_THRESHOLD = 10;
 
 interface ContractMobileListProps {
   data: Contract[];
@@ -45,16 +45,29 @@ export const ContractMobileList = memo(function ContractMobileList({
   const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
     if (!onScrollDirectionChange) return;
 
-    const currentScrollTop = event.currentTarget.scrollTop;
+    const target = event.currentTarget;
+    const currentScrollTop = target.scrollTop;
+    const scrollHeight = target.scrollHeight;
+    const clientHeight = target.clientHeight;
+    
     const isAtTop = currentScrollTop <= 2;
+    const isAtBottom = currentScrollTop + clientHeight >= scrollHeight - 10;
     const scrollDiff = currentScrollTop - lastScrollTopRef.current;
 
+    // En üstteyken panel açık kalsın
     if (isAtTop) {
       onScrollDirectionChange("up", true);
       lastScrollTopRef.current = 0;
       return;
     }
 
+    // En altta veya en alta yakınken kararsızlığı önle - mevcut durumu koru
+    if (isAtBottom) {
+      lastScrollTopRef.current = currentScrollTop;
+      return;
+    }
+
+    // Orta bölgede scroll yaparken yön değişimlerini tetikle
     if (Math.abs(scrollDiff) >= SCROLL_THRESHOLD) {
       onScrollDirectionChange(scrollDiff > 0 ? "down" : "up", false);
       lastScrollTopRef.current = currentScrollTop;
