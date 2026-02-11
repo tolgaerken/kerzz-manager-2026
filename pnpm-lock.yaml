@@ -75,6 +75,9 @@ importers:
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
+      mongodb:
+        specifier: 7.0.0
+        version: 7.0.0(socks@2.8.7)
       mongoose:
         specifier: latest
         version: 9.1.6(socks@2.8.7)
