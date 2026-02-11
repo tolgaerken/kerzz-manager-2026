@@ -12,6 +12,8 @@ import {
 } from "./dto";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
+import { LegacyLogRepository } from "./legacy/legacy-log.repository";
+import { mapLegacyLogToManagerLogResponse } from "./legacy/legacy-log.mapper";
 
 @Injectable()
 export class ManagerLogService {
@@ -19,7 +21,8 @@ export class ManagerLogService {
     @InjectModel(ManagerLog.name)
     private managerLogModel: Model<ManagerLogDocument>,
     @Inject(forwardRef(() => ManagerNotificationService))
-    private managerNotificationService: ManagerNotificationService
+    private managerNotificationService: ManagerNotificationService,
+    private legacyLogRepository: LegacyLogRepository
   ) {}
 
   async create(createManagerLogDto: CreateManagerLogDto): Promise<ManagerLogResponseDto> {
@@ -69,7 +72,7 @@ export class ManagerLogService {
   }
 
   async findAll(queryDto: ManagerLogQueryDto): Promise<PaginatedManagerLogsResponseDto> {
-    const { customerId, contextType, contextId, page = 1, limit = 50 } = queryDto;
+    const { customerId, contextType, contextId, includeLegacy = true, page = 1, limit = 50 } = queryDto;
     const skip = (page - 1) * limit;
 
     const filter: Record<string, unknown> = {};
@@ -77,18 +80,43 @@ export class ManagerLogService {
     if (contextType) filter.contextType = contextType;
     if (contextId) filter.contextId = contextId;
 
-    const [data, total] = await Promise.all([
-      this.managerLogModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.managerLogModel.countDocuments(filter).exec(),
+    if (!includeLegacy) {
+      const [data, total] = await Promise.all([
+        this.managerLogModel
+          .find(filter)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .exec(),
+        this.managerLogModel.countDocuments(filter).exec(),
+      ]);
+
+      return {
+        data: data.map((doc) => this.mapToResponseDto(doc)),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    }
+
+    const [newLogs, legacyLogs] = await Promise.all([
+      this.managerLogModel.find(filter).sort({ createdAt: -1 }).exec(),
+      this.getLegacyLogsSafely(queryDto),
     ]);
 
+    const mergedLogs = [
+      ...newLogs.map((doc) => this.mapToResponseDto(doc)),
+      ...legacyLogs.map((doc) => mapLegacyLogToManagerLogResponse(doc)),
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const paginatedLogs = mergedLogs.slice(skip, skip + limit);
+    const total = mergedLogs.length;
+
     return {
-      data: data.map((doc) => this.mapToResponseDto(doc)),
+      data: paginatedLogs,
       meta: {
         page,
         limit,
@@ -165,8 +193,17 @@ export class ManagerLogService {
       reminder: doc.reminder,
       authorId: doc.authorId,
       authorName: doc.authorName,
+      source: "new",
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };
+  }
+
+  private async getLegacyLogsSafely(queryDto: ManagerLogQueryDto) {
+    try {
+      return await this.legacyLogRepository.findAllByQuery(queryDto);
+    } catch {
+      return [];
+    }
   }
 }

@@ -17,6 +17,7 @@ export interface LogReminder {
 export interface Log {
   _id: string;
   id: string;
+  source?: "new" | "legacy";
   customerId: string;
   contextType: string;
   contextId: string;

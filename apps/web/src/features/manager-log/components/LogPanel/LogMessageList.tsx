@@ -18,10 +18,10 @@ export function LogMessageList({
 }: LogMessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Yeni mesaj geldiğinde en alta kaydır
+  // En yeni log üstte gösterildiği için listeyi üste sabitle
   useEffect(() => {
     if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
+      listRef.current.scrollTop = 0;
     }
   }, [logs.length]);
 
@@ -53,9 +53,9 @@ export function LogMessageList({
     );
   }
 
-  // Logları tarihe göre sırala (eskiden yeniye)
+  // Logları tarihe göre sırala (yeniden eskiye)
   const sortedLogs = [...logs].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (

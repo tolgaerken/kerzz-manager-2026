@@ -50,6 +50,7 @@ function createColumnDefs(): GridColumnDef<EnrichedPaymentPlan>[] {
       width: 110,
       sortable: true,
       filter: { type: "input" },
+      cellClassName: "font-mono",
     },
     {
       id: "internalFirm",
@@ -93,6 +94,7 @@ function createColumnDefs(): GridColumnDef<EnrichedPaymentPlan>[] {
       sortable: true,
       align: "right",
       cell: (value) => formatCurrency(value as number),
+      cellClassName: "font-mono",
       footer: {
         aggregate: "sum",
         label: "",
@@ -113,8 +115,9 @@ function createColumnDefs(): GridColumnDef<EnrichedPaymentPlan>[] {
       },
       cellClassName: (value) => {
         const num = value as number;
-        if (num > 0) return "text-[var(--color-error)] font-semibold text-right";
-        return "text-right";
+        const classes = "font-mono text-right";
+        if (num > 0) return `text-[var(--color-error)] font-semibold ${classes}`;
+        return classes;
       },
     },
     {

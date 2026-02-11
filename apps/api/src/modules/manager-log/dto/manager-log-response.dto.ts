@@ -27,6 +27,7 @@ export class ManagerLogResponseDto {
   reminder: ManagerLogReminderResponseDto | null;
   authorId: string;
   authorName: string;
+  source?: "new" | "legacy";
   createdAt: Date;
   updatedAt: Date;
 }

@@ -9,7 +9,9 @@ import {
   Cloud,
   AlertCircle,
   RefreshCw,
+  BarChart3,
 } from "lucide-react";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import { useSaleStats } from "../features/sales";
 import { useCustomerLookup } from "../features/lookup";
 
@@ -84,6 +86,9 @@ export function SalesDashboardPage() {
   >("monthly");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+
+  // Collapsible section state
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(true);
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -169,211 +174,235 @@ export function SalesDashboardPage() {
     { label: "Tamamlanan", value: statsData?.completed ?? 0, icon: Users },
   ];
 
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <BarChart3 className="h-5 w-5" />,
+    title: "Satış Paneli",
+    expanded: isHeaderExpanded,
+    onExpandedChange: setIsHeaderExpanded,
+    desktopActions: (
+      <>
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface p-1">
+          <div className="flex items-center gap-2 pl-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Yıl
+            </span>
+            <select
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(Number(event.target.value))}
+              className="h-7 rounded-md border border-border bg-surface px-2 text-xs text-foreground outline-none focus:border-primary"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Ay
+            </span>
+            <select
+              value={selectedMonth}
+              onChange={(event) =>
+                setSelectedMonth(Number(event.target.value))
+              }
+              className="h-7 rounded-md border border-border bg-surface px-2 text-xs text-foreground outline-none focus:border-primary"
+            >
+              {monthOptions.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {PERIODS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id as typeof period)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                period === p.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <button
+        onClick={() => refetch()}
+        disabled={isFetching}
+        className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+      </button>
+    ),
+    children: (
+      <p className="text-sm text-muted-foreground">
+        Satış performansınızı ve ciro dağılımını takip edin.
+      </p>
+    ),
+  });
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-1">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Satış Paneli</h1>
-          <p className="mt-1 text-muted">
-            Satış performansınızı ve ciro dağılımını takip edin.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface p-1">
-            <div className="flex items-center gap-2 pl-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                Yıl
-              </span>
-              <select
-                value={selectedYear}
-                onChange={(event) => setSelectedYear(Number(event.target.value))}
-                className="h-7 rounded-md border border-border bg-surface px-2 text-xs text-foreground outline-none focus:border-[var(--color-primary)]"
-              >
-                {yearOptions.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                Ay
-              </span>
-              <select
-                value={selectedMonth}
-                onChange={(event) =>
-                  setSelectedMonth(Number(event.target.value))
-                }
-                className="h-7 rounded-md border border-border bg-surface px-2 text-xs text-foreground outline-none focus:border-[var(--color-primary)]"
-              >
-                {monthOptions.map((month) => (
-                  <option key={month.value} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {PERIODS.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setPeriod(p.id as any)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  period === p.id
-                    ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="flex h-9 items-center justify-center rounded-lg border border-border bg-surface px-3 text-muted transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Header Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {/* Error State */}
-      {isError && (
-        <div className="flex items-center gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-error">
-          <AlertCircle className="h-5 w-5" />
-          <div>
-            <p className="font-medium">Veri yüklenirken hata oluştu</p>
-            <p className="text-sm opacity-80">
-              {error instanceof Error ? error.message : "Bilinmeyen hata"}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Main Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {salesStats.map((stat) => (
-          <div
-            key={stat.label}
-            className="group relative overflow-hidden rounded-xl border border-border bg-surface p-6 transition-all hover:border-[var(--color-primary)]/20 hover:shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div className={`rounded-lg p-3 ${stat.bg}`}>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
-              </div>
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 md:gap-6 overflow-y-auto">
+        {/* Error State */}
+        {isError && (
+          <div className="flex items-center gap-3 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 p-4 text-[var(--color-error)]">
+            <AlertCircle className="h-5 w-5" />
+            <div>
+              <p className="font-medium">Veri yüklenirken hata oluştu</p>
+              <p className="text-sm opacity-80">
+                {error instanceof Error ? error.message : "Bilinmeyen hata"}
+              </p>
             </div>
-            <p className="mt-4 text-2xl font-bold text-foreground">
-              {isLoading ? "..." : stat.value}
-            </p>
-            <p className="text-sm text-muted">{stat.label}</p>
           </div>
-        ))}
-      </div>
+        )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Top 10 Sales List */}
-        <div className="lg:col-span-2 flex flex-col rounded-xl border border-border bg-surface">
-          <div className="border-b border-border p-4">
-            <h3 className="font-semibold text-foreground">En Büyük 10 Satış</h3>
-            <p className="text-xs text-muted">Seçili dönemdeki en yüksek tutarlı satışlar</p>
-          </div>
-          <div className="grid gap-3 p-4 sm:grid-cols-2">
-            {isLoading ? (
-              <div className="col-span-full rounded-lg border border-border bg-surface-elevated p-6 text-center text-muted">
-                Yükleniyor...
+        {/* Main Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {salesStats.map((stat) => (
+            <div
+              key={stat.label}
+              className="group relative overflow-hidden rounded-xl border border-border bg-surface p-6 transition-all hover:border-primary/20 hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className={`rounded-lg p-3 ${stat.bg}`}>
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
               </div>
-            ) : statsData?.topSales?.length === 0 ? (
-              <div className="col-span-full rounded-lg border border-border bg-surface-elevated p-6 text-center text-muted">
-                Kayıt bulunamadı
-              </div>
-            ) : (
-              statsData?.topSales?.map((sale) => {
-                const statusValue = Array.isArray(sale.status)
-                  ? sale.status[0] || "pending"
-                  : sale.status || "pending";
-                const statusStyle =
-                  statusValue === "completed"
-                    ? "bg-[var(--color-success)]/10 text-[var(--color-success)]"
-                    : statusValue === "active"
-                      ? "bg-[var(--color-info)]/10 text-[var(--color-info)]"
-                      : statusValue === "cancelled"
-                        ? "bg-[var(--color-error)]/10 text-[var(--color-error)]"
-                        : "bg-[var(--color-warning)]/10 text-[var(--color-warning)]";
+              <p className="mt-4 text-2xl font-bold text-foreground">
+                {isLoading ? "..." : stat.value}
+              </p>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </div>
 
-                const statusLabel =
-                  statusValue === "completed"
-                    ? "Tamamlandı"
-                    : statusValue === "active"
-                      ? "Aktif"
-                      : statusValue === "cancelled"
-                        ? "İptal"
-                        : "Bekliyor";
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Top 10 Sales List */}
+          <div className="lg:col-span-2 flex flex-col rounded-xl border border-border bg-surface">
+            <div className="border-b border-border p-4">
+              <h3 className="font-semibold text-foreground">En Büyük 10 Satış</h3>
+              <p className="text-xs text-muted-foreground">Seçili dönemdeki en yüksek tutarlı satışlar</p>
+            </div>
+            <div className="grid gap-3 p-4 sm:grid-cols-2">
+              {isLoading ? (
+                <div className="col-span-full rounded-lg border border-border bg-surface-elevated p-6 text-center text-muted-foreground">
+                  Yükleniyor...
+                </div>
+              ) : statsData?.topSales?.length === 0 ? (
+                <div className="col-span-full rounded-lg border border-border bg-surface-elevated p-6 text-center text-muted-foreground">
+                  Kayıt bulunamadı
+                </div>
+              ) : (
+                statsData?.topSales?.map((sale) => {
+                  const statusValue = Array.isArray(sale.status)
+                    ? sale.status[0] || "pending"
+                    : sale.status || "pending";
+                  const statusStyle =
+                    statusValue === "completed"
+                      ? "bg-[var(--color-success)]/10 text-[var(--color-success)]"
+                      : statusValue === "active"
+                        ? "bg-[var(--color-info)]/10 text-[var(--color-info)]"
+                        : statusValue === "cancelled"
+                          ? "bg-[var(--color-error)]/10 text-[var(--color-error)]"
+                          : "bg-[var(--color-warning)]/10 text-[var(--color-warning)]";
 
-                return (
-                  <div
-                    key={sale._id}
-                    className="rounded-lg border border-border bg-surface p-4 transition-colors hover:bg-surface-hover"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {getCustomerName(sale.customerId) !== "-"
-                            ? getCustomerName(sale.customerId)
-                            : sale.customerName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{sale.sellerName}</p>
+                  const statusLabel =
+                    statusValue === "completed"
+                      ? "Tamamlandı"
+                      : statusValue === "active"
+                        ? "Aktif"
+                        : statusValue === "cancelled"
+                          ? "İptal"
+                          : "Bekliyor";
+
+                  return (
+                    <div
+                      key={sale._id}
+                      className="rounded-lg border border-border bg-surface p-4 transition-colors hover:bg-surface-hover"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {getCustomerName(sale.customerId) !== "-"
+                              ? getCustomerName(sale.customerId)
+                              : sale.customerName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{sale.sellerName}</p>
+                        </div>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle}`}
+                        >
+                          {statusLabel}
+                        </span>
                       </div>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle}`}
-                      >
-                        {statusLabel}
-                      </span>
+                      <div className="mt-3 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {new Date(sale.saleDate).toLocaleDateString("tr-TR")}
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {formatCurrency(sale.grandTotal || 0)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {new Date(sale.saleDate).toLocaleDateString("tr-TR")}
-                      </span>
-                      <span className="font-semibold text-foreground">
-                        {formatCurrency(sale.grandTotal || 0)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Secondary Stats */}
-        <div className="flex flex-col gap-4">
-            {secondaryStats.map((stat) => (
+          {/* Secondary Stats */}
+          <div className="flex flex-col gap-4">
+              {secondaryStats.map((stat) => (
             <div
               key={stat.label}
               className="flex items-center justify-between rounded-xl border border-border bg-surface p-4"
             >
               <div className="flex items-center gap-4">
               <div className="rounded-lg bg-surface-elevated p-2">
-                <stat.icon className="h-5 w-5 text-muted" />
+                <stat.icon className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted">{stat.label}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
                 <p className="text-xl font-bold text-foreground">
                   {isLoading ? "-" : stat.value}
                 </p>
               </div>
               </div>
             </div>
-            ))}
-            
-            <div className="rounded-xl border border-border bg-surface p-4 flex-1">
-                <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                    <TrendingUp className="h-8 w-8 text-muted mb-2" />
-                    <p className="text-sm font-medium text-foreground">Satış Hedefleri</p>
-                    <p className="text-xs text-muted mt-1">Bu özellik yakında eklenecek.</p>
-                </div>
-            </div>
+              ))}
+              
+              <div className="rounded-xl border border-border bg-surface p-4 flex-1">
+                  <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                      <TrendingUp className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm font-medium text-foreground">Satış Hedefleri</p>
+                      <p className="text-xs text-muted-foreground mt-1">Bu özellik yakında eklenecek.</p>
+                  </div>
+              </div>
+          </div>
         </div>
       </div>
     </div>

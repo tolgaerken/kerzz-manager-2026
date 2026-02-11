@@ -46,9 +46,9 @@ export function PipelineLogSection({
   const config = SECTION_CONFIG[type];
   const Icon = config.icon;
 
-  // Logları tarihe göre sırala (eskiden yeniye)
+  // Logları tarihe göre sırala (yeniden eskiye)
   const sortedLogs = [...logs].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (

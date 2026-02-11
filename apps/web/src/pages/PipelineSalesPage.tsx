@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Plus, RefreshCw, ShoppingCart } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   useSales,
   useCreateSale,
@@ -28,10 +29,13 @@ export function PipelineSalesPage() {
     endDate: defaultRange.endDate,
   });
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
 
-  const { data, isLoading, refetch } = useSales(queryParams);
+  const { data, isLoading, isFetching, refetch } = useSales(queryParams);
   const createMutation = useCreateSale();
   const updateMutation = useUpdateSale();
   const { getCustomerName } = useCustomerLookup();
@@ -94,7 +98,7 @@ export function PipelineSalesPage() {
     {
       id: "add",
       label: "Yeni Satış",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+      icon: <Plus size={14} />,
       onClick: () => {
         setEditingSale(null);
         setIsFormOpen(true);
@@ -103,63 +107,116 @@ export function PipelineSalesPage() {
     {
       id: "refresh",
       label: "Yenile",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`,
+      icon: <RefreshCw size={14} />,
       onClick: () => refetch(),
     },
   ];
 
-  return (
-    <div className="flex flex-col min-h-0 flex-1">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Satışlar
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-foreground-muted)]">
-            Satışlarınızı yönetin, onaylayın ve takip edin
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5">
-          <CalendarDays className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <ShoppingCart className="h-5 w-5" />,
+    title: "Satışlar",
+    count: data?.meta?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <div className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5">
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="date"
             value={queryParams.startDate ?? ""}
             onChange={(e) =>
               setQueryParams((prev) => ({ ...prev, startDate: e.target.value }))
             }
-            className="bg-transparent text-xs font-medium text-[var(--color-foreground)] outline-none"
+            className="bg-transparent text-xs font-medium text-foreground outline-none"
           />
-          <span className="text-xs text-[var(--color-muted-foreground)]">—</span>
+          <span className="text-xs text-muted-foreground">—</span>
           <input
             type="date"
             value={queryParams.endDate ?? ""}
             onChange={(e) =>
               setQueryParams((prev) => ({ ...prev, endDate: e.target.value }))
             }
-            className="bg-transparent text-xs font-medium text-[var(--color-foreground)] outline-none"
+            className="bg-transparent text-xs font-medium text-foreground outline-none"
           />
         </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          onClick={() => {
+            setEditingSale(null);
+            setIsFormOpen(true);
+          }}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Satış
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          onClick={() => {
+            setEditingSale(null);
+            setIsFormOpen(true);
+          }}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
       </div>
-
+    ),
+    children: (
       <SalesFilters filters={queryParams} onFilterChange={handleFilterChange} />
+    ),
+  });
 
-      <div className="flex-1 min-h-0 mt-4">
-        <SalesGrid
-          data={enrichedSales}
-          loading={isLoading}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
-          toolbarButtons={toolbarButtons}
-        />
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {data?.meta && (
-        <div className="flex items-center justify-between mt-3 px-1">
-          <span className="text-sm text-[var(--color-foreground-muted)]">
-            Toplam: {data.meta.total} kayıt
-          </span>
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <SalesGrid
+            data={enrichedSales}
+            loading={isLoading}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+            toolbarButtons={toolbarButtons}
+          />
         </div>
-      )}
+
+        {/* Footer Stats */}
+        {data?.meta && (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-sm text-muted-foreground">
+              Toplam: {data.meta.total} kayıt
+            </span>
+          </div>
+        )}
+      </div>
 
       <SaleFormModal
         isOpen={isFormOpen}

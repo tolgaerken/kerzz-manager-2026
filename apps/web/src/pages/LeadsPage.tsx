@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import { CalendarDays, MessageSquare, Plus, RefreshCw, Repeat } from "lucide-react";
+import { CalendarDays, MessageSquare, Plus, RefreshCw, Repeat, UserPlus } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
+import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   useLeads,
   useCreateLead,
@@ -31,11 +32,14 @@ export function LeadsPage() {
     endDate: defaultRange.endDate,
   });
 
+  // Collapsible section state
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-  const { data, isLoading, refetch } = useLeads(queryParams);
+  const { data, isLoading, isFetching, refetch } = useLeads(queryParams);
   const createMutation = useCreateLead();
   const updateMutation = useUpdateLead();
   const deleteMutation = useDeleteLead();
@@ -65,6 +69,7 @@ export function LeadsPage() {
     setEditingLead(lead);
     setIsFormOpen(true);
   }, []);
+
   const handleConvertLead = useCallback(async () => {
     if (!selectedLead) return;
     await convertMutation.mutateAsync({ leadId: selectedLead._id });
@@ -153,82 +158,135 @@ export function LeadsPage() {
     },
   ];
 
-  return (
-    <div className="flex flex-col min-h-0 flex-1">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Potansiyeller (Leads)
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-foreground-muted)]">
-            Potansiyel müşterilerinizi yönetin ve takip edin
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5">
-          <CalendarDays className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
+  // CollapsibleSection hook
+  const collapsible = CollapsibleSection({
+    icon: <UserPlus className="h-5 w-5" />,
+    title: "Potansiyeller (Leads)",
+    count: data?.meta?.total,
+    expanded: isFiltersExpanded,
+    onExpandedChange: setIsFiltersExpanded,
+    desktopActions: (
+      <>
+        <div className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5">
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="date"
             value={queryParams.startDate ?? ""}
             onChange={(e) =>
               setQueryParams((prev) => ({ ...prev, startDate: e.target.value, page: 1 }))
             }
-            className="bg-transparent text-xs font-medium text-[var(--color-foreground)] outline-none"
+            className="bg-transparent text-xs font-medium text-foreground outline-none"
           />
-          <span className="text-xs text-[var(--color-muted-foreground)]">—</span>
+          <span className="text-xs text-muted-foreground">—</span>
           <input
             type="date"
             value={queryParams.endDate ?? ""}
             onChange={(e) =>
               setQueryParams((prev) => ({ ...prev, endDate: e.target.value, page: 1 }))
             }
-            className="bg-transparent text-xs font-medium text-[var(--color-foreground)] outline-none"
+            className="bg-transparent text-xs font-medium text-foreground outline-none"
           />
         </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Yenile
+        </button>
+        <button
+          onClick={() => {
+            setEditingLead(null);
+            setIsFormOpen(true);
+          }}
+          className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni Lead
+        </button>
+      </>
+    ),
+    mobileActions: (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading || isFetching}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
+        <button
+          onClick={() => {
+            setEditingLead(null);
+            setIsFormOpen(true);
+          }}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Yeni
+        </button>
       </div>
-
+    ),
+    children: (
       <LeadsFilters filters={queryParams} onFilterChange={handleFilterChange} />
+    ),
+  });
 
-      <div className="flex-1 min-h-0 mt-4">
-        <LeadsGrid
-          data={data?.data || []}
-          loading={isLoading}
-          onSortChange={handleSortChange}
-          onRowDoubleClick={handleRowDoubleClick}
-          onSelectionChanged={setSelectedLead}
-          toolbarButtons={toolbarButtons}
-        />
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Collapsible Filters & Actions Container */}
+      <div {...collapsible.containerProps}>
+        {collapsible.headerContent}
+        {collapsible.collapsibleContent}
       </div>
 
-      {data?.meta && (
-        <div className="flex items-center justify-between mt-3 px-1">
-          <span className="text-sm text-[var(--color-foreground-muted)]">
-            Toplam: {data.meta.total} kayıt
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              className="px-3 py-1 text-sm border border-[var(--color-border)] rounded disabled:opacity-50"
-              disabled={!data.meta.hasPrevPage}
-              onClick={() =>
-                setQueryParams((p) => ({ ...p, page: (p.page || 1) - 1 }))
-              }
-            >
-              Önceki
-            </button>
-            <span className="text-sm">
-              {data.meta.page} / {data.meta.totalPages}
-            </span>
-            <button
-              className="px-3 py-1 text-sm border border-[var(--color-border)] rounded disabled:opacity-50"
-              disabled={!data.meta.hasNextPage}
-              onClick={() =>
-                setQueryParams((p) => ({ ...p, page: (p.page || 1) + 1 }))
-              }
-            >
-              Sonraki
-            </button>
-          </div>
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Grid Container */}
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <LeadsGrid
+            data={data?.data || []}
+            loading={isLoading}
+            onSortChange={handleSortChange}
+            onRowDoubleClick={handleRowDoubleClick}
+            onSelectionChanged={setSelectedLead}
+            toolbarButtons={toolbarButtons}
+          />
         </div>
-      )}
+
+        {/* Pagination */}
+        {data?.meta && (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-sm text-muted-foreground">
+              Toplam: {data.meta.total} kayıt
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1 text-sm border border-border rounded disabled:opacity-50"
+                disabled={!data.meta.hasPrevPage}
+                onClick={() =>
+                  setQueryParams((p) => ({ ...p, page: (p.page || 1) - 1 }))
+                }
+              >
+                Önceki
+              </button>
+              <span className="text-sm">
+                {data.meta.page} / {data.meta.totalPages}
+              </span>
+              <button
+                className="px-3 py-1 text-sm border border-border rounded disabled:opacity-50"
+                disabled={!data.meta.hasNextPage}
+                onClick={() =>
+                  setQueryParams((p) => ({ ...p, page: (p.page || 1) + 1 }))
+                }
+              >
+                Sonraki
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <LeadFormModal
         isOpen={isFormOpen}
