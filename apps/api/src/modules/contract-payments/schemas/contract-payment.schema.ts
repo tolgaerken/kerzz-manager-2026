@@ -19,7 +19,7 @@ export class ContractPayment {
   @Prop()
   id: string;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   contractId: string;
 
   @Prop()
