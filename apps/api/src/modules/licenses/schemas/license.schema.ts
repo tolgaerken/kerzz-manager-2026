@@ -204,4 +204,11 @@ LicenseSchema.index({ companyType: 1 });
 LicenseSchema.index({ active: 1 });
 LicenseSchema.index({ block: 1 });
 LicenseSchema.index({ customerId: 1 });
+LicenseSchema.index({ haveContract: 1 });
 LicenseSchema.index({ brandName: "text", customerName: "text", SearchItem: "text" });
+
+// Search sorgularında regex ile taranan alanlar için index
+LicenseSchema.index({ brandName: 1 });
+LicenseSchema.index({ customerName: 1 });
+LicenseSchema.index({ phone: 1 });
+LicenseSchema.index({ email: 1 });

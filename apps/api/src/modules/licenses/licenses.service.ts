@@ -148,16 +148,29 @@ export class LicensesService {
       };
     }
 
-    // Full query: Tüm alanlar + haveContract hesaplaması
+    // Filtre boşsa countDocuments yerine estimatedDocumentCount kullan (çok daha hızlı)
+    const hasFilter = Object.keys(filter).length > 0;
+
+    // Exclusion projection: ağır array/obje alanlarını hariç tut
+    // saasItems, licenseItems, persons, orwiStore grid'de kullanılmıyor
+    const projection = {
+      saasItems: 0,
+      licenseItems: 0,
+      persons: 0,
+      orwiStore: 0
+    };
+
     const [data, total, counts] = await Promise.all([
       this.licenseModel
-        .find(filter)
+        .find(filter, projection)
         .sort(sort)
         .skip(skip)
         .limit(numericLimit)
         .lean()
         .exec(),
-      this.licenseModel.countDocuments(filter).exec(),
+      hasFilter
+        ? this.licenseModel.countDocuments(filter).exec()
+        : this.licenseModel.estimatedDocumentCount().exec(),
       this.getCounts()
     ]);
 
@@ -168,7 +181,7 @@ export class LicensesService {
     const activeLicenseIds = await this.contractsService.getActiveLicenseIds(licenseIds);
 
     return {
-      data: data.map((doc) => this.mapToResponseDto(doc, activeLicenseIds.has(doc.licenseId.toString()))),
+      data: data.map((doc) => this.mapToListResponseDto(doc, activeLicenseIds.has(doc.licenseId.toString()))),
       pagination: {
         page: numericPage,
         limit: numericLimit,
@@ -289,47 +302,54 @@ export class LicensesService {
   }
 
   private async getCounts(): Promise<LicenseCountsDto> {
-    const [
-      total,
-      active,
-      blocked,
-      withContract,
-      kerzzPos,
-      orwiPos,
-      kerzzCloud,
-      chain,
-      single,
-      belediye,
-      unv
-    ] = await Promise.all([
-      this.licenseModel.countDocuments({}).exec(),
-      this.licenseModel.countDocuments({ active: true }).exec(),
-      this.licenseModel.countDocuments({ block: true }).exec(),
-      this.licenseModel.countDocuments({ haveContract: true }).exec(),
-      this.licenseModel.countDocuments({ type: "kerzz-pos" }).exec(),
-      this.licenseModel.countDocuments({ type: "orwi-pos" }).exec(),
-      this.licenseModel.countDocuments({ type: "kerzz-cloud" }).exec(),
-      this.licenseModel.countDocuments({ companyType: "chain" }).exec(),
-      this.licenseModel.countDocuments({ companyType: "single" }).exec(),
-      this.licenseModel.countDocuments({ companyType: "belediye" }).exec(),
-      this.licenseModel.countDocuments({ companyType: "unv" }).exec()
-    ]);
+    // 11 ayrı countDocuments yerine tek bir aggregation pipeline
+    const [result] = await this.licenseModel
+      .aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: [{ $eq: ["$active", true] }, 1, 0] } },
+            blocked: { $sum: { $cond: [{ $eq: ["$block", true] }, 1, 0] } },
+            withContract: { $sum: { $cond: [{ $eq: ["$haveContract", true] }, 1, 0] } },
+            kerzzPos: { $sum: { $cond: [{ $eq: ["$type", "kerzz-pos"] }, 1, 0] } },
+            orwiPos: { $sum: { $cond: [{ $eq: ["$type", "orwi-pos"] }, 1, 0] } },
+            kerzzCloud: { $sum: { $cond: [{ $eq: ["$type", "kerzz-cloud"] }, 1, 0] } },
+            chain: { $sum: { $cond: [{ $eq: ["$companyType", "chain"] }, 1, 0] } },
+            single: { $sum: { $cond: [{ $eq: ["$companyType", "single"] }, 1, 0] } },
+            belediye: { $sum: { $cond: [{ $eq: ["$companyType", "belediye"] }, 1, 0] } },
+            unv: { $sum: { $cond: [{ $eq: ["$companyType", "unv"] }, 1, 0] } }
+          }
+        }
+      ])
+      .exec();
+
+    if (!result) {
+      return {
+        total: 0,
+        active: 0,
+        blocked: 0,
+        withContract: 0,
+        byType: { kerzzPos: 0, orwiPos: 0, kerzzCloud: 0 },
+        byCompanyType: { chain: 0, single: 0, belediye: 0, unv: 0 }
+      };
+    }
 
     return {
-      total,
-      active,
-      blocked,
-      withContract,
+      total: result.total,
+      active: result.active,
+      blocked: result.blocked,
+      withContract: result.withContract,
       byType: {
-        kerzzPos,
-        orwiPos,
-        kerzzCloud
+        kerzzPos: result.kerzzPos,
+        orwiPos: result.orwiPos,
+        kerzzCloud: result.kerzzCloud
       },
       byCompanyType: {
-        chain,
-        single,
-        belediye,
-        unv
+        chain: result.chain,
+        single: result.single,
+        belediye: result.belediye,
+        unv: result.unv
       }
     };
   }
@@ -356,6 +376,62 @@ export class LicensesService {
       .replace("[Kerzz POS]", "[KP]")
       .replace("[Orwi POS]", "[OP]")
       .replace("[Kerzz Cloud]", "[KC]");
+  }
+
+  /**
+   * Liste sorguları için hafif DTO mapping.
+   * Aggregation pipeline'da saasItems/licenseItems $size ile count'a dönüştürülmüş durumda.
+   */
+  private mapToListResponseDto(doc: Record<string, any>, haveContract: boolean): Record<string, unknown> {
+    return {
+      _id: String(doc._id),
+      id: doc.id,
+      no: doc.no,
+      creation: doc.creation,
+      customerId: doc.customerId || "",
+      customerName: doc.customerName || "",
+      brandName: doc.brandName || "",
+      address: {
+        address: "",
+        cityId: 0,
+        city: doc.address?.city || "",
+        townId: 0,
+        town: "",
+        districtId: 0,
+        district: "",
+        countryId: "",
+        country: ""
+      },
+      phone: doc.phone || "",
+      email: doc.email || "",
+      chainId: doc.chainId || "",
+      resellerId: doc.resellerId || "",
+      person: doc.person || "",
+      block: doc.block ?? false,
+      blockMessage: doc.blockMessage || "",
+      isOpen: doc.isOpen ?? false,
+      active: doc.active ?? false,
+      // Projection ile array'ler çıkarıldı, count bilgisi yok
+      // Grid'de bu sütunlar gösterilmeyecek (veya detay sorgusundan gelecek)
+      saasItemsCount: 0,
+      licenseItemsCount: 0,
+      licenseId: doc.licenseId,
+      lastOnline: doc.lastOnline,
+      lastIp: doc.lastIp || "",
+      lastVersion: doc.lastVersion || "",
+      assetCode: doc.assetCode || 0,
+      hasRenty: doc.hasRenty ?? false,
+      hasLicense: doc.hasLicense ?? false,
+      haveContract,
+      hasBoss: doc.hasBoss ?? false,
+      hasEftPos: doc.hasEftPos ?? null,
+      type: doc.type || "",
+      currentVersion: doc.currentVersion || "",
+      SearchItem: this.transformSearchItem(doc.SearchItem),
+      companyType: doc.companyType || "",
+      kitchenType: doc.kitchenType || "",
+      category: doc.category || ""
+    };
   }
 
   private mapToResponseDto(license: License, haveContract: boolean): LicenseResponseDto {

@@ -7,7 +7,13 @@ import {
   CreateContractCashRegisterDto,
   UpdateContractCashRegisterDto,
   ContractCashRegisterResponseDto,
-  ContractCashRegistersListResponseDto
+  ContractCashRegistersListResponseDto,
+  CashRegisterStatsQueryDto,
+  CashRegisterStatsDto,
+  CurrencyBreakdownDto,
+  TimePeriodStatsDto,
+  ModelStatDto,
+  MonthlyTrendDto
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 
@@ -117,5 +123,224 @@ export class ContractCashRegistersService {
     const uuid = crypto.randomUUID();
     const suffix = Math.random().toString(16).substring(2, 6);
     return `${uuid}-${suffix}`;
+  }
+
+  // ─── Stats Metodu ────────────────────────────────────────────
+
+  async getStats(query: CashRegisterStatsQueryDto): Promise<CashRegisterStatsDto> {
+    const { contractId } = query;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    // Base filter
+    const baseFilter: Record<string, unknown> = {};
+    if (contractId) {
+      baseFilter.contractId = contractId;
+    }
+
+    // Aktif kayıtlar için filter
+    const activeFilter = {
+      ...baseFilter,
+      enabled: true,
+      expired: false
+    };
+
+    // Paralel sorgular
+    const [
+      totalCount,
+      activeCount,
+      tsmCount,
+      gmpCount,
+      yearlyCount,
+      monthlyCount,
+      todayStats,
+      thisMonthStats,
+      thisYearStats,
+      yearlyPriceStats,
+      monthlyPriceStats,
+      modelStats,
+      monthlyTrendStats
+    ] = await Promise.all([
+      // Toplam kayıt
+      this.contractCashRegisterModel.countDocuments(baseFilter).exec(),
+
+      // Aktif kayıt
+      this.contractCashRegisterModel.countDocuments(activeFilter).exec(),
+
+      // TSM sayısı
+      this.contractCashRegisterModel.countDocuments({ ...activeFilter, type: "tsm" }).exec(),
+
+      // GMP sayısı
+      this.contractCashRegisterModel.countDocuments({ ...activeFilter, type: "gmp" }).exec(),
+
+      // Yıllık ödeme
+      this.contractCashRegisterModel.countDocuments({ ...activeFilter, yearly: true }).exec(),
+
+      // Aylık ödeme
+      this.contractCashRegisterModel.countDocuments({ ...activeFilter, yearly: false }).exec(),
+
+      // Bugün eklenenler
+      this.getTimePeriodStats(activeFilter, todayStart),
+
+      // Bu ay eklenenler
+      this.getTimePeriodStats(activeFilter, monthStart),
+
+      // Bu yıl eklenenler
+      this.getTimePeriodStats(activeFilter, yearStart),
+
+      // Yıllık fiyat toplamları (currency bazlı)
+      this.getCurrencyPriceStats({ ...activeFilter, yearly: true }),
+
+      // Aylık fiyat toplamları (currency bazlı)
+      this.getCurrencyPriceStats({ ...activeFilter, yearly: false }),
+
+      // Model dağılımı
+      this.getModelDistribution(activeFilter),
+
+      // Aylık trend (son 12 ay)
+      this.getMonthlyTrend(activeFilter, now)
+    ]);
+
+    const passive = totalCount - activeCount;
+
+    return {
+      total: totalCount,
+      active: activeCount,
+      passive,
+      tsm: tsmCount,
+      gmp: gmpCount,
+      yearly: yearlyCount,
+      monthly: monthlyCount,
+      yearlyByPrice: yearlyPriceStats,
+      monthlyByPrice: monthlyPriceStats,
+      today: todayStats,
+      thisMonth: thisMonthStats,
+      thisYear: thisYearStats,
+      modelDistribution: modelStats,
+      monthlyTrend: monthlyTrendStats
+    };
+  }
+
+  private async getTimePeriodStats(
+    baseFilter: Record<string, unknown>,
+    startDate: Date
+  ): Promise<TimePeriodStatsDto> {
+    const filter = {
+      ...baseFilter,
+      editDate: { $gte: startDate }
+    };
+
+    const result = await this.contractCashRegisterModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$currency",
+          count: { $sum: 1 },
+          totalPrice: { $sum: "$price" }
+        }
+      }
+    ]).exec();
+
+    const currencyCounts = { tl: 0, usd: 0, eur: 0 };
+    const currencyTotals = { tl: 0, usd: 0, eur: 0 };
+    let totalCount = 0;
+
+    for (const item of result) {
+      const currency = item._id as keyof CurrencyBreakdownDto;
+      if (currency in currencyCounts) {
+        currencyCounts[currency] = item.count;
+        currencyTotals[currency] = item.totalPrice;
+        totalCount += item.count;
+      }
+    }
+
+    return {
+      count: totalCount,
+      currencyCounts,
+      currencyTotals
+    };
+  }
+
+  private async getCurrencyPriceStats(
+    filter: Record<string, unknown>
+  ): Promise<CurrencyBreakdownDto> {
+    const result = await this.contractCashRegisterModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$currency",
+          total: { $sum: "$price" }
+        }
+      }
+    ]).exec();
+
+    const totals: CurrencyBreakdownDto = { tl: 0, usd: 0, eur: 0 };
+
+    for (const item of result) {
+      const currency = item._id as keyof CurrencyBreakdownDto;
+      if (currency in totals) {
+        totals[currency] = item.total;
+      }
+    }
+
+    return totals;
+  }
+
+  private async getModelDistribution(
+    filter: Record<string, unknown>
+  ): Promise<ModelStatDto[]> {
+    const result = await this.contractCashRegisterModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$model",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]).exec();
+
+    return result.map(item => ({
+      modelId: item._id || "unknown",
+      count: item.count
+    }));
+  }
+
+  private async getMonthlyTrend(
+    filter: Record<string, unknown>,
+    now: Date
+  ): Promise<MonthlyTrendDto[]> {
+    const months: MonthlyTrendDto[] = [];
+
+    // Son 12 ay için boş array oluştur
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      months.push({ month: monthKey, count: 0 });
+    }
+
+    // Her ay için kayıt sayısını hesapla
+    const results = await Promise.all(
+      months.map(async (m) => {
+        const [year, month] = m.month.split("-").map(Number);
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = new Date(year, month, 1);
+
+        const count = await this.contractCashRegisterModel.countDocuments({
+          ...filter,
+          editDate: {
+            $gte: monthStart,
+            $lt: monthEnd
+          }
+        }).exec();
+
+        return { month: m.month, count };
+      })
+    );
+
+    return results;
   }
 }

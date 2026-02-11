@@ -1,14 +1,6 @@
 import { useMemo } from "react";
-import { useContractSaas } from "../../hooks/useContractDetail";
+import { useContractSaasStats } from "../../hooks/useContractDetail";
 import { useSoftwareProducts } from "../../../software-products/hooks/useSoftwareProducts";
-import type { ContractSaas } from "../../types";
-import {
-  getMonthlyTrend,
-  getTimePeriodStats,
-  isSameDay,
-  isSameMonth,
-  isSameYear,
-} from "../shared/dashboard/time";
 import type {
   CurrencyBreakdown,
   MonthlyTrend,
@@ -38,15 +30,14 @@ export interface SaasStats {
   monthlyTrend: MonthlyTrend[];
 }
 
-function getAmount(item: ContractSaas): number {
-  if (item.total && item.total > 0) return item.total;
-  if (item.qty && item.qty > 0) return item.price * item.qty;
-  return item.price;
+function getMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split("-");
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return date.toLocaleDateString("tr-TR", { month: "short", year: "2-digit" });
 }
 
 export function useSaasStats(contractId?: string) {
-  const shouldFetchAll = !contractId;
-  const { data, isLoading } = useContractSaas(contractId, shouldFetchAll);
+  const { data, isLoading } = useContractSaasStats(contractId);
   const { data: productsData } = useSoftwareProducts({ limit: 10000, isSaas: true });
 
   const productMap = useMemo(() => {
@@ -59,85 +50,56 @@ export function useSaasStats(contractId?: string) {
   }, [productsData]);
 
   const stats = useMemo<SaasStats>(() => {
-    const allItems = data?.data ?? [];
-    const now = new Date();
-
-    const items = allItems.filter((i) => i.enabled && !i.expired);
-
-    const total = items.length;
-    const active = items.length;
-    const passive = allItems.length - active;
-    const blocked = allItems.filter((i) => i.blocked).length;
-    const expired = allItems.filter((i) => i.expired).length;
-
-    const yearly = items.filter((i) => i.yearly).length;
-    const monthly = items.filter((i) => !i.yearly).length;
-    const totalQty = items.reduce((sum, item) => sum + (item.qty || 0), 0);
-
-    const yearlyByTotal: CurrencyBreakdown = { tl: 0, usd: 0, eur: 0 };
-    const monthlyByTotal: CurrencyBreakdown = { tl: 0, usd: 0, eur: 0 };
-
-    for (const item of items) {
-      const cur = item.currency as keyof CurrencyBreakdown;
-      if (cur in yearlyByTotal) {
-        if (item.yearly) {
-          yearlyByTotal[cur] += getAmount(item);
-        } else {
-          monthlyByTotal[cur] += getAmount(item);
-        }
-      }
+    if (!data) {
+      // Varsayılan boş stats
+      return {
+        total: 0,
+        active: 0,
+        passive: 0,
+        blocked: 0,
+        expired: 0,
+        yearly: 0,
+        monthly: 0,
+        totalQty: 0,
+        yearlyByTotal: { tl: 0, usd: 0, eur: 0 },
+        monthlyByTotal: { tl: 0, usd: 0, eur: 0 },
+        productDistribution: [],
+        today: {
+          count: 0,
+          currencyCounts: { tl: 0, usd: 0, eur: 0 },
+          currencyTotals: { tl: 0, usd: 0, eur: 0 }
+        },
+        thisMonth: {
+          count: 0,
+          currencyCounts: { tl: 0, usd: 0, eur: 0 },
+          currencyTotals: { tl: 0, usd: 0, eur: 0 }
+        },
+        thisYear: {
+          count: 0,
+          currencyCounts: { tl: 0, usd: 0, eur: 0 },
+          currencyTotals: { tl: 0, usd: 0, eur: 0 }
+        },
+        monthlyTrend: []
+      };
     }
 
-    const todayItems = items.filter((i) => i.editDate && isSameDay(new Date(i.editDate), now));
-    const thisMonthItems = items.filter((i) => i.editDate && isSameMonth(new Date(i.editDate), now));
-    const thisYearItems = items.filter((i) => i.editDate && isSameYear(new Date(i.editDate), now));
+    // Backend'den gelen product ID'leri için isim mapping
+    const productDistribution: ProductDistributionItem[] = data.productDistribution.map((p) => ({
+      name: productMap.get(p.productId) || p.productId,
+      count: p.count
+    }));
 
-    const today = getTimePeriodStats(
-      todayItems,
-      (item) => item.currency,
-      (item) => getAmount(item)
-    );
-    const thisMonth = getTimePeriodStats(
-      thisMonthItems,
-      (item) => item.currency,
-      (item) => getAmount(item)
-    );
-    const thisYear = getTimePeriodStats(
-      thisYearItems,
-      (item) => item.currency,
-      (item) => getAmount(item)
-    );
-
-    const productCounts = new Map<string, number>();
-    for (const item of items) {
-      const key = item.productId || "Bilinmeyen";
-      productCounts.set(key, (productCounts.get(key) || 0) + 1);
-    }
-    const productDistribution = Array.from(productCounts.entries())
-      .map(([id, count]) => ({
-        name: productMap.get(id) || id,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    const monthlyTrend = getMonthlyTrend(items, (item) => item.editDate);
+    // Aylık trend için label ekle
+    const monthlyTrend: MonthlyTrend[] = data.monthlyTrend.map((m) => ({
+      month: m.month,
+      label: getMonthLabel(m.month),
+      count: m.count
+    }));
 
     return {
-      total,
-      active,
-      passive,
-      blocked,
-      expired,
-      yearly,
-      monthly,
-      totalQty,
-      yearlyByTotal,
-      monthlyByTotal,
+      ...data,
       productDistribution,
-      today,
-      thisMonth,
-      thisYear,
-      monthlyTrend,
+      monthlyTrend
     };
   }, [data, productMap]);
 

@@ -122,3 +122,69 @@ export class UpdateContractCashRegisterDto {
   @IsBoolean()
   folioClose?: boolean;
 }
+
+// ─── Stats DTO'ları ──────────────────────────────────────────
+
+export class CurrencyBreakdownDto {
+  tl: number;
+  usd: number;
+  eur: number;
+}
+
+export class CurrencyCountBreakdownDto {
+  tl: number;
+  usd: number;
+  eur: number;
+}
+
+export class TimePeriodStatsDto {
+  count: number;
+  currencyCounts: CurrencyCountBreakdownDto;
+  currencyTotals: CurrencyBreakdownDto;
+}
+
+export class ModelStatDto {
+  modelId: string;
+  count: number;
+}
+
+export class MonthlyTrendDto {
+  month: string;
+  count: number;
+}
+
+export class CashRegisterStatsDto {
+  // Genel
+  total: number;
+  active: number;
+  passive: number;
+
+  // Tür bazlı
+  tsm: number;
+  gmp: number;
+
+  // Periyot bazlı
+  yearly: number;
+  monthly: number;
+
+  // Currency bazlı fiyat toplamları (aylık / yıllık ayrımı)
+  yearlyByPrice: CurrencyBreakdownDto;
+  monthlyByPrice: CurrencyBreakdownDto;
+
+  // Zaman bazlı (bugün, bu ay, bu yıl)
+  today: TimePeriodStatsDto;
+  thisMonth: TimePeriodStatsDto;
+  thisYear: TimePeriodStatsDto;
+
+  // Model bazlı dağılım
+  modelDistribution: ModelStatDto[];
+
+  // Aylık trend (son 12 ay)
+  monthlyTrend: MonthlyTrendDto[];
+}
+
+export class CashRegisterStatsQueryDto {
+  @IsOptional()
+  @IsString()
+  contractId?: string;
+}

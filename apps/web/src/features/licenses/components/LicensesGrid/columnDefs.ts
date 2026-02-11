@@ -165,7 +165,7 @@ export const createLicenseColumnDefs = (customerMap: Map<string, CustomerLookupI
   {
     id: "licenseItems",
     header: "Modüller",
-    accessorFn: (row) => row.licenseItems?.length || 0,
+    accessorFn: (row) => row.licenseItemsCount ?? row.licenseItems?.length ?? 0,
     width: 90,
     sortable: false,
     align: "center",
@@ -174,7 +174,7 @@ export const createLicenseColumnDefs = (customerMap: Map<string, CustomerLookupI
   {
     id: "saasItems",
     header: "SaaS",
-    accessorFn: (row) => row.saasItems?.length || 0,
+    accessorFn: (row) => row.saasItemsCount ?? row.saasItems?.length ?? 0,
     width: 80,
     sortable: false,
     align: "center",

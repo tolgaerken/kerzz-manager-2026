@@ -9,6 +9,8 @@ interface ActiveFilterBarProps<TData> {
   disabledFilters: DisabledFilterState;
   columns: GridColumnDef<TData>[];
   locale: GridLocale;
+  filteredRowCount: number;
+  totalRowCount: number;
   onToggleFilter: (columnId: string) => void;
   onRemoveFilter: (columnId: string) => void;
   onClearAll: () => void;
@@ -19,6 +21,8 @@ function ActiveFilterBarInner<TData>({
   disabledFilters,
   columns,
   locale,
+  filteredRowCount,
+  totalRowCount,
   onToggleFilter,
   onRemoveFilter,
   onClearAll,
@@ -45,6 +49,9 @@ function ActiveFilterBarInner<TData>({
           />
         </svg>
         <span>{locale.activeFilters}:</span>
+        <span className="kz-active-filter-bar__count">
+          {filteredRowCount} {locale.of} {totalRowCount} {locale.items}
+        </span>
       </div>
       <div className="kz-active-filter-bar__chips">
         {filterEntries.map(([columnId, filter]: [string, ActiveFilter]) => (

@@ -199,3 +199,9 @@ ContractSchema.index({ yearly: 1 });
 ContractSchema.index({ startDate: 1 });
 ContractSchema.index({ endDate: 1 });
 ContractSchema.index({ brand: "text", company: "text" });
+
+// contractId + tarih aralığı sorguları için compound index
+// (getActiveLicenseIds, hasActiveContract gibi sorgularda kullanılır)
+ContractSchema.index({ contractId: 1, startDate: 1, endDate: 1 });
+// customerId bazlı sorgular için
+ContractSchema.index({ customerId: 1 });

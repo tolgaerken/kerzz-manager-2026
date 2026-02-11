@@ -37,10 +37,10 @@ export class ContractSupport {
   @Prop({ default: true })
   enabled: boolean;
 
-  @Prop({ default: false })
+  @Prop({ default: false, index: true })
   blocked: boolean;
 
-  @Prop({ default: false })
+  @Prop({ default: false, index: true })
   expired: boolean;
 
   @Prop({ default: 0 })
@@ -49,7 +49,7 @@ export class ContractSupport {
   @Prop({ default: 0 })
   calulatedPrice: number;
 
-  @Prop()
+  @Prop({ index: true })
   editDate: Date;
 
   @Prop()
@@ -57,4 +57,11 @@ export class ContractSupport {
 }
 
 export const ContractSupportSchema = SchemaFactory.createForClass(ContractSupport);
+
+// Compound indexler
 ContractSupportSchema.index({ contractId: 1 });
+ContractSupportSchema.index({ enabled: 1, expired: 1 }); // Aktif kayıt sorguları için
+ContractSupportSchema.index({ editDate: -1 }); // Zaman bazlı sıralama için
+ContractSupportSchema.index({ type: 1 }); // Tip filtreleme için
+ContractSupportSchema.index({ currency: 1 }); // Currency bazlı sorgular için
+ContractSupportSchema.index({ yearly: 1 }); // Periyot bazlı sorgular için

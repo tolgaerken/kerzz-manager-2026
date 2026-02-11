@@ -12,7 +12,8 @@ import { ContractSupportsService } from "./contract-supports.service";
 import {
   ContractSupportQueryDto,
   CreateContractSupportDto,
-  UpdateContractSupportDto
+  UpdateContractSupportDto,
+  SupportsStatsQueryDto
 } from "./dto";
 
 @Controller("contract-supports")
@@ -22,6 +23,11 @@ export class ContractSupportsController {
   @Get()
   async findAll(@Query() query: ContractSupportQueryDto) {
     return this.contractSupportsService.findAll(query);
+  }
+
+  @Get("stats")
+  async getStats(@Query() query: SupportsStatsQueryDto) {
+    return this.contractSupportsService.getStats(query);
   }
 
   @Get(":id")

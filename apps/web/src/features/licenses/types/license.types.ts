@@ -91,6 +91,10 @@ export interface License {
   category: string;
   createdAt?: string;
   updatedAt?: string;
+  // Liste sorgularında array'ler yerine count döner
+  saasItemsCount?: number;
+  licenseItemsCount?: number;
+  personsCount?: number;
 }
 
 // Query parametreleri

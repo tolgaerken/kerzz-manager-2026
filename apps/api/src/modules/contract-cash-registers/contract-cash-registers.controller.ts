@@ -12,7 +12,8 @@ import { ContractCashRegistersService } from "./contract-cash-registers.service"
 import {
   ContractCashRegisterQueryDto,
   CreateContractCashRegisterDto,
-  UpdateContractCashRegisterDto
+  UpdateContractCashRegisterDto,
+  CashRegisterStatsQueryDto
 } from "./dto";
 
 @Controller("contract-cash-registers")
@@ -22,6 +23,11 @@ export class ContractCashRegistersController {
   @Get()
   async findAll(@Query() query: ContractCashRegisterQueryDto) {
     return this.contractCashRegistersService.findAll(query);
+  }
+
+  @Get("stats")
+  async getStats(@Query() query: CashRegisterStatsQueryDto) {
+    return this.contractCashRegistersService.getStats(query);
   }
 
   @Get(":id")

@@ -43,7 +43,7 @@ export class ContractCashRegister {
   @Prop({ default: true })
   enabled: boolean;
 
-  @Prop({ default: false })
+  @Prop({ default: false, index: true })
   expired: boolean;
 
   @Prop({ default: false })
@@ -52,7 +52,7 @@ export class ContractCashRegister {
   @Prop({ default: false })
   folioClose: boolean;
 
-  @Prop()
+  @Prop({ index: true })
   editDate: Date;
 
   @Prop()
@@ -60,4 +60,11 @@ export class ContractCashRegister {
 }
 
 export const ContractCashRegisterSchema = SchemaFactory.createForClass(ContractCashRegister);
+
+// Compound indexler
 ContractCashRegisterSchema.index({ contractId: 1 });
+ContractCashRegisterSchema.index({ enabled: 1, expired: 1 }); // Aktif kayıt sorguları için
+ContractCashRegisterSchema.index({ editDate: -1 }); // Zaman bazlı sıralama için
+ContractCashRegisterSchema.index({ type: 1 }); // Tür filtreleme için
+ContractCashRegisterSchema.index({ model: 1 }); // Model dağılımı için
+ContractCashRegisterSchema.index({ currency: 1 }); // Currency bazlı sorgular için

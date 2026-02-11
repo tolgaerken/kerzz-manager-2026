@@ -7,7 +7,13 @@ import {
   CreateContractSupportDto,
   UpdateContractSupportDto,
   ContractSupportResponseDto,
-  ContractSupportsListResponseDto
+  ContractSupportsListResponseDto,
+  SupportsStatsQueryDto,
+  SupportsStatsDto,
+  CurrencyBreakdownDto,
+  TimePeriodStatsDto,
+  TypeCountsDto,
+  MonthlyTrendDto
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 
@@ -113,5 +119,239 @@ export class ContractSupportsService {
     const uuid = crypto.randomUUID();
     const suffix = Math.random().toString(16).substring(2, 6);
     return `${uuid}-${suffix}`;
+  }
+
+  // ─── Stats Metodu ────────────────────────────────────────────
+
+  async getStats(query: SupportsStatsQueryDto): Promise<SupportsStatsDto> {
+    const { contractId } = query;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    // Base filter
+    const baseFilter: Record<string, unknown> = {};
+    if (contractId) {
+      baseFilter.contractId = contractId;
+    }
+
+    // Aktif kayıtlar için filter
+    const activeFilter = {
+      ...baseFilter,
+      enabled: true,
+      expired: false
+    };
+
+    // Paralel sorgular
+    const [
+      totalCount,
+      activeCount,
+      blockedCount,
+      expiredCount,
+      yearlyCount,
+      monthlyCount,
+      typeStats,
+      todayStats,
+      thisMonthStats,
+      thisYearStats,
+      yearlyPriceStats,
+      monthlyPriceStats,
+      monthlyTrendStats
+    ] = await Promise.all([
+      // Toplam kayıt
+      this.contractSupportModel.countDocuments(baseFilter).exec(),
+
+      // Aktif kayıt
+      this.contractSupportModel.countDocuments(activeFilter).exec(),
+
+      // Bloklu kayıtlar
+      this.contractSupportModel.countDocuments({ ...baseFilter, blocked: true }).exec(),
+
+      // Süresi dolmuş
+      this.contractSupportModel.countDocuments({ ...baseFilter, expired: true }).exec(),
+
+      // Yıllık ödeme
+      this.contractSupportModel.countDocuments({ ...activeFilter, yearly: true }).exec(),
+
+      // Aylık ödeme
+      this.contractSupportModel.countDocuments({ ...activeFilter, yearly: false }).exec(),
+
+      // Tip bazlı dağılım
+      this.getTypeStats(activeFilter),
+
+      // Bugün eklenenler
+      this.getTimePeriodStats(activeFilter, todayStart),
+
+      // Bu ay eklenenler
+      this.getTimePeriodStats(activeFilter, monthStart),
+
+      // Bu yıl eklenenler
+      this.getTimePeriodStats(activeFilter, yearStart),
+
+      // Yıllık fiyat toplamları
+      this.getCurrencyPriceStats({ ...activeFilter, yearly: true }),
+
+      // Aylık fiyat toplamları
+      this.getCurrencyPriceStats({ ...activeFilter, yearly: false }),
+
+      // Aylık trend
+      this.getMonthlyTrend(activeFilter, now)
+    ]);
+
+    const passive = totalCount - activeCount;
+
+    return {
+      total: totalCount,
+      active: activeCount,
+      passive,
+      blocked: blockedCount,
+      expired: expiredCount,
+      yearly: yearlyCount,
+      monthly: monthlyCount,
+      typeCounts: typeStats,
+      yearlyByPrice: yearlyPriceStats,
+      monthlyByPrice: monthlyPriceStats,
+      today: todayStats,
+      thisMonth: thisMonthStats,
+      thisYear: thisYearStats,
+      monthlyTrend: monthlyTrendStats
+    };
+  }
+
+  private async getTimePeriodStats(
+    baseFilter: Record<string, unknown>,
+    startDate: Date
+  ): Promise<TimePeriodStatsDto> {
+    const filter = {
+      ...baseFilter,
+      editDate: { $gte: startDate }
+    };
+
+    const result = await this.contractSupportModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$currency",
+          count: { $sum: 1 },
+          totalPrice: { $sum: "$price" }
+        }
+      }
+    ]).exec();
+
+    const currencyCounts = { tl: 0, usd: 0, eur: 0 };
+    const currencyTotals = { tl: 0, usd: 0, eur: 0 };
+    let totalCount = 0;
+
+    for (const item of result) {
+      const currency = item._id as keyof CurrencyBreakdownDto;
+      if (currency in currencyCounts) {
+        currencyCounts[currency] = item.count;
+        currencyTotals[currency] = item.totalPrice;
+        totalCount += item.count;
+      }
+    }
+
+    return {
+      count: totalCount,
+      currencyCounts,
+      currencyTotals
+    };
+  }
+
+  private async getCurrencyPriceStats(
+    filter: Record<string, unknown>
+  ): Promise<CurrencyBreakdownDto> {
+    const result = await this.contractSupportModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$currency",
+          total: { $sum: "$price" }
+        }
+      }
+    ]).exec();
+
+    const totals: CurrencyBreakdownDto = { tl: 0, usd: 0, eur: 0 };
+
+    for (const item of result) {
+      const currency = item._id as keyof CurrencyBreakdownDto;
+      if (currency in totals) {
+        totals[currency] = item.total;
+      }
+    }
+
+    return totals;
+  }
+
+  private async getTypeStats(
+    filter: Record<string, unknown>
+  ): Promise<TypeCountsDto> {
+    const result = await this.contractSupportModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$type",
+          count: { $sum: 1 }
+        }
+      }
+    ]).exec();
+
+    const typeCounts: TypeCountsDto = { standart: 0, gold: 0, platin: 0, vip: 0 };
+
+    for (const item of result) {
+      const type = this.normalizeType(item._id);
+      if (type in typeCounts) {
+        typeCounts[type as keyof TypeCountsDto] += item.count;
+      }
+    }
+
+    return typeCounts;
+  }
+
+  private normalizeType(value: string): string {
+    const normalized = (value || "standart").toLowerCase();
+    if (normalized === "standard") return "standart";
+    if (normalized === "platinum") return "platin";
+    if (normalized === "standart" || normalized === "gold" || normalized === "platin" || normalized === "vip") {
+      return normalized;
+    }
+    return "standart";
+  }
+
+  private async getMonthlyTrend(
+    filter: Record<string, unknown>,
+    now: Date
+  ): Promise<MonthlyTrendDto[]> {
+    const months: MonthlyTrendDto[] = [];
+
+    // Son 12 ay için boş array oluştur
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      months.push({ month: monthKey, count: 0 });
+    }
+
+    // Her ay için kayıt sayısını hesapla
+    const results = await Promise.all(
+      months.map(async (m) => {
+        const [year, month] = m.month.split("-").map(Number);
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = new Date(year, month, 1);
+
+        const count = await this.contractSupportModel.countDocuments({
+          ...filter,
+          editDate: {
+            $gte: monthStart,
+            $lt: monthEnd
+          }
+        }).exec();
+
+        return { month: m.month, count };
+      })
+    );
+
+    return results;
   }
 }

@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import { useContractCashRegisters } from "../../hooks/useContractDetail";
+import { useContractCashRegisterStats } from "../../hooks/useContractDetail";
 import { useActiveEftPosModels } from "../../hooks/useEftPosModels";
-import type { ContractCashRegister } from "../../types";
 
 // ─── Tip Tanımları ───────────────────────────────────────────
 
@@ -66,53 +65,16 @@ export interface CashRegisterStats {
 
 // ─── Yardımcı Fonksiyonlar ──────────────────────────────────
 
-function isSameDay(date: Date, ref: Date): boolean {
-  return (
-    date.getFullYear() === ref.getFullYear() &&
-    date.getMonth() === ref.getMonth() &&
-    date.getDate() === ref.getDate()
-  );
-}
-
-function isSameMonth(date: Date, ref: Date): boolean {
-  return (
-    date.getFullYear() === ref.getFullYear() &&
-    date.getMonth() === ref.getMonth()
-  );
-}
-
-function isSameYear(date: Date, ref: Date): boolean {
-  return date.getFullYear() === ref.getFullYear();
-}
-
-function getTimePeriodStats(items: ContractCashRegister[]): TimePeriodStats {
-  const currencyCounts: CurrencyCountBreakdown = { tl: 0, usd: 0, eur: 0 };
-  const currencyTotals: CurrencyBreakdown = { tl: 0, usd: 0, eur: 0 };
-
-  for (const item of items) {
-    const cur = item.currency as keyof CurrencyBreakdown;
-    if (cur in currencyCounts) {
-      currencyCounts[cur]++;
-      currencyTotals[cur] += item.price;
-    }
-  }
-
-  return { count: items.length, currencyCounts, currencyTotals };
-}
-
-function getMonthLabel(date: Date): string {
+function getMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split("-");
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
   return date.toLocaleDateString("tr-TR", { month: "short", year: "2-digit" });
-}
-
-function getMonthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 // ─── Hook ────────────────────────────────────────────────────
 
 export function useCashRegisterStats(contractId?: string) {
-  const shouldFetchAll = !contractId;
-  const { data, isLoading } = useContractCashRegisters(contractId, shouldFetchAll);
+  const { data, isLoading } = useContractCashRegisterStats(contractId);
   const { data: eftPosModelsData } = useActiveEftPosModels();
 
   const modelMap = useMemo(() => {
@@ -126,104 +88,55 @@ export function useCashRegisterStats(contractId?: string) {
   }, [eftPosModelsData]);
 
   const stats = useMemo<CashRegisterStats>(() => {
-    const allItems = data?.data ?? [];
-    const now = new Date();
-
-    // Sadece aktif kayıtları baz al
-    const items = allItems.filter((i) => i.enabled && !i.expired);
-
-    // Genel sayılar
-    const total = items.length;
-    const active = items.length;
-    const passive = allItems.length - active;
-
-    // Tür bazlı
-    const tsm = items.filter((i) => i.type === "tsm").length;
-    const gmp = items.filter((i) => i.type === "gmp").length;
-
-    // Periyot bazlı
-    const yearly = items.filter((i) => i.yearly).length;
-    const monthly = items.filter((i) => !i.yearly).length;
-
-    // Currency bazlı fiyat toplamları (aylık / yıllık ayrımı)
-    const yearlyByPrice: CurrencyBreakdown = { tl: 0, usd: 0, eur: 0 };
-    const monthlyByPrice: CurrencyBreakdown = { tl: 0, usd: 0, eur: 0 };
-    for (const item of items) {
-      const cur = item.currency as keyof CurrencyBreakdown;
-      if (cur in yearlyByPrice) {
-        if (item.yearly) {
-          yearlyByPrice[cur] += item.price;
-        } else {
-          monthlyByPrice[cur] += item.price;
-        }
-      }
+    if (!data) {
+      // Varsayılan boş stats
+      return {
+        total: 0,
+        active: 0,
+        passive: 0,
+        tsm: 0,
+        gmp: 0,
+        yearly: 0,
+        monthly: 0,
+        yearlyByPrice: { tl: 0, usd: 0, eur: 0 },
+        monthlyByPrice: { tl: 0, usd: 0, eur: 0 },
+        today: {
+          count: 0,
+          currencyCounts: { tl: 0, usd: 0, eur: 0 },
+          currencyTotals: { tl: 0, usd: 0, eur: 0 }
+        },
+        thisMonth: {
+          count: 0,
+          currencyCounts: { tl: 0, usd: 0, eur: 0 },
+          currencyTotals: { tl: 0, usd: 0, eur: 0 }
+        },
+        thisYear: {
+          count: 0,
+          currencyCounts: { tl: 0, usd: 0, eur: 0 },
+          currencyTotals: { tl: 0, usd: 0, eur: 0 }
+        },
+        modelDistribution: [],
+        monthlyTrend: []
+      };
     }
 
-    // Zaman bazlı
-    const todayItems = items.filter((i) => i.editDate && isSameDay(new Date(i.editDate), now));
-    const thisMonthItems = items.filter((i) => i.editDate && isSameMonth(new Date(i.editDate), now));
-    const thisYearItems = items.filter((i) => i.editDate && isSameYear(new Date(i.editDate), now));
+    // Backend'den gelen model ID'leri için isim mapping
+    const modelDistribution: ModelStat[] = data.modelDistribution.map((m) => ({
+      name: modelMap.get(m.modelId) || m.modelId,
+      count: m.count
+    }));
 
-    const today = getTimePeriodStats(todayItems);
-    const thisMonth = getTimePeriodStats(thisMonthItems);
-    const thisYear = getTimePeriodStats(thisYearItems);
-
-    // Model bazlı dağılım
-    const modelCounts = new Map<string, number>();
-    for (const item of items) {
-      if (item.model) {
-        modelCounts.set(item.model, (modelCounts.get(item.model) || 0) + 1);
-      }
-    }
-    const modelDistribution: ModelStat[] = Array.from(modelCounts.entries())
-      .map(([id, count]) => ({
-        name: modelMap.get(id) || id,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    // Aylık trend (son 12 ay)
-    const monthlyMap = new Map<string, number>();
-    const months: { key: string; label: string }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = getMonthKey(d);
-      const label = getMonthLabel(d);
-      monthlyMap.set(key, 0);
-      months.push({ key, label });
-    }
-
-    for (const item of items) {
-      if (item.editDate) {
-        const d = new Date(item.editDate);
-        const key = getMonthKey(d);
-        if (monthlyMap.has(key)) {
-          monthlyMap.set(key, monthlyMap.get(key)! + 1);
-        }
-      }
-    }
-
-    const monthlyTrend: MonthlyTrend[] = months.map((m) => ({
-      month: m.key,
-      label: m.label,
-      count: monthlyMap.get(m.key) || 0,
+    // Aylık trend için label ekle
+    const monthlyTrend: MonthlyTrend[] = data.monthlyTrend.map((m) => ({
+      month: m.month,
+      label: getMonthLabel(m.month),
+      count: m.count
     }));
 
     return {
-      total,
-      active,
-      passive,
-      tsm,
-      gmp,
-      yearly,
-      monthly,
-      yearlyByPrice,
-      monthlyByPrice,
-      today,
-      thisMonth,
-      thisYear,
+      ...data,
       modelDistribution,
-      monthlyTrend,
+      monthlyTrend
     };
   }, [data, modelMap]);
 

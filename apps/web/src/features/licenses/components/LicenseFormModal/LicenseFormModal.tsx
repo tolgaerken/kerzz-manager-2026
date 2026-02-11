@@ -9,6 +9,7 @@ import { useCustomerLookup } from "../../../lookup";
 import type { CustomerLookupItem } from "../../../lookup";
 import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
 import type { AddressData } from "../../../locations";
+import { useLicense } from "../../hooks/useLicenses";
 
 interface LicenseFormModalProps {
   isOpen: boolean;
@@ -38,6 +39,9 @@ export function LicenseFormModal({
   const [activeTab, setActiveTab] = useState<TabId>("info");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerLookupItem | null>(null);
 
+  // Edit modunda detay verisini çek (saasItems, licenseItems vb. liste sorgusunda gelmiyor)
+  const { data: licenseDetail } = useLicense(isOpen && license ? license._id : null);
+
   const [formData, setFormData] = useState<CreateLicenseInput>({
     brandName: "",
     customerId: "",
@@ -63,38 +67,41 @@ export function LicenseFormModal({
   // Lookup cache'ten customer map'i al (edit modda customer'ı bulmak için)
   const { customerMap } = useCustomerLookup();
 
+  // Detay verisi veya liste verisi - hangisi varsa onu kullan
+  const effectiveLicense = licenseDetail || license;
+
   useEffect(() => {
-    if (license) {
+    if (effectiveLicense && isOpen) {
       setFormData({
-        brandName: license.brandName,
-        customerId: license.customerId,
-        customerName: license.customerName,
-        phone: license.phone,
-        email: license.email,
-        type: license.type,
-        companyType: license.companyType,
-        category: license.category,
-        active: license.active,
-        block: license.block,
-        blockMessage: license.blockMessage,
-        hasRenty: license.hasRenty,
-        hasLicense: license.hasLicense,
-        hasBoss: license.hasBoss,
-        address: license.address,
-        licenseItems: license.licenseItems || [],
-        saasItems: license.saasItems || []
+        brandName: effectiveLicense.brandName,
+        customerId: effectiveLicense.customerId,
+        customerName: effectiveLicense.customerName,
+        phone: effectiveLicense.phone,
+        email: effectiveLicense.email,
+        type: effectiveLicense.type,
+        companyType: effectiveLicense.companyType,
+        category: effectiveLicense.category,
+        active: effectiveLicense.active,
+        block: effectiveLicense.block,
+        blockMessage: effectiveLicense.blockMessage,
+        hasRenty: effectiveLicense.hasRenty,
+        hasLicense: effectiveLicense.hasLicense,
+        hasBoss: effectiveLicense.hasBoss,
+        address: effectiveLicense.address,
+        licenseItems: effectiveLicense.licenseItems || [],
+        saasItems: effectiveLicense.saasItems || []
       });
       setActiveTab("info");
       
       // Edit modda: customerId varsa customer'ı cache'ten bul
-      if (license.customerId) {
-        const trimmedId = license.customerId.toString().trim();
+      if (effectiveLicense.customerId) {
+        const trimmedId = effectiveLicense.customerId.toString().trim();
         const customer = customerMap.get(trimmedId);
         setSelectedCustomer(customer || null);
       } else {
         setSelectedCustomer(null);
       }
-    } else {
+    } else if (!isOpen) {
       setFormData({
         brandName: "",
         customerId: "",
@@ -118,7 +125,7 @@ export function LicenseFormModal({
       setSelectedCustomer(null);
     }
     setErrors({});
-  }, [license, isOpen, customerMap]);
+  }, [effectiveLicense, isOpen, customerMap]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

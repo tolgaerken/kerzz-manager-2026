@@ -11,6 +11,9 @@ import type {
   ContractPayment,
   ContractDetailListResponse
 } from "../types";
+import type { CashRegisterStats } from "../components/CashRegisterDashboard/useCashRegisterStats";
+import type { SupportsStats } from "../components/SupportsDashboard/useSupportsStats";
+import type { SaasStats } from "../components/SaasDashboard/useSaasStats";
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACTS_CONSTANTS;
 
@@ -65,6 +68,14 @@ export async function deleteContractSupport(id: string): Promise<void> {
   return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`);
 }
 
+export async function fetchContractSupportStats(
+  contractId?: string
+): Promise<SupportsStats> {
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/stats${params}`;
+  return apiGet(url);
+}
+
 // Contract Saas API
 export async function fetchContractSaas(
   contractId?: string
@@ -91,6 +102,14 @@ export async function deleteContractSaas(id: string): Promise<void> {
   return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`);
 }
 
+export async function fetchContractSaasStats(
+  contractId?: string
+): Promise<SaasStats> {
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/stats${params}`;
+  return apiGet(url);
+}
+
 // Contract Cash Registers API
 export async function fetchContractCashRegisters(
   contractId?: string
@@ -115,6 +134,14 @@ export async function updateContractCashRegister(
 
 export async function deleteContractCashRegister(id: string): Promise<void> {
   return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`);
+}
+
+export async function fetchContractCashRegisterStats(
+  contractId?: string
+): Promise<CashRegisterStats> {
+  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/stats${params}`;
+  return apiGet(url);
 }
 
 // Contract Versions API

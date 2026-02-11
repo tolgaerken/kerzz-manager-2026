@@ -2,8 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchContractUsers,
   fetchContractSupports,
+  fetchContractSupportStats,
   fetchContractSaas,
+  fetchContractSaasStats,
   fetchContractCashRegisters,
+  fetchContractCashRegisterStats,
   fetchContractVersions,
   fetchContractItems,
   fetchContractDocuments,
@@ -26,11 +29,27 @@ export function useContractSupports(contractId?: string, fetchAll = false) {
   });
 }
 
+export function useContractSupportStats(contractId?: string) {
+  return useQuery({
+    queryKey: ["contract-support-stats", contractId ?? "all"],
+    queryFn: () => fetchContractSupportStats(contractId),
+    staleTime: 1000 * 60 * 5 // 5 dakika cache
+  });
+}
+
 export function useContractSaas(contractId?: string, fetchAll = false) {
   return useQuery({
     queryKey: ["contract-saas", contractId ?? "all"],
     queryFn: () => fetchContractSaas(contractId),
     enabled: !!contractId || fetchAll
+  });
+}
+
+export function useContractSaasStats(contractId?: string) {
+  return useQuery({
+    queryKey: ["contract-saas-stats", contractId ?? "all"],
+    queryFn: () => fetchContractSaasStats(contractId),
+    staleTime: 1000 * 60 * 5 // 5 dakika cache
   });
 }
 
@@ -71,5 +90,13 @@ export function useContractPayments(contractId: string | undefined) {
     queryKey: ["contract-payments", contractId],
     queryFn: () => fetchContractPayments(contractId!),
     enabled: !!contractId
+  });
+}
+
+export function useContractCashRegisterStats(contractId?: string) {
+  return useQuery({
+    queryKey: ["contract-cash-register-stats", contractId ?? "all"],
+    queryFn: () => fetchContractCashRegisterStats(contractId),
+    staleTime: 1000 * 60 * 5 // 5 dakika cache
   });
 }

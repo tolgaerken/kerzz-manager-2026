@@ -12,7 +12,8 @@ import { ContractSaasService } from "./contract-saas.service";
 import {
   ContractSaasQueryDto,
   CreateContractSaasDto,
-  UpdateContractSaasDto
+  UpdateContractSaasDto,
+  SaasStatsQueryDto
 } from "./dto";
 
 @Controller("contract-saas")
@@ -22,6 +23,11 @@ export class ContractSaasController {
   @Get()
   async findAll(@Query() query: ContractSaasQueryDto) {
     return this.contractSaasService.findAll(query);
+  }
+
+  @Get("stats")
+  async getStats(@Query() query: SaasStatsQueryDto) {
+    return this.contractSaasService.getStats(query);
   }
 
   @Get(":id")

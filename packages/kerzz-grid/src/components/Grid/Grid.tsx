@@ -429,6 +429,8 @@ function GridInner<TData>(
           disabledFilters={grid.disabledFilters}
           columns={columns as GridColumnDef<TData>[]}
           locale={locale}
+          filteredRowCount={grid.filteredRowCount}
+          totalRowCount={grid.totalRowCount}
           onToggleFilter={grid.toggleFilterEnabled}
           onRemoveFilter={grid.removeFilter}
           onClearAll={grid.clearAllFilters}

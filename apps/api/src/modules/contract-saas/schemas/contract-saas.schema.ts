@@ -40,19 +40,19 @@ export class ContractSaas {
   @Prop({ default: true })
   enabled: boolean;
 
-  @Prop({ default: false })
+  @Prop({ default: false, index: true })
   expired: boolean;
 
-  @Prop({ default: false })
+  @Prop({ default: false, index: true })
   blocked: boolean;
 
-  @Prop()
+  @Prop({ index: true })
   productId: string;
 
   @Prop({ default: 0 })
   total: number;
 
-  @Prop()
+  @Prop({ index: true })
   editDate: Date;
 
   @Prop()
@@ -60,4 +60,11 @@ export class ContractSaas {
 }
 
 export const ContractSaasSchema = SchemaFactory.createForClass(ContractSaas);
+
+// Compound indexler
 ContractSaasSchema.index({ contractId: 1 });
+ContractSaasSchema.index({ enabled: 1, expired: 1 }); // Aktif kayıt sorguları için
+ContractSaasSchema.index({ editDate: -1 }); // Zaman bazlı sıralama için
+ContractSaasSchema.index({ currency: 1 }); // Currency bazlı sorgular için
+ContractSaasSchema.index({ yearly: 1 }); // Periyot bazlı sorgular için
+ContractSaasSchema.index({ productId: 1 }); // Ürün dağılımı için
