@@ -142,18 +142,18 @@ export function ContractFormModal({
       <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed inset-4 md:inset-[10%] z-10 bg-[var(--color-surface)] rounded-lg shadow-xl flex flex-col">
+      <div className="fixed inset-0 md:inset-4 lg:inset-[10%] z-10 bg-[var(--color-surface)] md:rounded-lg shadow-xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <FileText className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border)] shrink-0">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="rounded-lg bg-primary/10 p-1.5 md:p-2">
+              <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold text-[var(--color-foreground)]">Yeni Kontrat</h2>
+            <h2 className="text-base md:text-lg font-semibold text-[var(--color-foreground)]">Yeni Kontrat</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md hover:bg-[var(--color-surface-elevated)] transition-colors"
+            className="p-1.5 md:p-1 rounded-md hover:bg-[var(--color-surface-elevated)] transition-colors"
           >
             <X className="w-5 h-5 text-[var(--color-foreground-muted)]" />
           </button>
@@ -161,8 +161,8 @@ export function ContractFormModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="space-y-6 max-w-3xl">
+          <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+            <div className="space-y-5 md:space-y-6 max-w-3xl">
               {/* Müşteri Seçimi */}
               <div>
                 <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-3 flex items-center gap-2">
@@ -375,7 +375,7 @@ export function ContractFormModal({
                 <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-3">
                   Ödeme ve Bildirim
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -432,18 +432,18 @@ export function ContractFormModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex justify-end gap-3 px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 px-4 md:px-6 py-3 md:py-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors"
             >
               İptal
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Kaydediliyor..." : "Kaydet"}
             </button>

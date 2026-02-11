@@ -33,19 +33,19 @@ export function BatchProgressModal({
   const isCompleted = status === "completed";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl rounded-xl bg-surface border border-border shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl rounded-xl bg-surface border border-border shadow-2xl max-h-[calc(100vh-2rem)] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Loader2 className={`h-5 w-5 text-primary ${isRunning ? "animate-spin" : ""}`} />
+        <div className="flex items-center justify-between border-b border-border px-4 sm:px-6 py-3 sm:py-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="rounded-lg bg-primary/10 p-1.5 sm:p-2 shrink-0">
+              <Loader2 className={`h-4 w-4 sm:h-5 sm:w-5 text-primary ${isRunning ? "animate-spin" : ""}`} />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">
                 Ödeme Planı Hesaplama
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {isCompleted
                   ? "Tamamlandı"
                   : isPaused
@@ -54,33 +54,33 @@ export function BatchProgressModal({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {!isCompleted && (
               <button
                 onClick={onMinimize}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-surface-elevated hover:text-foreground transition-colors"
+                className="rounded-lg p-1.5 sm:p-2 text-muted-foreground hover:bg-surface-elevated hover:text-foreground transition-colors"
                 title="Arka plana al"
               >
-                <Minimize2 className="h-5 w-5" />
+                <Minimize2 className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             )}
             <button
               onClick={isCompleted ? onClose : onCancel}
-              className="rounded-lg p-2 text-muted-foreground hover:bg-surface-elevated hover:text-foreground transition-colors"
+              className="rounded-lg p-1.5 sm:p-2 text-muted-foreground hover:bg-surface-elevated hover:text-foreground transition-colors"
               title={isCompleted ? "Kapat" : "İptal et"}
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">İlerleme</span>
-            <span className="text-sm font-medium text-primary">{percentage}%</span>
+            <span className="text-xs sm:text-sm font-medium text-foreground">İlerleme</span>
+            <span className="text-xs sm:text-sm font-medium text-primary">{percentage}%</span>
           </div>
-          <div className="h-3 w-full rounded-full bg-surface-elevated overflow-hidden">
+          <div className="h-2.5 sm:h-3 w-full rounded-full bg-surface-elevated overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
                 isCompleted
@@ -92,11 +92,11 @@ export function BatchProgressModal({
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between mt-2 text-[10px] sm:text-xs text-muted-foreground">
             <span>
               {completedCount - errorCount} başarılı
               {errorCount > 0 && (
-                <span className="text-[var(--color-error)] ml-2">{errorCount} hatalı</span>
+                <span className="text-[var(--color-error)] ml-1 sm:ml-2">{errorCount} hatalı</span>
               )}
             </span>
             <span>{pendingCount} bekliyor</span>
@@ -104,8 +104,8 @@ export function BatchProgressModal({
         </div>
 
         {/* Items List */}
-        <div className="px-6 pb-4">
-          <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-surface-elevated">
+        <div className="px-4 sm:px-6 pb-4 flex-1 min-h-0 overflow-hidden">
+          <div className="h-full max-h-48 sm:max-h-64 overflow-y-auto rounded-lg border border-border bg-surface-elevated">
             {items.map((item, index) => (
               <div
                 key={item.contractId}
@@ -149,8 +149,8 @@ export function BatchProgressModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-border px-4 sm:px-6 py-3 sm:py-4 shrink-0">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             {isCompleted ? (
               <span className="text-[var(--color-success)] font-medium">
                 İşlem tamamlandı
@@ -163,31 +163,31 @@ export function BatchProgressModal({
               <span>İşlem devam ediyor...</span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-center sm:justify-end">
             {!isCompleted && (
               <>
                 {isPaused ? (
                   <button
                     onClick={onResume}
-                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover transition-colors"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg bg-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary-hover transition-colors"
                   >
-                    <Play className="h-4 w-4" />
+                    <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Devam Et
                   </button>
                 ) : (
                   <button
                     onClick={onPause}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
                   >
-                    <Pause className="h-4 w-4" />
+                    <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Duraklat
                   </button>
                 )}
                 <button
                   onClick={onCancel}
-                  className="flex items-center gap-2 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 px-4 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
                 >
-                  <XCircle className="h-4 w-4" />
+                  <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   İptal
                 </button>
               </>
@@ -195,9 +195,9 @@ export function BatchProgressModal({
             {isCompleted && (
               <button
                 onClick={onClose}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover transition-colors"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary-hover transition-colors"
               >
-                <CheckCircle className="h-4 w-4" />
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Tamam
               </button>
             )}

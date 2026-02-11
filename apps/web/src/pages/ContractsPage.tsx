@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt } from "lucide-react";
+import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt, X } from "lucide-react";
+import { useIsMobile } from "../hooks/useIsMobile";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useContracts,
@@ -24,6 +25,9 @@ import { useCustomerLookup } from "../features/lookup";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function ContractsPage() {
+  // Mobile detection
+  const isMobile = useIsMobile();
+
   // Filter states
   const [flow, setFlow] = useState<ContractFlow>("active");
   const [yearly, setYearly] = useState<boolean | undefined>(false);
@@ -332,34 +336,36 @@ export function ContractsPage() {
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Filters & Actions Container */}
-      <div className="flex-shrink-0 rounded-lg border border-border bg-surface p-4">
-        <div className="flex flex-col gap-4">
+      <div className="flex-shrink-0 rounded-lg border border-border bg-surface p-3 md:p-4">
+        <div className="flex flex-col gap-3 md:gap-4">
           {/* Header Row - Title & Actions */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {/* Title & Count */}
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-semibold text-foreground">Kontrat Yönetimi</h1>
+              <h1 className="text-base md:text-lg font-semibold text-foreground">Kontrat Yönetimi</h1>
               {data?.data && (
-                <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                  {data.data.length} kontrat
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {data.data.length}
                 </span>
               )}
             </div>
+            {/* Actions */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => refetch({ cancelRefetch: true })}
                 disabled={isFetching}
-                className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
+                className="flex flex-1 md:flex-none items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 md:py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                Yenile
+                {!isMobile && "Yenile"}
               </button>
               <button
                 onClick={handleCreateClick}
-                className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+                className="flex flex-1 md:flex-none items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 md:py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Yeni Kontrat
+                {isMobile ? "Yeni" : "Yeni Kontrat"}
               </button>
             </div>
           </div>
@@ -441,11 +447,11 @@ export function ContractsPage() {
 
       {/* Check Contract Error Notification */}
       {checkMutation.isError && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-50 p-4 shadow-lg">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-          <div>
-            <p className="font-medium text-red-800">Hesaplama hatası</p>
-            <p className="text-sm text-red-600">
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50 flex items-start gap-3 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 p-3 md:p-4 shadow-lg">
+          <AlertCircle className="h-5 w-5 text-[var(--color-error)] flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-[var(--color-error-foreground)]">Hesaplama hatası</p>
+            <p className="text-sm text-[var(--color-error)] truncate">
               {checkMutation.error instanceof Error
                 ? checkMutation.error.message
                 : "Ödeme planı hesaplanırken bir hata oluştu"}
@@ -453,9 +459,10 @@ export function ContractsPage() {
           </div>
           <button
             onClick={() => checkMutation.reset()}
-            className="ml-2 rounded-md p-1 text-red-600 hover:bg-red-100 transition-colors"
+            className="flex-shrink-0 rounded-md p-1.5 text-[var(--color-error)] hover:bg-[var(--color-error)]/20 transition-colors"
+            aria-label="Kapat"
           >
-            &times;
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}

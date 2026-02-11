@@ -1665,3 +1665,107 @@
   background: color-mix(in srgb, var(--kz-error) 8%, var(--kz-bg));
   border-color: var(--kz-error);
 }
+
+/* ============================
+   Mobile Responsive Styles
+   ============================ */
+
+@media (max-width: 767px) {
+  /* Toolbar - mobile layout */
+  .kz-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .kz-toolbar__left {
+    flex: 1 1 100%;
+    order: 1;
+    gap: 6px;
+  }
+
+  .kz-toolbar__right {
+    flex: 1 1 100%;
+    order: 2;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* Search input - full width on mobile */
+  .kz-toolbar-search {
+    min-width: 0;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  /* Toolbar buttons - icon only on mobile */
+  .kz-toolbar__btn-label {
+    display: none;
+  }
+
+  .kz-toolbar__btn {
+    padding: 6px 8px;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  /* Filter panels - full width on mobile */
+  .kz-filter-dropdown,
+  .kz-filter-input,
+  .kz-filter-numeric,
+  .kz-filter-date-tree {
+    min-width: auto;
+    max-width: calc(100vw - 32px);
+    width: calc(100vw - 32px);
+  }
+
+  /* Column visibility panel - full width on mobile */
+  .kz-column-visibility {
+    min-width: auto;
+    width: calc(100vw - 32px);
+    max-width: 320px;
+  }
+
+  /* Settings panel - full width on mobile */
+  .kz-settings-panel {
+    min-width: auto;
+    max-width: calc(100vw - 32px);
+    width: calc(100vw - 32px);
+  }
+
+  /* Filter chips - smaller on mobile */
+  .kz-filter-chip {
+    max-width: 160px;
+    font-size: 10px;
+  }
+
+  /* Active filter bar - compact on mobile */
+  .kz-active-filter-bar {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  .kz-active-filter-bar__label {
+    font-size: 10px;
+  }
+
+  /* Grid cells - smaller padding on mobile */
+  .kz-grid {
+    --kz-cell-padding-x: 8px;
+    --kz-font-size: 12px;
+    --kz-header-font-size: 12px;
+    --kz-filter-font-size: 11px;
+    --kz-row-height: 32px;
+    --kz-header-height: 36px;
+    --kz-grid-padding: 4px;
+  }
+
+  /* Selection cell - smaller on mobile */
+  .kz-selection-cell,
+  .kz-selection-header-cell,
+  .kz-selection-footer-cell {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+  }
+}

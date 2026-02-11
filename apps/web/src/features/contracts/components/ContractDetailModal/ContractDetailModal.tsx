@@ -169,18 +169,18 @@ export function ContractDetailModal({
       {/* Modal - Full Screen */}
       <div className="relative z-10 w-full h-full bg-surface shadow-xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-border shrink-0">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold text-foreground truncate">
+            <h2 className="text-base md:text-lg font-semibold text-foreground truncate">
               {contract.brand}
             </h2>
-            <p className="text-sm text-muted-foreground truncate">
-              {contract.company} • Kontrat No: {contract.no}
+            <p className="text-xs md:text-sm text-muted-foreground truncate">
+              {contract.company} • #{contract.no}
             </p>
           </div>
           <button
             onClick={handleOpenLogs}
-            className="ml-4 p-2 rounded-lg hover:bg-surface-elevated transition-colors"
+            className="ml-2 md:ml-4 p-2 rounded-lg hover:bg-surface-elevated transition-colors"
             title="Logları Görüntüle"
           >
             <MessageSquare className="w-5 h-5 text-primary" />
@@ -194,21 +194,21 @@ export function ContractDetailModal({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border px-4 overflow-x-auto shrink-0">
+        <div className="flex border-b border-border px-2 md:px-4 overflow-x-auto shrink-0 scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
               {tab.id !== "summary" && tabCounts[tab.id] > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                <span className="px-1 md:px-1.5 py-0.5 text-[10px] md:text-xs font-medium rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
                   {tabCounts[tab.id]}
                 </span>
               )}
@@ -217,15 +217,15 @@ export function ContractDetailModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col px-4 md:px-6 py-3 md:py-4">
           {renderTabContent()}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border shrink-0">
+        <div className="flex justify-end gap-3 px-4 md:px-6 py-3 md:py-4 border-t border-border shrink-0">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-foreground bg-surface-elevated rounded-lg hover:bg-border transition-colors"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-foreground bg-surface-elevated rounded-lg hover:bg-border transition-colors"
           >
             Kapat
           </button>

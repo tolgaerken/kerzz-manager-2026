@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { ContractMobileList } from "./ContractMobileList";
 import type { Contract } from "../../types";
 
 interface ContractsGridProps {
@@ -53,9 +55,10 @@ export function ContractsGrid({
   onRowDoubleClick,
   onRowSelect,
   onSelectionChange,
-  selectedIds,
+  selectedIds = [],
   toolbarButtons
 }: ContractsGridProps) {
+  const isMobile = useIsMobile();
   // Column definitions for kerzz-grid
   const columns: GridColumnDef<Contract>[] = useMemo(
     () => {
@@ -276,6 +279,23 @@ export function ContractsGrid({
     [toolbarButtons]
   );
 
+  // Mobile view - single tap opens modal, no multiselect
+  if (isMobile) {
+    return (
+      <div className="flex flex-1 flex-col min-h-0">
+        <ContractMobileList
+          data={data}
+          loading={loading}
+          onCardClick={(contract) => {
+            onRowSelect?.(contract);
+            onRowDoubleClick?.(contract);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="flex-1 min-h-0">
       <Grid<Contract>

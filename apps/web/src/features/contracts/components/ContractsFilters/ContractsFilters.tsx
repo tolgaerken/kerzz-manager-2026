@@ -79,9 +79,9 @@ export function ContractsFilters({
   onYearlyChange
 }: ContractsFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-4">
+    <div className="flex flex-wrap items-center gap-2 md:gap-4">
       {/* Flow Filters */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
         <FilterButton
           active={activeFlow === "active"}
           onClick={() => onFlowChange("active")}
@@ -116,12 +116,12 @@ export function ContractsFilters({
         />
       </div>
 
-      {/* Divider */}
-      <div className="h-6 w-px bg-border-subtle" />
+      {/* Divider - hidden on mobile */}
+      <div className="hidden md:block h-6 w-px bg-border-subtle" />
 
       {/* Period Filters */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground mr-1">Periyot:</span>
+      <div className="flex items-center gap-1 md:gap-1.5">
+        <span className="hidden md:inline text-xs text-muted-foreground mr-1">Periyot:</span>
         <FilterButton
           active={yearlyFilter === true}
           onClick={() => onYearlyChange(true)}
