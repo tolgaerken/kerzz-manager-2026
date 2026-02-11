@@ -39,8 +39,8 @@ echo -e "${YELLOW}[5/8] Dosyalar sunucuya yükleniyor (tar ile)...${NC}"
 # Frontend upload (tek arşiv olarak)
 tar -czf - -C apps/web/dist . | ssh $SERVER "tar -xzf - -C $REMOTE_WEB_PATH"
 
-# Backend upload (dist + package.json)
-tar -czf - -C apps/api dist package.json | ssh $SERVER "tar -xzf - -C $REMOTE_API_PATH"
+# Backend upload (dist + package.json + .env)
+tar -czf - -C apps/api dist package.json .env | ssh $SERVER "tar -xzf - -C $REMOTE_API_PATH"
 
 echo -e "${YELLOW}[6/8] Nginx config güncelleniyor...${NC}"
 # Nginx config ve docker-compose upload
