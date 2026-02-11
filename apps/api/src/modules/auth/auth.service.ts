@@ -48,7 +48,7 @@ export class AuthService {
     @InjectModel(SsoAppLicence.name, SSO_DB_CONNECTION)
     private readonly ssoAppLicenceModel: Model<SsoAppLicenceDocument>
   ) {
-    this.appId = this.configService.get<string>("APP_ID") || "21aa-9637";
+    this.appId = this.configService.get<string>("APP_ID") || "io-cloud-2025";
     this.logger.log(`AuthService initialized with APP_ID: "${this.appId}"`);
   }
 
@@ -120,6 +120,18 @@ export class AuthService {
       throw new UnauthorizedException("Kullanıcı hesabı devre dışı");
     }
 
+    const tokenCurrentAppId =
+      payload.userInfo && typeof payload.userInfo.currentapp === "string" && payload.userInfo.currentapp.length > 0
+        ? payload.userInfo.currentapp
+        : undefined;
+    const currentAppId = this.appId;
+
+    if (tokenCurrentAppId && tokenCurrentAppId !== this.appId) {
+      this.logger.warn(
+        `Token currentapp (${tokenCurrentAppId}) APP_ID (${this.appId}) ile farkli. APP_ID baz aliniyor.`
+      );
+    }
+
     // Check if user is assigned to this app
     // Önce kullanıcının tüm app atamalarını logla (debug için)
     const allUserApps = await this.ssoUserAppModel
@@ -129,26 +141,26 @@ export class AuthService {
     this.logger.debug(
       `User ${userId} app assignments: ${JSON.stringify(allUserApps.map((ua) => ({ app_id: ua.app_id, isActive: ua.isActive })))}`
     );
-    this.logger.debug(`Looking for app_id: "${this.appId}"`);
+    this.logger.debug(`Looking for app_id: "${currentAppId}"`);
 
     const userApp = await this.ssoUserAppModel
-      .findOne({ app_id: this.appId, user_id: userId })
+      .findOne({ app_id: currentAppId, user_id: userId })
       .lean()
       .exec();
 
     if (!userApp) {
-      this.logger.warn(`User ${userId} is not assigned to app ${this.appId}. Available apps: ${allUserApps.map((ua) => ua.app_id).join(", ")}`);
+      this.logger.warn(`User ${userId} is not assigned to app ${currentAppId}. Available apps: ${allUserApps.map((ua) => ua.app_id).join(", ")}`);
       throw new UnauthorizedException("Bu uygulamaya erişim yetkiniz yok");
     }
 
     // isActive kontrolünü de esnek yapalım (undefined = aktif kabul et)
     if (userApp.isActive === false) {
-      this.logger.warn(`User ${userId} app assignment is inactive for ${this.appId}`);
+      this.logger.warn(`User ${userId} app assignment is inactive for ${currentAppId}`);
       throw new UnauthorizedException("Bu uygulamaya erişim yetkiniz yok");
     }
 
     // Get user's roles and permissions for this app
-    const { roles, permissions } = await this.getUserRolesAndPermissions(userId);
+    const { roles, permissions } = await this.getUserRolesAndPermissions(userId, currentAppId);
 
     const roleNames = roles.map((r) => r.name.toLowerCase());
     const isAdmin = roleNames.includes("veri owner") || roleNames.includes("admin");
@@ -160,7 +172,7 @@ export class AuthService {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      appId: this.appId,
+      appId: currentAppId,
       roles: roles.map((r) => r.name),
       permissions: permissions.map((p) => p.permission),
       isAdmin,
@@ -173,11 +185,12 @@ export class AuthService {
    * Get user's roles and permissions for this app
    */
   async getUserRolesAndPermissions(
-    userId: string
+    userId: string,
+    appId = this.appId
   ): Promise<{ roles: SsoRoleType[]; permissions: SsoPermissionInfo[] }> {
     // Get user's licence for this app
     const licence = await this.ssoAppLicenceModel
-      .findOne({ app_id: this.appId, user_id: userId })
+      .findOne({ app_id: appId, user_id: userId })
       .lean()
       .exec();
 
@@ -187,7 +200,7 @@ export class AuthService {
 
     // Get role details
     const roles = await this.ssoRoleModel
-      .find({ id: { $in: licence.roles }, app_id: this.appId })
+      .find({ id: { $in: licence.roles }, app_id: appId })
       .lean()
       .exec();
 
@@ -201,7 +214,7 @@ export class AuthService {
 
     // Get permission details
     const permissions = await this.ssoPermissionModel
-      .find({ id: { $in: permissionIds }, app_id: this.appId })
+      .find({ id: { $in: permissionIds }, app_id: appId })
       .lean()
       .exec();
 

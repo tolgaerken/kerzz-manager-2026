@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
 import { useIsMobile } from "../../../../hooks/useIsMobile";
 import { ContractMobileList } from "./ContractMobileList";
+import { LogBadge } from "../../../../components/ui";
 import type { Contract } from "../../types";
 
 interface ContractsGridProps {
@@ -15,6 +16,10 @@ interface ContractsGridProps {
   selectedIds?: string[];
   toolbarButtons?: ToolbarButtonConfig[];
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
+  /** Son log tarihleri map'i (contractId -> ISO date string) */
+  lastLogDatesByContractId?: Record<string, string>;
+  /** Log panelini açmak için callback */
+  onOpenLogs?: (contract: Contract) => void;
 }
 
 // Date formatter
@@ -58,7 +63,9 @@ export function ContractsGrid({
   onSelectionChange,
   selectedIds = [],
   toolbarButtons,
-  onScrollDirectionChange
+  onScrollDirectionChange,
+  lastLogDatesByContractId,
+  onOpenLogs
 }: ContractsGridProps) {
   const isMobile = useIsMobile();
   // Column definitions for kerzz-grid
@@ -233,12 +240,26 @@ export function ContractsGrid({
           sortable: true,
           resizable: true,
           filter: { type: "dropdown", showCounts: true }
+        },
+        {
+          id: "log",
+          header: "",
+          accessorKey: "_id",
+          width: 44,
+          align: "center",
+          cell: (_, row) => (
+            <LogBadge
+              lastLogAt={lastLogDatesByContractId?.[row._id]}
+              onClick={() => onOpenLogs?.(row)}
+              size="md"
+            />
+          )
         }
       );
 
       return baseColumns;
     },
-    [yearlyFilter]
+    [yearlyFilter, lastLogDatesByContractId, onOpenLogs]
   );
 
   // Handle sort change from kerzz-grid

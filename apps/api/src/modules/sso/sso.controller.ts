@@ -7,9 +7,11 @@ import {
   Body,
   Param,
   Query,
+  Req,
   HttpCode,
   HttpStatus
 } from "@nestjs/common";
+import { Request } from "express";
 import { SsoUsersService, AssignUserDto } from "./sso-users.service";
 import { SsoRolesService, CreateRoleDto, UpdateRoleDto } from "./sso-roles.service";
 import {
@@ -18,6 +20,7 @@ import {
   UpdatePermissionDto
 } from "./sso-permissions.service";
 import { RequirePermission } from "../auth/decorators/require-permission.decorator";
+import type { AuthenticatedUser } from "../auth/auth.types";
 
 @Controller("sso")
 export class SsoController {
@@ -33,8 +36,8 @@ export class SsoController {
    * Get all users assigned to this application
    */
   @Get("users")
-  async getAppUsers() {
-    return this.usersService.getAppUsers();
+  async getAppUsers(@Req() req: Request & { user?: AuthenticatedUser }) {
+    return this.usersService.getAppUsers(req.user?.appId);
   }
 
   /**

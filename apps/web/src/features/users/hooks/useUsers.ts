@@ -30,11 +30,11 @@ export function useAppUsers() {
 /**
  * Search users in SSO database
  */
-export function useSearchUsers(query: string, enabled = true) {
+export function useSearchUsers(query: string, enabled = true, minQueryLength = 2) {
   return useQuery({
     queryKey: usersQueryKeys.search(query),
     queryFn: () => usersApi.searchUsers(query),
-    enabled: enabled && query.length >= 2
+    enabled: enabled && query.length >= minQueryLength
   });
 }
 

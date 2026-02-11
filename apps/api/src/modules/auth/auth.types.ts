@@ -6,6 +6,7 @@ export interface SsoTokenUserInfo {
   name: string;
   mail?: string;
   phone?: string;
+  currentapp?: string;
   accessToken?: string;
   licances?: SsoUserLicence[];
 }

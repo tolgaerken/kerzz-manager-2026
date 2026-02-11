@@ -22,7 +22,7 @@ import {
   type CreateContractInput,
   type CheckContractResult
 } from "../features/contracts";
-import { useLogPanelStore } from "../features/manager-log";
+import { useLogPanelStore, useLastLogDatesByContexts } from "../features/manager-log";
 import { useCustomerLookup } from "../features/lookup";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
@@ -126,6 +126,92 @@ export function ContractsPage() {
 
   // Customer lookup for erpId
   const { customerMap } = useCustomerLookup();
+
+  // Contract ID'lerini topla (son log tarihleri için)
+  const {
+    contractIds,
+    legacyContractNumbers,
+    customerIds,
+    contractNumberToContractIdMap,
+    customerIdToContractIdMap,
+  } = useMemo(() => {
+    const contracts = data?.data ?? [];
+
+    // contractNumber -> contractId mapping (legacy sonuçlarını dönüştürmek için)
+    const numberToIdMap = new Map<string, string>();
+    // customerId -> contractId mapping (legacy customerId sonuçlarını dönüştürmek için)
+    const customerToContractMap = new Map<string, string>();
+
+    for (const c of contracts) {
+      if (c.no && c.no > 0 && c._id) {
+        numberToIdMap.set(String(c.no), c._id);
+      }
+      // Her customerId için en son contractId'yi sakla
+      if (c.customerId && c._id) {
+        customerToContractMap.set(c.customerId, c._id);
+      }
+    }
+
+    return {
+      contractIds: [...new Set(contracts.map((c) => c._id).filter(Boolean))],
+      // Legacy log sisteminde contractId olarak contractNumber (no) kullanılıyor
+      legacyContractNumbers: [
+        ...new Set(
+          contracts
+            .map((c) => c.no)
+            .filter((n) => n && n > 0)
+            .map((n) => String(n))
+        ),
+      ],
+      // Legacy log sisteminde customerId ile de log tutulmuş olabilir
+      customerIds: [...new Set(contracts.map((c) => c.customerId).filter(Boolean))],
+      contractNumberToContractIdMap: numberToIdMap,
+      customerIdToContractIdMap: customerToContractMap,
+    };
+  }, [data?.data]);
+
+  // Son log tarihlerini batch olarak getir (yeni + legacy)
+  const { data: rawLastLogDates } = useLastLogDatesByContexts({
+    contexts: [
+      { type: "contract", ids: contractIds },
+    ],
+    // Legacy için hem contractNumber hem customerId gönder
+    legacyContractIds: legacyContractNumbers,
+    legacyCustomerIds: customerIds,
+    includeLegacy: true,
+    groupByField: "contractId",
+  });
+
+  // Legacy sonuçlarını contractId'ye dönüştür
+  const lastLogDatesByContractId = useMemo(() => {
+    if (!rawLastLogDates) return undefined;
+    const result: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(rawLastLogDates)) {
+      // 1. Eğer key bir contractNumber ise, contractId'ye dönüştür
+      const contractIdFromNumber = contractNumberToContractIdMap.get(key);
+      if (contractIdFromNumber) {
+        if (!result[contractIdFromNumber] || value > result[contractIdFromNumber]) {
+          result[contractIdFromNumber] = value;
+        }
+      }
+
+      // 2. Eğer key bir customerId ise, ilgili contractId'ye dönüştür
+      const contractIdFromCustomer = customerIdToContractIdMap.get(key);
+      if (contractIdFromCustomer) {
+        if (!result[contractIdFromCustomer] || value > result[contractIdFromCustomer]) {
+          result[contractIdFromCustomer] = value;
+        }
+      }
+
+      // 3. Orijinal key'i de koru (yeni log sistemi için)
+      if (!result[key] || value > result[key]) {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }, [rawLastLogDates, contractNumberToContractIdMap, customerIdToContractIdMap]);
 
   // Account transactions store
   const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
@@ -315,7 +401,7 @@ export function ContractsPage() {
     refetch();
   }, [batchCheck, refetch]);
 
-  // Log panelini aç
+  // Log panelini aç (toolbar butonu için)
   const handleOpenLogs = useCallback(() => {
     if (!selectedContract) return;
     openEntityPanel({
@@ -325,6 +411,19 @@ export function ContractsPage() {
       title: `Kontrat: ${selectedContract.brand || selectedContract.company || `#${selectedContract.no}`}`,
     });
   }, [selectedContract, openEntityPanel]);
+
+  // Log panelini aç (grid satırındaki ikon için)
+  const handleOpenLogsForContract = useCallback(
+    (contract: Contract) => {
+      openEntityPanel({
+        customerId: contract.customerId,
+        activeTab: "contract",
+        contractId: contract._id,
+        title: `Kontrat: ${contract.brand || contract.company || `#${contract.no}`}`,
+      });
+    },
+    [openEntityPanel]
+  );
 
   // Cari hareketleri modalını aç
   const handleOpenAccountTransactions = useCallback(() => {
@@ -445,6 +544,8 @@ export function ContractsPage() {
             onSelectionChange={handleSelectionChange}
             toolbarButtons={toolbarButtons}
             onScrollDirectionChange={collapsible.handleScrollDirectionChange}
+            lastLogDatesByContractId={lastLogDatesByContractId}
+            onOpenLogs={handleOpenLogsForContract}
           />
         </div>
       </div>

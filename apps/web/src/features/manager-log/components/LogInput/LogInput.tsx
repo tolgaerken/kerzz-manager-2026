@@ -1,17 +1,11 @@
-import { useState, useRef, useCallback, type KeyboardEvent } from "react";
+import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from "react";
 import { Send, Calendar, Loader2, X } from "lucide-react";
 import { MentionPopup, type MentionUser } from "./MentionPopup";
 import { ReferencePopup, type ReferenceItem } from "./ReferencePopup";
 import { ReminderPicker } from "./ReminderPicker";
 import type { CreateLogInput, LogMention, LogReference } from "../../types";
-
-// Demo kullanıcı listesi - gerçek uygulamada API'den gelecek
-const DEMO_USERS: MentionUser[] = [
-  { id: "user-1", name: "Ahmet Yılmaz" },
-  { id: "user-2", name: "Mehmet Demir" },
-  { id: "user-3", name: "Ayşe Kaya" },
-  { id: "user-4", name: "Fatma Çelik" },
-];
+import { useAppUsers } from "../../../users/hooks/useUsers";
+import { useAuthStore } from "../../../auth/store/authStore";
 
 interface LogInputProps {
   onSend: (
@@ -36,9 +30,49 @@ export function LogInput({ onSend, isLoading }: LogInputProps) {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const filteredUsers = DEMO_USERS.filter((user) =>
-    user.name.toLowerCase().includes(mentionSearch.toLowerCase())
-  );
+  // Sadece bu app'e atanmış kullanıcıları getir
+  const { data: appUsers = [] } = useAppUsers();
+  const currentUser = useAuthStore((state) => state.userInfo);
+
+  // Mention için sadece app kullanıcılarını filtrele
+  const filteredUsers = useMemo<MentionUser[]>(() => {
+    const normalizedSearch = mentionSearch.toLowerCase();
+
+    const appMentionUsers = appUsers
+      .map((user) => {
+        const fallbackName =
+          "userName" in user && typeof user.userName === "string"
+            ? user.userName
+            : "";
+        const resolvedName =
+          typeof user.name === "string" && user.name.trim().length > 0
+            ? user.name
+            : fallbackName;
+
+        return {
+          id: user.id,
+          name: resolvedName,
+        };
+      })
+      .filter((user) => user.name.length > 0)
+      .filter((user) => user.name.toLowerCase().includes(normalizedSearch));
+
+    if (appMentionUsers.length > 0) {
+      return appMentionUsers;
+    }
+
+    // API boş dönerse mention tamamen kırılmasın, en azından aktif kullanıcı seçilebilsin
+    if (currentUser?.id && currentUser?.name) {
+      const matchesSearch = currentUser.name
+        .toLowerCase()
+        .includes(normalizedSearch);
+      if (matchesSearch) {
+        return [{ id: currentUser.id, name: currentUser.name }];
+      }
+    }
+
+    return [];
+  }, [appUsers, currentUser?.id, currentUser?.name, mentionSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;

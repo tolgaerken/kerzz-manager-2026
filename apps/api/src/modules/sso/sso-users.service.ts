@@ -61,9 +61,13 @@ export class SsoUsersService {
   /**
    * Get all users assigned to this application
    */
-  async getAppUsers(): Promise<AppUserDto[]> {
+  async getAppUsers(appId?: string): Promise<AppUserDto[]> {
+    const effectiveAppId = appId && appId.length > 0 ? appId : this.appId;
+
     const userApps = await this.ssoUserAppModel
-      .find({ app_id: this.appId, isActive: true })
+      // user-app kaydında ilgili app_id + devre dışı olmayan atamalar
+      // Bazı eski kayıtlarda isActive alanı olmayabiliyor; onları aktif kabul et
+      .find({ app_id: effectiveAppId, isActive: { $ne: false } })
       .sort({ user_name: 1 })
       .lean()
       .exec();
