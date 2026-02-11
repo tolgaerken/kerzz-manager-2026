@@ -28,6 +28,11 @@ export class OffersController {
     return this.offersService.getStats();
   }
 
+  @Post("recalculate-all")
+  async recalculateAll() {
+    return this.offersService.recalculateAllTotals();
+  }
+
   @Get(":id")
   async findOne(@Param("id") id: string) {
     return this.offersService.findOne(id);
@@ -65,8 +70,8 @@ export class OffersController {
     return this.offersService.calculate(id);
   }
 
-  @AuditLog({ module: "offers", entityType: "Offer" })
   @Post(":id/revert-conversion")
+  @AuditLog({ module: "offers", entityType: "Offer" })
   async revertConversion(@Param("id") id: string) {
     return this.offersService.revertConversion(id);
   }

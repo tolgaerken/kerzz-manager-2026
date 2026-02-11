@@ -32,6 +32,7 @@
     "nodemailer": "^8.0.0",
     "passport": "latest",
     "passport-jwt": "latest",
+    "puppeteer": "^24.37.2",
     "reflect-metadata": "latest",
     "rxjs": "latest",
     "uuid": "^13.0.0"

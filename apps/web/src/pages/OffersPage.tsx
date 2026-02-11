@@ -22,6 +22,7 @@ import { useConvertOfferToSale } from "../features/pipeline/hooks/usePipelineIte
 import { useAuth } from "../features/auth";
 import { useRevertSale } from "../features/sales";
 import { useLogPanelStore } from "../features/manager-log";
+import { openOfferDocument } from "../features/offers/api/offersApi";
 
 const toDateInputValue = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -115,7 +116,11 @@ export function OffersPage() {
 
   const totalAmount = useMemo(() => {
     return enrichedOffers.reduce(
-      (sum, offer) => sum + (offer.totals?.overallGrandTotal || 0),
+      (sum, offer) => {
+        // Yeni yapı: totals.overallGrandTotal, eski yapı: grandTotal
+        const grandTotal = offer.totals?.overallGrandTotal || (offer as any).grandTotal || 0;
+        return sum + grandTotal;
+      },
       0
     );
   }, [enrichedOffers]);
@@ -188,6 +193,17 @@ export function OffersPage() {
       title: `Teklif: ${selectedOffer.no || selectedOffer.pipelineRef}`,
     });
   }, [selectedOffer, openPipelinePanel]);
+
+  const handleGenerateDocument = useCallback(
+    async (offer: Offer, format: "html" | "pdf") => {
+      try {
+        await openOfferDocument(offer._id, format);
+      } catch (err) {
+        console.error("Belge oluşturma hatası:", err);
+      }
+    },
+    [],
+  );
 
   const toolbarButtons: ToolbarButtonConfig[] = [
     {
@@ -338,6 +354,7 @@ export function OffersPage() {
             onSelectionChanged={setSelectedOffer}
             toolbarButtons={toolbarButtons}
             onScrollDirectionChange={collapsible.handleScrollDirectionChange}
+            onGenerateDocument={handleGenerateDocument}
           />
         </div>
 

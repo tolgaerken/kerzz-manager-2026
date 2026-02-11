@@ -249,9 +249,9 @@ export function LicenseItemsTable({
             </div>
           ) : (
             <div className="flex flex-col gap-2 pb-2">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <LicenseMobileCard
-                  key={item._id}
+                  key={item._id || `license-${index}`}
                   item={item}
                   onEdit={readOnly ? undefined : () => {
                     setEditingItem(item);

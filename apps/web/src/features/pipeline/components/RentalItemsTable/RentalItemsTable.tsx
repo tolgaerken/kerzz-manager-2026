@@ -279,9 +279,9 @@ export function RentalItemsTable({
             </div>
           ) : (
             <div className="flex flex-col gap-2 pb-2">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <RentalMobileCard
-                  key={item._id}
+                  key={item._id || `rental-${index}`}
                   item={item}
                   onEdit={readOnly ? undefined : () => {
                     setEditingItem(item);

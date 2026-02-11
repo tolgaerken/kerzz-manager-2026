@@ -1,4 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
+import { AUTH_CONSTANTS } from "../../auth/constants/auth.constants";
 import { OFFERS_CONSTANTS } from "../constants/offers.constants";
 import type {
   Offer,
@@ -90,4 +91,46 @@ export async function fetchOfferStats(): Promise<OfferStats> {
   const url = `${API_BASE_URL}${ENDPOINTS.OFFERS}/stats`;
 
   return apiGet<OfferStats>(url);
+}
+
+/**
+ * Teklif belgesini auth header ile fetch edip yeni sekmede açar.
+ * window.open() JWT token gönderemediği için fetch + blob URL kullanılır.
+ */
+export async function openOfferDocument(
+  id: string,
+  format: "html" | "pdf" = "html",
+): Promise<void> {
+  const url = `${API_BASE_URL}${ENDPOINTS.OFFER_DOCUMENT(id, format)}`;
+
+  // Auth header'ları al (apiClient pattern'i ile aynı)
+  const headers: Record<string, string> = {};
+  try {
+    const storedData = localStorage.getItem(AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      const token = parsed?.token;
+      if (token?.accessToken) {
+        headers["Authorization"] = `Bearer ${token.accessToken}`;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const response = await fetch(url, { method: "GET", headers });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Belge oluşturma hatası" }));
+    throw new Error((error as { message?: string }).message || "Belge oluşturma hatası");
+  }
+
+  const contentType = format === "pdf" ? "application/pdf" : "text/html";
+  const blob = new Blob([await response.arrayBuffer()], { type: contentType });
+  const blobUrl = URL.createObjectURL(blob);
+
+  window.open(blobUrl, "_blank");
+
+  // Bellek temizliği: tab açıldıktan sonra blob URL'yi serbest bırak
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 }

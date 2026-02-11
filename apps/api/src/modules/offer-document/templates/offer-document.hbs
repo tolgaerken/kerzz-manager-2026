@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kerzz Teklif - #{{offer.no}}</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #1e293b;
+      background: #fff;
+    }
+
+    /* ── Print Settings ── */
+    @media print {
+      @page {
+        size: A4;
+        margin: 12mm 15mm;
+      }
+      body { margin: 0; padding: 0; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none !important; }
+    }
+
+    /* ── Page Header ── */
+    .document-header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #0f172a;
+    }
+
+    .document-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .document-header .subtitle {
+      font-size: 12px;
+      color: #475569;
+      font-weight: 500;
+    }
+
+    /* ── Meta Info ── */
+    .meta-grid {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    .meta-block {
+      flex: 1;
+    }
+
+    .meta-block.right {
+      text-align: right;
+    }
+
+    .meta-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .meta-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .meta-value.large {
+      font-size: 14px;
+    }
+
+    /* ── Customer Box ── */
+    .customer-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+    }
+
+    .customer-box .company-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .customer-box .brand-name {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .section-body {
+      font-size: 10px;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .section-body p {
+      margin-bottom: 4px;
+    }
+
+    /* ── Approval Box ── */
+    .approval-box {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 24px;
+    }
+
+    .approval-box .title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .approval-grid {
+      display: flex;
+      gap: 24px;
+    }
+
+    .approval-field {
+      flex: 1;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 8px;
+    }
+
+    .approval-field .label {
+      font-size: 9px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    /* ── Acceptance Note ── */
+    .acceptance-note {
+      font-size: 9px;
+      color: #64748b;
+      margin-top: 16px;
+      line-height: 1.5;
+      font-style: italic;
+    }
+
+    /* ── Items Table ── */
+    .items-section {
+      margin-bottom: 28px;
+    }
+
+    .items-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      padding: 8px 0;
+      border-bottom: 2px solid #0f172a;
+      margin-bottom: 0;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .items-table thead th {
+      font-size: 9px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+    }
+
+    .items-table thead th.right {
+      text-align: right;
+    }
+
+    .items-table thead th.center {
+      text-align: center;
+    }
+
+    .items-table tbody td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+      font-size: 11px;
+    }
+
+    .items-table tbody tr:last-child td {
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .items-table .item-name {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .items-table .item-desc {
+      font-size: 9px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .items-table .num {
+      text-align: center;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .items-table .amount {
+      text-align: right;
+      font-family: "SF Mono", "Cascadia Code", Consolas, monospace;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    /* ── Totals ── */
+    .totals-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    .totals-table {
+      border-collapse: collapse;
+      min-width: 280px;
+    }
+
+    .totals-table td {
+      padding: 4px 10px;
+      font-size: 11px;
+    }
+
+    .totals-table .label-cell {
+      text-align: right;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .totals-table .value-cell {
+      text-align: right;
+      font-family: "SF Mono", "Cascadia Code", Consolas, monospace;
+      color: #0f172a;
+      font-weight: 500;
+    }
+
+    .totals-table .grand-total .label-cell {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 12px;
+    }
+
+    .totals-table .grand-total .value-cell {
+      font-weight: 700;
+      font-size: 12px;
+      border-top: 2px solid #0f172a;
+    }
+
+    .totals-table .discount .value-cell {
+      color: #dc2626;
+    }
+
+    /* ── Print toolbar ── */
+    .print-toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #0f172a;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .print-toolbar button {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .print-toolbar button:hover {
+      background: #2563eb;
+    }
+
+    .print-toolbar .info {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-left: auto;
+    }
+
+    @media print {
+      .print-toolbar { display: none !important; }
+      body { padding-top: 0 !important; }
+    }
+
+    @media screen {
+      body { padding-top: 52px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Yazdırma Toolbar (sadece ekranda) -->
+  <div class="print-toolbar no-print">
+    <button onclick="window.print()">Yazdır / PDF Kaydet</button>
+    <span class="info">Teklif #{{offer.no}} — {{offer.customerName}}</span>
+  </div>
+
+  <!-- ═══════ SAYFA 1: KAPAK ═══════ -->
+  <div class="document-header">
+    <h1>KERZZ PROJE TEKLİFİ - [ EK-S-2 ]</h1>
+  </div>
+
+  <div class="meta-grid">
+    <div class="meta-block">
+      <div class="meta-label">Tarih</div>
+      <div class="meta-value">{{formatDate offer.saleDate}}</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-label">Geçerlilik Tarihi</div>
+      <div class="meta-value">{{formatDate offer.validUntil}}</div>
+    </div>
+    <div class="meta-block right">
+      <div class="meta-label">Referans</div>
+      <div class="meta-value large">#{{offer.no}}</div>
+    </div>
+  </div>
+
+  <div class="customer-box">
+    {{#if offer.brandName}}
+    <div class="brand-name">{{offer.brandName}}</div>
+    {{/if}}
+    <div class="company-name">{{offer.customerName}}</div>
+  </div>
+
+  <!-- Finansal Açıklamalar -->
+  <div class="section">
+    <div class="section-title">FİNANSAL AÇIKLAMALAR</div>
+    <div class="section-body">
+      <p>Teklifimize KDV Dahil değildir. Belirtilen fiyatlara donanım, yazılım ve hizmet ürünlerinde %20 KDV, Yazar kasa donanım ürünlerinde %10 KDV ilave edilecektir.</p>
+      <p>Teklifimiz, teklif tarihinden itibaren 15 gün için geçerlidir.</p>
+      <p>Teklif kabulü sonrasında Yazılım Lisans, Destek Sözleşmesi ve/veya Kiralama sözleşmeleri imzalanmalıdır.</p>
+      <p>Ürünlerin stok durumları ve kurulum tarihi ödeme sonrasında kesinleşir. Ödeme alınmadan kurulum planlamasına başlanmaz.</p>
+      <p>Kerzz ofislerinin bulunmadığı yerlerdeki kurulumlarda ulaşım konaklama masrafları müşteriye aittir.</p>
+      <p>Fiyat bilgisi size özel olarak ticari sır niteliğinde paylaşılmıştır. Üçüncü kişi ve kurumlarla paylaşmayınız.</p>
+      <p>Döviz Fiyatları fatura tarihinde geçerli olan Garanti Bankası Efektif Satış Kuru üzerinden Türk Lirasına çevrilecektir.</p>
+    </div>
+  </div>
+
+  <!-- Teknik Şartlar -->
+  <div class="section">
+    <div class="section-title">TEKNİK ŞARTLAR</div>
+    <div class="section-body">
+      <p>Cihazların kurulacağı yerlere Ethernet ve elektrik kabloları çekilmeli hazır hale getirilmelidir. Kablolama ve alt yapı işlemleri, Müşteri'nin sorumluluğundadır.</p>
+      <p>Kablolama için kullanılması gerekli kablo tipi Cat.6 STP veya Cat.5 STP kablolardır.</p>
+      <p>Data kablosu ve elektrik kablosu çekimlerinde aralarındaki mesafenin en az 60 cm olmasına dikkat edilmelidir.</p>
+      <p>Tüm bilgisayar sistemi özel bir elektrik panelinden beslenmeli ve sigortalarının ayrı tutulması gerekmektedir.</p>
+      <p>Merkez Şube bağlantılı sistemlerde MPLS, VPN bağlantı sistemleri önerilmektedir, Ancak VAE, ADSL ve G.HSDSL sistemleri ile de çalışmak mümkündür.</p>
+      <p>Donanımlar Kerzz uyumluluğu test edilmiş ve gerekli modifikasyonlar yapılmış ürünlerdir.</p>
+      <p>Donanım ürünleri 2 yıl süre ile üretici garantisindedir.</p>
+      <p>Yazılım ürünleri her türlü üretim hatasına karşı garantilidir.</p>
+    </div>
+  </div>
+
+  <!-- Çevre Şartları -->
+  <div class="section">
+    <div class="section-title">ÇEVRE ŞARTLARI</div>
+    <div class="section-body">
+      <p>Çalışma şartları için ortam sıcaklığı 15-40 C arası olmalıdır.</p>
+      <p>Cihazların sıcaklık değerlerinin korunabilmesi için dört taraftan hava akışını sağlayacak bir düzen içinde korunmaları gerekmektedir.</p>
+      <p>Cihazlar, ateş, mikrodalga, manyetik alan ve yüksek elektrikle çalışan aletlerin en az 60 cm uzağında olmalıdır.</p>
+      <p>Elektrik hatları mutlaka topraklanmalıdır. Ayrıca U.P.S kullanımı ani voltaj değişikliklerinden etkilenmemek için şiddetle önerilmektedir.</p>
+      <p>Uzaktan destek hizmetlerinin yerine getirilebilmesi için müşteri adreslerinde aktif ve çalışır durumda, Statik IP'ye sahip internet hatları gerekmektedir.</p>
+    </div>
+  </div>
+
+  <!-- Teklif Onayı -->
+  <div class="acceptance-note">
+    Teklifimizi kabul ediyorsanız lütfen aşağıdaki alana Kaşe/İmza/Tarih atarak satis@veriyazilim.com.tr mail adresine veya 0850 224 95 94 nolu faksımıza gönderiniz.
+  </div>
+
+  <div class="approval-box">
+    <div class="title">TEKLİF ONAYI</div>
+    <div class="approval-grid">
+      <div class="approval-field">
+        <div class="label">YETKİLİ ADI SOYADI</div>
+      </div>
+      <div class="approval-field">
+        <div class="label">TARİH</div>
+      </div>
+      <div class="approval-field">
+        <div class="label">KAŞE - İMZA</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SAYFA 2+: ÜRÜN TABLOLARI ═══════ -->
+  <div class="page-break"></div>
+
+  <!-- Donanım ve Diğer Ürünler -->
+  {{#ifHasItems offer.products}}
+  <div class="items-section">
+    <div class="items-section-title">Donanım ve Diğer Ürünler</div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:30px" class="center">#</th>
+          <th>Açıklama</th>
+          <th style="width:50px" class="center">Miktar</th>
+          <th style="width:100px" class="right">Birim Fiyat</th>
+          <th style="width:90px" class="right">İndirim</th>
+          <th style="width:100px" class="right">Tutar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each offer.products}}
+        <tr>
+          <td class="num">{{increment @index}}</td>
+          <td>
+            <div class="item-name">{{this.name}}</div>
+            {{#if this.description}}<div class="item-desc">{{this.description}}</div>{{/if}}
+          </td>
+          <td class="num">{{this.qty}} {{this.unit}}</td>
+          <td class="amount">{{formatCurrency this.price this.currency}}</td>
+          <td class="amount">{{formatCurrency this.discountTotal this.currency}}</td>
+          <td class="amount">{{formatCurrency this.grandTotal this.currency}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <div class="totals-row">
+      <table class="totals-table">
+        <tr>
+          <td class="label-cell">Toplam({{currencySymbol productsCurrency}})</td>
+          <td class="value-cell">{{formatCurrency productsTotalBeforeDiscount productsCurrency}}</td>
+        </tr>
+        {{#ifGt productsTotalDiscount 0}}
+        <tr class="discount">
+          <td class="label-cell">İndirim({{currencySymbol productsCurrency}})</td>
+          <td class="value-cell">{{formatCurrency productsTotalDiscount productsCurrency}}</td>
+        </tr>
+        {{/ifGt}}
+        <tr class="grand-total">
+          <td class="label-cell">Genel Toplam({{currencySymbol productsCurrency}})</td>
+          <td class="value-cell">{{formatCurrency productsTotalGrand productsCurrency}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {{/ifHasItems}}
+
+  <!-- Yazılım Lisansları -->
+  {{#ifHasItems offer.licenses}}
+  <div class="items-section">
+    <div class="items-section-title">Yazılım Lisansları</div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:30px" class="center">#</th>
+          <th>Açıklama</th>
+          <th style="width:50px" class="center">Miktar</th>
+          <th style="width:100px" class="right">Birim Fiyat</th>
+          <th style="width:90px" class="right">İndirim</th>
+          <th style="width:100px" class="right">Tutar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each offer.licenses}}
+        <tr>
+          <td class="num">{{increment @index}}</td>
+          <td>
+            <div class="item-name">{{this.name}}</div>
+            {{#if this.description}}<div class="item-desc">{{this.description}}</div>{{/if}}
+          </td>
+          <td class="num">{{this.qty}} {{this.unit}}</td>
+          <td class="amount">{{formatCurrency this.price this.currency}}</td>
+          <td class="amount">{{formatCurrency this.discountTotal this.currency}}</td>
+          <td class="amount">{{formatCurrency this.grandTotal this.currency}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <div class="totals-row">
+      <table class="totals-table">
+        <tr>
+          <td class="label-cell">Toplam({{currencySymbol licensesCurrency}})</td>
+          <td class="value-cell">{{formatCurrency licensesTotalBeforeDiscount licensesCurrency}}</td>
+        </tr>
+        {{#ifGt licensesTotalDiscount 0}}
+        <tr class="discount">
+          <td class="label-cell">İndirim({{currencySymbol licensesCurrency}})</td>
+          <td class="value-cell">{{formatCurrency licensesTotalDiscount licensesCurrency}}</td>
+        </tr>
+        {{/ifGt}}
+        <tr class="grand-total">
+          <td class="label-cell">Genel Toplam({{currencySymbol licensesCurrency}})</td>
+          <td class="value-cell">{{formatCurrency licensesTotalGrand licensesCurrency}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {{/ifHasItems}}
+
+  <!-- Kiralama ve Aylık Hizmetler -->
+  {{#ifHasItems offer.rentals}}
+  <div class="items-section">
+    <div class="items-section-title">Kiralama ve Aylık Hizmetler</div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:30px" class="center">#</th>
+          <th>Açıklama</th>
+          <th style="width:50px" class="center">Miktar</th>
+          <th style="width:100px" class="right">Birim Fiyat</th>
+          <th style="width:90px" class="right">İndirim</th>
+          <th style="width:100px" class="right">Tutar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each offer.rentals}}
+        <tr>
+          <td class="num">{{increment @index}}</td>
+          <td>
+            <div class="item-name">{{this.name}}{{#if this.yearly}} (Yıllık){{/if}}</div>
+            {{#if this.description}}<div class="item-desc">{{this.description}}</div>{{/if}}
+          </td>
+          <td class="num">{{this.qty}} {{this.unit}}</td>
+          <td class="amount">{{formatCurrency this.price this.currency}}</td>
+          <td class="amount">{{formatCurrency this.discountTotal this.currency}}</td>
+          <td class="amount">{{formatCurrency this.grandTotal this.currency}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <div class="totals-row">
+      <table class="totals-table">
+        <tr>
+          <td class="label-cell">Toplam({{currencySymbol rentalsCurrency}})</td>
+          <td class="value-cell">{{formatCurrency rentalsTotalBeforeDiscount rentalsCurrency}}</td>
+        </tr>
+        {{#ifGt rentalsTotalDiscount 0}}
+        <tr class="discount">
+          <td class="label-cell">İndirim({{currencySymbol rentalsCurrency}})</td>
+          <td class="value-cell">{{formatCurrency rentalsTotalDiscount rentalsCurrency}}</td>
+        </tr>
+        {{/ifGt}}
+        <tr class="grand-total">
+          <td class="label-cell">Genel Toplam({{currencySymbol rentalsCurrency}})</td>
+          <td class="value-cell">{{formatCurrency rentalsTotalGrand rentalsCurrency}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {{/ifHasItems}}
+
+</body>
+</html>

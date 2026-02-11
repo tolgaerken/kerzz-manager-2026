@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FileText, FileDown } from "lucide-react";
 import { Grid } from "@kerzz/grid";
 import type { GridColumnDef, ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../../hooks/useIsMobile";
@@ -14,6 +15,7 @@ interface OffersGridProps {
   onSortChange?: (field: string, order: "asc" | "desc") => void;
   toolbarButtons?: ToolbarButtonConfig[];
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
+  onGenerateDocument?: (offer: Offer, format: "html" | "pdf") => void;
 }
 
 export function OffersGrid({
@@ -24,6 +26,7 @@ export function OffersGrid({
   onSortChange,
   toolbarButtons,
   onScrollDirectionChange,
+  onGenerateDocument,
 }: OffersGridProps) {
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,21 +83,66 @@ export function OffersGrid({
     [toolbarButtons],
   );
 
-  const columns: GridColumnDef<Offer>[] = offerColumnDefs.map((col) => ({
-    ...col,
-    cellClassName: (_value: unknown, row: Offer) => {
-      const original =
-        typeof col.cellClassName === "function"
-          ? col.cellClassName(_value, row)
-          : col.cellClassName || "";
-      const staleClass = isStaleOffer(row)
-        ? " bg-[var(--color-warning)]/10"
-        : "";
-      return selectedId === row._id
-        ? `${original}${staleClass} bg-[var(--color-primary)]/10`.trim()
-        : `${original}${staleClass}`.trim();
-    },
-  }));
+  const actionsColumn: GridColumnDef<Offer> = useMemo(
+    () => ({
+      id: "actions",
+      header: "",
+      width: 70,
+      sortable: false,
+      resizable: false,
+      cell: (_value: unknown, row: Offer) => (
+        <div className="flex items-center justify-center gap-1">
+          <button
+            type="button"
+            title="HTML olarak aç"
+            onClick={(e) => {
+              e.stopPropagation();
+              onGenerateDocument?.(row, "html");
+            }}
+            className="rounded p-1 transition-colors hover:bg-[var(--color-surface-hover)]"
+          >
+            <FileText className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
+          </button>
+          <button
+            type="button"
+            title="PDF olarak aç"
+            onClick={(e) => {
+              e.stopPropagation();
+              onGenerateDocument?.(row, "pdf");
+            }}
+            className="rounded p-1 transition-colors hover:bg-[var(--color-surface-hover)]"
+          >
+            <FileDown className="h-3.5 w-3.5 text-[var(--color-muted-foreground)]" />
+          </button>
+        </div>
+      ),
+    }),
+    [onGenerateDocument],
+  );
+
+  const columns: GridColumnDef<Offer>[] = useMemo(() => {
+    const baseCols = offerColumnDefs.map((col) => ({
+      ...col,
+      cellClassName: (_value: unknown, row: Offer) => {
+        const original =
+          typeof col.cellClassName === "function"
+            ? col.cellClassName(_value, row)
+            : col.cellClassName || "";
+        const staleClass = isStaleOffer(row)
+          ? " bg-[var(--color-warning)]/10"
+          : "";
+        return selectedId === row._id
+          ? `${original}${staleClass} bg-[var(--color-primary)]/10`.trim()
+          : `${original}${staleClass}`.trim();
+      },
+    }));
+
+    if (onGenerateDocument) {
+      return [...baseCols, actionsColumn];
+    }
+
+    return baseCols;
+  }, [selectedId, isStaleOffer, onGenerateDocument, actionsColumn]);
 
   // Mobile view - single tap opens modal, no multiselect
   if (isMobile) {

@@ -66,14 +66,10 @@ export function PaymentItemFormModal({
     []
   );
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      onSubmit(formData);
-      onClose();
-    },
-    [formData, onSubmit, onClose]
-  );
+  const handleSubmit = useCallback(() => {
+    onSubmit(formData);
+    onClose();
+  }, [formData, onSubmit, onClose]);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -102,11 +98,18 @@ export function PaymentItemFormModal({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full md:max-w-md bg-[var(--color-surface)] rounded-t-2xl md:rounded-xl shadow-xl max-h-[90vh] flex flex-col">
+      <div 
+        className="relative z-10 w-full md:max-w-md bg-[var(--color-surface)] rounded-t-2xl md:rounded-xl shadow-xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] shrink-0">
           <div className="flex items-center gap-2">
@@ -133,8 +136,8 @@ export function PaymentItemFormModal({
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+        {/* Form - div kullanıyoruz çünkü parent modal zaten form içerebilir */}
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             {/* Tutar & Para Birimi */}
             <div className="grid grid-cols-2 gap-3">
@@ -270,13 +273,14 @@ export function PaymentItemFormModal({
               İptal
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity"
             >
               {isEditMode ? "Güncelle" : "Ekle"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

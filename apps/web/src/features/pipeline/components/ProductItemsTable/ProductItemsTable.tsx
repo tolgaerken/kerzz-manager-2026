@@ -248,9 +248,9 @@ export function ProductItemsTable({
             </div>
           ) : (
             <div className="flex flex-col gap-2 pb-2">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <ProductMobileCard
-                  key={item._id}
+                  key={item._id || `product-${index}`}
                   item={item}
                   onEdit={readOnly ? undefined : () => {
                     setEditingItem(item);

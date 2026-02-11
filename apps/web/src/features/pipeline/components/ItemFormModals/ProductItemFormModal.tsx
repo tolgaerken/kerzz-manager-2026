@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Package } from "lucide-react";
 import type { PipelineProduct } from "../../types/pipeline.types";
 import { recalculateItem, generateTempId } from "../../utils/lineItemCalculations";
+import { ProductAutocomplete, type ProductOption } from "./ProductAutocomplete";
 
 type ProductItem = Partial<PipelineProduct>;
 
@@ -66,15 +67,43 @@ export function ProductItemFormModal({
     []
   );
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      const calculated = recalculateItem(formData as PipelineProduct);
-      onSubmit(calculated as ProductItem);
-      onClose();
+  const handleProductSelect = useCallback(
+    (product: ProductOption | null) => {
+      if (!product) {
+        setFormData((prev) => ({
+          ...prev,
+          productId: "",
+          catalogId: "",
+          name: "",
+          price: 0,
+          vatRate: 20,
+          currency: "tl",
+          unit: "adet",
+        }));
+        return;
+      }
+      setFormData((prev) => {
+        const updated = {
+          ...prev,
+          productId: product.id,
+          catalogId: product._id,
+          name: product.friendlyName || product.name,
+          price: product.salePrice || 0,
+          vatRate: product.vatRate || 20,
+          currency: product.currency || "tl",
+          unit: product.unit || "adet",
+        };
+        return recalculateItem(updated as PipelineProduct) as ProductItem;
+      });
     },
-    [formData, onSubmit, onClose]
+    []
   );
+
+  const handleSubmit = useCallback(() => {
+    const calculated = recalculateItem(formData as PipelineProduct);
+    onSubmit(calculated as ProductItem);
+    onClose();
+  }, [formData, onSubmit, onClose]);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -103,11 +132,19 @@ export function ProductItemFormModal({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
+        onClick={(e) => {
+          // Sadece backdrop'a direkt tıklandığında kapat
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full md:max-w-md bg-[var(--color-surface)] rounded-t-2xl md:rounded-xl shadow-xl max-h-[90vh] flex flex-col">
+      <div 
+        className="relative z-10 w-full md:max-w-md bg-[var(--color-surface)] rounded-t-2xl md:rounded-xl shadow-xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] shrink-0">
           <div className="flex items-center gap-2">
@@ -126,10 +163,17 @@ export function ProductItemFormModal({
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+        {/* Form - div kullanıyoruz çünkü parent modal zaten form içerebilir */}
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {/* Ürün Adı */}
+            {/* Ürün Seçimi (Autocomplete) */}
+            <ProductAutocomplete
+              value={formData.productId || formData.catalogId}
+              displayName={formData.name}
+              onChange={handleProductSelect}
+            />
+
+            {/* Ürün Adı (Manuel düzenleme için) */}
             <div>
               <label className={labelClassName}>
                 Ürün Adı <span className="text-[var(--color-error)]">*</span>
@@ -138,7 +182,7 @@ export function ProductItemFormModal({
                 type="text"
                 value={formData.name || ""}
                 onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Ürün adı girin"
+                placeholder="Ürün adı girin veya yukarıdan seçin"
                 className={inputClassName}
                 required
               />
@@ -290,13 +334,14 @@ export function ProductItemFormModal({
               İptal
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-opacity"
             >
               {isEditMode ? "Güncelle" : "Ekle"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

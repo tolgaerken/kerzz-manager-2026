@@ -77,7 +77,7 @@ export const offerColumnDefs: GridColumnDef<Offer>[] = [
   {
     id: "grandTotal",
     header: "Genel Toplam",
-    accessorFn: (row) => row.totals?.overallGrandTotal || 0,
+    accessorFn: (row) => row.totals?.overallGrandTotal || (row as any).grandTotal || 0,
     width: 140,
     sortable: true,
     align: "right",

@@ -54,6 +54,7 @@ import { LeadsModule } from "./modules/leads";
 import { OffersModule } from "./modules/offers";
 import { SalesModule } from "./modules/sales";
 import { PipelineGatewayModule } from "./modules/pipeline-gateway";
+import { OfferDocumentModule } from "./modules/offer-document";
 import { VersionModule } from "./modules/version";
 // Auth Module
 import { AuthModule, JwtAuthGuard } from "./modules/auth";
@@ -130,6 +131,8 @@ import { SsoModule } from "./modules/sso";
     OffersModule,
     SalesModule,
     PipelineGatewayModule,
+    // Document Generation
+    OfferDocumentModule,
   ],
   providers: [
     // Global JWT Auth Guard

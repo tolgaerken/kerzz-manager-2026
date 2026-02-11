@@ -8,6 +8,8 @@ export const OFFERS_CONSTANTS = {
     OFFER_STATUS: (id: string) => `/offers/${encodeURIComponent(id)}/status`,
     OFFER_CALCULATE: (id: string) => `/offers/${encodeURIComponent(id)}/calculate`,
     OFFER_REVERT_CONVERSION: (id: string) => `/offers/${encodeURIComponent(id)}/revert-conversion`,
+    OFFER_DOCUMENT: (id: string, format: "html" | "pdf" = "html") =>
+      `/offers/${encodeURIComponent(id)}/document?format=${format}`,
   },
   QUERY_KEYS: {
     OFFERS: "offers",

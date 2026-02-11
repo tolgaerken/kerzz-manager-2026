@@ -236,6 +236,9 @@ export class OffersService {
       );
     }
 
+    // Toplamları hesapla
+    await this.calculate(offerId);
+
     return this.findOne(offerId);
   }
 
@@ -279,6 +282,9 @@ export class OffersService {
         rentals,
         payments,
       });
+
+      // Toplamları hesapla (ürünler değiştiğinde)
+      await this.calculate(id);
     }
 
     return this.findOne(id);
@@ -328,6 +334,35 @@ export class OffersService {
     await this.offerModel.findByIdAndUpdate(id, { totals }).exec();
 
     return totals;
+  }
+
+  async recalculateAllTotals(): Promise<{
+    success: number;
+    failed: number;
+    total: number;
+  }> {
+    const offers = await this.offerModel.find({}).lean().exec();
+    let success = 0;
+    let failed = 0;
+
+    for (const offer of offers) {
+      try {
+        await this.calculate(offer._id.toString());
+        success++;
+      } catch (err) {
+        failed++;
+        console.error(
+          `Teklif ${offer.no} hesaplama hatası:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
+    return {
+      success,
+      failed,
+      total: offers.length,
+    };
   }
 
   /**

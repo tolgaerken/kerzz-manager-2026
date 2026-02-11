@@ -133,9 +133,9 @@ export function PaymentItemsTable({
             </div>
           ) : (
             <div className="flex flex-col gap-2 pb-2">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <PaymentMobileCard
-                  key={item._id}
+                  key={item._id || `payment-${index}`}
                   item={item}
                   onEdit={readOnly ? undefined : () => {
                     setEditingItem(item);

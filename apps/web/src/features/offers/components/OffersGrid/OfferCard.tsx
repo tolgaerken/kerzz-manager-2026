@@ -90,7 +90,7 @@ export const OfferCard = memo(function OfferCard({
     onClick(offer);
   };
 
-  const totalAmount = offer.totals?.overallGrandTotal || 0;
+  const totalAmount = offer.totals?.overallGrandTotal || (offer as any).grandTotal || 0;
 
   return (
     <div
