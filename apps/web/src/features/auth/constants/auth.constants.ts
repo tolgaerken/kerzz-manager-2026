@@ -1,6 +1,6 @@
 export const AUTH_CONSTANTS = {
   SSO_BASE_URL: "https://sso-service.kerzz.com:4500",
-  SSO_API_KEY: "8df68169-kerzz-d318-d4b1-dda0d9ae4823!?@998f!840c**d97f",
+  SSO_API_KEY: "e5788b40-ec7e-0fe0-daf8-80c17445ab9d!?@f8a4!e347**11d3",
   
   ENDPOINTS: {
     LOGIN: "/api/user/login",

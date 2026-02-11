@@ -1,3 +1,4 @@
+import { apiGet, apiPatch } from "../../../lib/apiClient";
 import { BANK_TRANSACTIONS_CONSTANTS } from "../constants";
 import type {
   BankTransactionQueryParams,
@@ -11,16 +12,6 @@ import type {
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = BANK_TRANSACTIONS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
 
 function buildQueryString(params: BankTransactionQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -42,15 +33,7 @@ export async function fetchBankTransactions(
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.BANK_TRANSACTIONS}${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<BankTransactionsResponse>(response);
+  return apiGet<BankTransactionsResponse>(url);
 }
 
 // Banka ozet bilgilerini getir
@@ -64,15 +47,7 @@ export async function fetchBankSummary(
 
   const url = `${API_BASE_URL}${ENDPOINTS.SUMMARY}?${searchParams.toString()}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<BankSummaryResponse>(response);
+  return apiGet<BankSummaryResponse>(url);
 }
 
 // Banka islemi guncelle
@@ -82,31 +57,14 @@ export async function updateBankTransaction(
 ): Promise<BankTransaction> {
   const url = `${API_BASE_URL}${ENDPOINTS.BANK_TRANSACTIONS}/${id}`;
 
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<BankTransaction>(response);
+  return apiPatch<BankTransaction>(url, data);
 }
 
 // ERP banka haritalarini getir
 export async function fetchErpBankMaps(): Promise<BankAccount[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.ERP_BANK_MAPS}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<BankAccount[]>(response);
+  return apiGet<BankAccount[]>(url);
 }
 
 // ERP cari hesaplari getir
@@ -115,15 +73,7 @@ export async function fetchErpAccounts(
 ): Promise<ErpAccount[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.ERP_ACCOUNTS}/${companyId}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<ErpAccount[]>(response);
+  return apiGet<ErpAccount[]>(url);
 }
 
 // ERP muhasebe hesaplarini getir
@@ -132,13 +82,5 @@ export async function fetchErpGlAccounts(
 ): Promise<ErpGlAccount[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.ERP_GL_ACCOUNTS}/${companyId}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<ErpGlAccount[]>(response);
+  return apiGet<ErpGlAccount[]>(url);
 }

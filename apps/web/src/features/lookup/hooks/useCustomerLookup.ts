@@ -4,6 +4,10 @@ import { fetchCustomerLookup } from "../api/lookupApi";
 import { LOOKUP_QUERY_KEYS } from "../constants";
 import type { CustomerLookupItem } from "../types/lookup.types";
 
+interface UseCustomerLookupOptions {
+  enabled?: boolean;
+}
+
 /**
  * Uygulama genelinde müşteri lookup verisini sağlar.
  *
@@ -13,12 +17,15 @@ import type { CustomerLookupItem } from "../types/lookup.types";
  * - getCustomerName: customerId'den isim çözümler.
  * - searchCustomers: client-side arama (autocomplete için).
  */
-export function useCustomerLookup() {
+export function useCustomerLookup(options: UseCustomerLookupOptions = {}) {
+  const { enabled = true } = options;
+
   const query = useQuery<CustomerLookupItem[], Error>({
     queryKey: LOOKUP_QUERY_KEYS.CUSTOMERS,
     queryFn: fetchCustomerLookup,
     staleTime: Infinity,
-    gcTime: Infinity
+    gcTime: Infinity,
+    enabled
   });
 
   const customers = query.data ?? [];

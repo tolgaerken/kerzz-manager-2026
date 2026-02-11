@@ -1,3 +1,4 @@
+import { apiGet, apiPost } from "../../../lib/apiClient";
 import { NOTIFICATION_SETTINGS_CONSTANTS } from "../constants/notification-settings.constants";
 import type {
   InvoiceQueueQueryParams,
@@ -12,14 +13,6 @@ import type {
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = NOTIFICATION_SETTINGS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
 
 function buildInvoiceQueryString(params?: InvoiceQueueQueryParams): string {
   if (!params) return "";
@@ -48,11 +41,7 @@ export const notificationQueueApi = {
   ): Promise<PaginatedQueueInvoicesResponse> {
     const queryString = buildInvoiceQueryString(params);
     const url = `${API_BASE_URL}${ENDPOINTS.QUEUE_INVOICES}${queryString ? `?${queryString}` : ""}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-    });
-    return handleResponse<PaginatedQueueInvoicesResponse>(response);
+    return apiGet<PaginatedQueueInvoicesResponse>(url);
   },
 
   async getContractQueue(
@@ -60,30 +49,17 @@ export const notificationQueueApi = {
   ): Promise<PaginatedQueueContractsResponse> {
     const queryString = buildContractQueryString(params);
     const url = `${API_BASE_URL}${ENDPOINTS.QUEUE_CONTRACTS}${queryString ? `?${queryString}` : ""}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-    });
-    return handleResponse<PaginatedQueueContractsResponse>(response);
+    return apiGet<PaginatedQueueContractsResponse>(url);
   },
 
   async getQueueStats(): Promise<QueueStats> {
     const url = `${API_BASE_URL}${ENDPOINTS.QUEUE_STATS}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-    });
-    return handleResponse<QueueStats>(response);
+    return apiGet<QueueStats>(url);
   },
 
   async sendManual(dto: ManualSendDto): Promise<ManualSendResponse> {
     const url = `${API_BASE_URL}${ENDPOINTS.QUEUE_SEND}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(dto),
-    });
-    return handleResponse<ManualSendResponse>(response);
+    return apiPost<ManualSendResponse>(url, dto);
   },
 
   async preview(params: QueuePreviewParams): Promise<QueuePreviewResponse> {
@@ -93,10 +69,6 @@ export const notificationQueueApi = {
       channel: params.channel,
     }).toString();
     const url = `${API_BASE_URL}${ENDPOINTS.QUEUE_PREVIEW}?${qs}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-    });
-    return handleResponse<QueuePreviewResponse>(response);
+    return apiGet<QueuePreviewResponse>(url);
   },
 };

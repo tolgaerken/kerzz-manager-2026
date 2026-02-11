@@ -10,6 +10,7 @@ import {
   Bell,
   FileCheck,
   TrendingUp,
+  UserCog,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -90,6 +91,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     label: "Sistem",
     subItems: [
       { label: "Sistem Logları", path: "/system/logs" },
+      { label: "Kullanıcı Yönetimi", path: "/system/users" },
     ],
   },
   {

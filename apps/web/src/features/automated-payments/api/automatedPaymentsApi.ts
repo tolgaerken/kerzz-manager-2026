@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiDelete } from "../../../lib/apiClient";
 import { AUTOMATED_PAYMENTS_CONSTANTS } from "../constants/automatedPayments.constants";
 import type {
   AutoPaymentTokensResponse,
@@ -9,18 +10,6 @@ import type {
 } from "../types/automatedPayment.types";
 
 const { API_BASE_URL, ENDPOINTS } = AUTOMATED_PAYMENTS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Sunucu Hatası"
-    );
-  }
-  return response.json();
-}
 
 function buildQueryString(params: AutoPaymentQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -39,15 +28,7 @@ export async function fetchAutoPaymentTokens(
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.TOKENS}${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<AutoPaymentTokensResponse>(response);
+  return apiGet<AutoPaymentTokensResponse>(url);
 }
 
 export async function collectPayment(
@@ -55,16 +36,7 @@ export async function collectPayment(
 ): Promise<CollectPaymentResponse> {
   const url = `${API_BASE_URL}${ENDPOINTS.COLLECT}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<CollectPaymentResponse>(response);
+  return apiPost<CollectPaymentResponse>(url, data);
 }
 
 export async function fetchCustomerCards(
@@ -72,15 +44,7 @@ export async function fetchCustomerCards(
 ): Promise<CardItem[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.CUSTOMER_CARDS(customerId)}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<CardItem[]>(response);
+  return apiGet<CardItem[]>(url);
 }
 
 export async function fetchPaymentPlans(
@@ -88,36 +52,13 @@ export async function fetchPaymentPlans(
 ): Promise<PaymentPlanItem[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.PAYMENT_PLANS(erpId)}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<PaymentPlanItem[]>(response);
+  return apiGet<PaymentPlanItem[]>(url);
 }
 
 export async function deleteAutoPaymentToken(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.DELETE_TOKEN(id)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Silme hatası"
-    );
-  }
+  return apiDelete<void>(url);
 }
 
 export async function deleteCard(
@@ -126,20 +67,5 @@ export async function deleteCard(
 ): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.DELETE_CARD(customerId, ctoken)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Kart silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Kart silme hatası"
-    );
-  }
+  return apiDelete<void>(url);
 }

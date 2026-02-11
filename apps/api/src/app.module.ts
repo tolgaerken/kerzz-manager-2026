@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { APP_INTERCEPTOR } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { ConfigModule } from "./config";
-import { DatabaseModule, ContractDatabaseModule, HelpersDatabaseModule } from "./database";
+import { DatabaseModule, ContractDatabaseModule, HelpersDatabaseModule, SsoDatabaseModule } from "./database";
 import { HealthModule } from "./modules/health/health.module";
 import { ContractsModule } from "./modules/contracts";
 import { CustomersModule } from "./modules/customers";
@@ -55,6 +55,10 @@ import { OffersModule } from "./modules/offers";
 import { SalesModule } from "./modules/sales";
 import { PipelineGatewayModule } from "./modules/pipeline-gateway";
 import { VersionModule } from "./modules/version";
+// Auth Module
+import { AuthModule, JwtAuthGuard } from "./modules/auth";
+// SSO Module
+import { SsoModule } from "./modules/sso";
 
 @Module({
   imports: [
@@ -62,6 +66,11 @@ import { VersionModule } from "./modules/version";
     DatabaseModule,
     ContractDatabaseModule,
     HelpersDatabaseModule,
+    SsoDatabaseModule,
+    // Auth Module
+    AuthModule,
+    // SSO Module
+    SsoModule,
     HealthModule,
     VersionModule,
     ContractsModule,
@@ -123,6 +132,11 @@ import { VersionModule } from "./modules/version";
     PipelineGatewayModule,
   ],
   providers: [
+    // Global JWT Auth Guard
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditLogInterceptor,

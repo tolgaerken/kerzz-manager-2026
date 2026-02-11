@@ -30,6 +30,7 @@ import { ContractDocumentsPage } from "./pages/ContractDocumentsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
+import { UsersPage } from "./pages/UsersPage";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -276,6 +277,13 @@ const systemLogsRoute = createRoute({
   component: SystemLogsPage,
 });
 
+// Users page
+const usersRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/system/users",
+  component: UsersPage,
+});
+
 // Notification Settings page
 const notificationSettingsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -326,6 +334,7 @@ const routeTree = rootRoute.addChildren([
     eInvoicePricesRoute,
     systemLogsRoute,
     notificationSettingsRoute,
+    usersRoute,
   ]),
 ]);
 

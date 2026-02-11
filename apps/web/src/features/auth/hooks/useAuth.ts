@@ -16,11 +16,19 @@ export function useAuth() {
     isManager,
     isLoading,
     error,
+    permissions,
+    appUsers,
     setUserInfo,
     setActiveLicance,
     setLoading,
     setError,
-    logout,
+    setPermissions,
+    setAppUsers,
+    setRoleFlags,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    logout
   } = useAuthStore();
 
   const getStoredToken = useCallback((): string | null => {
@@ -34,6 +42,38 @@ export function useAuth() {
     }
   }, []);
 
+  /**
+   * Fetch user permissions and app users from backend
+   * This syncs permissions from sso-db via our backend
+   * Note: This is optional - if it fails, we still have permissions from SSO token
+   * @param accessToken - Token to use for the request (for immediate post-login calls)
+   */
+  const syncPermissionsFromBackend = useCallback(async (accessToken?: string): Promise<void> => {
+    try {
+      const response = await authApi.getMe(accessToken);
+
+      // Update permissions from backend
+      const permissionNames = response.user.permissions.map((p) => p.permission);
+      setPermissions(permissionNames);
+
+      // Update app users
+      setAppUsers(response.appUsers);
+
+      // Update role flags from backend
+      setRoleFlags({
+        isAdmin: response.user.isAdmin,
+        isFinance: response.user.isFinance,
+        isManager: response.user.isManager
+      });
+      
+      console.log("[useAuth] Backend permission sync successful");
+    } catch (err) {
+      // If backend sync fails, we still have permissions from SSO token
+      // Don't let this break the login flow
+      console.warn("[useAuth] Backend permission sync failed (non-critical):", err);
+    }
+  }, [setPermissions, setAppUsers, setRoleFlags]);
+
   const autoLogin = useCallback(async (): Promise<boolean> => {
     const token = getStoredToken();
     if (!token) return false;
@@ -45,6 +85,11 @@ export function useAuth() {
       const userInfo = await authApi.autoLoginWithToken(token);
       validateLicances(userInfo);
       setUserInfo(userInfo);
+
+      // Sync permissions from backend after successful login
+      // Pass the token directly since localStorage might not be updated yet
+      await syncPermissionsFromBackend(userInfo.accessToken);
+
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Auto login failed");
@@ -52,40 +97,50 @@ export function useAuth() {
     } finally {
       setLoading(false);
     }
-  }, [getStoredToken, setLoading, setError, setUserInfo]);
+  }, [getStoredToken, setLoading, setError, setUserInfo, syncPermissionsFromBackend]);
 
-  const requestOtp = useCallback(async (gsm: string): Promise<"ok" | "new"> => {
-    setLoading(true);
-    setError(null);
+  const requestOtp = useCallback(
+    async (gsm: string): Promise<"ok" | "new"> => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await authApi.requestOtp({ gsm });
-      return response.message;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "OTP request failed";
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setError]);
+      try {
+        const response = await authApi.requestOtp({ gsm });
+        return response.message;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "OTP request failed";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const verifyOtp = useCallback(async (gsm: string, otpCode: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
+  const verifyOtp = useCallback(
+    async (gsm: string, otpCode: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const userInfo = await authApi.verifyOtp({ gsm, otpCode });
-      validateLicances(userInfo);
-      setUserInfo(userInfo);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "OTP verification failed";
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setError, setUserInfo]);
+      try {
+        const userInfo = await authApi.verifyOtp({ gsm, otpCode });
+        validateLicances(userInfo);
+        setUserInfo(userInfo);
+
+        // Sync permissions from backend after successful login
+        // Pass the token directly since localStorage might not be updated yet
+        await syncPermissionsFromBackend(userInfo.accessToken);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "OTP verification failed";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError, setUserInfo, syncPermissionsFromBackend]
+  );
 
   const handleLogout = useCallback(() => {
     logout();
@@ -100,12 +155,18 @@ export function useAuth() {
     isManager,
     isLoading,
     error,
+    permissions,
+    appUsers,
     autoLogin,
     requestOtp,
     verifyOtp,
     logout: handleLogout,
     setActiveLicance,
     setError,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    syncPermissionsFromBackend
   };
 }
 

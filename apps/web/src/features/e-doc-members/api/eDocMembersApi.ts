@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
 import { E_DOC_MEMBERS_CONSTANTS } from "../constants/eDocMembers.constants";
 import type {
   EDocMembersResponse,
@@ -7,18 +8,6 @@ import type {
 } from "../types/eDocMember.types";
 
 const { API_BASE_URL, ENDPOINTS } = E_DOC_MEMBERS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Sunucu Hatası",
-    );
-  }
-  return response.json();
-}
 
 function buildQueryString(params: EDocMemberQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -40,15 +29,7 @@ export async function fetchEDocMembers(
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.LIST}${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<EDocMembersResponse>(response);
+  return apiGet<EDocMembersResponse>(url);
 }
 
 export async function createEDocMember(
@@ -56,16 +37,7 @@ export async function createEDocMember(
 ): Promise<EDocMemberItem> {
   const url = `${API_BASE_URL}${ENDPOINTS.CREATE}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<EDocMemberItem>(response);
+  return apiPost<EDocMemberItem>(url, data);
 }
 
 export async function updateEDocMember(
@@ -74,35 +46,11 @@ export async function updateEDocMember(
 ): Promise<EDocMemberItem> {
   const url = `${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`;
 
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<EDocMemberItem>(response);
+  return apiPatch<EDocMemberItem>(url, data);
 }
 
 export async function deleteEDocMember(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.DELETE(id)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Silme hatası",
-    );
-  }
+  return apiDelete<void>(url);
 }

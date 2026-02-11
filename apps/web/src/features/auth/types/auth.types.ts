@@ -21,15 +21,54 @@ export interface UserLicance {
 export interface Role {
   developer: boolean;
   id: string;
-  level: number;
+  level?: number;
   name: string;
+  description?: string;
 }
 
 export interface Permission {
   id: string;
-  name: string;
+  name?: string;
   permission: string;
   group: string;
+  description?: string;
+}
+
+/**
+ * App user info (users assigned to the application)
+ */
+export interface AppUser {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  isActive: boolean;
+}
+
+/**
+ * User with permissions from backend /auth/me
+ */
+export interface UserWithPermissions {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  isActive: boolean;
+  lastLoginDate?: string;
+  appId: string;
+  roles: Role[];
+  permissions: Permission[];
+  isAdmin: boolean;
+  isFinance: boolean;
+  isManager: boolean;
+}
+
+/**
+ * Response from /auth/me endpoint
+ */
+export interface AuthMeResponse {
+  user: UserWithPermissions;
+  appUsers: AppUser[];
 }
 
 export interface AuthState {
@@ -41,6 +80,9 @@ export interface AuthState {
   isManager: boolean;
   isLoading: boolean;
   error: string | null;
+  // New fields for backend-synced permissions
+  permissions: string[];
+  appUsers: AppUser[];
 }
 
 export interface LoginCredentials {

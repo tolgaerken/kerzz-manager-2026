@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
 import { E_INVOICE_PRICES_CONSTANTS } from "../constants/eInvoicePrices.constants";
 import type {
   EInvoicePricesResponse,
@@ -7,18 +8,6 @@ import type {
 } from "../types/eInvoicePrice.types";
 
 const { API_BASE_URL, ENDPOINTS } = E_INVOICE_PRICES_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Sunucu hatası",
-    );
-  }
-  return response.json();
-}
 
 function buildQueryString(params: EInvoicePriceQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -36,15 +25,7 @@ export async function fetchEInvoicePrices(
   const qs = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.LIST}${qs ? `?${qs}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<EInvoicePricesResponse>(response);
+  return apiGet<EInvoicePricesResponse>(url);
 }
 
 export async function createEInvoicePrice(
@@ -52,16 +33,7 @@ export async function createEInvoicePrice(
 ): Promise<EInvoicePriceItem> {
   const url = `${API_BASE_URL}${ENDPOINTS.CREATE}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<EInvoicePriceItem>(response);
+  return apiPost<EInvoicePriceItem>(url, data);
 }
 
 export async function updateEInvoicePrice(
@@ -70,37 +42,13 @@ export async function updateEInvoicePrice(
 ): Promise<EInvoicePriceItem> {
   const url = `${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`;
 
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<EInvoicePriceItem>(response);
+  return apiPatch<EInvoicePriceItem>(url, data);
 }
 
 export async function deleteEInvoicePrice(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.DELETE(id)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Silme hatası",
-    );
-  }
+  return apiDelete<void>(url);
 }
 
 export async function bulkUpsertEInvoicePrices(
@@ -108,16 +56,7 @@ export async function bulkUpsertEInvoicePrices(
 ): Promise<EInvoicePricesResponse> {
   const url = `${API_BASE_URL}${ENDPOINTS.BULK_UPSERT}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(items),
-  });
-
-  return handleResponse<EInvoicePricesResponse>(response);
+  return apiPost<EInvoicePricesResponse>(url, items);
 }
 
 export async function deleteCustomerPrices(
@@ -125,20 +64,5 @@ export async function deleteCustomerPrices(
 ): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.DELETE_BY_CUSTOMER(customerErpId)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Silme hatası",
-    );
-  }
+  return apiDelete<void>(url);
 }

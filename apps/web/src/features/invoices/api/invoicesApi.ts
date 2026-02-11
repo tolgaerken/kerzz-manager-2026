@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
 import { INVOICES_CONSTANTS } from "../constants/invoices.constants";
 import type {
   InvoiceQueryParams,
@@ -8,14 +9,6 @@ import type {
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = INVOICES_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
 
 function buildQueryString(params: InvoiceQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -40,79 +33,29 @@ function buildQueryString(params: InvoiceQueryParams): string {
 export async function fetchInvoices(params: InvoiceQueryParams = {}): Promise<InvoicesResponse> {
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}${queryString ? `?${queryString}` : ""}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  return handleResponse<InvoicesResponse>(response);
+  return apiGet<InvoicesResponse>(url);
 }
 
 // Tek fatura getir
 export async function fetchInvoiceById(id: string): Promise<Invoice> {
   const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}/${id}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  return handleResponse<Invoice>(response);
+  return apiGet<Invoice>(url);
 }
 
 // Yeni fatura oluştur
 export async function createInvoice(data: CreateInvoiceInput): Promise<Invoice> {
   const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
-    body: JSON.stringify(data)
-  });
-
-  return handleResponse<Invoice>(response);
+  return apiPost<Invoice>(url, data);
 }
 
 // Fatura güncelle
 export async function updateInvoice(id: string, data: UpdateInvoiceInput): Promise<Invoice> {
   const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}/${id}`;
-
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
-    body: JSON.stringify(data)
-  });
-
-  return handleResponse<Invoice>(response);
+  return apiPatch<Invoice>(url, data);
 }
 
 // Fatura sil
 export async function deleteInvoice(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}/${id}`;
-
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
+  return apiDelete<void>(url);
 }

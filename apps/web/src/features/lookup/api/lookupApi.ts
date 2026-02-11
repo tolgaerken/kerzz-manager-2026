@@ -1,3 +1,4 @@
+import { apiGet } from "../../../lib/apiClient";
 import type {
   CustomerLookupItem,
   LicenseLookupItem,
@@ -6,14 +7,6 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3888/api";
 
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
-
 /**
  * Tüm müşterileri minimal alanlarla çeker.
  * Backend'e fields parametresi göndererek sadece gerekli alanları alır.
@@ -21,16 +14,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function fetchCustomerLookup(): Promise<CustomerLookupItem[]> {
   const fields = "id,name,companyName,erpId,taxNo";
   const url = `${API_BASE_URL}/customers?limit=99999&type=all&fields=${fields}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  const result = await handleResponse<LookupResponse<CustomerLookupItem>>(response);
+  const result = await apiGet<LookupResponse<CustomerLookupItem>>(url);
   return result.data;
 }
 
@@ -41,15 +25,6 @@ export async function fetchCustomerLookup(): Promise<CustomerLookupItem[]> {
 export async function fetchLicenseLookup(): Promise<LicenseLookupItem[]> {
   const fields = "id,brandName,SearchItem,customerId,customerName";
   const url = `${API_BASE_URL}/licenses?limit=99999&fields=${fields}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  const result = await handleResponse<LookupResponse<LicenseLookupItem>>(response);
+  const result = await apiGet<LookupResponse<LicenseLookupItem>>(url);
   return result.data;
 }

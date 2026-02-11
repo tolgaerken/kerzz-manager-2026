@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
 import { E_DOC_CREDITS_CONSTANTS } from "../constants/eDocCredits.constants";
 import type {
   EDocCreditsResponse,
@@ -7,18 +8,6 @@ import type {
 } from "../types/eDocCredit.types";
 
 const { API_BASE_URL, ENDPOINTS } = E_DOC_CREDITS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Sunucu Hatası"
-    );
-  }
-  return response.json();
-}
 
 function buildQueryString(params: EDocCreditQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -41,15 +30,7 @@ export async function fetchEDocCredits(
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.LIST}${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<EDocCreditsResponse>(response);
+  return apiGet<EDocCreditsResponse>(url);
 }
 
 export async function createEDocCredit(
@@ -57,16 +38,7 @@ export async function createEDocCredit(
 ): Promise<EDocCreditItem> {
   const url = `${API_BASE_URL}${ENDPOINTS.CREATE}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<EDocCreditItem>(response);
+  return apiPost<EDocCreditItem>(url, data);
 }
 
 export async function updateEDocCredit(
@@ -75,16 +47,7 @@ export async function updateEDocCredit(
 ): Promise<EDocCreditItem> {
   const url = `${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`;
 
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  return handleResponse<EDocCreditItem>(response);
+  return apiPatch<EDocCreditItem>(url, data);
 }
 
 export interface CreditInvoiceResult {
@@ -101,34 +64,11 @@ export async function createInvoiceForCredit(
 ): Promise<CreditInvoiceResult> {
   const url = `${API_BASE_URL}${ENDPOINTS.CREATE_INVOICE(id)}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<CreditInvoiceResult>(response);
+  return apiPost<CreditInvoiceResult>(url, {});
 }
 
 export async function deleteEDocCredit(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.DELETE(id)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Silme hatası"
-    );
-  }
+  return apiDelete<void>(url);
 }

@@ -4,6 +4,10 @@ import { fetchLicenseLookup } from "../api/lookupApi";
 import { LOOKUP_QUERY_KEYS } from "../constants";
 import type { LicenseLookupItem } from "../types/lookup.types";
 
+interface UseLicenseLookupOptions {
+  enabled?: boolean;
+}
+
 /**
  * Uygulama genelinde lisans lookup verisini sağlar.
  *
@@ -12,12 +16,15 @@ import type { LicenseLookupItem } from "../types/lookup.types";
  * - licenseMap: _id ve id ile O(1) erişim.
  * - searchLicenses: client-side arama (autocomplete için).
  */
-export function useLicenseLookup() {
+export function useLicenseLookup(options: UseLicenseLookupOptions = {}) {
+  const { enabled = true } = options;
+
   const query = useQuery<LicenseLookupItem[], Error>({
     queryKey: LOOKUP_QUERY_KEYS.LICENSES,
     queryFn: fetchLicenseLookup,
     staleTime: Infinity,
-    gcTime: Infinity
+    gcTime: Infinity,
+    enabled
   });
 
   const licenses = query.data ?? [];

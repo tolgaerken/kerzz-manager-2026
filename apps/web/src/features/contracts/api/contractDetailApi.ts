@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
 import { CONTRACTS_CONSTANTS } from "../constants/contracts.constants";
 import type {
   ContractUser,
@@ -13,54 +14,29 @@ import type {
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACTS_CONSTANTS;
 
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
-
 // Contract Users API
 export async function fetchContractUsers(
   contractId: string
 ): Promise<ContractDetailListResponse<ContractUser>> {
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}?contractId=${encodeURIComponent(contractId)}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractUser(
   data: Omit<ContractUser, "_id" | "id">
 ): Promise<ContractUser> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}`, data);
 }
 
 export async function updateContractUser(
   id: string,
   data: Partial<Omit<ContractUser, "_id" | "id">>
 ): Promise<ContractUser> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractUser(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_USERS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Supports API
@@ -69,41 +45,24 @@ export async function fetchContractSupports(
 ): Promise<ContractDetailListResponse<ContractSupport>> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}${params}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractSupport(
   data: Omit<ContractSupport, "_id" | "id">
 ): Promise<ContractSupport> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}`, data);
 }
 
 export async function updateContractSupport(
   id: string,
   data: Partial<Omit<ContractSupport, "_id" | "id">>
 ): Promise<ContractSupport> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractSupport(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Saas API
@@ -112,41 +71,24 @@ export async function fetchContractSaas(
 ): Promise<ContractDetailListResponse<ContractSaas>> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}${params}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractSaas(
   data: Omit<ContractSaas, "_id" | "id">
 ): Promise<ContractSaas> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}`, data);
 }
 
 export async function updateContractSaas(
   id: string,
   data: Partial<Omit<ContractSaas, "_id" | "id">>
 ): Promise<ContractSaas> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractSaas(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Cash Registers API
@@ -155,41 +97,24 @@ export async function fetchContractCashRegisters(
 ): Promise<ContractDetailListResponse<ContractCashRegister>> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}${params}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractCashRegister(
   data: Omit<ContractCashRegister, "_id" | "id">
 ): Promise<ContractCashRegister> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}`, data);
 }
 
 export async function updateContractCashRegister(
   id: string,
   data: Partial<Omit<ContractCashRegister, "_id" | "id">>
 ): Promise<ContractCashRegister> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractCashRegister(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Versions API
@@ -198,41 +123,24 @@ export async function fetchContractVersions(
 ): Promise<ContractDetailListResponse<ContractVersion>> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}${params}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractVersion(
   data: Omit<ContractVersion, "_id" | "id">
 ): Promise<ContractVersion> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}`, data);
 }
 
 export async function updateContractVersion(
   id: string,
   data: Partial<Omit<ContractVersion, "_id" | "id">>
 ): Promise<ContractVersion> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractVersion(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Items API
@@ -240,41 +148,24 @@ export async function fetchContractItems(
   contractId: string
 ): Promise<ContractDetailListResponse<ContractItem>> {
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}?contractId=${encodeURIComponent(contractId)}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractItem(
   data: Omit<ContractItem, "_id" | "id">
 ): Promise<ContractItem> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}`, data);
 }
 
 export async function updateContractItem(
   id: string,
   data: Partial<Omit<ContractItem, "_id" | "id">>
 ): Promise<ContractItem> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractItem(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Documents API
@@ -283,41 +174,24 @@ export async function fetchContractDocuments(
 ): Promise<ContractDetailListResponse<ContractDocument>> {
   const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}${params}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractDocument(
   data: Omit<ContractDocument, "_id" | "id">
 ): Promise<ContractDocument> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}`, data);
 }
 
 export async function updateContractDocument(
   id: string,
   data: Partial<Omit<ContractDocument, "_id" | "id">>
 ): Promise<ContractDocument> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractDocument(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_DOCUMENTS}/${encodeURIComponent(id)}`);
 }
 
 // Contract Payments API
@@ -325,39 +199,22 @@ export async function fetchContractPayments(
   contractId: string
 ): Promise<ContractDetailListResponse<ContractPayment>> {
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}?contractId=${encodeURIComponent(contractId)}`;
-  const response = await fetch(url);
-  return handleResponse(response);
+  return apiGet(url);
 }
 
 export async function createContractPayment(
   data: Omit<ContractPayment, "_id" | "id">
 ): Promise<ContractPayment> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPost(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}`, data);
 }
 
 export async function updateContractPayment(
   id: string,
   data: Partial<Omit<ContractPayment, "_id" | "id">>
 ): Promise<ContractPayment> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`, data);
 }
 
 export async function deleteContractPayment(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Silme işlemi başarısız" }));
-    throw new Error(error.message || "Silme işlemi başarısız");
-  }
+  return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`);
 }

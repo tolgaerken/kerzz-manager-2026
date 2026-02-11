@@ -2,7 +2,7 @@ import {
   Injectable,
   NestInterceptor,
   ExecutionContext,
-  CallHandler,
+  CallHandler
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Observable, tap, catchError, throwError } from "rxjs";
@@ -11,9 +11,15 @@ import { SystemLogsService } from "../system-logs.service";
 import {
   SystemLogCategory,
   SystemLogAction,
-  SystemLogStatus,
+  SystemLogStatus
 } from "../schemas/system-log.schema";
 import { AUDIT_LOG_KEY, AuditLogOptions } from "../decorators/audit-log.decorator";
+import { AuthenticatedUser } from "../../auth/auth.types";
+
+// Extend Express Request to include user from JWT
+interface RequestWithUser extends Request {
+  user?: AuthenticatedUser;
+}
 
 /**
  * HTTP method'unu SystemLogAction'a map eder
@@ -43,11 +49,20 @@ function extractEntityId(req: Request): string | null {
 
 /**
  * Request'ten kullanıcı bilgisi çıkar
- * Not: Şu an JWT guard yok, header'dan alıyoruz
+ * Önce JWT'den (request.user), yoksa header'dan alır
  */
-function extractUserInfo(req: Request): { userId: string | null; userName: string | null } {
-  const userId = req.headers["x-user-id"] as string || null;
-  const userName = req.headers["x-user-name"] as string || null;
+function extractUserInfo(req: RequestWithUser): { userId: string | null; userName: string | null } {
+  // First try to get from JWT (request.user set by JwtAuthGuard)
+  if (req.user) {
+    return {
+      userId: req.user.id,
+      userName: req.user.name
+    };
+  }
+
+  // Fallback to headers (for backward compatibility)
+  const userId = (req.headers["x-user-id"] as string) || null;
+  const userName = (req.headers["x-user-name"] as string) || null;
   return { userId, userName };
 }
 
@@ -69,7 +84,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const method = request.method;
     const action = mapHttpMethodToAction(method);
 

@@ -1,3 +1,4 @@
+import { apiGet } from "../../../lib/apiClient";
 import { NOTIFICATION_SETTINGS_CONSTANTS } from "../constants/notification-settings.constants";
 import type {
   NotificationLog,
@@ -6,14 +7,6 @@ import type {
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = NOTIFICATION_SETTINGS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
 
 function buildQueryString(params?: NotificationLogQueryParams): string {
   if (!params) return "";
@@ -43,28 +36,12 @@ export const notificationLogsApi = {
     const queryString = buildQueryString(params);
     const url = `${API_BASE_URL}${ENDPOINTS.LOGS}${queryString ? `?${queryString}` : ""}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    });
-
-    return handleResponse<PaginatedNotificationLogsResponse>(response);
+    return apiGet<PaginatedNotificationLogsResponse>(url);
   },
 
   async getById(id: string): Promise<NotificationLog> {
     const url = `${API_BASE_URL}${ENDPOINTS.LOGS}/${id}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    });
-
-    return handleResponse<NotificationLog>(response);
+    return apiGet<NotificationLog>(url);
   },
 };

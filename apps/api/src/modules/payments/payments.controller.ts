@@ -13,6 +13,7 @@ import {
 import { PaymentsService } from "./payments.service";
 import { CreatePaymentLinkDto } from "./dto/create-payment-link.dto";
 import { PaymentLinkQueryDto } from "./dto/payment-link-query.dto";
+import { Public } from "../auth/decorators/public.decorator";
 
 @Controller("payments")
 export class PaymentsController {
@@ -29,6 +30,7 @@ export class PaymentsController {
     return this.paymentsService.findAll(query);
   }
 
+  @Public()
   @Get("links/:linkId/info")
   async getPaymentInfo(@Param("linkId") linkId: string) {
     return this.paymentsService.getPaymentInfo(linkId);
@@ -44,6 +46,7 @@ export class PaymentsController {
    * PayTR callback endpoint (public - auth gerektirmez).
    * PayTR odeme sonucunu bu endpointe POST eder.
    */
+  @Public()
   @Post("callback")
   @HttpCode(HttpStatus.OK)
   @Header("Content-Type", "text/plain")
@@ -55,6 +58,7 @@ export class PaymentsController {
   /**
    * PayTR basari redirect (GET).
    */
+  @Public()
   @Get("success")
   @Header("Content-Type", "text/plain")
   async successPayment() {
@@ -64,6 +68,7 @@ export class PaymentsController {
   /**
    * PayTR hata redirect (GET).
    */
+  @Public()
   @Get("error")
   @Header("Content-Type", "text/plain")
   async errorPayment() {

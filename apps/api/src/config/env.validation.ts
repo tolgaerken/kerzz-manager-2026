@@ -1,5 +1,5 @@
 import { plainToInstance } from "class-transformer";
-import { IsEnum, IsNumber, IsString, validateSync } from "class-validator";
+import { IsEnum, IsNumber, IsOptional, IsString, validateSync } from "class-validator";
 
 enum Environment {
   Development = "development",
@@ -22,6 +22,20 @@ class EnvironmentVariables {
 
   @IsString()
   MONGODB_CONTRACT_DB: string;
+
+  // SSO Database - Optional (falls back to MONGODB_URI)
+  @IsOptional()
+  @IsString()
+  MONGODB_SSO_URI?: string;
+
+  @IsOptional()
+  @IsString()
+  MONGODB_SSO_DB?: string = "sso-db";
+
+  // Application ID for SSO filtering
+  @IsOptional()
+  @IsString()
+  APP_ID?: string = "kerzz-manager";
 
   @IsString()
   JWT_SECRET: string;

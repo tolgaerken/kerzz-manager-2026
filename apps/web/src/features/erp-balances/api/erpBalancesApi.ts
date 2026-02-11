@@ -1,3 +1,4 @@
+import { apiGet, apiPost } from "../../../lib/apiClient";
 import { ERP_BALANCES_CONSTANTS } from "../constants/erpBalances.constants";
 import type {
   ErpBalanceQueryParams,
@@ -8,16 +9,6 @@ import type {
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = ERP_BALANCES_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
 
 function buildQueryString(params: ErpBalanceQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -38,15 +29,7 @@ export async function fetchErpBalances(
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.BALANCES}${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<ErpBalancesResponse>(response);
+  return apiGet<ErpBalancesResponse>(url);
 }
 
 export async function fetchErpBalancesByCompany(
@@ -54,41 +37,17 @@ export async function fetchErpBalancesByCompany(
 ): Promise<ErpBalance[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.BALANCES_BY_COMPANY}/${companyId}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<ErpBalance[]>(response);
+  return apiGet<ErpBalance[]>(url);
 }
 
 export async function fetchErpBalanceStatus(): Promise<ErpBalanceStatus> {
   const url = `${API_BASE_URL}${ENDPOINTS.BALANCES_STATUS}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<ErpBalanceStatus>(response);
+  return apiGet<ErpBalanceStatus>(url);
 }
 
 export async function refreshErpBalances(): Promise<ErpBalanceRefreshResult> {
   const url = `${API_BASE_URL}${ENDPOINTS.BALANCES_REFRESH}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<ErpBalanceRefreshResult>(response);
+  return apiPost<ErpBalanceRefreshResult>(url, {});
 }

@@ -1,5 +1,7 @@
 // EftPos Models API
 
+import { apiGet } from "../../../lib/apiClient";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3888/api";
 
 export interface EftPosModel {
@@ -28,14 +30,6 @@ export interface EftPosModelQueryParams {
   sortOrder?: "asc" | "desc";
 }
 
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
-
 function buildQueryString(params: EftPosModelQueryParams): string {
   const searchParams = new URLSearchParams();
 
@@ -55,28 +49,12 @@ export async function fetchEftPosModels(
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}/eft-pos-models${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  return handleResponse<EftPosModelsResponse>(response);
+  return apiGet<EftPosModelsResponse>(url);
 }
 
 // Tek EftPos modeli getir
 export async function fetchEftPosModelById(id: string): Promise<EftPosModel> {
   const url = `${API_BASE_URL}/eft-pos-models/${id}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    }
-  });
-
-  return handleResponse<EftPosModel>(response);
+  return apiGet<EftPosModel>(url);
 }

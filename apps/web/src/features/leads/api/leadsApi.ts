@@ -1,3 +1,4 @@
+import { apiGet, apiPost, apiPatch, apiDelete } from "../../../lib/apiClient";
 import { LEADS_CONSTANTS } from "../constants/leads.constants";
 import type {
   LeadsResponse,
@@ -10,18 +11,6 @@ import type {
 } from "../types/lead.types";
 
 const { API_BASE_URL, ENDPOINTS } = LEADS_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Sunucu hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Sunucu hatası",
-    );
-  }
-  return response.json();
-}
 
 function buildQueryString(params: LeadQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -49,44 +38,19 @@ export async function fetchLeads(
   const qs = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}${qs ? `?${qs}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<LeadsResponse>(response);
+  return apiGet<LeadsResponse>(url);
 }
 
 export async function fetchLeadById(id: string): Promise<Lead> {
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}/${encodeURIComponent(id)}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<Lead>(response);
+  return apiGet<Lead>(url);
 }
 
 export async function createLead(input: CreateLeadInput): Promise<Lead> {
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  return handleResponse<Lead>(response);
+  return apiPost<Lead>(url, input);
 }
 
 export async function updateLead(
@@ -95,37 +59,13 @@ export async function updateLead(
 ): Promise<Lead> {
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}/${encodeURIComponent(id)}`;
 
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  return handleResponse<Lead>(response);
+  return apiPatch<Lead>(url, input);
 }
 
 export async function deleteLead(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}/${encodeURIComponent(id)}`;
 
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    const error = await response
-      .json()
-      .catch(() => ({ message: "Silme hatası" }));
-    throw new Error(
-      (error as { message?: string }).message || "Silme hatası",
-    );
-  }
+  return apiDelete<void>(url);
 }
 
 export async function addLeadActivity(
@@ -134,28 +74,11 @@ export async function addLeadActivity(
 ): Promise<Lead> {
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}/${encodeURIComponent(id)}/activities`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  return handleResponse<Lead>(response);
+  return apiPost<Lead>(url, input);
 }
 
 export async function fetchLeadStats(): Promise<LeadStats> {
   const url = `${API_BASE_URL}${ENDPOINTS.LEADS}/stats`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<LeadStats>(response);
+  return apiGet<LeadStats>(url);
 }

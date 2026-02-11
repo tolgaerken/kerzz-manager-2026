@@ -11,6 +11,10 @@ export interface MongoChangeEvent {
   timestamp: string;
 }
 
+interface UseMongoChangeStreamOptions {
+  enabled?: boolean;
+}
+
 /**
  * Belirtilen MongoDB collection icin change stream dinler.
  *
@@ -28,8 +32,10 @@ export interface MongoChangeEvent {
  */
 export function useMongoChangeStream(
   collection: string | null | undefined,
-  onEvent: (event: MongoChangeEvent) => void
+  onEvent: (event: MongoChangeEvent) => void,
+  options: UseMongoChangeStreamOptions = {}
 ): void {
+  const { enabled = true } = options;
   const { socket } = useSocket();
   const callbackRef = useRef(onEvent);
 
@@ -37,7 +43,7 @@ export function useMongoChangeStream(
   callbackRef.current = onEvent;
 
   useEffect(() => {
-    if (!socket || !collection) return;
+    if (!socket || !collection || !enabled) return;
 
     // Collection room'una abone ol
     console.log(`[useMongoChangeStream] Subscribe: "${collection}"`);
@@ -60,5 +66,5 @@ export function useMongoChangeStream(
       socket.off("change", handler);
       socket.emit("unsubscribe", { collection });
     };
-  }, [socket, collection]);
+  }, [socket, collection, enabled]);
 }

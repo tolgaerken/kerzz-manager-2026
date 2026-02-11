@@ -1,21 +1,8 @@
+import { apiGet, apiPost, apiPatch } from "../../../lib/apiClient";
 import { MANAGER_LOG_CONSTANTS } from "../constants/manager-log.constants";
-import type {
-  LogQueryParams,
-  LogsResponse,
-  Log,
-  CreateLogInput,
-  PipelineLogsResponse,
-} from "../types";
+import type { LogQueryParams, LogsResponse, Log, CreateLogInput, PipelineLogsResponse } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = MANAGER_LOG_CONSTANTS;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Sunucu Hatası" }));
-    throw new Error(error.message || "Sunucu Hatası");
-  }
-  return response.json();
-}
 
 function buildQueryString(params: LogQueryParams): string {
   const searchParams = new URLSearchParams();
@@ -83,82 +70,31 @@ export const managerLogKeys = {
 export async function fetchManagerLogs(params: LogQueryParams = {}): Promise<LogsResponse> {
   const queryString = buildQueryString(params);
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}${queryString ? `?${queryString}` : ""}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<LogsResponse>(response);
+  return apiGet<LogsResponse>(url);
 }
 
 // Tek log getir
 export async function fetchManagerLogById(id: string): Promise<Log> {
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}/${id}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<Log>(response);
+  return apiGet<Log>(url);
 }
 
 // Yeni log oluştur
 export async function createManagerLog(data: CreateLogInput): Promise<Log> {
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}`;
-
-  console.log("[createManagerLog] URL:", url);
-  console.log("[createManagerLog] Data:", data);
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  console.log("[createManagerLog] Response status:", response.status);
-
-  return handleResponse<Log>(response);
+  return apiPost<Log>(url, data);
 }
 
 // Hatırlatmayı tamamlandı olarak işaretle
 export async function markManagerLogReminderCompleted(id: string): Promise<Log> {
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}/${id}/reminder/complete`;
-
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<Log>(response);
+  return apiPatch<Log>(url);
 }
 
 // Pipeline loglarını getir (lead/offer/sale zinciri)
 export async function fetchPipelineLogs(pipelineRef: string): Promise<PipelineLogsResponse> {
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}/pipeline/${encodeURIComponent(pipelineRef)}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<PipelineLogsResponse>(response);
+  return apiGet<PipelineLogsResponse>(url);
 }
 
 /**
@@ -179,17 +115,7 @@ async function fetchLastLogDatesChunk(
   params: LastByContextsParams
 ): Promise<LastByContextsResponse> {
   const url = `${API_BASE_URL}${ENDPOINTS.LOGS}/last-by-contexts`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(params),
-  });
-
-  return handleResponse<LastByContextsResponse>(response);
+  return apiPost<LastByContextsResponse>(url, params);
 }
 
 // Body-parser limiti 100KB, güvenli bir chunk boyutu kullan
