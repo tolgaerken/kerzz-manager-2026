@@ -165,12 +165,30 @@ export class Invoice {
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
 
 // Indexes for better query performance
+// Tek alan indexleri (lookup ve basic filter için)
 InvoiceSchema.index({ invoiceNumber: 1 });
-InvoiceSchema.index({ invoiceDate: 1 });
-InvoiceSchema.index({ dueDate: 1 });
 InvoiceSchema.index({ customerId: 1 });
 InvoiceSchema.index({ contractId: 1 });
-InvoiceSchema.index({ isPaid: 1 });
-InvoiceSchema.index({ invoiceType: 1 });
-InvoiceSchema.index({ internalFirm: 1 });
+InvoiceSchema.index({ erpId: 1 }); // Arama için
+
+// Compound indexler (en sık kullanılan sorgu kombinasyonları)
+// 1. Tarih aralığı + sıralama (en sık kullanılan - InvoicesPage default sorgusu)
+InvoiceSchema.index({ invoiceDate: -1, isPaid: 1, internalFirm: 1 });
+
+// 2. İç firma + ödeme durumu + tarih (filtreleme + sıralama)
+InvoiceSchema.index({ internalFirm: 1, isPaid: 1, invoiceDate: -1 });
+
+// 3. Fatura tipi + tarih (tip bazlı sorgular)
+InvoiceSchema.index({ invoiceType: 1, invoiceDate: -1 });
+
+// 4. Müşteri + tarih (müşteri bazlı sorgular)
+InvoiceSchema.index({ customerId: 1, invoiceDate: -1 });
+
+// 5. Kontrat + tarih (kontrat bazlı sorgular)
+InvoiceSchema.index({ contractId: 1, invoiceDate: -1 });
+
+// 6. Vade tarihi + ödeme durumu (gecikmiş faturalar için)
+InvoiceSchema.index({ isPaid: 1, dueDate: 1 });
+
+// Text index (arama için - partial match)
 InvoiceSchema.index({ name: "text", invoiceNumber: "text", description: "text" });

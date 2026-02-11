@@ -63,7 +63,7 @@ export function InvoicesPage() {
   
   const [queryParams, setQueryParams] = useState<InvoiceQueryParams>({
     page: 1,
-    limit: 100000,
+    limit: 1000, // 100000'den 1000'e düşürüldü - performans iyileştirmesi
     search: "",
     invoiceType: "",
     sortField: "invoiceDate",
@@ -116,7 +116,7 @@ export function InvoicesPage() {
   const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // ERP Bakiye verileri - Cari bakiye için
-  const { data: erpBalancesData } = useErpBalances({ limit: 100000 });
+  const { data: erpBalancesData } = useErpBalances({ limit: 5000 }); // 100000'den 5000'e düşürüldü
 
   // erpId (CariKodu) -> CariBakiye eşleştirmesi
   const balanceMap = useMemo(() => {
