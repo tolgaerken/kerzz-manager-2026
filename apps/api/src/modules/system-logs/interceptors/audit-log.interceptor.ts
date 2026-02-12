@@ -62,7 +62,9 @@ function extractUserInfo(req: RequestWithUser): { userId: string | null; userNam
 
   // Fallback to headers (for backward compatibility)
   const userId = (req.headers["x-user-id"] as string) || null;
-  const userName = (req.headers["x-user-name"] as string) || null;
+  const rawUserName = (req.headers["x-user-name"] as string) || null;
+  // Frontend Türkçe karakterler için encodeURIComponent kullanıyor, decode et
+  const userName = rawUserName ? decodeURIComponent(rawUserName) : null;
   return { userId, userName };
 }
 

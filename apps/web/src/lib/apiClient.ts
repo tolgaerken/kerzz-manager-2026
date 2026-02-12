@@ -55,7 +55,9 @@ function getAuthHeaders(): Record<string, string> {
         headers["x-user-id"] = token.id;
       }
       if (token?.name) {
-        headers["x-user-name"] = token.name;
+        // HTTP header'ları ISO-8859-1 karakter setini destekler
+        // Türkçe karakterler için encodeURIComponent kullanıyoruz
+        headers["x-user-name"] = encodeURIComponent(token.name);
       }
     }
   } catch (err) {
