@@ -4,6 +4,7 @@ import type { Offer, CreateOfferInput, OfferStatus } from "../../types/offer.typ
 import { useOffer } from "../../hooks/useOffers";
 import { CustomerAutocomplete } from "./CustomerAutocomplete";
 import { LossReasonModal } from "../LossReasonModal";
+import { OfferTotalsDisplay } from "./OfferTotalsDisplay";
 import { useCompanies } from "../../../companies/hooks/useCompanies";
 import {
   ProductItemsTable,
@@ -608,6 +609,9 @@ function GeneralTab({
           className={`${inputClassName} resize-none`}
         />
       </div>
+
+      {/* Toplamlar */}
+      <OfferTotalsDisplay formData={formData} />
     </div>
   );
 }

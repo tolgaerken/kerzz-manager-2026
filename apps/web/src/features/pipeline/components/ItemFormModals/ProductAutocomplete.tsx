@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Search, X, Package, ChevronDown } from "lucide-react";
+import { Search, X, Package, ChevronDown, Check } from "lucide-react";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
 import { useHardwareProducts } from "../../../hardware-products";
 import type { HardwareProduct } from "../../../hardware-products";
 
@@ -30,12 +31,14 @@ export function ProductAutocomplete({
   error,
   placeholder = "Ürün ara veya seç...",
 }: ProductAutocompleteProps) {
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: productsData } = useHardwareProducts({
     saleActive: true,
@@ -69,9 +72,9 @@ export function ProductAutocomplete({
     );
   }, [products, searchText]);
 
-  // Click outside handler - sadece dropdown açıkken çalışsın
+  // Click outside handler - sadece dropdown açıkken ve desktop'ta çalışsın
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isMobile) return;
     
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -87,7 +90,16 @@ export function ProductAutocomplete({
       clearTimeout(timeoutId);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
+
+  // Mobilde modal açıldığında input'a focus
+  useEffect(() => {
+    if (isOpen && isMobile && mobileInputRef.current) {
+      setTimeout(() => {
+        mobileInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen, isMobile]);
 
   // Scroll highlighted item into view
   useEffect(() => {
@@ -163,7 +175,7 @@ export function ProductAutocomplete({
         className={`relative flex items-center border rounded-lg bg-[var(--color-surface)] transition-shadow ${
           error
             ? "border-[var(--color-error)]"
-            : isOpen
+            : isOpen && !isMobile
             ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/40"
             : "border-[var(--color-border)]"
         }`}
@@ -171,20 +183,35 @@ export function ProductAutocomplete({
         <div className="flex items-center gap-2 pl-3">
           <Package className="h-4 w-4 text-[var(--color-muted-foreground)]" />
         </div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={isOpen ? searchText : displayValue}
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            setHighlightedIndex(0);
-            if (!isOpen) setIsOpen(true);
-          }}
-          onFocus={() => setIsOpen(true)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="flex-1 px-2 py-2.5 text-sm bg-transparent text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none"
-        />
+        {isMobile ? (
+          // Mobilde tıklanabilir alan
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="flex-1 px-2 py-2.5 text-sm text-left bg-transparent text-[var(--color-foreground)] focus:outline-none"
+          >
+            {displayValue || (
+              <span className="text-[var(--color-muted-foreground)]">
+                {placeholder}
+              </span>
+            )}
+          </button>
+        ) : (
+          <input
+            ref={inputRef}
+            type="text"
+            value={isOpen ? searchText : displayValue}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setHighlightedIndex(0);
+              if (!isOpen) setIsOpen(true);
+            }}
+            onFocus={() => setIsOpen(true)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            className="flex-1 px-2 py-2.5 text-sm bg-transparent text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none"
+          />
+        )}
         {value && (
           <button
             type="button"
@@ -211,7 +238,8 @@ export function ProductAutocomplete({
         <p className="mt-1 text-xs text-[var(--color-error)]">{error}</p>
       )}
 
-      {isOpen && (
+      {/* Desktop Dropdown */}
+      {isOpen && !isMobile && (
         <div
           ref={listRef}
           className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg"
@@ -258,6 +286,82 @@ export function ProductAutocomplete({
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Mobile Full Screen Modal */}
+      {isOpen && isMobile && (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-[var(--color-surface)]">
+          {/* Mobile Modal Header */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                setSearchText("");
+              }}
+              className="p-1.5 -ml-1.5 rounded-md hover:bg-[var(--color-surface-elevated)] transition-colors"
+            >
+              <X className="w-5 h-5 text-[var(--color-muted-foreground)]" />
+            </button>
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-foreground)]" />
+              <input
+                ref={mobileInputRef}
+                type="text"
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  setHighlightedIndex(0);
+                }}
+                placeholder="Ürün ara..."
+                className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40"
+              />
+            </div>
+          </div>
+
+          {/* Mobile Modal List */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredProducts.length === 0 ? (
+              <div className="px-4 py-8 text-sm text-center text-[var(--color-muted-foreground)]">
+                {searchText ? "Sonuç bulunamadı" : "Ürün bulunamadı"}
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--color-border)]">
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product._id}
+                    type="button"
+                    onClick={() => handleSelect(product)}
+                    className={`w-full px-4 py-3 text-left transition-colors active:bg-[var(--color-surface-elevated)] ${
+                      product.id === value ? "bg-[var(--color-primary)]/5" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-sm font-medium text-[var(--color-foreground)] truncate">
+                          {product.friendlyName || product.name}
+                        </span>
+                        {product.friendlyName && product.name !== product.friendlyName && (
+                          <span className="text-xs text-[var(--color-muted-foreground)] truncate">
+                            {product.name}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                          {formatCurrency(product.salePrice, product.currency)}
+                        </span>
+                        {product.id === value && (
+                          <Check className="w-4 h-4 text-[var(--color-primary)]" />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

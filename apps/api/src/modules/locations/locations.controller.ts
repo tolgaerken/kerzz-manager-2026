@@ -1,11 +1,13 @@
 import { Controller, Get, Query } from "@nestjs/common";
 import { LocationsService } from "./locations.service";
 import { TownQueryDto, DistrictQueryDto } from "./dto";
+import { Public } from "../auth/decorators/public.decorator";
 
 @Controller("locations")
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
+  @Public()
   @Get("countries")
   findCountries() {
     return this.locationsService.findCountries();

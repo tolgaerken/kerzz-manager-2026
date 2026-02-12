@@ -589,6 +589,16 @@ export class OffersService {
 
   private mapToResponse(offer: any): OfferResponseDto {
     const conv = offer.conversionInfo || {};
+    
+    // Eski yapıdan yeni yapıya uyumluluk: grandTotal varsa totals içine ekle
+    const totals = offer.totals || {};
+    if (!totals.overallGrandTotal && offer.grandTotal) {
+      totals.overallGrandTotal = offer.grandTotal;
+      totals.overallSubTotal = offer.total || 0;
+      totals.overallDiscountTotal = offer.discount || 0;
+      totals.overallTaxTotal = offer.tax || 0;
+    }
+    
     return {
       _id: offer._id.toString(),
       no: offer.no || 0,
@@ -600,7 +610,7 @@ export class OffersService {
       validUntil: offer.validUntil,
       sellerId: offer.sellerId || "",
       sellerName: offer.sellerName || "",
-      totals: offer.totals || {},
+      totals,
       usdRate: offer.usdRate || 0,
       eurRate: offer.eurRate || 0,
       status: offer.status || "draft",

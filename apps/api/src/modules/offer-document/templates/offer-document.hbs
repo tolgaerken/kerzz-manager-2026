@@ -27,82 +27,171 @@
       .no-print { display: none !important; }
     }
 
-    /* ── Page Header ── */
-    .document-header {
-      text-align: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid #0f172a;
-    }
-
-    .document-header h1 {
-      font-size: 18px;
-      font-weight: 700;
+    /* ── Logo ── */
+    .logo {
+      font-size: 32px;
+      font-weight: 800;
       color: #0f172a;
-      letter-spacing: 0.5px;
+      letter-spacing: 4px;
       margin-bottom: 8px;
     }
 
-    .document-header .subtitle {
-      font-size: 12px;
-      color: #475569;
-      font-weight: 500;
+    .logo-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
 
-    /* ── Meta Info ── */
-    .meta-grid {
+    /* ── Cover Header ── */
+    .cover-header {
+      text-align: center;
+      padding: 20px 0 24px;
+      border-bottom: 3px solid #0f172a;
+      margin-bottom: 24px;
+    }
+
+    .cover-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 1px;
+      margin-top: 16px;
+    }
+
+    .cover-header .doc-type {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* ── Reference Table ── */
+    .ref-table-container {
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      gap: 16px;
+      justify-content: center;
+      margin-bottom: 24px;
     }
 
-    .meta-block {
-      flex: 1;
+    .ref-table {
+      border-collapse: collapse;
+      min-width: 320px;
+      border: 1px solid #e2e8f0;
     }
 
-    .meta-block.right {
-      text-align: right;
+    .ref-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #e2e8f0;
     }
 
-    .meta-label {
-      font-size: 9px;
+    .ref-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ref-table .ref-label {
+      font-size: 10px;
       font-weight: 600;
-      color: #94a3b8;
+      color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 2px;
+      background: #f8fafc;
+      width: 140px;
     }
 
-    .meta-value {
+    .ref-table .ref-value {
       font-size: 12px;
       font-weight: 600;
       color: #0f172a;
     }
 
-    .meta-value.large {
-      font-size: 14px;
+    /* ── Info Cards ── */
+    .info-cards {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
-    /* ── Customer Box ── */
-    .customer-box {
-      background: #f8fafc;
+    .info-card {
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .info-card-header {
+      background: #0f172a;
+      color: #fff;
+      padding: 8px 14px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-card-body {
+      padding: 12px 14px;
+      background: #fff;
+    }
+
+    .info-card-body .primary {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .info-card-body .secondary {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+
+    .info-card-body .detail {
+      font-size: 10px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    /* ── Company Footer ── */
+    .company-footer {
       border: 1px solid #e2e8f0;
       border-radius: 6px;
       padding: 14px 18px;
       margin-bottom: 24px;
+      background: #f8fafc;
     }
 
-    .customer-box .company-name {
-      font-size: 13px;
-      font-weight: 700;
+    .company-footer-title {
+      font-size: 10px;
+      font-weight: 600;
       color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .company-footer-grid {
+      display: flex;
+      gap: 24px;
+    }
+
+    .company-footer-col {
+      flex: 1;
+    }
+
+    .company-footer-col .label {
+      font-size: 9px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
       margin-bottom: 2px;
     }
 
-    .customer-box .brand-name {
-      font-size: 11px;
-      color: #64748b;
+    .company-footer-col .value {
+      font-size: 10px;
+      color: #475569;
+      line-height: 1.5;
     }
 
     /* ── Section ── */
@@ -295,6 +384,11 @@
       color: #dc2626;
     }
 
+    /* Currency separator */
+    .totals-table .currency-separator td {
+      padding-top: 8px;
+    }
+
     /* ── Print toolbar ── */
     .print-toolbar {
       position: fixed;
@@ -350,30 +444,104 @@
   </div>
 
   <!-- ═══════ SAYFA 1: KAPAK ═══════ -->
-  <div class="document-header">
-    <h1>KERZZ PROJE TEKLİFİ - [ EK-S-2 ]</h1>
+  
+  <!-- Logo ve Başlık -->
+  <div class="cover-header">
+    <div class="logo">KERZZ</div>
+    <div class="logo-subtitle">Veri Yazılım ve Danışmanlık A.Ş.</div>
+    <h1>PROJE TEKLİFİ</h1>
+    <div class="doc-type">[ EK-S-2 ]</div>
   </div>
 
-  <div class="meta-grid">
-    <div class="meta-block">
-      <div class="meta-label">Tarih</div>
-      <div class="meta-value">{{formatDate offer.saleDate}}</div>
+  <!-- Referans Tablosu -->
+  <div class="ref-table-container">
+    <table class="ref-table">
+      <tr>
+        <td class="ref-label">Teklif No</td>
+        <td class="ref-value">#{{offer.no}}</td>
+      </tr>
+      <tr>
+        <td class="ref-label">Tarih</td>
+        <td class="ref-value">{{formatDate offer.saleDate}}</td>
+      </tr>
+      <tr>
+        <td class="ref-label">Geçerlilik Tarihi</td>
+        <td class="ref-value">{{formatDate offer.validUntil}}</td>
+      </tr>
+      {{#if offer.pipelineRef}}
+      <tr>
+        <td class="ref-label">Referans Kodu</td>
+        <td class="ref-value">{{offer.pipelineRef}}</td>
+      </tr>
+      {{/if}}
+    </table>
+  </div>
+
+  <!-- Müşteri ve Satıcı Bilgileri -->
+  <div class="info-cards">
+    <!-- Müşteri Kartı -->
+    <div class="info-card">
+      <div class="info-card-header">Müşteri Bilgileri</div>
+      <div class="info-card-body">
+        <div class="primary">{{offer.customerName}}</div>
+        {{#if offer.brandName}}
+        <div class="secondary">{{offer.brandName}}</div>
+        {{/if}}
+        {{#if customer.address}}
+        <div class="detail">{{customer.address}}</div>
+        {{/if}}
+        {{#if customer.taxNo}}
+        <div class="detail">VKN: {{customer.taxNo}}{{#if customer.taxOffice}} - {{customer.taxOffice}}{{/if}}</div>
+        {{/if}}
+        {{#if customer.phone}}
+        <div class="detail">Tel: {{customer.phone}}</div>
+        {{/if}}
+        {{#if customer.email}}
+        <div class="detail">Email: {{customer.email}}</div>
+        {{/if}}
+      </div>
     </div>
-    <div class="meta-block">
-      <div class="meta-label">Geçerlilik Tarihi</div>
-      <div class="meta-value">{{formatDate offer.validUntil}}</div>
-    </div>
-    <div class="meta-block right">
-      <div class="meta-label">Referans</div>
-      <div class="meta-value large">#{{offer.no}}</div>
+
+    <!-- Satıcı Kartı -->
+    <div class="info-card">
+      <div class="info-card-header">Satış Temsilcisi</div>
+      <div class="info-card-body">
+        {{#if seller.name}}
+        <div class="primary">{{seller.name}}</div>
+        {{else}}
+        <div class="primary">{{offer.sellerName}}</div>
+        {{/if}}
+        {{#if seller.phone}}
+        <div class="detail">Tel: {{seller.phone}}</div>
+        {{/if}}
+        {{#if seller.email}}
+        <div class="detail">Email: {{seller.email}}</div>
+        {{/if}}
+      </div>
     </div>
   </div>
 
-  <div class="customer-box">
-    {{#if offer.brandName}}
-    <div class="brand-name">{{offer.brandName}}</div>
-    {{/if}}
-    <div class="company-name">{{offer.customerName}}</div>
+  <!-- Şirket İletişim Bilgileri -->
+  <div class="company-footer">
+    <div class="company-footer-title">Kerzz İletişim</div>
+    <div class="company-footer-grid">
+      <div class="company-footer-col">
+        <div class="label">İstanbul Ofis</div>
+        <div class="value">[Adres bilgisi eklenecek]</div>
+      </div>
+      <div class="company-footer-col">
+        <div class="label">Ankara Ofis</div>
+        <div class="value">[Adres bilgisi eklenecek]</div>
+      </div>
+      <div class="company-footer-col">
+        <div class="label">İletişim</div>
+        <div class="value">
+          Tel: 0850 224 95 94<br>
+          Email: satis@veriyazilim.com.tr<br>
+          Web: www.kerzz.com
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Finansal Açıklamalar -->
@@ -441,7 +609,7 @@
   <div class="page-break"></div>
 
   <!-- Donanım ve Diğer Ürünler -->
-  {{#ifHasItems offer.products}}
+  {{#if hasProducts}}
   <div class="items-section">
     <div class="items-section-title">Donanım ve Diğer Ürünler</div>
     <table class="items-table">
@@ -473,27 +641,30 @@
     </table>
     <div class="totals-row">
       <table class="totals-table">
+        {{#each productsCurrencyTotals}}
+        {{#if @index}}<tr class="currency-separator"><td colspan="2"></td></tr>{{/if}}
         <tr>
-          <td class="label-cell">Toplam({{currencySymbol productsCurrency}})</td>
-          <td class="value-cell">{{formatCurrency productsTotalBeforeDiscount productsCurrency}}</td>
+          <td class="label-cell">Toplam({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalBeforeDiscount this.currency}}</td>
         </tr>
-        {{#ifGt productsTotalDiscount 0}}
+        {{#ifGt this.totalDiscount 0}}
         <tr class="discount">
-          <td class="label-cell">İndirim({{currencySymbol productsCurrency}})</td>
-          <td class="value-cell">{{formatCurrency productsTotalDiscount productsCurrency}}</td>
+          <td class="label-cell">İndirim({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalDiscount this.currency}}</td>
         </tr>
         {{/ifGt}}
         <tr class="grand-total">
-          <td class="label-cell">Genel Toplam({{currencySymbol productsCurrency}})</td>
-          <td class="value-cell">{{formatCurrency productsTotalGrand productsCurrency}}</td>
+          <td class="label-cell">Genel Toplam({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalGrand this.currency}}</td>
         </tr>
+        {{/each}}
       </table>
     </div>
   </div>
-  {{/ifHasItems}}
+  {{/if}}
 
   <!-- Yazılım Lisansları -->
-  {{#ifHasItems offer.licenses}}
+  {{#if hasLicenses}}
   <div class="items-section">
     <div class="items-section-title">Yazılım Lisansları</div>
     <table class="items-table">
@@ -525,27 +696,30 @@
     </table>
     <div class="totals-row">
       <table class="totals-table">
+        {{#each licensesCurrencyTotals}}
+        {{#if @index}}<tr class="currency-separator"><td colspan="2"></td></tr>{{/if}}
         <tr>
-          <td class="label-cell">Toplam({{currencySymbol licensesCurrency}})</td>
-          <td class="value-cell">{{formatCurrency licensesTotalBeforeDiscount licensesCurrency}}</td>
+          <td class="label-cell">Toplam({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalBeforeDiscount this.currency}}</td>
         </tr>
-        {{#ifGt licensesTotalDiscount 0}}
+        {{#ifGt this.totalDiscount 0}}
         <tr class="discount">
-          <td class="label-cell">İndirim({{currencySymbol licensesCurrency}})</td>
-          <td class="value-cell">{{formatCurrency licensesTotalDiscount licensesCurrency}}</td>
+          <td class="label-cell">İndirim({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalDiscount this.currency}}</td>
         </tr>
         {{/ifGt}}
         <tr class="grand-total">
-          <td class="label-cell">Genel Toplam({{currencySymbol licensesCurrency}})</td>
-          <td class="value-cell">{{formatCurrency licensesTotalGrand licensesCurrency}}</td>
+          <td class="label-cell">Genel Toplam({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalGrand this.currency}}</td>
         </tr>
+        {{/each}}
       </table>
     </div>
   </div>
-  {{/ifHasItems}}
+  {{/if}}
 
   <!-- Kiralama ve Aylık Hizmetler -->
-  {{#ifHasItems offer.rentals}}
+  {{#if hasRentals}}
   <div class="items-section">
     <div class="items-section-title">Kiralama ve Aylık Hizmetler</div>
     <table class="items-table">
@@ -577,24 +751,27 @@
     </table>
     <div class="totals-row">
       <table class="totals-table">
+        {{#each rentalsCurrencyTotals}}
+        {{#if @index}}<tr class="currency-separator"><td colspan="2"></td></tr>{{/if}}
         <tr>
-          <td class="label-cell">Toplam({{currencySymbol rentalsCurrency}})</td>
-          <td class="value-cell">{{formatCurrency rentalsTotalBeforeDiscount rentalsCurrency}}</td>
+          <td class="label-cell">Toplam({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalBeforeDiscount this.currency}}</td>
         </tr>
-        {{#ifGt rentalsTotalDiscount 0}}
+        {{#ifGt this.totalDiscount 0}}
         <tr class="discount">
-          <td class="label-cell">İndirim({{currencySymbol rentalsCurrency}})</td>
-          <td class="value-cell">{{formatCurrency rentalsTotalDiscount rentalsCurrency}}</td>
+          <td class="label-cell">İndirim({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalDiscount this.currency}}</td>
         </tr>
         {{/ifGt}}
         <tr class="grand-total">
-          <td class="label-cell">Genel Toplam({{currencySymbol rentalsCurrency}})</td>
-          <td class="value-cell">{{formatCurrency rentalsTotalGrand rentalsCurrency}}</td>
+          <td class="label-cell">Genel Toplam({{currencySymbol this.currency}})</td>
+          <td class="value-cell">{{formatCurrency this.totalGrand this.currency}}</td>
         </tr>
+        {{/each}}
       </table>
     </div>
   </div>
-  {{/ifHasItems}}
+  {{/if}}
 
 </body>
 </html>

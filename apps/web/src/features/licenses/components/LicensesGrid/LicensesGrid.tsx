@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { Grid, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
+import { LicenseMobileList } from "./LicenseMobileList";
 import { createLicenseColumnDefs } from "./columnDefs";
 import type { License } from "../../types";
 import { useCustomerLookup } from "../../../lookup";
@@ -13,6 +15,7 @@ interface LicensesGridProps {
   onSelectionChange?: (selectedIds: string[]) => void;
   selectedIds?: string[];
   toolbarButtons?: ToolbarButtonConfig[];
+  onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
 export function LicensesGrid({
@@ -23,8 +26,10 @@ export function LicensesGrid({
   onRowSelect,
   onSelectionChange,
   selectedIds,
-  toolbarButtons
+  toolbarButtons,
+  onScrollDirectionChange
 }: LicensesGridProps) {
+  const isMobile = useIsMobile();
   const { customerMap } = useCustomerLookup();
 
   // Column definitions'ı customerMap ile oluştur
@@ -55,6 +60,24 @@ export function LicensesGrid({
     [onRowSelect]
   );
 
+  // Mobile view - single tap opens modal, no multiselect
+  if (isMobile) {
+    return (
+      <div className="flex flex-1 flex-col min-h-0">
+        <LicenseMobileList
+          data={data}
+          loading={loading}
+          onCardClick={(license) => {
+            onRowSelect?.(license);
+            onRowDoubleClick?.(license);
+          }}
+          onScrollDirectionChange={onScrollDirectionChange}
+        />
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="h-full w-full flex-1">
       <Grid<License>

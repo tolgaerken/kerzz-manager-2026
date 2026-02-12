@@ -1,4 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { CountryCodeSelect, getBrowserCountryCode } from "./CountryCodeSelect";
+import { useCountries } from "../../locations";
 
 interface LoginFormProps {
   onRequestOtp: (gsm: string) => Promise<void>;
@@ -44,15 +46,33 @@ function LoadingSpinner() {
 
 export function LoginForm({ onRequestOtp, onVerifyOtp, isLoading, error }: LoginFormProps) {
   const [state, setState] = useState<LoginState>("gsm");
+  const [countryCode, setCountryCode] = useState("90"); // Varsayılan TR
   const [gsm, setGsm] = useState("");
   const [otp, setOtp] = useState("");
+
+  const { data: countries } = useCountries();
+
+  // Tarayıcı locale'inden varsayılan ülkeyi belirle
+  useEffect(() => {
+    if (!countries?.length) return;
+
+    const browserCountry = getBrowserCountryCode();
+    const country = countries.find((c) => c.alpha2Code === browserCountry);
+    
+    if (country?.callingCodes?.[0]) {
+      setCountryCode(country.callingCodes[0]);
+    }
+  }, [countries]);
+
+  // Tam telefon numarasını oluştur (ülke kodu + numara)
+  const fullPhoneNumber = `+${countryCode}${gsm.replace(/^0+/, "")}`;
 
   async function handleGsmSubmit(e: FormEvent) {
     e.preventDefault();
     if (!gsm.trim()) return;
 
     try {
-      await onRequestOtp(gsm);
+      await onRequestOtp(fullPhoneNumber);
       setState("otp");
     } catch {
       // Error is handled by parent
@@ -64,7 +84,7 @@ export function LoginForm({ onRequestOtp, onVerifyOtp, isLoading, error }: Login
     if (!otp.trim()) return;
 
     try {
-      await onVerifyOtp(gsm, otp);
+      await onVerifyOtp(fullPhoneNumber, otp);
     } catch {
       // Error is handled by parent
     }
@@ -96,17 +116,19 @@ export function LoginForm({ onRequestOtp, onVerifyOtp, isLoading, error }: Login
               <label htmlFor="gsm" className="block text-sm font-semibold text-muted-foreground">
                 Telefon Numarası
               </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                  <PhoneIcon />
-                </div>
+              <div className="flex rounded-xl border border-foreground/10 bg-foreground/5 transition-all duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                <CountryCodeSelect
+                  value={countryCode}
+                  onChange={setCountryCode}
+                  disabled={isLoading}
+                />
                 <input
                   id="gsm"
                   type="tel"
                   value={gsm}
                   onChange={(e) => setGsm(e.target.value)}
                   placeholder="5XX XXX XX XX"
-                  className="w-full rounded-xl border border-foreground/10 bg-foreground/5 py-4 pl-12 pr-4 text-foreground placeholder-subtle transition-all duration-200 focus:border-primary focus:bg-foreground/10 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="flex-1 rounded-r-xl bg-transparent py-4 pl-3 pr-4 text-foreground placeholder-subtle focus:outline-none"
                   disabled={isLoading}
                   autoComplete="tel"
                 />
@@ -149,7 +171,7 @@ export function LoginForm({ onRequestOtp, onVerifyOtp, isLoading, error }: Login
 
             <div className="rounded-xl bg-accent/10 p-4 ring-1 ring-accent/20">
               <p className="text-center text-sm text-accent">
-                <span className="font-semibold text-foreground">{gsm}</span> numarasına doğrulama kodu gönderildi
+                <span className="font-semibold text-foreground">{fullPhoneNumber}</span> numarasına doğrulama kodu gönderildi
               </p>
             </div>
 
@@ -198,7 +220,7 @@ export function LoginForm({ onRequestOtp, onVerifyOtp, isLoading, error }: Login
               Kod gelmedi mi?{" "}
               <button
                 type="button"
-                onClick={() => void onRequestOtp(gsm)}
+                onClick={() => void onRequestOtp(fullPhoneNumber)}
                 disabled={isLoading}
                 className="font-medium text-primary transition-colors hover:text-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
               >

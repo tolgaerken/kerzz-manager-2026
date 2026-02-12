@@ -1,9 +1,11 @@
 import { useState, useCallback, useMemo } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { Grid, type ToolbarButtonConfig, type ToolbarConfig } from "@kerzz/grid";
+import { useIsMobile } from "../../../../hooks/useIsMobile";
 import type { LicenseItem } from "../../types";
 import type { ProductOption } from "./ProductAutocompleteEditor";
 import { licenseItemColumns } from "./licenseItemColumns";
+import { LicenseItemMobileList } from "./LicenseItemMobileList";
 
 interface LicenseItemsGridProps {
   /** Mevcut lisans öğeleri */
@@ -32,6 +34,7 @@ export function LicenseItemsGrid({
   selectionMode = "multiple",
   allowDelete = false
 }: LicenseItemsGridProps) {
+  const isMobile = useIsMobile();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Grid'in selection change callback'i
@@ -158,6 +161,22 @@ export function LicenseItemsGrid({
     );
   }
 
+  // Mobil görünüm
+  if (isMobile) {
+    return (
+      <div className="flex-1 min-h-0">
+        <LicenseItemMobileList
+          items={items}
+          products={products}
+          loading={loading}
+          allowDelete={allowDelete}
+          onItemsChange={onItemsChange}
+        />
+      </div>
+    );
+  }
+
+  // Desktop grid görünümü
   return (
     <div className="flex-1 min-h-0">
       <Grid<LicenseItem>
