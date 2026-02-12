@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { X, Package, Layers, Building2, Phone, User } from "lucide-react";
 import type { License, CreateLicenseInput, UpdateLicenseInput, LicenseItem, LicenseType, CompanyType } from "../../types";
 import { LICENSE_TYPES, COMPANY_TYPES, LICENSE_CATEGORIES } from "../../constants/licenses.constants";
@@ -10,6 +10,8 @@ import type { CustomerLookupItem } from "../../../lookup";
 import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
 import type { AddressData } from "../../../locations";
 import { useLicense } from "../../hooks/useLicenses";
+import { PhoneInput, parsePhoneNumber, formatFullPhoneNumber } from "../../../../components/ui";
+import type { PhoneInputValue } from "../../../../components/ui";
 
 interface LicenseFormModalProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export function LicenseFormModal({
   const isEdit = !!license;
   const [activeTab, setActiveTab] = useState<TabId>("info");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerLookupItem | null>(null);
+  const [phoneValue, setPhoneValue] = useState<PhoneInputValue>({ countryCode: "90", phoneNumber: "" });
 
   // Edit modunda detay verisini çek (saasItems, licenseItems vb. liste sorgusunda gelmiyor)
   const { data: licenseDetail } = useLicense(isOpen && license ? license._id : null);
@@ -72,6 +75,12 @@ export function LicenseFormModal({
 
   useEffect(() => {
     if (effectiveLicense && isOpen) {
+      // Telefon numarasını parse et
+      const parsedPhone = effectiveLicense.phone 
+        ? parsePhoneNumber(effectiveLicense.phone)
+        : { countryCode: "90", phoneNumber: "" };
+      setPhoneValue(parsedPhone);
+
       setFormData({
         brandName: effectiveLicense.brandName,
         customerId: effectiveLicense.customerId,
@@ -102,6 +111,7 @@ export function LicenseFormModal({
         setSelectedCustomer(null);
       }
     } else if (!isOpen) {
+      setPhoneValue({ countryCode: "90", phoneNumber: "" });
       setFormData({
         brandName: "",
         customerId: "",
@@ -171,10 +181,19 @@ export function LicenseFormModal({
     setFormData((prev) => ({ ...prev, saasItems: items }));
   }, []);
 
+  // Telefon değişiklik handler'ı
+  const handlePhoneChange = useCallback((value: PhoneInputValue) => {
+    setPhoneValue(value);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+    // Telefon numarasını formatla ve formData'ya ekle
+    const fullPhone = phoneValue.phoneNumber 
+      ? formatFullPhoneNumber(phoneValue)
+      : "";
+    onSubmit({ ...formData, phone: fullPhone });
   };
 
   const tabs: Tab[] = [
@@ -365,20 +384,13 @@ export function LicenseFormModal({
                     İletişim Bilgileri
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="phone" className={labelClasses}>
-                        Telefon
-                      </label>
-                      <input
-                        type="text"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className={inputClasses}
-                        placeholder="Telefon numarası"
-                      />
-                    </div>
+                    <PhoneInput
+                      value={phoneValue}
+                      onChange={handlePhoneChange}
+                      label="Telefon"
+                      placeholder="5XX XXX XX XX"
+                      error={errors.phone}
+                    />
 
                     <div>
                       <label htmlFor="email" className={labelClasses}>

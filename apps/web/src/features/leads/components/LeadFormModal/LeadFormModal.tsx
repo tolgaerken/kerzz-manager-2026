@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MessageSquare } from "lucide-react";
-import { Modal } from "../../../../components/ui";
+import { Modal, PhoneInput, parsePhoneNumber, formatFullPhoneNumber } from "../../../../components/ui";
+import type { PhoneInputValue } from "../../../../components/ui";
 import type {
   Lead,
   CreateLeadInput,
@@ -79,11 +80,18 @@ export function LeadFormModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLossModalOpen, setIsLossModalOpen] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [phoneValue, setPhoneValue] = useState<PhoneInputValue>({ countryCode: "90", phoneNumber: "" });
   const { openPipelinePanel } = useLogPanelStore();
 
   useEffect(() => {
     if (isOpen) {
       if (lead) {
+        // Telefon numarasını parse et
+        const parsedPhone = lead.contactPhone
+          ? parsePhoneNumber(lead.contactPhone)
+          : { countryCode: "90", phoneNumber: "" };
+        setPhoneValue(parsedPhone);
+
         setFormData({
           contactName: lead.contactName || "",
           companyName: lead.companyName || "",
@@ -103,6 +111,7 @@ export function LeadFormModal({
         });
       } else {
         setFormData({ ...initialFormState });
+        setPhoneValue({ countryCode: "90", phoneNumber: "" });
       }
       setErrors({});
       setIsLossModalOpen(false);
@@ -129,15 +138,25 @@ export function LeadFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Telefon değişiklik handler'ı
+  const handlePhoneChange = useCallback((value: PhoneInputValue) => {
+    setPhoneValue(value);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (formData.status === "lost" && !formData.lossInfo?.reason) {
+    // Telefon numarasını formatla
+    const fullPhone = phoneValue.phoneNumber
+      ? formatFullPhoneNumber(phoneValue)
+      : "";
+    const submitData = { ...formData, contactPhone: fullPhone };
+    if (submitData.status === "lost" && !submitData.lossInfo?.reason) {
       setIsLossModalOpen(true);
       setPendingSubmit(true);
       return;
     }
-    onSubmit(formData);
+    onSubmit(submitData);
   };
 
   const handleChange = (
@@ -222,18 +241,12 @@ export function LeadFormModal({
 
         {/* Telefon & E-posta */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
-              Telefon
-            </label>
-            <input
-              type="tel"
-              value={formData.contactPhone || ""}
-              onChange={(e) => handleChange("contactPhone", e.target.value)}
-              placeholder="+90 5XX XXX XX XX"
-              className="w-full px-3 py-2.5 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 transition-shadow font-mono"
-            />
-          </div>
+          <PhoneInput
+            value={phoneValue}
+            onChange={handlePhoneChange}
+            label="Telefon"
+            placeholder="5XX XXX XX XX"
+          />
           <div>
             <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
               E-posta
@@ -473,7 +486,11 @@ export function LeadFormModal({
           setPendingSubmit(false);
         }}
         onSubmit={(value) => {
-          const nextData = { ...formData, lossInfo: value, status: "lost" as const };
+          // Telefon numarasını formatla
+          const fullPhone = phoneValue.phoneNumber
+            ? formatFullPhoneNumber(phoneValue)
+            : "";
+          const nextData = { ...formData, contactPhone: fullPhone, lossInfo: value, status: "lost" as const };
           setFormData(nextData);
           setIsLossModalOpen(false);
           if (pendingSubmit) {

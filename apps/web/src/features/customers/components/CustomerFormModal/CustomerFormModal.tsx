@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { Modal } from "../../../../components/ui";
+import { useState, useEffect, useCallback } from "react";
+import { Modal, PhoneInput, parsePhoneNumber, formatFullPhoneNumber } from "../../../../components/ui";
+import type { PhoneInputValue } from "../../../../components/ui";
 import type { Customer, CreateCustomerInput, UpdateCustomerInput } from "../../types";
 import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
 import type { AddressData } from "../../../locations";
@@ -32,9 +33,16 @@ export function CustomerFormModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [phoneValue, setPhoneValue] = useState<PhoneInputValue>({ countryCode: "90", phoneNumber: "" });
 
   useEffect(() => {
     if (customer) {
+      // Telefon numarasını parse et
+      const parsedPhone = customer.phone
+        ? parsePhoneNumber(customer.phone)
+        : { countryCode: "90", phoneNumber: "" };
+      setPhoneValue(parsedPhone);
+
       setFormData({
         taxNo: customer.taxNo,
         name: customer.name,
@@ -45,6 +53,7 @@ export function CustomerFormModal({
         enabled: customer.enabled
       });
     } else {
+      setPhoneValue({ countryCode: "90", phoneNumber: "" });
       setFormData({
         taxNo: "",
         name: "",
@@ -83,12 +92,21 @@ export function CustomerFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Telefon değişiklik handler'ı
+  const handlePhoneChange = useCallback((value: PhoneInputValue) => {
+    setPhoneValue(value);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validate()) return;
 
-    onSubmit(formData);
+    // Telefon numarasını formatla
+    const fullPhone = phoneValue.phoneNumber
+      ? formatFullPhoneNumber(phoneValue)
+      : "";
+    onSubmit({ ...formData, phone: fullPhone });
   };
 
   const inputClasses =
@@ -168,20 +186,12 @@ export function CustomerFormModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Telefon */}
-          <div>
-            <label htmlFor="phone" className={labelClasses}>
-              Telefon
-            </label>
-            <input
-              type="text"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className={inputClasses}
-              placeholder="Telefon numarası"
-            />
-          </div>
+          <PhoneInput
+            value={phoneValue}
+            onChange={handlePhoneChange}
+            label="Telefon"
+            placeholder="5XX XXX XX XX"
+          />
 
           {/* E-posta */}
           <div>

@@ -152,7 +152,8 @@ export const createLicenseColumnDefs = (customerMap: Map<string, CustomerLookupI
     width: 150,
     sortable: true,
     valueFormatter: (value) => formatDate(value as string | null),
-    cellClassName: (_value, row) => getOnlineStatusClass(row.lastOnline)
+    cellClassName: (_value, row) => getOnlineStatusClass(row.lastOnline),
+    filter: { type: "dateTree" }
   },
   {
     id: "lastVersion",

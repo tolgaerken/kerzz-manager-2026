@@ -5,3 +5,5 @@ export { CollapsibleSection, CollapsibleSectionContainer } from "./CollapsibleSe
 export type { CollapsibleSectionProps, CollapsibleSectionContainerProps } from "./CollapsibleSection";
 export { LogBadge } from "./LogBadge";
 export type { LogBadgeProps } from "./LogBadge";
+export { PhoneInput, getBrowserCountryCode, formatFullPhoneNumber, parsePhoneNumber } from "./PhoneInput";
+export type { PhoneInputValue } from "./PhoneInput";

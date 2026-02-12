@@ -63,9 +63,23 @@ export function useUpdateLicense() {
 
   return useMutation<License, Error, { id: string; data: UpdateLicenseInput }>({
     mutationFn: ({ id, data }) => updateLicense(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: licensesKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: licensesKeys.detail(variables.id) });
+    onSuccess: (updatedLicense, variables) => {
+      // Liste cache'lerini güncelle (tüm listeyi yeniden çekmeden)
+      queryClient.setQueriesData<LicensesResponse>(
+        { queryKey: licensesKeys.lists() },
+        (oldData) => {
+          if (!oldData?.data) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((license) =>
+              license._id === variables.id ? updatedLicense : license
+            )
+          };
+        }
+      );
+      // Detay cache'ini güncelle
+      queryClient.setQueryData(licensesKeys.detail(variables.id), updatedLicense);
+      // Lookup cache'ini invalidate et (dropdown'larda güncel veri için)
       queryClient.invalidateQueries({ queryKey: [...LOOKUP_QUERY_KEYS.LICENSES] });
     }
   });

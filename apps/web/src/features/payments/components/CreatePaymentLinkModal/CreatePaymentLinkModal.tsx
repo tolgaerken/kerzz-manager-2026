@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { Modal } from "../../../../components/ui/Modal";
+import { Modal, PhoneInput, parsePhoneNumber, formatFullPhoneNumber } from "../../../../components/ui";
+import type { PhoneInputValue } from "../../../../components/ui";
 import { useCompanies } from "../../../companies";
 import type { CreatePaymentLinkInput } from "../../types/payment.types";
 
@@ -34,11 +35,13 @@ export function CreatePaymentLinkModal({
 }: CreatePaymentLinkModalProps) {
   const [formData, setFormData] = useState<CreatePaymentLinkInput>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [phoneValue, setPhoneValue] = useState<PhoneInputValue>({ countryCode: "90", phoneNumber: "" });
   const { data: companies = [] } = useCompanies();
 
   useEffect(() => {
     if (isOpen && !createdUrl) {
       setFormData(initialForm);
+      setPhoneValue({ countryCode: "90", phoneNumber: "" });
       setErrors({});
     }
   }, [isOpen, createdUrl]);
@@ -53,6 +56,11 @@ export function CreatePaymentLinkModal({
     },
     [errors]
   );
+
+  // Telefon değişiklik handler'ı
+  const handlePhoneChange = useCallback((value: PhoneInputValue) => {
+    setPhoneValue(value);
+  }, []);
 
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -81,9 +89,13 @@ export function CreatePaymentLinkModal({
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!validate()) return;
-      onSubmit(formData);
+      // Telefon numarasını formatla
+      const fullPhone = phoneValue.phoneNumber
+        ? formatFullPhoneNumber(phoneValue)
+        : "";
+      onSubmit({ ...formData, gsm: fullPhone });
     },
-    [formData, onSubmit, validate]
+    [formData, onSubmit, validate, phoneValue]
   );
 
   const handleClose = useCallback(() => {
@@ -204,19 +216,12 @@ export function CreatePaymentLinkModal({
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
-                GSM
-              </label>
-              <input
-                type="tel"
-                name="gsm"
-                value={formData.gsm ?? ""}
-                onChange={handleChange}
-                placeholder="5XX XXX XX XX"
-                className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              />
-            </div>
+            <PhoneInput
+              value={phoneValue}
+              onChange={handlePhoneChange}
+              label="GSM"
+              placeholder="5XX XXX XX XX"
+            />
 
             <div>
               <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
