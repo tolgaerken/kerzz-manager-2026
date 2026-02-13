@@ -4,10 +4,45 @@ import type { GridTheme } from './theme.types';
 import type { ToolbarConfig } from './toolbar.types';
 import type { SelectionMode } from './selection.types';
 import type { GridSettings } from './settings.types';
+import type { MobileFilterColumnConfig, MobileSortColumnConfig } from './mobile-filter.types';
 import type { SortingState } from '@tanstack/react-table';
 
 // Re-export for consumers
 export type { SortingState };
+
+// ── Mobile Card View Types ──
+
+/** Props passed to mobile card renderer */
+export interface MobileCardRenderProps<TData> {
+  /** The data item to render */
+  item: TData;
+  /** Index of the item in the filtered data array */
+  index: number;
+  /** Whether this item is currently selected */
+  isSelected: boolean;
+  /** Toggle selection for this item */
+  onSelect: () => void;
+  /** Single tap handler (maps to onRowClick) */
+  onTap: () => void;
+  /** Double tap handler (maps to onRowDoubleClick) */
+  onDoubleTap: () => void;
+}
+
+/** Mobile view configuration */
+export interface MobileConfig<TData> {
+  /** Card renderer function - required */
+  cardRenderer: (props: MobileCardRenderProps<TData>) => React.ReactNode;
+  /** Filter column configurations for MobileFilterSort */
+  filterColumns?: MobileFilterColumnConfig[];
+  /** Sort column configurations for MobileFilterSort */
+  sortColumns?: MobileSortColumnConfig[];
+  /** Estimated card height in pixels for virtual scroll (default: 120) */
+  estimatedCardHeight?: number;
+  /** Custom empty state message */
+  emptyMessage?: string;
+  /** Scroll direction change callback for collapsible header integration */
+  onScrollDirectionChange?: (direction: 'up' | 'down' | null, isAtTop: boolean) => void;
+}
 
 export interface GridProps<TData = unknown> {
   /** Data array to display */
@@ -42,6 +77,9 @@ export interface GridProps<TData = unknown> {
   bordered?: boolean;
   /** Toolbar configuration. Pass true for defaults, false to hide, or config object for customization. Default: true */
   toolbar?: boolean | ToolbarConfig<TData>;
+
+  /** Mobile view configuration. When provided and viewport is mobile, renders card list instead of table */
+  mobileConfig?: MobileConfig<TData>;
 
   // Selection
   /** Selection mode: 'none' | 'single' | 'multiple' (default: 'single') */

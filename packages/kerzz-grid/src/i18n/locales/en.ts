@@ -87,4 +87,8 @@ export const en: GridLocale = {
   items: 'items',
   of: 'of',
   and: 'and',
+
+  // Mobile card list
+  mobileCardListRecords: 'records',
+  mobileCardListSelected: 'selected',
 };

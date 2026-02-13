@@ -8,6 +8,7 @@ import type { FooterAggregationSetting } from '../../types/settings.types';
 import { useGridInstance } from '../../core/useGridInstance';
 import { useRowSelection } from '../../core/useRowSelection';
 import { useGridEditing } from '../../core/useGridEditing';
+import { useIsMobile } from '../../core/useIsMobile';
 import { ThemeProvider } from '../../theme/ThemeProvider';
 import { LocaleProvider } from '../../i18n/LocaleProvider';
 import { themeToCssVars } from '../../utils/themeUtils';
@@ -17,6 +18,8 @@ import { GridFooter } from './GridFooter';
 import { ActiveFilterBar } from '../Footer/ActiveFilterBar';
 import { GridToolbar } from '../Toolbar/GridToolbar';
 import { ColumnVisibilityPanel } from '../ColumnManager/ColumnVisibilityPanel';
+import { MobileFilterSort } from '../MobileFilter';
+import { MobileCardList } from '../MobileCardList';
 import { Portal } from '../Portal/Portal';
 import { useLocale } from '../../i18n/useLocale';
 import '../../theme/grid-base.css';
@@ -31,6 +34,7 @@ function GridInner<TData>(
     loading = false,
     stripedRows = false,
     toolbar,
+    mobileConfig,
     selectionMode = 'single',
     selectionCheckbox,
     selectedIds,
@@ -50,7 +54,9 @@ function GridInner<TData>(
   } = props;
 
   const locale = useLocale();
+  const isMobile = useIsMobile();
   const [pendingNewRows, setPendingNewRows] = useState<TData[]>([]);
+  const [mobileFilteredData, setMobileFilteredData] = useState<TData[]>([]);
   const grid = useGridInstance(props, pendingNewRows.length);
 
   // Effective selection mode: use settings if available, otherwise use prop
@@ -265,6 +271,106 @@ function GridInner<TData>(
     }
   }, [selection.selectedCount, selection.selectedIds, displayData, getRowIdFn, grid.rowVirtualizer]);
 
+  // Mobile filtered data handler
+  const handleMobileFilteredDataChange = useCallback((data: TData[]) => {
+    setMobileFilteredData(data);
+  }, []);
+
+  // Determine if we should show mobile view
+  const showMobileView = isMobile && mobileConfig != null;
+
+  // Data to use for mobile card list (filtered by MobileFilterSort or original data)
+  const mobileDisplayData = useMemo(() => {
+    if (!showMobileView) return [];
+    // If filter/sort columns are provided, use filtered data from MobileFilterSort
+    if (mobileConfig?.filterColumns?.length || mobileConfig?.sortColumns?.length) {
+      return mobileFilteredData;
+    }
+    // Otherwise use the grid's filtered data
+    return grid.filteredData;
+  }, [showMobileView, mobileConfig, mobileFilteredData, grid.filteredData]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOBILE VIEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (showMobileView && mobileConfig) {
+    const hasMobileFilters = (mobileConfig.filterColumns?.length ?? 0) > 0 || (mobileConfig.sortColumns?.length ?? 0) > 0;
+
+    return (
+      <div className="kz-grid kz-grid--mobile" style={gridStyle}>
+        {/* Toolbar - visible on mobile too */}
+        {showToolbar && (
+          <GridToolbar
+            config={toolbarConfig!}
+            data={mobileDisplayData}
+            columns={grid.orderedColumns as GridColumnDef<TData>[]}
+            allColumns={columns as GridColumnDef<TData>[]}
+            visibility={grid.state.columnVisibility}
+            onToggleColumn={grid.columnVisibility.toggleColumn}
+            onShowAll={grid.columnVisibility.showAllColumns}
+            onHideAll={grid.columnVisibility.hideAllColumns}
+            cssVars={cssVars}
+            searchTerm={grid.searchTerm}
+            onSearchChange={grid.setSearchTerm}
+            editMode={editing.editMode}
+            onSaveAll={editing.saveAllChanges}
+            onCancelAll={handleCancelAll}
+            onAddRow={createEmptyRow ? editing.requestAddRow : undefined}
+            settings={grid.state.settings}
+            onSelectionModeChange={handleSelectionModeChange}
+            onHeaderFilterChange={handleHeaderFilterChange}
+            onFooterAggregationChange={handleFooterAggregationChange}
+            onResetSorting={handleResetSorting}
+            onResetAll={grid.resetState}
+            selectedCount={selection.selectedCount}
+            onSelectedCountClick={undefined}
+          />
+        )}
+
+        {/* MobileFilterSort - if filter/sort columns provided */}
+        {hasMobileFilters && (
+          <div className="kz-mobile-filter-wrapper">
+            <MobileFilterSort<TData>
+              data={props.data}
+              filterColumns={mobileConfig.filterColumns ?? []}
+              sortColumns={mobileConfig.sortColumns ?? []}
+              locale={props.locale}
+              onFilteredDataChange={handleMobileFilteredDataChange}
+            />
+          </div>
+        )}
+
+        {/* Mobile Card List with Virtual Scroll */}
+        <MobileCardList<TData>
+          data={mobileDisplayData}
+          cardRenderer={mobileConfig.cardRenderer}
+          loading={loading}
+          getRowId={getRowIdFn}
+          estimatedCardHeight={mobileConfig.estimatedCardHeight}
+          emptyMessage={mobileConfig.emptyMessage}
+          isRowSelected={selection.isSelected}
+          onSelectionToggle={selection.toggleRow}
+          selectionMode={effectiveSelectionMode}
+          onRowClick={onRowClick}
+          onRowDoubleClick={onRowDoubleClick}
+          onScrollDirectionChange={mobileConfig.onScrollDirectionChange}
+          selectedCount={selection.selectedCount}
+          totalCount={mobileDisplayData.length}
+        />
+
+        {/* Loading overlay */}
+        {loading && (
+          <div className="kz-grid-loading">
+            <div className="kz-grid-loading__spinner" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DESKTOP VIEW
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="kz-grid" style={gridStyle}>
       {/* Toolbar */}

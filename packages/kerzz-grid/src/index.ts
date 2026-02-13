@@ -26,12 +26,16 @@ export { useStateStore } from './core/useStateStore';
 export { useFooterAggregation } from './core/useFooterAggregation';
 export { useCellNavigation } from './core/useCellNavigation';
 export { useMobileFilterSort } from './core/useMobileFilterSort';
+export { useIsMobile } from './core/useIsMobile';
 
 // Column Visibility Panel
 export { ColumnVisibilityPanel } from './components/ColumnManager/ColumnVisibilityPanel';
 
 // Mobile Filter/Sort
 export { MobileFilterSort } from './components/MobileFilter';
+
+// Mobile Card List
+export { MobileCardList } from './components/MobileCardList';
 
 // State
 export { StateManager } from './state/StateManager';
@@ -44,7 +48,7 @@ export { exportToPrint } from './utils/exportPrint';
 export { getFilterSummary } from './utils/filterHelpers';
 
 // Types
-export type { GridProps, GridState, GridRef, SortingState } from './types/grid.types';
+export type { GridProps, GridState, GridRef, SortingState, MobileConfig, MobileCardRenderProps } from './types/grid.types';
 export type { GridColumnDef } from './types/column.types';
 export type {
   GridTheme,
