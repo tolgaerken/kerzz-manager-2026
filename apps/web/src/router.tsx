@@ -21,6 +21,7 @@ import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { EDocCreditsPage } from "./pages/EDocCreditsPage";
 import { EDocMembersPage } from "./pages/EDocMembersPage";
 import { EInvoicePricesPage } from "./pages/EInvoicePricesPage";
+import { EDocStatusesPage } from "./pages/EDocStatusesPage";
 import { ContractInvoicesPage } from "./pages/ContractInvoicesPage";
 import { ContractCashRegistersPage } from "./pages/ContractCashRegistersPage";
 import { ContractSupportsPage } from "./pages/ContractSupportsPage";
@@ -249,6 +250,13 @@ const eInvoicePricesRoute = createRoute({
   component: EInvoicePricesPage,
 });
 
+// E-Document Statuses page
+const eDocStatusesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/e-documents/statuses",
+  component: EDocStatusesPage,
+});
+
 // Public payment form (no auth)
 const publicPaymentFormRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -332,6 +340,7 @@ const routeTree = rootRoute.addChildren([
     eDocCreditsRoute,
     eDocMembersRoute,
     eInvoicePricesRoute,
+    eDocStatusesRoute,
     systemLogsRoute,
     notificationSettingsRoute,
     usersRoute,

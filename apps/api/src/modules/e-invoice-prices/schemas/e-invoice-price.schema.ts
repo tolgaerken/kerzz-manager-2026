@@ -34,7 +34,7 @@ export class EInvoicePrice {
   @Prop({ default: false })
   isCredit: boolean;
 
-  @Prop({ default: "", index: true })
+  @Prop({ default: "" })
   customerErpId: string;
 
   @Prop()

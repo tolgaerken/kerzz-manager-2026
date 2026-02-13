@@ -36,6 +36,7 @@ import { AutomatedPaymentsModule } from "./modules/automated-payments";
 import { EDocCreditsModule } from "./modules/e-doc-credits";
 import { EDocMembersModule } from "./modules/e-doc-members";
 import { EInvoicePricesModule } from "./modules/e-invoice-prices";
+import { EDocStatusesModule } from "./modules/e-doc-statuses";
 // MongoDB WebSocket Module
 import { MongoWsModule } from "./modules/mongo-ws";
 // Company & ERP Modules
@@ -99,6 +100,7 @@ import { SsoModule } from "./modules/sso";
     EDocCreditsModule,
     EDocMembersModule,
     EInvoicePricesModule,
+    EDocStatusesModule,
     // MongoDB WebSocket Module (Global)
     MongoWsModule,
     // Manager Log & Notification Modules

@@ -10,7 +10,7 @@ export class EDocCredit {
   @Prop()
   id: string;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   erpId: string;
 
   @Prop()

@@ -28,7 +28,7 @@ export class Sale {
   @Prop({ type: Number, index: true, unique: true })
   no: number;
 
-  @Prop({ type: String, index: true })
+  @Prop({ type: String })
   pipelineRef: string;
 
   @Prop({ type: String, default: "" })
@@ -37,7 +37,7 @@ export class Sale {
   @Prop({ type: String, default: "" })
   leadId: string;
 
-  @Prop({ type: String, required: true, index: true })
+  @Prop({ type: String, required: true })
   customerId: string;
 
   @Prop({ type: String, default: "" })
@@ -92,7 +92,6 @@ export class Sale {
       "completed",
       "cancelled",
     ],
-    index: true,
   })
   status: string;
 

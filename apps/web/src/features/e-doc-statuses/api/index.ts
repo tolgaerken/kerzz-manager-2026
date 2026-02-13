@@ -1,0 +1,1 @@
+export { fetchIntegratorStatuses } from "./eDocStatusesApi";

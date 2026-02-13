@@ -81,6 +81,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: FileCheck,
     label: "E-Belge",
     subItems: [
+      { label: "E-Belge Durumları", path: "/e-documents/statuses" },
       { label: "Üye Yönetimi", path: "/e-documents/members" },
       { label: "Kontör Yüklemeleri", path: "/e-documents/credits" },
       { label: "Fiyat Tanımları", path: "/e-documents/invoice-prices" },

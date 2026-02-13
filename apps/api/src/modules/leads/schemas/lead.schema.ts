@@ -61,7 +61,7 @@ export type LeadDocument = Lead & Document;
 export class Lead {
   _id: Types.ObjectId;
 
-  @Prop({ type: String, unique: true, index: true })
+  @Prop({ type: String, unique: true })
   pipelineRef: string;
 
   // Opsiyonel müşteri bağlantısı
@@ -95,7 +95,6 @@ export class Lead {
     type: String,
     default: "new",
     enum: ["new", "contacted", "qualified", "unqualified", "converted", "lost"],
-    index: true,
   })
   status: string;
 

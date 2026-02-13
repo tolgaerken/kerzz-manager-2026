@@ -13,7 +13,7 @@ export class PipelineRental {
   @Prop({ type: String, required: true, enum: ["offer", "sale"], index: true })
   parentType: string;
 
-  @Prop({ type: String, index: true })
+  @Prop({ type: String })
   pipelineRef: string;
 
   @Prop({ type: String })
