@@ -179,7 +179,7 @@ export class InvoicesService {
    */
   async getUnpaidSummaryByErp(): Promise<{ erpId: string; count: number; totalAmount: number }[]> {
     return this.invoiceModel.aggregate([
-      { $match: { isPaid: false, erpId: { $ne: null, $ne: "" } } },
+      { $match: { isPaid: false, erpId: { $nin: [null, ""] } } },
       {
         $group: {
           _id: "$erpId",
