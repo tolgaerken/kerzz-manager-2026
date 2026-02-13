@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { FileText, MessageSquare, Receipt, RefreshCw, FileCheck, CheckCircle } from "lucide-react";
+import { FileText, MessageSquare, Receipt, FileCheck, CheckCircle } from "lucide-react";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
@@ -325,87 +325,6 @@ export function ContractInvoicesPage() {
     count: data?.data?.length,
     expanded: isFiltersExpanded,
     onExpandedChange: setIsFiltersExpanded,
-    desktopActions: (
-      <div className="flex items-center gap-2">
-        {selectedIds.length > 0 && (
-          <span className="text-sm font-medium text-[var(--color-primary)]">
-            Seçili Toplam:{" "}
-            {new Intl.NumberFormat("tr-TR", {
-              style: "currency",
-              currency: "TRY",
-            }).format(selectedTotal)}
-          </span>
-        )}
-        <button
-          onClick={handleOpenLogs}
-          disabled={!selectedPlan || selectedIds.length > 1}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Loglar"
-        >
-          <MessageSquare className="w-3.5 h-3.5" />
-          Loglar
-        </button>
-        <button
-          onClick={handleOpenAccountTransactions}
-          disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Cari Hareketleri"
-        >
-          <Receipt className="w-3.5 h-3.5" />
-          Cari Hareketleri
-        </button>
-      </div>
-    ),
-    mobileActions: (
-      <div className="flex flex-col gap-2">
-        {/* Seçili toplam - mobil */}
-        {selectedIds.length > 0 && (
-          <div className="flex items-center justify-center rounded-md bg-[var(--color-primary)]/10 px-3 py-2">
-            <span className="text-sm font-medium text-[var(--color-primary)]">
-              Seçili: {selectedIds.length} | {new Intl.NumberFormat("tr-TR", {
-                style: "currency",
-                currency: "TRY",
-              }).format(selectedTotal)}
-            </span>
-          </div>
-        )}
-        {/* Aksiyon butonları - mobil */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleOpenLogs}
-            disabled={!selectedPlan || selectedIds.length > 1}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Loglar"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleOpenAccountTransactions}
-            disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Cari Hareketleri"
-          >
-            <Receipt className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleCreateInvoices}
-            disabled={selectedIds.length === 0 || createInvoicesMutation.isPending}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--color-success)] px-3 py-2 text-xs font-medium text-[var(--color-success-foreground)] transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Fatura Oluştur"
-          >
-            <FileCheck className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleCheckContracts}
-            disabled={selectedIds.length === 0 || checkContractsMutation.isPending}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-elevated px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Kontrat Kontrol"
-          >
-            <CheckCircle className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    ),
     children: (
       <>
         {/* Toolbar - hem mobil hem desktop */}
@@ -456,7 +375,111 @@ export function ContractInvoicesPage() {
       )}
 
       {/* Content Area */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* Sticky Action Bar */}
+        <div className="sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] px-3 py-2">
+          {isMobile ? (
+            <div className="flex flex-col gap-2">
+              {/* Seçili toplam - mobil */}
+              {selectedIds.length > 0 && (
+                <div className="flex items-center justify-center rounded-md bg-[var(--color-primary)]/10 px-3 py-2">
+                  <span className="text-sm font-medium text-[var(--color-primary)]">
+                    Seçili: {selectedIds.length} |{" "}
+                    {new Intl.NumberFormat("tr-TR", {
+                      style: "currency",
+                      currency: "TRY",
+                    }).format(selectedTotal)}
+                  </span>
+                </div>
+              )}
+              {/* Aksiyon butonları - mobil */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleOpenLogs}
+                  disabled={!selectedPlan || selectedIds.length > 1}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2 text-xs font-medium text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Loglar"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleOpenAccountTransactions}
+                  disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2 text-xs font-medium text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Cari Hareketleri"
+                >
+                  <Receipt className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleCreateInvoices}
+                  disabled={selectedIds.length === 0 || createInvoicesMutation.isPending}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--color-success)] px-3 py-2 text-xs font-medium text-[var(--color-success-foreground)] transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Fatura Oluştur"
+                >
+                  <FileCheck className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleCheckContracts}
+                  disabled={selectedIds.length === 0 || checkContractsMutation.isPending}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2 text-xs font-medium text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Kontrat Kontrol"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <span className="text-sm font-medium text-[var(--color-primary)]">
+                  Seçili Toplam:{" "}
+                  {new Intl.NumberFormat("tr-TR", {
+                    style: "currency",
+                    currency: "TRY",
+                  }).format(selectedTotal)}
+                </span>
+              )}
+              <div className="flex-1" />
+              <button
+                onClick={handleOpenLogs}
+                disabled={!selectedPlan || selectedIds.length > 1}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Loglar"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Loglar
+              </button>
+              <button
+                onClick={handleOpenAccountTransactions}
+                disabled={!selectedPlan || selectedIds.length > 1 || !hasErpId}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Cari Hareketleri"
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                Cari Hareketleri
+              </button>
+              <button
+                onClick={handleCreateInvoices}
+                disabled={selectedIds.length === 0 || createInvoicesMutation.isPending}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-success-foreground)] bg-[var(--color-success)] rounded-md hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Fatura Oluştur"
+              >
+                <FileCheck className="w-3.5 h-3.5" />
+                Fatura Oluştur
+              </button>
+              <button
+                onClick={handleCheckContracts}
+                disabled={selectedIds.length === 0 || checkContractsMutation.isPending}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Kontrat Kontrol"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Kontrat Kontrol
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Grid Container */}
         <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden mx-3 mb-3">
           <ContractInvoicesGrid

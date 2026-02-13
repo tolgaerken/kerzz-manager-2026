@@ -2,23 +2,12 @@ import { AUTH_CONSTANTS } from "../features/auth/constants/auth.constants";
 
 const { STORAGE_KEYS } = AUTH_CONSTANTS;
 
-// Login sonrası grace period - bu süre içinde 401'lerde logout yapma
-const AUTH_GRACE_PERIOD_MS = 5000;
-let lastLoginTimestamp: number | null = null;
-
 /**
  * Login timestamp'ini güncelle - login başarılı olduğunda çağrılmalı
+ * Not: Şu an grace period devre dışı, ileride tekrar aktif edilebilir
  */
 export function setLoginTimestamp(): void {
-  lastLoginTimestamp = Date.now();
-}
-
-/**
- * Grace period içinde miyiz kontrol et
- */
-function isWithinGracePeriod(): boolean {
-  if (!lastLoginTimestamp) return false;
-  return Date.now() - lastLoginTimestamp < AUTH_GRACE_PERIOD_MS;
+  // noop - grace period devre dışı
 }
 
 export interface ApiClientOptions extends RequestInit {
@@ -68,24 +57,12 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 /**
- * Handle 401 Unauthorized response - logout and redirect
- * Grace period içindeyse logout yapmaz (login sonrası geçici 401'leri önlemek için)
+ * Handle 401 Unauthorized response
+ * Token silme devre dışı - network kesintilerinde kullanıcının yeniden login olmasını önlemek için
+ * Sadece konsola log basılır, token korunur
  */
 function handleUnauthorized(): void {
-  // Grace period içindeyse logout yapma
-  if (isWithinGracePeriod()) {
-    console.warn("[apiClient] 401 received but within grace period, skipping logout");
-    return;
-  }
-
-  // Clear auth data
-  localStorage.removeItem(STORAGE_KEYS.USER_INFO);
-  localStorage.removeItem(STORAGE_KEYS.ACTIVE_LICANCE);
-
-  // Redirect to login
-  if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-    window.location.href = "/login";
-  }
+  console.warn("[apiClient] 401 received - token korunuyor, silme devre dışı");
 }
 
 /**

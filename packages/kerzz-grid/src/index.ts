@@ -25,9 +25,13 @@ export { useGridFilter } from './core/useGridFilter';
 export { useStateStore } from './core/useStateStore';
 export { useFooterAggregation } from './core/useFooterAggregation';
 export { useCellNavigation } from './core/useCellNavigation';
+export { useMobileFilterSort } from './core/useMobileFilterSort';
 
 // Column Visibility Panel
 export { ColumnVisibilityPanel } from './components/ColumnManager/ColumnVisibilityPanel';
+
+// Mobile Filter/Sort
+export { MobileFilterSort } from './components/MobileFilter';
 
 // State
 export { StateManager } from './state/StateManager';
@@ -101,5 +105,20 @@ export type {
   FooterAggregationSetting,
 } from './types/settings.types';
 
+// Mobile Filter/Sort Types
+export type {
+  MobileFilterColumnConfig,
+  MobileSortColumnConfig,
+  MobileFilterState,
+  MobileSortState,
+  MobileActiveFilter,
+  MobileFilterCondition,
+  MobileDropdownOption,
+  UseMobileFilterSortOptions,
+  UseMobileFilterSortReturn,
+  MobileFilterSortProps,
+} from './types/mobile-filter.types';
+
 // CSS import helper
 import './theme/grid-base.css';
+import './components/MobileFilter/mobile-filter.css';

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Grid } from "@kerzz/grid";
-import type { GridColumnDef } from "@kerzz/grid";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Grid, MobileFilterSort } from "@kerzz/grid";
+import type { GridColumnDef, MobileFilterColumnConfig, MobileSortColumnConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { InvoicePlanMobileList } from "./InvoicePlanMobileList";
 import { LogBadge } from "../../../components/ui";
@@ -97,6 +97,7 @@ function createColumnDefs(
       width: 120,
       sortable: true,
       align: "right",
+      filter: { type: "numeric" },
       cell: (value) => formatCurrency(value as number),
       cellClassName: "font-mono",
       footer: {
@@ -112,6 +113,7 @@ function createColumnDefs(
       width: 120,
       sortable: true,
       align: "right",
+      filter: { type: "numeric" },
       cell: (value) => {
         const num = value as number;
         if (num === -100) return "—";
@@ -194,6 +196,7 @@ function createColumnDefs(
       accessorKey: "editDate",
       width: 110,
       sortable: true,
+      filter: { type: "dateTree" },
       cell: (value) => formatDate(value as string),
     },
     {
@@ -202,6 +205,7 @@ function createColumnDefs(
       accessorKey: "editUser",
       width: 100,
       sortable: true,
+      filter: { type: "dropdown", showCounts: true },
     },
   ];
 }
@@ -253,12 +257,70 @@ export function ContractInvoicesGrid({
     [lastLogDatesByPlanId, onOpenLogs]
   );
 
+  // Mobil filtre/sort konfigürasyonları
+  const mobileFilterColumns = useMemo<MobileFilterColumnConfig[]>(() => [
+    { id: "contractNumber", header: "Sözleşme No", type: "text", accessorKey: "contractNumber" },
+    { id: "internalFirm", header: "Firma", type: "select", accessorKey: "internalFirm" },
+    { id: "company", header: "Müşteri", type: "text", accessorKey: "company" },
+    { id: "brand", header: "Marka", type: "text", accessorKey: "brand" },
+    { id: "segment", header: "Segment", type: "select", accessorKey: "segment" },
+    { id: "total", header: "Tutar", type: "number", accessorKey: "total" },
+    { id: "balance", header: "Bakiye", type: "number", accessorKey: "balance" },
+    { id: "invoiceNo", header: "Fatura No", type: "text", accessorKey: "invoiceNo" },
+    { id: "paid", header: "Ödeme", type: "boolean", accessorKey: "paid" },
+    { id: "block", header: "Blok", type: "boolean", accessorKey: "block" },
+    { id: "invoiceError", header: "Hata", type: "text", accessorKey: "invoiceError" },
+    { id: "payDate", header: "Plan Tarihi", type: "text", accessorKey: "payDate" },
+    { id: "editDate", header: "Düzenleme", type: "text", accessorKey: "editDate" },
+    { id: "editUser", header: "Düzenleyen", type: "text", accessorKey: "editUser" },
+  ], []);
+
+  const mobileSortColumns = useMemo<MobileSortColumnConfig[]>(() => [
+    { id: "contractNumber", header: "Sözleşme No", accessorKey: "contractNumber" },
+    { id: "internalFirm", header: "Firma", accessorKey: "internalFirm" },
+    { id: "company", header: "Müşteri", accessorKey: "company" },
+    { id: "brand", header: "Marka", accessorKey: "brand" },
+    { id: "segment", header: "Segment", accessorKey: "segment" },
+    { id: "total", header: "Tutar", accessorKey: "total" },
+    { id: "balance", header: "Bakiye", accessorKey: "balance" },
+    { id: "invoiceNo", header: "Fatura No", accessorKey: "invoiceNo" },
+    { id: "paid", header: "Ödeme", accessorKey: "paid" },
+    { id: "block", header: "Blok", accessorKey: "block" },
+    { id: "invoiceError", header: "Hata", accessorKey: "invoiceError" },
+    { id: "payDate", header: "Plan Tarihi", accessorKey: "payDate" },
+    { id: "editDate", header: "Düzenleme", accessorKey: "editDate" },
+    { id: "editUser", header: "Düzenleyen", accessorKey: "editUser" },
+  ], []);
+
+  // Filtrelenmiş data state (mobil için)
+  // NOT: data değiştiğinde MobileFilterSort kendi hook'unda filtreleri yeniden uygular
+  // ve onFilteredDataChange callback'i ile sonucu döner. Burada data'yı doğrudan
+  // set etmiyoruz, aksi halde aktif filtreler bypass edilir.
+  const [filteredMobileData, setFilteredMobileData] = useState<EnrichedPaymentPlan[]>(data);
+
+  // Filtrelenmiş data callback
+  const handleFilteredDataChange = useCallback((newData: EnrichedPaymentPlan[]) => {
+    setFilteredMobileData(newData);
+  }, []);
+
   // Mobil görünüm
   if (isMobile) {
     return (
       <div ref={containerRef} className="h-full w-full flex-1 flex flex-col">
+        {/* Filter/Sort Accordion */}
+        <div className="px-2 pt-2">
+          <MobileFilterSort<EnrichedPaymentPlan>
+            data={data}
+            filterColumns={mobileFilterColumns}
+            sortColumns={mobileSortColumns}
+            locale="tr"
+            onFilteredDataChange={handleFilteredDataChange}
+          />
+        </div>
+
+        {/* Card List */}
         <InvoicePlanMobileList
-          data={data}
+          data={filteredMobileData}
           loading={loading}
           selectedIds={selectedIds}
           onCardClick={(plan) => onRowDoubleClick?.(plan)}
