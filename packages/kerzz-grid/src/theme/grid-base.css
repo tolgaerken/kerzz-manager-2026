@@ -184,12 +184,59 @@
   line-height: 1;
 }
 
+.kz-toolbar__custom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .kz-toolbar__separator {
   width: 1px;
   height: 20px;
   background: var(--kz-border);
   margin: 0 4px;
   flex-shrink: 0;
+}
+
+/* ---- Toolbar Row Count Badge ---- */
+.kz-toolbar__row-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 8px;
+  border: var(--kz-border-width) solid var(--kz-border);
+  border-radius: 10px;
+  background: var(--kz-bg);
+  color: var(--kz-text-muted);
+  font-size: 11px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  height: 22px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.kz-toolbar__row-count--clickable {
+  cursor: pointer;
+  border-color: var(--kz-primary);
+  background: color-mix(in oklch, var(--kz-primary) 8%, var(--kz-bg));
+  color: var(--kz-text);
+}
+
+.kz-toolbar__row-count--clickable:hover {
+  background: color-mix(in oklch, var(--kz-primary) 16%, var(--kz-bg));
+}
+
+.kz-toolbar__row-count--clickable:active {
+  transform: scale(0.96);
+}
+
+.kz-toolbar__row-count-selected {
+  font-weight: 600;
+  color: var(--kz-primary);
 }
 
 /* ---- Toolbar Search ---- */
@@ -1684,31 +1731,49 @@
    ============================ */
 
 @media (max-width: 767px) {
-  /* Toolbar - mobile layout */
+  /* Toolbar - mobile layout: 2 rows (main + custom buttons) */
   .kz-toolbar {
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
     padding: 6px;
   }
 
   .kz-toolbar__left {
-    flex: 1 1 100%;
+    flex: 1 1 0;
     order: 1;
-    gap: 6px;
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-width: 0;
   }
 
   .kz-toolbar__right {
-    flex: 1 1 100%;
+    flex: 0 0 auto;
     order: 2;
     justify-content: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
-  /* Search input - full width on mobile */
-  .kz-toolbar-search {
-    min-width: 0;
+  /* Custom buttons row - full width second line on mobile */
+  .kz-toolbar__custom {
     flex: 1 1 100%;
-    max-width: none;
+    order: 3;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .kz-toolbar__custom::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Search input - compact on mobile */
+  .kz-toolbar-search {
+    min-width: 100px;
+    max-width: 140px;
+    flex: 1 1 auto;
   }
 
   /* Toolbar buttons - icon only on mobile */
@@ -1720,6 +1785,7 @@
     padding: 6px 8px;
     min-width: 36px;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   /* Filter panels - full width on mobile */
@@ -1808,25 +1874,6 @@
   font-size: var(--kz-font-size, 14px);
   color: var(--kz-muted-foreground, #6b7280);
   text-align: center;
-}
-
-.kz-mobile-card-list__count {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;
-  background: var(--kz-surface, #ffffff);
-  border-bottom: 1px solid var(--kz-border, #e5e7eb);
-  font-size: 12px;
-  color: var(--kz-muted-foreground, #6b7280);
-}
-
-.kz-mobile-card-list__count-selected {
-  color: var(--kz-primary, #3b82f6);
-  font-weight: 500;
 }
 
 .kz-mobile-card-list__scroll {

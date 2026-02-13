@@ -33,10 +33,6 @@ interface MobileCardListProps<TData> {
   onRowDoubleClick?: (row: TData, index: number) => void;
   /** Scroll direction change callback */
   onScrollDirectionChange?: (direction: 'up' | 'down' | null, isAtTop: boolean) => void;
-  /** Number of selected items */
-  selectedCount: number;
-  /** Total count of items */
-  totalCount: number;
 }
 
 function MobileCardListInner<TData>({
@@ -52,8 +48,6 @@ function MobileCardListInner<TData>({
   onRowClick,
   onRowDoubleClick,
   onScrollDirectionChange,
-  selectedCount,
-  totalCount,
 }: MobileCardListProps<TData>) {
   const locale = useLocale();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -111,18 +105,6 @@ function MobileCardListInner<TData>({
 
   return (
     <div className="kz-mobile-card-list">
-      {/* Sticky count indicator */}
-      <div className="kz-mobile-card-list__count">
-        <span>
-          {totalCount} {locale.mobileCardListRecords || 'kayıt'}
-          {selectedCount > 0 && (
-            <span className="kz-mobile-card-list__count-selected">
-              {' '}({selectedCount} {locale.mobileCardListSelected || 'seçili'})
-            </span>
-          )}
-        </span>
-      </div>
-
       {/* Virtual scroll container */}
       <div
         ref={scrollContainerRef}

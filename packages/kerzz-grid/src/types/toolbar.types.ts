@@ -13,6 +13,8 @@ export interface ToolbarButtonConfig {
   disabled?: boolean;
   /** Button visual variant */
   variant?: 'default' | 'primary' | 'danger';
+  /** Optional tooltip text (defaults to label) */
+  title?: string;
 }
 
 export interface ToolbarConfig<TData = unknown> {

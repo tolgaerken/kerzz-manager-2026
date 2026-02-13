@@ -87,10 +87,6 @@ export interface GridLocale {
   items: string;
   of: string;
   and: string;
-
-  // Mobile card list
-  mobileCardListRecords: string;
-  mobileCardListSelected: string;
 }
 
 export type LocaleKey = keyof GridLocale;

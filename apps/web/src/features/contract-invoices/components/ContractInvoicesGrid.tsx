@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@kerzz/grid";
-import type { GridColumnDef, MobileFilterColumnConfig, MobileSortColumnConfig } from "@kerzz/grid";
+import type { GridColumnDef, MobileFilterColumnConfig, MobileSortColumnConfig, ToolbarButtonConfig } from "@kerzz/grid";
 import { InvoicePlanCard } from "./InvoicePlanCard";
 import { LogBadge } from "../../../components/ui";
 import type { EnrichedPaymentPlan } from "../types";
@@ -257,6 +257,8 @@ interface ContractInvoicesGridProps {
   lastLogDatesByPlanId?: Record<string, string>;
   /** Log panelini açmak için callback */
   onOpenLogs?: (plan: EnrichedPaymentPlan) => void;
+  /** Toolbar'da gösterilecek custom butonlar */
+  toolbarCustomButtons?: ToolbarButtonConfig[];
 }
 
 export function ContractInvoicesGrid({
@@ -268,6 +270,7 @@ export function ContractInvoicesGrid({
   onScrollDirectionChange,
   lastLogDatesByPlanId,
   onOpenLogs,
+  toolbarCustomButtons,
 }: ContractInvoicesGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(500);
@@ -307,6 +310,7 @@ export function ContractInvoicesGrid({
         stateKey="contract-invoices-grid"
         toolbar={{
           exportFileName: "sozlesme_faturalari",
+          customButtons: toolbarCustomButtons,
         }}
         mobileConfig={{
           cardRenderer: (props) => (

@@ -87,8 +87,4 @@ export const tr: GridLocale = {
   items: 'kayıt',
   of: '/',
   and: 've',
-
-  // Mobile card list
-  mobileCardListRecords: 'kayıt',
-  mobileCardListSelected: 'seçili',
 };

@@ -323,7 +323,7 @@ function GridInner<TData>(
             onResetSorting={handleResetSorting}
             onResetAll={grid.resetState}
             selectedCount={selection.selectedCount}
-            onSelectedCountClick={undefined}
+            onSelectedCountClick={handleScrollToFirstSelected}
           />
         )}
 
@@ -331,7 +331,7 @@ function GridInner<TData>(
         {hasMobileFilters && (
           <div className="kz-mobile-filter-wrapper">
             <MobileFilterSort<TData>
-              data={props.data}
+              data={grid.filteredData}
               filterColumns={mobileConfig.filterColumns ?? []}
               sortColumns={mobileConfig.sortColumns ?? []}
               locale={props.locale}
@@ -354,8 +354,6 @@ function GridInner<TData>(
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
           onScrollDirectionChange={mobileConfig.onScrollDirectionChange}
-          selectedCount={selection.selectedCount}
-          totalCount={mobileDisplayData.length}
         />
 
         {/* Loading overlay */}

@@ -141,41 +141,44 @@ function GridToolbarInner<TData>({
   const hasBuiltInButtons = showExcel || showPdf || showColumns || showSettings;
   const hasCustomButtons = customButtons.length > 0;
 
+  // Row count badge: shows "selected / total" or just "total"
+  const rowCountBadge = (
+    <button
+      type="button"
+      className={[
+        'kz-toolbar__row-count',
+        selectedCount > 0 && onSelectedCountClick ? 'kz-toolbar__row-count--clickable' : '',
+      ].filter(Boolean).join(' ')}
+      onClick={selectedCount > 0 ? (onSelectedCountClick ?? undefined) : undefined}
+      title={
+        selectedCount > 0
+          ? `${locale.toolbarSelectedRows}: ${selectedCount} / ${data.length}`
+          : String(data.length)
+      }
+    >
+      {selectedCount > 0 ? (
+        <><span className="kz-toolbar__row-count-selected">{selectedCount}</span>/{data.length}</>
+      ) : (
+        <>{data.length}</>
+      )}
+    </button>
+  );
+
   return (
     <div className="kz-toolbar">
-      {/* Left: Search + Selected count + Custom buttons + Edit mode actions */}
+      {/* Left: Search + Row count + Edit mode actions */}
       <div className="kz-toolbar__left">
         {showSearch && (
           <ToolbarSearchInput value={searchTerm} onChange={onSearchChange} />
         )}
 
-        {/* Selected row count indicator */}
-        {selectedCount > 0 && (
-          <>
-            {showSearch && <ToolbarSeparator />}
-            <ToolbarButton
-              label={`${locale.toolbarSelectedRows}: ${selectedCount}`}
-              onClick={onSelectedCountClick ?? (() => {})}
-              disabled={!onSelectedCountClick}
-            />
-          </>
-        )}
-
-        {customButtons.map((btn: ToolbarButtonConfig) => (
-          <ToolbarButton
-            key={btn.id}
-            label={btn.label}
-            icon={btn.icon}
-            onClick={btn.onClick}
-            disabled={btn.disabled}
-            variant={btn.variant}
-          />
-        ))}
+        {/* Row count badge - right next to search */}
+        {rowCountBadge}
 
         {/* Add Row button: always visible when onAddRow is provided */}
         {showAddRow && onAddRow && (
           <>
-            {(hasCustomButtons || showSearch) && <ToolbarSeparator />}
+            {showSearch && <ToolbarSeparator />}
             <ToolbarButton
               label={locale.toolbarAddRow}
               icon={<AddRowIcon />}
@@ -187,7 +190,7 @@ function GridToolbarInner<TData>({
         {/* Edit mode: Save & Cancel buttons */}
         {editMode && (
           <>
-            {!(showAddRow && onAddRow) && (hasCustomButtons || showSearch) && <ToolbarSeparator />}
+            {showSearch && <ToolbarSeparator />}
             <ToolbarButton
               label={locale.toolbarSave}
               icon={<SaveIcon />}
@@ -206,7 +209,6 @@ function GridToolbarInner<TData>({
 
       {/* Right: Built-in buttons */}
       <div className="kz-toolbar__right">
-        {hasCustomButtons && hasBuiltInButtons && <ToolbarSeparator />}
 
         {showExcel && (
           <ToolbarButton
@@ -308,6 +310,23 @@ function GridToolbarInner<TData>({
           </>
         )}
       </div>
+
+      {/* Custom buttons row - separate line on mobile */}
+      {hasCustomButtons && (
+        <div className="kz-toolbar__custom">
+          {customButtons.map((btn: ToolbarButtonConfig) => (
+            <ToolbarButton
+              key={btn.id}
+              label={btn.label}
+              icon={btn.icon}
+              onClick={btn.onClick}
+              disabled={btn.disabled}
+              variant={btn.variant}
+              title={btn.title}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
