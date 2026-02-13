@@ -124,6 +124,5 @@ export interface EntityLogPanelContext {
   // Sonra eklenecek ID'ler (placeholder tab'lar için)
   collectionId?: string;
   eTransformId?: string;
-  eTransformId?: string;
   technicalId?: string;
 }

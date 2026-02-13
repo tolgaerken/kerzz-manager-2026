@@ -180,11 +180,8 @@ export function createColumnDefs(
     {
       id: "unpaidInvoiceCount",
       header: "Fatura Adedi",
-      accessorKey: "CariKodu",
-      // filterAccessorFn: Filtreleme için gerçek değeri döner (lookup'tan)
-      filterAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.count ?? 0,
-      // sortAccessorFn: Sıralama için gerçek değeri döner (lookup'tan)
-      sortAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.count ?? 0,
+      // accessorFn: Filtreleme/sıralama için lookup'tan gerçek değeri döner
+      accessorFn: (row: ErpBalance) => unpaidMap?.get(row.CariKodu)?.count ?? 0,
       width: 100,
       sortable: true,
       filter: { type: "numeric" },
@@ -202,11 +199,11 @@ export function createColumnDefs(
       footer: {
         aggregate: "custom",
         label: "",
-        customAggregator: (data) => {
+        customFn: (values) => {
           if (!unpaidMap) return 0;
-          return data.reduce((sum, row) => {
-            const unpaid = unpaidMap.get(row.CariKodu);
-            return sum + (unpaid?.count || 0);
+          return values.reduce<number>((sum, value) => {
+            if (typeof value !== "number") return sum;
+            return sum + value;
           }, 0);
         },
         format: (v) => formatNumber(v),
@@ -215,11 +212,9 @@ export function createColumnDefs(
     {
       id: "unpaidInvoiceAmount",
       header: "Fatura Tutarı",
-      accessorKey: "CariKodu",
-      // filterAccessorFn: Filtreleme için gerçek değeri döner (lookup'tan)
-      filterAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.totalAmount ?? 0,
-      // sortAccessorFn: Sıralama için gerçek değeri döner (lookup'tan)
-      sortAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.totalAmount ?? 0,
+      // accessorFn: Filtreleme/sıralama için lookup'tan gerçek değeri döner
+      accessorFn: (row: ErpBalance) =>
+        unpaidMap?.get(row.CariKodu)?.totalAmount ?? 0,
       width: 140,
       sortable: true,
       filter: { type: "numeric" },
@@ -237,11 +232,11 @@ export function createColumnDefs(
       footer: {
         aggregate: "custom",
         label: "",
-        customAggregator: (data) => {
+        customFn: (values) => {
           if (!unpaidMap) return 0;
-          return data.reduce((sum, row) => {
-            const unpaid = unpaidMap.get(row.CariKodu);
-            return sum + (unpaid?.totalAmount || 0);
+          return values.reduce<number>((sum, value) => {
+            if (typeof value !== "number") return sum;
+            return sum + value;
           }, 0);
         },
         format: (v) => formatCurrency(v),

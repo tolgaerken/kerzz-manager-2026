@@ -158,7 +158,6 @@ export function AllRecordsCashRegistersGrid() {
       onClick: handleOpenLogs,
       disabled: !selectedItem || selectedIds.length > 1 || !hasContractMapping,
       variant: "default",
-      title: "Seçili sözleşmenin loglarını görüntüle",
     });
 
     // Cari Hareketleri
@@ -169,7 +168,6 @@ export function AllRecordsCashRegistersGrid() {
       onClick: handleOpenAccountTransactions,
       disabled: !selectedItem || selectedIds.length > 1 || !hasErpId,
       variant: "primary",
-      title: "Seçili sözleşmenin cari hareketlerini görüntüle",
     });
 
     return buttons;

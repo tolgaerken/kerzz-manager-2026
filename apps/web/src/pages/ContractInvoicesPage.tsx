@@ -346,7 +346,6 @@ export function ContractInvoicesPage() {
       onClick: handleCreateInvoices,
       disabled: selectedIds.length === 0 || createInvoicesMutation.isPending,
       variant: "primary",
-      title: "Seçili planlardan fatura oluştur",
     });
 
     // Kontrat Kontrol
@@ -357,7 +356,6 @@ export function ContractInvoicesPage() {
       onClick: handleCheckContracts,
       disabled: selectedIds.length === 0 || checkContractsMutation.isPending,
       variant: "default",
-      title: "Seçili kontratları kontrol et",
     });
 
     // Loglar
@@ -368,7 +366,6 @@ export function ContractInvoicesPage() {
       onClick: handleOpenLogs,
       disabled: !selectedPlan || selectedIds.length > 1,
       variant: "default",
-      title: "Seçili planın loglarını görüntüle",
     });
 
     // Cari Hareketleri
@@ -379,7 +376,6 @@ export function ContractInvoicesPage() {
       onClick: handleOpenAccountTransactions,
       disabled: !selectedPlan || selectedIds.length > 1 || !hasErpId,
       variant: "default",
-      title: "Cari hareketleri görüntüle",
     });
 
     return buttons;

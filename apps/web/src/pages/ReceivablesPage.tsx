@@ -167,7 +167,6 @@ export function ReceivablesPage() {
       onClick: handleOpenLogs,
       disabled: !selectedItem || selectedIds.length > 1 || !hasCustomerId,
       variant: "default",
-      title: "Seçili carinin loglarını görüntüle",
     });
 
     // Faturalar
@@ -178,7 +177,6 @@ export function ReceivablesPage() {
       onClick: handleOpenInvoices,
       disabled: !selectedItem || selectedIds.length > 1,
       variant: "default",
-      title: "Seçili carinin faturalarını görüntüle",
     });
 
     // Cari Hareketleri
