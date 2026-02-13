@@ -29,13 +29,14 @@ function FilterDateTreeInner<TData>({
 
   const monthNames = useMemo(() => locale.filterMonths.split(','), [locale.filterMonths]);
 
-  // Build tree structure from data
+  // Build tree structure from data (use filterAccessorFn if provided for computed/lookup columns)
   const tree = useMemo(
     () =>
       buildDateTree(
         data,
         (column.accessorKey ?? column.id) as string,
         column.accessorFn as ((row: TData) => unknown) | undefined,
+        column.filterAccessorFn as ((row: TData) => unknown) | undefined,
       ),
     [data, column],
   );
@@ -47,6 +48,7 @@ function FilterDateTreeInner<TData>({
             data,
             (column.accessorKey ?? column.id) as string,
             column.accessorFn as ((row: TData) => unknown) | undefined,
+            column.filterAccessorFn as ((row: TData) => unknown) | undefined,
           )
         : 0,
     [data, column, filterConfig.showBlanks],

@@ -5,7 +5,8 @@ import type {
   InvoicesResponse,
   Invoice,
   CreateInvoiceInput,
-  UpdateInvoiceInput
+  UpdateInvoiceInput,
+  UnpaidSummaryByErpItem
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = INVOICES_CONSTANTS;
@@ -58,4 +59,10 @@ export async function updateInvoice(id: string, data: UpdateInvoiceInput): Promi
 export async function deleteInvoice(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}/${id}`;
   return apiDelete<void>(url);
+}
+
+// Müşteri bazında ödenmemiş fatura özeti (erpId = CariKodu)
+export async function fetchUnpaidInvoiceSummaryByErp(): Promise<UnpaidSummaryByErpItem[]> {
+  const url = `${API_BASE_URL}${ENDPOINTS.INVOICES}/unpaid-summary-by-erp`;
+  return apiGet<UnpaidSummaryByErpItem[]>(url);
 }

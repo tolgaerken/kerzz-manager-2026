@@ -105,14 +105,18 @@ function HeaderCellInner<TData>({
 
   // If column has no explicit filter config but filterEnabled is true via settings,
   // infer the best filter type from the actual data values.
+  // Uses filterAccessorFn if provided (for computed/lookup columns), otherwise accessorFn or accessorKey.
   const inferredFilterConfig = useMemo(() => {
     if (column.filter || !filterEnabled) return column.filter;
     // Sample first non-null value to determine type
     const key = column.accessorKey ?? column.id;
     for (const row of data) {
-      const val = column.accessorFn
-        ? column.accessorFn(row)
-        : (row as Record<string, unknown>)[key];
+      // Use filterAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
+      const val = column.filterAccessorFn
+        ? column.filterAccessorFn(row)
+        : column.accessorFn
+          ? column.accessorFn(row)
+          : (row as Record<string, unknown>)[key];
       if (val == null) continue;
       if (typeof val === 'number') return { type: 'numeric' as const };
       if (typeof val === 'boolean') return { type: 'dropdown' as const, showCounts: true };

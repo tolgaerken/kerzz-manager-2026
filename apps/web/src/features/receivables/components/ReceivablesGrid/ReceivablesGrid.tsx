@@ -40,6 +40,8 @@ interface ReceivablesGridProps {
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
   /** Toolbar'da gösterilecek ek custom butonlar */
   toolbarCustomButtons?: ToolbarButtonConfig[];
+  /** Müşteri bazında ödenmemiş fatura özeti (CariKodu -> { count, totalAmount }) */
+  unpaidMap?: Map<string, { count: number; totalAmount: number }>;
 }
 
 export function ReceivablesGrid({
@@ -50,6 +52,7 @@ export function ReceivablesGrid({
   onRowDoubleClick,
   onScrollDirectionChange,
   toolbarCustomButtons,
+  unpaidMap,
 }: ReceivablesGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(500);
@@ -68,7 +71,7 @@ export function ReceivablesGrid({
     return () => observer.disconnect();
   }, []);
 
-  const columns = useMemo(() => createColumnDefs(), []);
+  const columns = useMemo(() => createColumnDefs(unpaidMap), [unpaidMap]);
 
   return (
     <div ref={containerRef} className="h-full w-full flex-1">

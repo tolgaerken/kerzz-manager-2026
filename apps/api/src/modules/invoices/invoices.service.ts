@@ -167,6 +167,24 @@ export class InvoicesService {
     }
   }
 
+  /**
+   * Müşteri bazında ödenmemiş fatura sayısı ve tutarını döner
+   * erpId (CariKodu) bazında gruplar
+   */
+  async getUnpaidSummaryByErp(): Promise<{ erpId: string; count: number; totalAmount: number }[]> {
+    return this.invoiceModel.aggregate([
+      { $match: { isPaid: false, erpId: { $ne: null, $ne: "" } } },
+      {
+        $group: {
+          _id: "$erpId",
+          count: { $sum: 1 },
+          totalAmount: { $sum: "$grandTotal" }
+        }
+      },
+      { $project: { erpId: "$_id", count: 1, totalAmount: 1, _id: 0 } }
+    ]).exec();
+  }
+
   private async getCounts(baseFilter: Record<string, unknown>): Promise<InvoiceCountsDto> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

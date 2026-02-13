@@ -61,12 +61,17 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
         const col = columnMap.get(sort.id);
         if (!col) continue;
 
-        const aVal = col.accessorFn
-          ? col.accessorFn(a)
-          : (a as Record<string, unknown>)[col.accessorKey ?? col.id];
-        const bVal = col.accessorFn
-          ? col.accessorFn(b)
-          : (b as Record<string, unknown>)[col.accessorKey ?? col.id];
+        // Use sortAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
+        const aVal = col.sortAccessorFn
+          ? col.sortAccessorFn(a)
+          : col.accessorFn
+            ? col.accessorFn(a)
+            : (a as Record<string, unknown>)[col.accessorKey ?? col.id];
+        const bVal = col.sortAccessorFn
+          ? col.sortAccessorFn(b)
+          : col.accessorFn
+            ? col.accessorFn(b)
+            : (b as Record<string, unknown>)[col.accessorKey ?? col.id];
 
         let cmp = 0;
         if (aVal == null && bVal == null) cmp = 0;

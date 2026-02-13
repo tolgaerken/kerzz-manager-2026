@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { Wallet, AlertTriangle, Clock, CalendarCheck, Users } from "lucide-react";
+import { Wallet, AlertTriangle, Clock, CalendarCheck, Users, FileX } from "lucide-react";
 import type { ErpBalance } from "../../../erp-balances";
 
 interface ReceivablesSummaryProps {
   data: ErpBalance[] | undefined;
   isLoading: boolean;
+  /** Müşteri bazında ödenmemiş fatura özeti (CariKodu -> { count, totalAmount }) */
+  unpaidMap?: Map<string, { count: number; totalAmount: number }>;
 }
 
 function formatCurrency(value: number): string {
@@ -19,7 +21,7 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat("tr-TR").format(value);
 }
 
-export function ReceivablesSummary({ data, isLoading }: ReceivablesSummaryProps) {
+export function ReceivablesSummary({ data, isLoading, unpaidMap }: ReceivablesSummaryProps) {
   const totals = useMemo(() => {
     if (!data || data.length === 0) {
       return {
@@ -61,10 +63,30 @@ export function ReceivablesSummary({ data, isLoading }: ReceivablesSummaryProps)
     };
   }, [data]);
 
+  // Ödenmemiş fatura toplamları (filtrelenmiş müşterilere göre)
+  const unpaidTotals = useMemo(() => {
+    if (!data || !unpaidMap || unpaidMap.size === 0) {
+      return { totalCount: 0, totalAmount: 0 };
+    }
+
+    let totalCount = 0;
+    let totalAmount = 0;
+
+    for (const item of data) {
+      const unpaid = unpaidMap.get(item.CariKodu);
+      if (unpaid) {
+        totalCount += unpaid.count;
+        totalAmount += unpaid.totalAmount;
+      }
+    }
+
+    return { totalCount, totalAmount };
+  }, [data, unpaidMap]);
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-        {[1, 2, 3, 4, 5].map((i) => (
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
             className="h-20 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] animate-pulse"
@@ -75,7 +97,7 @@ export function ReceivablesSummary({ data, isLoading }: ReceivablesSummaryProps)
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
       {/* Toplam Alacak */}
       <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
         <div className="flex items-center justify-between">
@@ -160,6 +182,26 @@ export function ReceivablesSummary({ data, isLoading }: ReceivablesSummaryProps)
           </div>
           <div className="rounded-full bg-[var(--color-primary)]/10 p-2 ml-2 flex-shrink-0">
             <Users className="h-4 w-4 text-[var(--color-primary)]" />
+          </div>
+        </div>
+      </div>
+
+      {/* Ödenmemiş Fatura */}
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-[var(--color-muted-foreground)] truncate">
+              Ödenmemiş Fatura
+            </p>
+            <p className="text-lg font-bold text-[var(--color-error)] truncate">
+              {formatCurrency(unpaidTotals.totalAmount)}
+            </p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">
+              {formatNumber(unpaidTotals.totalCount)} fatura
+            </p>
+          </div>
+          <div className="rounded-full bg-[var(--color-error)]/10 p-2 ml-2 flex-shrink-0">
+            <FileX className="h-4 w-4 text-[var(--color-error)]" />
           </div>
         </div>
       </div>

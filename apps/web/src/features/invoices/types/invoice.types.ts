@@ -137,3 +137,10 @@ export interface CreateInvoiceInput {
 }
 
 export interface UpdateInvoiceInput extends Partial<CreateInvoiceInput> {}
+
+// Müşteri bazında ödenmemiş fatura özeti (erpId = CariKodu)
+export interface UnpaidSummaryByErpItem {
+  erpId: string;
+  count: number;
+  totalAmount: number;
+}

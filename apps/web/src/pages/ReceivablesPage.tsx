@@ -1,14 +1,17 @@
 import { useState, useCallback, useMemo } from "react";
-import { Wallet, Receipt } from "lucide-react";
+import { Wallet, Receipt, MessageSquare } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import { ReceivablesGrid, ReceivablesSummary } from "../features/receivables";
 import { useErpBalances, type ErpBalance } from "../features/erp-balances";
+import { useUnpaidInvoiceSummaryByErp } from "../features/invoices";
 import {
   AccountTransactionsModal,
   useAccountTransactionsStore,
 } from "../features/account-transactions";
+import { useLogPanelStore } from "../features/manager-log";
+import { useCustomerLookup } from "../features/lookup";
 
 /** Grup şirketlerinin cari kodları */
 const GROUP_COMPANY_IDS = new Set(["M0002", "M1246", "E0061", "M0072", "M2186", "A0001"]);
@@ -29,6 +32,9 @@ export function ReceivablesPage() {
   // Veri çekme - tüm veriyi çek
   const { data: erpBalancesData, isLoading } = useErpBalances({ limit: 5000 });
 
+  // Ödenmemiş fatura özeti (erpId = CariKodu bazında)
+  const { unpaidMap, isLoading: isUnpaidLoading } = useUnpaidInvoiceSummaryByErp();
+
   // Grup şirketleri filtrelenmiş veri (Summary + Grid için ortak)
   const filteredErpData = useMemo(() => {
     const raw = erpBalancesData?.data || [];
@@ -38,6 +44,21 @@ export function ReceivablesPage() {
 
   // Account transactions store
   const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
+
+  // Log panel store
+  const { openEntityPanel } = useLogPanelStore();
+
+  // Customer lookup (erpId -> customerId çözümlemesi için)
+  const { customers } = useCustomerLookup();
+
+  /** erpId -> CustomerLookupItem reverse map */
+  const erpIdToCustomerMap = useMemo(() => {
+    const map = new Map<string, { _id: string; name?: string; companyName?: string }>();
+    for (const c of customers) {
+      if (c.erpId) map.set(c.erpId, c);
+    }
+    return map;
+  }, [customers]);
 
   // Satır çift tıklama -> cari hareketleri aç
   const handleRowDoubleClick = useCallback(
@@ -70,6 +91,24 @@ export function ReceivablesPage() {
     if (!selectedItem) return;
     openAccountTransactionsModal(selectedItem.CariKodu, selectedItem.internalFirm || "VERI");
   }, [selectedItem, openAccountTransactionsModal]);
+
+  // Log panelini aç (toolbar butonu)
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedItem) return;
+    const customer = erpIdToCustomerMap.get(selectedItem.CariKodu);
+    if (!customer) return;
+    openEntityPanel({
+      customerId: customer._id,
+      activeTab: "contract",
+      title: `Cari: ${selectedItem.CariUnvan || selectedItem.CariKodu}`,
+    });
+  }, [selectedItem, erpIdToCustomerMap, openEntityPanel]);
+
+  // Seçili kaydın müşteri eşleşmesi var mı?
+  const hasCustomerId = useMemo(() => {
+    if (!selectedItem) return false;
+    return erpIdToCustomerMap.has(selectedItem.CariKodu);
+  }, [selectedItem, erpIdToCustomerMap]);
 
   // Seçili kayıtların toplamı
   const selectedTotal = useMemo(() => {
@@ -111,6 +150,17 @@ export function ReceivablesPage() {
       });
     }
 
+    // Loglar
+    buttons.push({
+      id: "open-logs",
+      label: "Log",
+      icon: <MessageSquare className="w-3.5 h-3.5" />,
+      onClick: handleOpenLogs,
+      disabled: !selectedItem || selectedIds.length > 1 || !hasCustomerId,
+      variant: "default",
+      title: "Seçili carinin loglarını görüntüle",
+    });
+
     // Cari Hareketleri
     buttons.push({
       id: "account-transactions",
@@ -122,7 +172,7 @@ export function ReceivablesPage() {
     });
 
     return buttons;
-  }, [includeGroupCompanies, toggleGroupCompanies, selectedIds.length, selectedTotal, selectedItem, handleOpenAccountTransactions]);
+  }, [includeGroupCompanies, toggleGroupCompanies, selectedIds.length, selectedTotal, selectedItem, handleOpenAccountTransactions, handleOpenLogs, hasCustomerId]);
 
   // CollapsibleSection hook
   const collapsible = CollapsibleSection({
@@ -142,7 +192,11 @@ export function ReceivablesPage() {
       </div>
     ),
     children: (
-      <ReceivablesSummary data={filteredErpData} isLoading={isLoading} />
+      <ReceivablesSummary
+        data={filteredErpData}
+        isLoading={isLoading || isUnpaidLoading}
+        unpaidMap={unpaidMap}
+      />
     ),
   });
 
@@ -166,6 +220,7 @@ export function ReceivablesPage() {
             onRowDoubleClick={handleRowDoubleClick}
             onScrollDirectionChange={collapsible.handleScrollDirectionChange}
             toolbarCustomButtons={toolbarCustomButtons}
+            unpaidMap={unpaidMap}
           />
         </div>
       </div>

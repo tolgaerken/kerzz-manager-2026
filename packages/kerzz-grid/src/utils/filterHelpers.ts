@@ -214,18 +214,23 @@ export interface DateTreeResult {
 
 /**
  * Build a hierarchical date tree (Year > Month > Day) from data column values.
+ * @param filterAccessorFn - Optional custom accessor for filter values (used for computed/lookup columns)
  */
 export function buildDateTree<TData>(
   data: TData[],
   accessorKey: string,
   accessorFn?: (row: TData) => unknown,
+  filterAccessorFn?: (row: TData) => unknown,
 ): DateTreeResult {
   const yearMap = new Map<number, Map<number, Set<number>>>();
 
   for (let i = 0; i < data.length; i++) {
-    const raw = accessorFn
-      ? accessorFn(data[i])
-      : (data[i] as Record<string, unknown>)[accessorKey];
+    // Use filterAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
+    const raw = filterAccessorFn
+      ? filterAccessorFn(data[i])
+      : accessorFn
+        ? accessorFn(data[i])
+        : (data[i] as Record<string, unknown>)[accessorKey];
 
     if (raw == null || String(raw).trim() === '') continue;
 
@@ -264,18 +269,23 @@ export function buildDateTree<TData>(
 
 /**
  * Get unique values and their counts from a data column.
+ * @param filterAccessorFn - Optional custom accessor for filter values (used for computed/lookup columns)
  */
 export function getColumnUniqueValues<TData>(
   data: TData[],
   accessorKey: string,
   accessorFn?: (row: TData) => unknown,
+  filterAccessorFn?: (row: TData) => unknown,
 ): { value: string; displayValue: string; count: number }[] {
   const counts = new Map<string, number>();
 
   for (let i = 0; i < data.length; i++) {
-    const raw = accessorFn
-      ? accessorFn(data[i])
-      : (data[i] as Record<string, unknown>)[accessorKey];
+    // Use filterAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
+    const raw = filterAccessorFn
+      ? filterAccessorFn(data[i])
+      : accessorFn
+        ? accessorFn(data[i])
+        : (data[i] as Record<string, unknown>)[accessorKey];
     const key = raw == null || String(raw).trim() === '' ? '' : String(raw);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
@@ -358,17 +368,22 @@ function getConditionLabel(condition: FilterCondition, locale: GridLocale): stri
 
 /**
  * Count blank values in a data column.
+ * @param filterAccessorFn - Optional custom accessor for filter values (used for computed/lookup columns)
  */
 export function countBlanks<TData>(
   data: TData[],
   accessorKey: string,
   accessorFn?: (row: TData) => unknown,
+  filterAccessorFn?: (row: TData) => unknown,
 ): number {
   let count = 0;
   for (let i = 0; i < data.length; i++) {
-    const raw = accessorFn
-      ? accessorFn(data[i])
-      : (data[i] as Record<string, unknown>)[accessorKey];
+    // Use filterAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
+    const raw = filterAccessorFn
+      ? filterAccessorFn(data[i])
+      : accessorFn
+        ? accessorFn(data[i])
+        : (data[i] as Record<string, unknown>)[accessorKey];
     if (raw == null || String(raw).trim() === '') count++;
   }
   return count;

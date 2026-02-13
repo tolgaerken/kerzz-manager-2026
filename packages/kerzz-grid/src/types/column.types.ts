@@ -11,6 +11,20 @@ export interface GridColumnDef<TData = unknown> {
   accessorKey?: keyof TData & string;
   /** Custom accessor function */
   accessorFn?: (row: TData) => unknown;
+  /**
+   * Custom accessor function for filtering.
+   * Use this when the filter value differs from the display value
+   * (e.g., computed/lookup columns where cell renderer shows a different value).
+   * If not provided, falls back to accessorFn or accessorKey.
+   */
+  filterAccessorFn?: (row: TData) => unknown;
+  /**
+   * Custom accessor function for sorting.
+   * Use this when the sort value differs from the display value
+   * (e.g., computed/lookup columns where cell renderer shows a different value).
+   * If not provided, falls back to accessorFn or accessorKey.
+   */
+  sortAccessorFn?: (row: TData) => unknown;
   /** Custom cell renderer */
   cell?: (value: unknown, row: TData, context?: Record<string, unknown>) => React.ReactNode;
   /** Column width in pixels */

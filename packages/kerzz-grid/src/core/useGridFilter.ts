@@ -34,12 +34,17 @@ export function useGridFilter<TData>({
   const columnAccessors = useMemo(() => {
     const map = new Map<
       string,
-      { accessorKey?: string; accessorFn?: (row: TData) => unknown }
+      {
+        accessorKey?: string;
+        accessorFn?: (row: TData) => unknown;
+        filterAccessorFn?: (row: TData) => unknown;
+      }
     >();
     for (const col of columns) {
       map.set(col.id, {
         accessorKey: col.accessorKey,
         accessorFn: col.accessorFn,
+        filterAccessorFn: col.filterAccessorFn,
       });
     }
     return map;
@@ -57,9 +62,12 @@ export function useGridFilter<TData>({
         const accessor = columnAccessors.get(columnId);
         if (!accessor) continue;
 
-        const cellValue = accessor.accessorFn
-          ? accessor.accessorFn(row)
-          : (row as Record<string, unknown>)[accessor.accessorKey ?? columnId];
+        // Use filterAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
+        const cellValue = accessor.filterAccessorFn
+          ? accessor.filterAccessorFn(row)
+          : accessor.accessorFn
+            ? accessor.accessorFn(row)
+            : (row as Record<string, unknown>)[accessor.accessorKey ?? columnId];
 
         if (!matchesFilter(cellValue, filter)) {
           return false;

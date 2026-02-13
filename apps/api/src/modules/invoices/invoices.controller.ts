@@ -25,6 +25,11 @@ export class InvoicesController {
     return this.invoicesService.findAll(query);
   }
 
+  @Get("unpaid-summary-by-erp")
+  getUnpaidSummaryByErp() {
+    return this.invoicesService.getUnpaidSummaryByErp();
+  }
+
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.invoicesService.findOne(id);

@@ -17,7 +17,12 @@ const formatNumber = (value: number | null | undefined): string => {
   return new Intl.NumberFormat("tr-TR").format(value);
 };
 
-export function createColumnDefs(): GridColumnDef<ErpBalance>[] {
+/** Ödenmemiş fatura özeti tipi */
+type UnpaidInfo = { count: number; totalAmount: number };
+
+export function createColumnDefs(
+  unpaidMap?: Map<string, UnpaidInfo>
+): GridColumnDef<ErpBalance>[] {
   return [
     {
       id: "CariKodu",
@@ -171,6 +176,76 @@ export function createColumnDefs(): GridColumnDef<ErpBalance>[] {
       filter: { type: "numeric" },
       cell: (value) => formatCurrency(value as number),
       cellClassName: "font-mono text-right",
+    },
+    {
+      id: "unpaidInvoiceCount",
+      header: "Fatura Adedi",
+      accessorKey: "CariKodu",
+      // filterAccessorFn: Filtreleme için gerçek değeri döner (lookup'tan)
+      filterAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.count ?? 0,
+      // sortAccessorFn: Sıralama için gerçek değeri döner (lookup'tan)
+      sortAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.count ?? 0,
+      width: 100,
+      sortable: true,
+      filter: { type: "numeric" },
+      align: "right",
+      cell: (_value, row) => {
+        const unpaid = unpaidMap?.get(row.CariKodu);
+        return unpaid ? formatNumber(unpaid.count) : "0";
+      },
+      cellClassName: (_value, row) => {
+        const unpaid = unpaidMap?.get(row.CariKodu);
+        const classes = "font-mono text-right";
+        if (unpaid && unpaid.count > 0) return `text-[var(--color-error)] font-semibold ${classes}`;
+        return classes;
+      },
+      footer: {
+        aggregate: "custom",
+        label: "",
+        customAggregator: (data) => {
+          if (!unpaidMap) return 0;
+          return data.reduce((sum, row) => {
+            const unpaid = unpaidMap.get(row.CariKodu);
+            return sum + (unpaid?.count || 0);
+          }, 0);
+        },
+        format: (v) => formatNumber(v),
+      },
+    },
+    {
+      id: "unpaidInvoiceAmount",
+      header: "Fatura Tutarı",
+      accessorKey: "CariKodu",
+      // filterAccessorFn: Filtreleme için gerçek değeri döner (lookup'tan)
+      filterAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.totalAmount ?? 0,
+      // sortAccessorFn: Sıralama için gerçek değeri döner (lookup'tan)
+      sortAccessorFn: (row) => unpaidMap?.get(row.CariKodu)?.totalAmount ?? 0,
+      width: 140,
+      sortable: true,
+      filter: { type: "numeric" },
+      align: "right",
+      cell: (_value, row) => {
+        const unpaid = unpaidMap?.get(row.CariKodu);
+        return unpaid ? formatCurrency(unpaid.totalAmount) : formatCurrency(0);
+      },
+      cellClassName: (_value, row) => {
+        const unpaid = unpaidMap?.get(row.CariKodu);
+        const classes = "font-mono text-right";
+        if (unpaid && unpaid.totalAmount > 0) return `text-[var(--color-error)] font-semibold ${classes}`;
+        return classes;
+      },
+      footer: {
+        aggregate: "custom",
+        label: "",
+        customAggregator: (data) => {
+          if (!unpaidMap) return 0;
+          return data.reduce((sum, row) => {
+            const unpaid = unpaidMap.get(row.CariKodu);
+            return sum + (unpaid?.totalAmount || 0);
+          }, 0);
+        },
+        format: (v) => formatCurrency(v),
+      },
     },
     {
       id: "VergiN",

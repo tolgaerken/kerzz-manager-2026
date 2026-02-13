@@ -29,15 +29,25 @@ function FilterDropdownInner<TData>({
   const [searchTerm, setSearchTerm] = useState('');
   const isInitialRender = useRef(true);
 
-  // Compute unique values
+  // Compute unique values (use filterAccessorFn if provided for computed/lookup columns)
   const uniqueValues = useMemo(
-    () => getColumnUniqueValues(data, column.accessorKey ?? column.id, column.accessorFn as ((row: TData) => unknown) | undefined),
+    () => getColumnUniqueValues(
+      data,
+      column.accessorKey ?? column.id,
+      column.accessorFn as ((row: TData) => unknown) | undefined,
+      column.filterAccessorFn as ((row: TData) => unknown) | undefined,
+    ),
     [data, column],
   );
 
   // Always compute blanks count so we can always show the empty/filled options
   const blanksCount = useMemo(
-    () => countBlanks(data, column.accessorKey ?? column.id, column.accessorFn as ((row: TData) => unknown) | undefined),
+    () => countBlanks(
+      data,
+      column.accessorKey ?? column.id,
+      column.accessorFn as ((row: TData) => unknown) | undefined,
+      column.filterAccessorFn as ((row: TData) => unknown) | undefined,
+    ),
     [data, column],
   );
 
