@@ -18,6 +18,7 @@ import type {
   EDocCreditQueryParams,
   EDocCreditFormData,
 } from "../features/e-doc-credits";
+import { AccountTransactionsModal } from "../features/account-transactions";
 
 export function EDocCreditsPage() {
   // -- Query State --
@@ -525,6 +526,9 @@ export function EDocCreditsPage() {
           </div>
         </div>
       )}
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }

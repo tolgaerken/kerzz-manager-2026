@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { MessageSquare, Receipt } from "lucide-react";
 import { Grid } from "@kerzz/grid";
-import type { GridColumnDef } from "@kerzz/grid";
+import type { GridColumnDef, ToolbarButtonConfig } from "@kerzz/grid";
 import { eDocCreditColumnDefs } from "./columnDefs";
 import type { EDocCreditItem } from "../../types/eDocCredit.types";
+import { useLogPanelStore } from "../../../manager-log";
+import { useAccountTransactionsStore } from "../../../account-transactions";
 
 interface EDocCreditsGridProps {
   data: EDocCreditItem[];
@@ -20,6 +23,18 @@ export function EDocCreditsGrid({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Log panel store
+  const { openEntityPanel } = useLogPanelStore();
+
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
+
+  // Seçili item
+  const selectedItem = useMemo(() => {
+    if (!selectedId) return null;
+    return data.find((item) => item._id === selectedId) || null;
+  }, [selectedId, data]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -51,6 +66,50 @@ export function EDocCreditsGrid({
     [onRowDoubleClick]
   );
 
+  // Log panelini aç (toolbar butonu)
+  const handleOpenLogs = useCallback(() => {
+    if (!selectedItem || !selectedItem.customerId) return;
+    openEntityPanel({
+      customerId: selectedItem.customerId,
+      activeTab: "e-transform",
+      eTransformId: selectedItem._id,
+      title: `E-Dönüşüm: ${selectedItem.customerName || selectedItem.erpId}`,
+    });
+  }, [selectedItem, openEntityPanel]);
+
+  // Cari hareketleri modalını aç (toolbar butonu)
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedItem || !selectedItem.erpId) return;
+    openAccountTransactionsModal(selectedItem.erpId, selectedItem.internalFirm || "VERI");
+  }, [selectedItem, openAccountTransactionsModal]);
+
+  // Toolbar custom butonları
+  const toolbarCustomButtons = useMemo<ToolbarButtonConfig[]>(() => {
+    const buttons: ToolbarButtonConfig[] = [];
+
+    // Loglar
+    buttons.push({
+      id: "open-logs",
+      label: "Log",
+      icon: <MessageSquare className="w-3.5 h-3.5" />,
+      onClick: handleOpenLogs,
+      disabled: !selectedItem || !selectedItem.customerId,
+      variant: "default",
+    });
+
+    // Cari Hareketleri
+    buttons.push({
+      id: "account-transactions",
+      label: "Cari Hareket",
+      icon: <Receipt className="w-3.5 h-3.5" />,
+      onClick: handleOpenAccountTransactions,
+      disabled: !selectedItem || !selectedItem.erpId,
+      variant: "primary",
+    });
+
+    return buttons;
+  }, [selectedItem, handleOpenLogs, handleOpenAccountTransactions]);
+
   const columns: GridColumnDef<EDocCreditItem>[] = eDocCreditColumnDefs.map(
     (col) => ({
       ...col,
@@ -77,7 +136,10 @@ export function EDocCreditsGrid({
         getRowId={(row) => row._id}
         onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
-        toolbar
+        toolbar={{
+          exportFileName: "kontor_yuklemeleri",
+          customButtons: toolbarCustomButtons,
+        }}
         stateKey="e-doc-credits"
       />
     </div>

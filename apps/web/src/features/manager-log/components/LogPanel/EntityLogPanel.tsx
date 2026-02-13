@@ -6,6 +6,7 @@ import {
   Calendar,
   CreditCard,
   FileDigit,
+  RefreshCw,
   Wrench,
 } from "lucide-react";
 import { LogPanelHeader } from "./LogPanelHeader";
@@ -19,8 +20,8 @@ const TAB_CONFIGS: EntityTabConfig[] = [
   { type: "license", label: "Lisans", icon: "Key", enabled: true },
   { type: "invoice", label: "Fatura", icon: "Receipt", enabled: true },
   { type: "payment-plan", label: "Ödeme Planı", icon: "Calendar", enabled: true },
+  { type: "e-transform", label: "E-Dönüşüm", icon: "RefreshCw", enabled: true },
   { type: "collection", label: "Tahsilat", icon: "CreditCard", enabled: false },
-  { type: "e-transform", label: "E-Dönüşüm", icon: "FileDigit", enabled: false },
   { type: "technical", label: "Teknik", icon: "Wrench", enabled: false },
 ];
 
@@ -33,6 +34,7 @@ function getTabIcon(iconName: string, className: string) {
     Calendar: <Calendar className={className} />,
     CreditCard: <CreditCard className={className} />,
     FileDigit: <FileDigit className={className} />,
+    RefreshCw: <RefreshCw className={className} />,
     Wrench: <Wrench className={className} />,
   };
   return icons[iconName] || null;
@@ -162,11 +164,9 @@ export function EntityLogPanel() {
           placeholderMessage={
             activeTab === "collection"
               ? "Tahsilat logları yakında eklenecek"
-              : activeTab === "e-transform"
-                ? "E-Dönüşüm logları yakında eklenecek"
-                : activeTab === "technical"
-                  ? "Teknik destek logları yakında eklenecek"
-                  : "Bu özellik yakında eklenecek"
+              : activeTab === "technical"
+                ? "Teknik destek logları yakında eklenecek"
+                : "Bu özellik yakında eklenecek"
           }
           highlightLogId={highlightLogId}
           onHighlightSeen={clearHighlight}

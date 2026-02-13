@@ -99,7 +99,7 @@ export type EntityTabType =
   | "invoice"
   | "payment-plan"
   | "collection" // Tahsilat - sonra yapılacak
-  | "e-transform" // E-Dönüşüm - sonra yapılacak
+  | "e-transform" // E-Dönüşüm
   | "technical"; // Teknik - sonra yapılacak
 
 /** Tab konfigürasyonu */
@@ -123,6 +123,7 @@ export interface EntityLogPanelContext {
   paymentPlanId?: string;
   // Sonra eklenecek ID'ler (placeholder tab'lar için)
   collectionId?: string;
+  eTransformId?: string;
   eTransformId?: string;
   technicalId?: string;
 }
