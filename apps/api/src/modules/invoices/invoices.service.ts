@@ -28,6 +28,7 @@ export class InvoicesService {
       invoiceType,
       isPaid,
       customerId,
+      erpId,
       contractId,
       internalFirm,
       startDate,
@@ -56,6 +57,11 @@ export class InvoicesService {
     // Customer filter
     if (customerId) {
       filter.customerId = customerId;
+    }
+
+    // ERP ID filter (CariKodu)
+    if (erpId) {
+      filter.erpId = erpId;
     }
 
     // Contract filter

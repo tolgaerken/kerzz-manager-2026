@@ -24,12 +24,13 @@ export const invoicesKeys = {
 };
 
 // Faturaları getir
-export function useInvoices(params: InvoiceQueryParams = {}) {
+export function useInvoices(params: InvoiceQueryParams = {}, enabled = true) {
   return useQuery<InvoicesResponse, Error>({
     queryKey: invoicesKeys.list(params),
     queryFn: () => fetchInvoices(params),
     staleTime: 1000 * 60 * 5, // 5 dakika
-    gcTime: 1000 * 60 * 30 // 30 dakika
+    gcTime: 1000 * 60 * 30, // 30 dakika
+    enabled
   });
 }
 

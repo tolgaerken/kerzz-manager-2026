@@ -33,6 +33,10 @@ export class InvoiceQueryDto {
 
   @IsOptional()
   @IsString()
+  erpId?: string;
+
+  @IsOptional()
+  @IsString()
   contractId?: string;
 
   @IsOptional()

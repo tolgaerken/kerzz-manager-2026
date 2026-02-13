@@ -20,6 +20,7 @@ function buildQueryString(params: InvoiceQueryParams): string {
   if (params.invoiceType) searchParams.set("invoiceType", params.invoiceType);
   if (params.isPaid !== undefined) searchParams.set("isPaid", params.isPaid.toString());
   if (params.customerId) searchParams.set("customerId", params.customerId);
+  if (params.erpId) searchParams.set("erpId", params.erpId);
   if (params.contractId) searchParams.set("contractId", params.contractId);
   if (params.internalFirm) searchParams.set("internalFirm", params.internalFirm);
   if (params.startDate) searchParams.set("startDate", params.startDate);

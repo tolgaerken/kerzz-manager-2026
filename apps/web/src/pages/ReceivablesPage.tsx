@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo } from "react";
-import { Wallet, Receipt, MessageSquare } from "lucide-react";
+import { Wallet, Receipt, MessageSquare, FileText } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
-import { ReceivablesGrid, ReceivablesSummary } from "../features/receivables";
+import { ReceivablesGrid, ReceivablesSummary, InvoicesModal, useInvoicesModalStore } from "../features/receivables";
 import { useErpBalances, type ErpBalance } from "../features/erp-balances";
 import { useUnpaidInvoiceSummaryByErp } from "../features/invoices";
 import {
@@ -47,6 +47,9 @@ export function ReceivablesPage() {
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
+
+  // Invoices modal store
+  const { openModal: openInvoicesModal } = useInvoicesModalStore();
 
   // Customer lookup (erpId -> customerId çözümlemesi için)
   const { customers } = useCustomerLookup();
@@ -103,6 +106,12 @@ export function ReceivablesPage() {
       title: `Cari: ${selectedItem.CariUnvan || selectedItem.CariKodu}`,
     });
   }, [selectedItem, erpIdToCustomerMap, openEntityPanel]);
+
+  // Fatura modalını aç (toolbar butonu)
+  const handleOpenInvoices = useCallback(() => {
+    if (!selectedItem) return;
+    openInvoicesModal(selectedItem.CariKodu, selectedItem.CariUnvan || selectedItem.CariKodu);
+  }, [selectedItem, openInvoicesModal]);
 
   // Seçili kaydın müşteri eşleşmesi var mı?
   const hasCustomerId = useMemo(() => {
@@ -161,6 +170,17 @@ export function ReceivablesPage() {
       title: "Seçili carinin loglarını görüntüle",
     });
 
+    // Faturalar
+    buttons.push({
+      id: "open-invoices",
+      label: "Fatura",
+      icon: <FileText className="w-3.5 h-3.5" />,
+      onClick: handleOpenInvoices,
+      disabled: !selectedItem || selectedIds.length > 1,
+      variant: "default",
+      title: "Seçili carinin faturalarını görüntüle",
+    });
+
     // Cari Hareketleri
     buttons.push({
       id: "account-transactions",
@@ -172,7 +192,7 @@ export function ReceivablesPage() {
     });
 
     return buttons;
-  }, [includeGroupCompanies, toggleGroupCompanies, selectedIds.length, selectedTotal, selectedItem, handleOpenAccountTransactions, handleOpenLogs, hasCustomerId]);
+  }, [includeGroupCompanies, toggleGroupCompanies, selectedIds.length, selectedTotal, selectedItem, handleOpenAccountTransactions, handleOpenLogs, handleOpenInvoices, hasCustomerId]);
 
   // CollapsibleSection hook
   const collapsible = CollapsibleSection({
@@ -227,6 +247,9 @@ export function ReceivablesPage() {
 
       {/* Account Transactions Modal */}
       <AccountTransactionsModal />
+
+      {/* Invoices Modal */}
+      <InvoicesModal />
     </div>
   );
 }

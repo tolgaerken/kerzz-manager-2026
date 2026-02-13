@@ -74,6 +74,7 @@ export interface InvoiceQueryParams {
   invoiceType?: InvoiceType | "";
   isPaid?: boolean;
   customerId?: string;
+  erpId?: string;
   contractId?: string;
   internalFirm?: string;
   startDate?: string;
