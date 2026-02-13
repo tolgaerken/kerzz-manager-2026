@@ -124,7 +124,7 @@ export function AccountTransactionsModal() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col p-4 md:p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col p-4 md:p-6">
           {/* Filters - Mobilde dikey, masaüstünde yatay */}
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-3 md:mb-4 flex-shrink-0">
             <YearSelector year={year} onYearChange={handleYearChange} />
@@ -146,7 +146,7 @@ export function AccountTransactionsModal() {
 
           {/* Transactions Table */}
           {erpId ? (
-            <div className="mt-3 md:mt-4">
+            <div className="mt-3 md:mt-4 flex-1 min-h-0">
               <TransactionsTable
                 transactions={transactions}
                 loading={transactionsLoading}
@@ -156,7 +156,6 @@ export function AccountTransactionsModal() {
                     : null
                 }
                 onRowClick={handleRowClick}
-                height="calc(100vh - 280px) md:calc(90vh - 320px)"
               />
             </div>
           ) : (

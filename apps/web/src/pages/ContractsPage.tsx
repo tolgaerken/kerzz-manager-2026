@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt, X } from "lucide-react";
-import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
@@ -15,7 +14,6 @@ import {
   CheckContractResultModal,
   BatchProgressModal,
   FloatingProgressBar,
-  ContractSearchInput,
   type ContractFlow,
   type ContractQueryParams,
   type Contract,
@@ -27,13 +25,9 @@ import { useCustomerLookup } from "../features/lookup";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function ContractsPage() {
-  // Mobile detection
-  const isMobile = useIsMobile();
-
   // Filter states
   const [flow, setFlow] = useState<ContractFlow>("active");
   const [yearly, setYearly] = useState<boolean | undefined>(false);
-  const [mobileSearch, setMobileSearch] = useState("");
   const [sortField, setSortField] = useState("no");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -82,26 +76,11 @@ export function ContractsPage() {
       ? allData
       : allData.filter((c) => c.yearly === yearly);
 
-    const normalizedSearch = mobileSearch.trim().toLocaleLowerCase("tr-TR");
-    const searchFiltered = isMobile && normalizedSearch.length > 0
-      ? periodFiltered.filter((contract) => {
-        const contractNo = String(contract.no).toLocaleLowerCase("tr-TR");
-        const company = contract.company.toLocaleLowerCase("tr-TR");
-        const brand = contract.brand.toLocaleLowerCase("tr-TR");
-
-        return (
-          contractNo.includes(normalizedSearch) ||
-          company.includes(normalizedSearch) ||
-          brand.includes(normalizedSearch)
-        );
-      })
-      : periodFiltered;
-
     return {
-      filteredData: searchFiltered,
+      filteredData: periodFiltered,
       periodCounts: { yearly: yearlyCount, monthly: monthlyCount }
     };
-  }, [rawData?.data, yearly, isMobile, mobileSearch]);
+  }, [rawData?.data, yearly]);
 
   // data objesini oluştur (eski yapıyla uyumlu)
   const data = useMemo(() => {
@@ -261,19 +240,14 @@ export function ContractsPage() {
       </div>
     ),
     children: (
-      <>
-        <ContractsFilters
-          activeFlow={flow}
-          yearlyFilter={yearly}
-          counts={data?.counts}
-          periodCounts={periodCounts}
-          onFlowChange={setFlow}
-          onYearlyChange={setYearly}
-        />
-        {isMobile && (
-          <ContractSearchInput value={mobileSearch} onChange={setMobileSearch} />
-        )}
-      </>
+      <ContractsFilters
+        activeFlow={flow}
+        yearlyFilter={yearly}
+        counts={data?.counts}
+        periodCounts={periodCounts}
+        onFlowChange={setFlow}
+        onYearlyChange={setYearly}
+      />
     ),
   });
 

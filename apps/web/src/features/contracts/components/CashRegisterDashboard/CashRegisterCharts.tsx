@@ -96,7 +96,7 @@ function MiniPieChart({
   return (
     <ChartCard title={title}>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <PieChart>
             <Pie
               data={data}
@@ -189,7 +189,7 @@ export function CashRegisterCharts({ stats }: CashRegisterChartsProps) {
           </div>
         ) : (
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart
                 data={modelData}
                 layout="vertical"
@@ -231,7 +231,7 @@ export function CashRegisterCharts({ stats }: CashRegisterChartsProps) {
       {/* Aylık Trend */}
       <ChartCard title="Aylık Trend (Son 12 Ay)">
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart
               data={trendData}
               margin={{ top: 0, right: 8, bottom: 0, left: -16 }}

@@ -43,8 +43,8 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
     new Set(['selection', 'filters', 'footer', 'actions'])
   );
 
-  // Columns that have filter config
-  const filterableColumns = columns.filter((c) => c.filter != null);
+  // All columns with a header (show all in settings, not just those with filter config)
+  const filterableColumns = columns.filter((c) => c.header);
 
   // Columns that are numeric (can have footer aggregation)
   const numericColumns = columns.filter((c) => {

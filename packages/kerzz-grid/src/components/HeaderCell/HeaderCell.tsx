@@ -103,7 +103,31 @@ function HeaderCellInner<TData>({
     return { top: rect.bottom + 2, left: rect.left };
   }, [position]);
 
-  const hasFilter = !!column.filter && filterEnabled;
+  // If column has no explicit filter config but filterEnabled is true via settings,
+  // infer the best filter type from the actual data values.
+  const inferredFilterConfig = useMemo(() => {
+    if (column.filter || !filterEnabled) return column.filter;
+    // Sample first non-null value to determine type
+    const key = column.accessorKey ?? column.id;
+    for (const row of data) {
+      const val = column.accessorFn
+        ? column.accessorFn(row)
+        : (row as Record<string, unknown>)[key];
+      if (val == null) continue;
+      if (typeof val === 'number') return { type: 'numeric' as const };
+      if (typeof val === 'boolean') return { type: 'dropdown' as const, showCounts: true };
+      if (val instanceof Date) return { type: 'dateTree' as const };
+      // Check if string looks like a date (ISO format)
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+        return { type: 'dateTree' as const };
+      }
+      return { type: 'input' as const };
+    }
+    return { type: 'input' as const };
+  }, [column, filterEnabled, data]);
+
+  const effectiveFilterConfig = column.filter ?? inferredFilterConfig;
+  const hasFilter = !!effectiveFilterConfig && filterEnabled;
   const isFilterActive = !!activeFilter;
 
   const classNames = [
@@ -166,7 +190,7 @@ function HeaderCellInner<TData>({
       )}
 
       {/* Filter panel - rendered via Portal */}
-      {filterOpen && column.filter?.type === 'dropdown' && (
+      {filterOpen && effectiveFilterConfig?.type === 'dropdown' && (
         <Portal>
           <div
             ref={popoverRef}
@@ -184,7 +208,7 @@ function HeaderCellInner<TData>({
             <FilterDropdown
               column={column}
               data={data}
-              filterConfig={column.filter as DropdownFilterConfig}
+              filterConfig={effectiveFilterConfig as DropdownFilterConfig}
               activeFilter={activeFilter?.type === 'dropdown' ? activeFilter as ActiveDropdownFilter : undefined}
               onApply={handleFilterApply}
               onClear={handleFilterClear}
@@ -194,7 +218,7 @@ function HeaderCellInner<TData>({
         </Portal>
       )}
 
-      {filterOpen && column.filter?.type === 'input' && (
+      {filterOpen && effectiveFilterConfig?.type === 'input' && (
         <Portal>
           <div
             ref={popoverRef}
@@ -210,7 +234,7 @@ function HeaderCellInner<TData>({
             }}
           >
             <FilterInput
-              filterConfig={column.filter as InputFilterConfig}
+              filterConfig={effectiveFilterConfig as InputFilterConfig}
               activeFilter={activeFilter?.type === 'input' ? activeFilter as ActiveInputFilter : undefined}
               onApply={handleFilterApply}
               onClear={handleFilterClear}
@@ -220,7 +244,7 @@ function HeaderCellInner<TData>({
         </Portal>
       )}
 
-      {filterOpen && column.filter?.type === 'dateTree' && (
+      {filterOpen && effectiveFilterConfig?.type === 'dateTree' && (
         <Portal>
           <div
             ref={popoverRef}
@@ -238,7 +262,7 @@ function HeaderCellInner<TData>({
             <FilterDateTree
               column={column}
               data={data}
-              filterConfig={column.filter as DateTreeFilterConfig}
+              filterConfig={effectiveFilterConfig as DateTreeFilterConfig}
               activeFilter={activeFilter?.type === 'dateTree' ? activeFilter as ActiveDateTreeFilter : undefined}
               onApply={handleFilterApply}
               onClear={handleFilterClear}
@@ -248,7 +272,7 @@ function HeaderCellInner<TData>({
         </Portal>
       )}
 
-      {filterOpen && column.filter?.type === 'numeric' && (
+      {filterOpen && effectiveFilterConfig?.type === 'numeric' && (
         <Portal>
           <div
             ref={popoverRef}
@@ -264,7 +288,7 @@ function HeaderCellInner<TData>({
             }}
           >
             <FilterNumeric
-              filterConfig={column.filter as NumericFilterConfig}
+              filterConfig={effectiveFilterConfig as NumericFilterConfig}
               activeFilter={activeFilter?.type === 'numeric' ? activeFilter as ActiveNumericFilter : undefined}
               onApply={handleFilterApply}
               onClear={handleFilterClear}

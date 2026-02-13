@@ -73,7 +73,7 @@ function MiniPieChart({ data, title }: { data: { name: string; value: number }[]
   return (
     <ChartCard title={title}>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <PieChart>
             <Pie
               data={data}
@@ -141,7 +141,7 @@ export function SupportsCharts({ stats }: SupportsChartsProps) {
 
       <ChartCard title="Aylik Trend (Son 12 Ay)">
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={trendData} margin={{ top: 0, right: 8, bottom: 0, left: -16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
               <XAxis

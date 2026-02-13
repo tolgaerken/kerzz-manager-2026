@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
 import { Plus, RefreshCw, MessageSquare, Receipt, Key } from "lucide-react";
-import { useIsMobile } from "../hooks/useIsMobile";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
@@ -8,7 +7,6 @@ import {
   LicensesFilters,
   LicenseFormModal,
   DeleteConfirmModal,
-  LicenseSearchInput,
   useLicenses,
   useCreateLicense,
   useUpdateLicense,
@@ -28,9 +26,6 @@ import { useCustomerLookup } from "../features/lookup";
 import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function LicensesPage() {
-  // Mobile detection
-  const isMobile = useIsMobile();
-
   // Query state - tüm veriyi getirmek için limit yüksek tutuldu (virtual scroll kullanılacak)
   const [queryParams, setQueryParams] = useState<LicenseQueryParams>({
     limit: 100000,
@@ -42,9 +37,6 @@ export function LicensesPage() {
     sortOrder: "desc"
   });
 
-  // Mobile search state (frontend filtering)
-  const [mobileSearch, setMobileSearch] = useState("");
-
   // Collapsible section state
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
@@ -55,39 +47,10 @@ export function LicensesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Queries & Mutations
-  const { data: rawData, isLoading, isFetching, refetch } = useLicenses(queryParams);
+  const { data, isLoading, isFetching, refetch } = useLicenses(queryParams);
   const createMutation = useCreateLicense();
   const updateMutation = useUpdateLicense();
   const deleteMutation = useDeleteLicense();
-
-  // Frontend'de mobil arama filtreleme
-  const data = useMemo(() => {
-    if (!rawData?.data) return rawData;
-
-    const normalizedSearch = mobileSearch.trim().toLocaleLowerCase("tr-TR");
-    if (!isMobile || normalizedSearch.length === 0) {
-      return rawData;
-    }
-
-    const filteredData = rawData.data.filter((license) => {
-      const licenseId = String(license.licenseId).toLocaleLowerCase("tr-TR");
-      const brandName = (license.brandName || "").toLocaleLowerCase("tr-TR");
-      const customerName = (license.customerName || "").toLocaleLowerCase("tr-TR");
-      const phone = (license.phone || "").toLocaleLowerCase("tr-TR");
-
-      return (
-        licenseId.includes(normalizedSearch) ||
-        brandName.includes(normalizedSearch) ||
-        customerName.includes(normalizedSearch) ||
-        phone.includes(normalizedSearch)
-      );
-    });
-
-    return {
-      ...rawData,
-      data: filteredData
-    };
-  }, [rawData, isMobile, mobileSearch]);
 
   // Log panel store
   const { openEntityPanel } = useLogPanelStore();
@@ -306,28 +269,23 @@ export function LicensesPage() {
       </div>
     ),
     children: (
-      <>
-        <LicensesFilters
-          search={queryParams.search || ""}
-          type={(queryParams.type as LicenseType) || ""}
-          companyType={(queryParams.companyType as CompanyType) || ""}
-          category={(queryParams.category as LicenseCategory) || ""}
-          activeFilter={queryParams.active}
-          blockFilter={queryParams.block}
-          counts={rawData?.counts}
-          onSearchChange={handleSearchChange}
-          onTypeChange={handleTypeChange}
-          onCompanyTypeChange={handleCompanyTypeChange}
-          onCategoryChange={handleCategoryChange}
-          onActiveFilterChange={handleActiveFilterChange}
-          onBlockFilterChange={handleBlockFilterChange}
-          onClearFilters={handleClearFilters}
-          hideMobileSearch={true}
-        />
-        {isMobile && (
-          <LicenseSearchInput value={mobileSearch} onChange={setMobileSearch} />
-        )}
-      </>
+      <LicensesFilters
+        search={queryParams.search || ""}
+        type={(queryParams.type as LicenseType) || ""}
+        companyType={(queryParams.companyType as CompanyType) || ""}
+        category={(queryParams.category as LicenseCategory) || ""}
+        activeFilter={queryParams.active}
+        blockFilter={queryParams.block}
+        counts={data?.counts}
+        onSearchChange={handleSearchChange}
+        onTypeChange={handleTypeChange}
+        onCompanyTypeChange={handleCompanyTypeChange}
+        onCategoryChange={handleCategoryChange}
+        onActiveFilterChange={handleActiveFilterChange}
+        onBlockFilterChange={handleBlockFilterChange}
+        onClearFilters={handleClearFilters}
+        hideMobileSearch={true}
+      />
     ),
   });
 

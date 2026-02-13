@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { Grid, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
-import { useIsMobile } from "../../../../hooks/useIsMobile";
-import { LicenseMobileList } from "./LicenseMobileList";
+import { Grid, type ToolbarButtonConfig, type SortingState, type MobileFilterColumnConfig, type MobileSortColumnConfig } from "@kerzz/grid";
+import { LicenseCard } from "./LicenseCard";
 import { createLicenseColumnDefs } from "./columnDefs";
 import type { License } from "../../types";
 import { useCustomerLookup } from "../../../lookup";
@@ -18,6 +17,28 @@ interface LicensesGridProps {
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
+// Mobil filtre konfigürasyonu
+const mobileFilterColumns: MobileFilterColumnConfig[] = [
+  { id: "licenseId", header: "Lisans No", type: "number", accessorKey: "licenseId" },
+  { id: "brandName", header: "Tabela Adı", type: "text", accessorKey: "brandName" },
+  { id: "customerName", header: "Müşteri", type: "text", accessorKey: "customerName" },
+  { id: "type", header: "Tip", type: "select", accessorKey: "type" },
+  { id: "companyType", header: "Şirket Tipi", type: "select", accessorKey: "companyType" },
+  { id: "active", header: "Aktif", type: "boolean", accessorKey: "active" },
+  { id: "block", header: "Bloke", type: "boolean", accessorKey: "block" },
+  { id: "haveContract", header: "Kontrat", type: "boolean", accessorKey: "haveContract" },
+  { id: "category", header: "Kategori", type: "select", accessorKey: "category" },
+];
+
+// Mobil sıralama konfigürasyonu
+const mobileSortColumns: MobileSortColumnConfig[] = [
+  { id: "licenseId", header: "Lisans No", accessorKey: "licenseId" },
+  { id: "brandName", header: "Tabela Adı", accessorKey: "brandName" },
+  { id: "customerName", header: "Müşteri", accessorKey: "customerName" },
+  { id: "type", header: "Tip", accessorKey: "type" },
+  { id: "lastOnline", header: "Son Online", accessorKey: "lastOnline" },
+];
+
 export function LicensesGrid({
   data,
   loading,
@@ -29,7 +50,6 @@ export function LicensesGrid({
   toolbarButtons,
   onScrollDirectionChange
 }: LicensesGridProps) {
-  const isMobile = useIsMobile();
   const { customerMap } = useCustomerLookup();
 
   // Column definitions'ı customerMap ile oluştur
@@ -60,24 +80,6 @@ export function LicensesGrid({
     [onRowSelect]
   );
 
-  // Mobile view - single tap opens modal, no multiselect
-  if (isMobile) {
-    return (
-      <div className="flex flex-1 flex-col min-h-0">
-        <LicenseMobileList
-          data={data}
-          loading={loading}
-          onCardClick={(license) => {
-            onRowSelect?.(license);
-            onRowDoubleClick?.(license);
-          }}
-          onScrollDirectionChange={onScrollDirectionChange}
-        />
-      </div>
-    );
-  }
-
-  // Desktop view
   return (
     <div className="h-full w-full flex-1">
       <Grid<License>
@@ -102,6 +104,22 @@ export function LicensesGrid({
           showExcelExport: true,
           showPdfExport: false,
           customButtons: toolbarButtons
+        }}
+        mobileConfig={{
+          cardRenderer: (props) => (
+            <LicenseCard
+              license={props.item}
+              onClick={() => {
+                onRowSelect?.(props.item);
+                props.onDoubleTap();
+              }}
+              selected={props.isSelected}
+            />
+          ),
+          filterColumns: mobileFilterColumns,
+          sortColumns: mobileSortColumns,
+          estimatedCardHeight: 140,
+          onScrollDirectionChange,
         }}
       />
     </div>

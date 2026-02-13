@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig, type SortingState } from "@kerzz/grid";
-import { useIsMobile } from "../../../../hooks/useIsMobile";
-import { ContractMobileList } from "./ContractMobileList";
+import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig, type SortingState, type MobileFilterColumnConfig, type MobileSortColumnConfig } from "@kerzz/grid";
+import { ContractCard } from "./ContractCard";
 import { LogBadge } from "../../../../components/ui";
 import type { Contract } from "../../types";
 
@@ -53,6 +52,35 @@ function formatFlow(value: unknown): string {
   return flowMap[value as string] || (value as string) || "-";
 }
 
+// Mobil filtre konfigürasyonu
+const mobileFilterColumns: MobileFilterColumnConfig[] = [
+  { id: "no", header: "No", type: "number", accessorKey: "no" },
+  { id: "brand", header: "Marka", type: "text", accessorKey: "brand" },
+  { id: "company", header: "Firma", type: "text", accessorKey: "company" },
+  { id: "description", header: "Açıklama", type: "text", accessorKey: "description" },
+  { id: "contractFlow", header: "Durum", type: "select", accessorKey: "contractFlow" },
+  { id: "yearly", header: "Periyot", type: "boolean", accessorKey: "yearly" },
+  { id: "internalFirm", header: "İç Firma", type: "select", accessorKey: "internalFirm" },
+  { id: "enabled", header: "Aktif", type: "boolean", accessorKey: "enabled" },
+  { id: "total", header: "Aylık Tutar", type: "number", accessorKey: "total" },
+  { id: "yearlyTotal", header: "Yıllık Tutar", type: "number", accessorKey: "yearlyTotal" },
+  { id: "saasTotal", header: "SaaS Tutar", type: "number", accessorKey: "saasTotal" },
+];
+
+// Mobil sıralama konfigürasyonu
+const mobileSortColumns: MobileSortColumnConfig[] = [
+  { id: "no", header: "No", accessorKey: "no" },
+  { id: "brand", header: "Marka", accessorKey: "brand" },
+  { id: "company", header: "Firma", accessorKey: "company" },
+  { id: "contractFlow", header: "Durum", accessorKey: "contractFlow" },
+  { id: "yearly", header: "Periyot", accessorKey: "yearly" },
+  { id: "total", header: "Aylık Tutar", accessorKey: "total" },
+  { id: "yearlyTotal", header: "Yıllık Tutar", accessorKey: "yearlyTotal" },
+  { id: "saasTotal", header: "SaaS Tutar", accessorKey: "saasTotal" },
+  { id: "startDate", header: "Başlangıç", accessorKey: "startDate" },
+  { id: "endDate", header: "Bitiş", accessorKey: "endDate" },
+];
+
 export function ContractsGrid({
   data,
   loading,
@@ -67,7 +95,6 @@ export function ContractsGrid({
   lastLogDatesByContractId,
   onOpenLogs
 }: ContractsGridProps) {
-  const isMobile = useIsMobile();
   // Column definitions for kerzz-grid
   const columns: GridColumnDef<Contract>[] = useMemo(
     () => {
@@ -302,24 +329,6 @@ export function ContractsGrid({
     [toolbarButtons]
   );
 
-  // Mobile view - single tap opens modal, no multiselect
-  if (isMobile) {
-    return (
-      <div className="flex flex-1 flex-col min-h-0">
-        <ContractMobileList
-          data={data}
-          loading={loading}
-          onCardClick={(contract) => {
-            onRowSelect?.(contract);
-            onRowDoubleClick?.(contract);
-          }}
-          onScrollDirectionChange={onScrollDirectionChange}
-        />
-      </div>
-    );
-  }
-
-  // Desktop view
   return (
     <div className="flex-1 min-h-0">
       <Grid<Contract>
@@ -337,6 +346,25 @@ export function ContractsGrid({
         selectedIds={selectedIds}
         onSelectionChange={onSelectionChange}
         toolbar={toolbarConfig}
+        mobileConfig={{
+          cardRenderer: (props) => (
+            <ContractCard
+              contract={props.item}
+              onClick={() => {
+                onRowSelect?.(props.item);
+                props.onDoubleTap();
+              }}
+              selected={props.isSelected}
+              onSelect={() => props.onSelect()}
+              lastLogAt={lastLogDatesByContractId?.[props.item._id]}
+              onOpenLogs={onOpenLogs}
+            />
+          ),
+          filterColumns: mobileFilterColumns,
+          sortColumns: mobileSortColumns,
+          estimatedCardHeight: 160,
+          onScrollDirectionChange,
+        }}
       />
     </div>
   );

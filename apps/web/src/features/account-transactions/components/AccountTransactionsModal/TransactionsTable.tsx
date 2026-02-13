@@ -239,7 +239,7 @@ export function TransactionsTable({
             Kayıt bulunamadı
           </div>
         ) : (
-          <div className="space-y-3 overflow-y-auto" style={{ maxHeight: height }}>
+          <div className="space-y-3 pb-4">
             {transactions.map((transaction) => {
               const transactionId = getRowId(transaction);
               return (

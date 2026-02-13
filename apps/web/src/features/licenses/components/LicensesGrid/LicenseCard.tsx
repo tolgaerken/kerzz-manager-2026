@@ -13,7 +13,8 @@ import type { License, LicenseType, CompanyType } from "../../types";
 
 interface LicenseCardProps {
   license: License;
-  onClick: (license: License) => void;
+  onClick: () => void;
+  selected?: boolean;
 }
 
 // Date formatter - relative time for lastOnline
@@ -100,12 +101,9 @@ function StatusBadge({ active, block }: { active: boolean; block: boolean }) {
 
 export const LicenseCard = memo(function LicenseCard({
   license,
-  onClick
+  onClick,
+  selected = false
 }: LicenseCardProps) {
-  const handleClick = () => {
-    onClick(license);
-  };
-
   const companyTypeLabel = COMPANY_TYPE_CONFIG[license.companyType]?.label || license.companyType;
   const cityName = license.address?.city || "-";
 
@@ -113,14 +111,18 @@ export const LicenseCard = memo(function LicenseCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={handleClick}
+      onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          handleClick();
+          onClick();
         }
       }}
-      className="relative rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 transition-all hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)] active:scale-[0.98]"
+      className={`relative rounded-lg border p-2.5 transition-all hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)] active:scale-[0.98] ${
+        selected
+          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+          : "border-[var(--color-border)] bg-[var(--color-surface)]"
+      }`}
     >
       {/* Header: ID, Brand, Type Badge */}
       <div className="mb-1.5 flex items-start justify-between gap-2">

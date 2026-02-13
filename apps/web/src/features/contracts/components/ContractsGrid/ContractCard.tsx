@@ -1,10 +1,17 @@
 import { memo } from "react";
 import { Calendar, Building2, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { LogBadge } from "../../../../components/ui";
 import type { Contract } from "../../types";
 
 interface ContractCardProps {
   contract: Contract;
   onClick: (contract: Contract) => void;
+  selected?: boolean;
+  onSelect?: (contract: Contract) => void;
+  /** Son log tarihi (ISO date string) */
+  lastLogAt?: string;
+  /** Log panelini açmak için callback */
+  onOpenLogs?: (contract: Contract) => void;
 }
 
 // Date formatter
@@ -64,10 +71,23 @@ function FlowBadge({ flow }: { flow: string }) {
 
 export const ContractCard = memo(function ContractCard({
   contract,
-  onClick
+  onClick,
+  selected,
+  onSelect,
+  lastLogAt,
+  onOpenLogs
 }: ContractCardProps) {
   const handleClick = () => {
     onClick(contract);
+  };
+
+  const handleSelect = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect?.(contract);
+  };
+
+  const handleOpenLogs = () => {
+    onOpenLogs?.(contract);
   };
 
   // Determine which total to show based on contract type
@@ -85,20 +105,44 @@ export const ContractCard = memo(function ContractCard({
           handleClick();
         }
       }}
-      className="relative rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 transition-all hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)] active:scale-[0.98]"
+      className={`relative rounded-lg border bg-[var(--color-surface)] p-2.5 transition-all hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)] active:scale-[0.98] ${
+        selected
+          ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]"
+          : "border-[var(--color-border)]"
+      }`}
     >
       {/* Header: No, Brand, Status */}
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="mb-0.5 flex items-center gap-2">
+          <div className="mb-0.5 flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium text-[var(--color-muted-foreground)]">#{contract.no}</span>
             <FlowBadge flow={contract.contractFlow} />
+            {/* Log badge */}
+            <LogBadge
+              lastLogAt={lastLogAt}
+              onClick={handleOpenLogs}
+              size="sm"
+            />
           </div>
           <h3 className="text-sm font-semibold text-[var(--color-foreground)] truncate">
             {contract.brand || "-"}
           </h3>
         </div>
-        <ChevronRight className="h-4 w-4 text-[var(--color-muted-foreground)] flex-shrink-0 mt-1" />
+        <div className="flex items-center gap-2">
+          {onSelect && (
+            <button
+              onClick={handleSelect}
+              className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+                selected
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)]"
+              }`}
+            >
+              {selected && <CheckCircle2 className="h-3 w-3" />}
+            </button>
+          )}
+          <ChevronRight className="h-4 w-4 text-[var(--color-muted-foreground)] flex-shrink-0" />
+        </div>
       </div>
 
       {/* Company */}

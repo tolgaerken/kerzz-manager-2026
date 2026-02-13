@@ -6,4 +6,3 @@ export { DeleteConfirmModal } from "./DeleteConfirmModal";
 export { LicenseItemsGrid } from "./LicenseItemsGrid";
 export { LicenseModulesTab } from "./LicenseModulesTab";
 export { LicenseSaasTab } from "./LicenseSaasTab";
-export { LicenseSearchInput } from "./LicenseSearchInput";

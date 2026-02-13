@@ -16,6 +16,7 @@ import { InvoicesPage } from "./pages/InvoicesPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
 import { AutomatedPaymentsPage } from "./pages/AutomatedPaymentsPage";
 import { BankTransactionsPage } from "./pages/BankTransactionsPage";
+import { ReceivablesPage } from "./pages/ReceivablesPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { EDocCreditsPage } from "./pages/EDocCreditsPage";
@@ -187,6 +188,13 @@ const bankTransactionsRoute = createRoute({
   component: BankTransactionsPage,
 });
 
+// Receivables page
+const receivablesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/finance/receivables",
+  component: ReceivablesPage,
+});
+
 // Contract Invoices page
 const contractInvoicesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -337,6 +345,7 @@ const routeTree = rootRoute.addChildren([
     paymentsRoute,
     automatedPaymentsRoute,
     bankTransactionsRoute,
+    receivablesRoute,
     eDocCreditsRoute,
     eDocMembersRoute,
     eInvoicePricesRoute,

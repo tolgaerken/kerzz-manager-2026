@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Grid, type GridColumnDef, type ToolbarButtonConfig, type ToolbarConfig, type SortingState } from "@kerzz/grid";
+import { useCallback, useMemo } from "react";
+import { Grid, type GridColumnDef, type ToolbarButtonConfig, type ToolbarConfig, type SortingState, type MobileFilterColumnConfig, type MobileSortColumnConfig } from "@kerzz/grid";
 import { salesColumnDefs } from "./columnDefs";
+import { SaleCard } from "./SaleCard";
 import type { Sale } from "../../types/sale.types";
-import { useIsMobile } from "../../../../hooks/useIsMobile";
-import { SaleMobileList } from "./SaleMobileList";
 
 export interface SalesGridProps {
   data: Sale[];
@@ -15,6 +14,29 @@ export interface SalesGridProps {
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
 }
 
+// Mobil filtre konfigürasyonu
+const mobileFilterColumns: MobileFilterColumnConfig[] = [
+  { id: "no", header: "No", type: "number", accessorKey: "no" },
+  { id: "pipelineRef", header: "Referans", type: "text", accessorKey: "pipelineRef" },
+  { id: "customerName", header: "Müşteri", type: "text", accessorKey: "customerName" },
+  { id: "sellerName", header: "Satıcı", type: "text", accessorKey: "sellerName" },
+  { id: "status", header: "Durum", type: "select", accessorKey: "status" },
+  { id: "approved", header: "Onay", type: "boolean", accessorKey: "approved" },
+  { id: "internalFirm", header: "Firma", type: "select", accessorKey: "internalFirm" },
+  { id: "grandTotal", header: "Genel Toplam", type: "number", accessorKey: "grandTotal" },
+];
+
+// Mobil sıralama konfigürasyonu
+const mobileSortColumns: MobileSortColumnConfig[] = [
+  { id: "no", header: "No", accessorKey: "no" },
+  { id: "customerName", header: "Müşteri", accessorKey: "customerName" },
+  { id: "sellerName", header: "Satıcı", accessorKey: "sellerName" },
+  { id: "saleDate", header: "Satış Tarihi", accessorKey: "saleDate" },
+  { id: "grandTotal", header: "Genel Toplam", accessorKey: "grandTotal" },
+  { id: "status", header: "Durum", accessorKey: "status" },
+  { id: "createdAt", header: "Oluşturulma", accessorKey: "createdAt" },
+];
+
 export function SalesGrid({
   data,
   loading,
@@ -24,32 +46,11 @@ export function SalesGrid({
   toolbarButtons,
   onScrollDirectionChange,
 }: SalesGridProps) {
-  const isMobile = useIsMobile();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(400);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerHeight(entry.contentRect.height);
-      }
-    });
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   const handleRowClick = useCallback(
     (row: Sale) => {
-      const newId = selectedId === row._id ? null : row._id;
-      setSelectedId(newId);
-      onSelectionChanged?.(newId ? row : null);
+      onSelectionChanged?.(row);
     },
-    [selectedId, onSelectionChanged]
+    [onSelectionChanged]
   );
 
   const handleRowDoubleClick = useCallback(
@@ -76,39 +77,13 @@ export function SalesGrid({
     [toolbarButtons]
   );
 
-  const columns: GridColumnDef<Sale>[] = salesColumnDefs.map((col) => ({
-    ...col,
-    cellClassName: (_value: unknown, row: Sale) => {
-      const original =
-        typeof col.cellClassName === "function"
-          ? col.cellClassName(_value, row)
-          : col.cellClassName || "";
-      return selectedId === row._id
-        ? `${original} bg-blue-50 dark:bg-blue-900/20`.trim()
-        : original;
-    },
-  }));
-
-  // Mobil görünüm
-  if (isMobile) {
-    return (
-      <SaleMobileList
-        data={data}
-        loading={loading}
-        onRowDoubleClick={onRowDoubleClick}
-        onScrollDirectionChange={onScrollDirectionChange}
-      />
-    );
-  }
-
-  // Desktop görünüm
   return (
-    <div ref={containerRef} className="h-full w-full flex-1">
+    <div className="flex-1 min-h-0">
       <Grid<Sale>
         data={data}
-        columns={columns}
+        columns={salesColumnDefs as GridColumnDef<Sale>[]}
         locale="tr"
-        height={containerHeight}
+        height="100%"
         loading={loading}
         getRowId={(row) => row._id}
         onRowClick={handleRowClick}
@@ -117,6 +92,22 @@ export function SalesGrid({
         stripedRows
         toolbar={toolbarConfig}
         stateKey="sales"
+        mobileConfig={{
+          cardRenderer: (props) => (
+            <SaleCard
+              sale={props.item}
+              onClick={() => {
+                onSelectionChanged?.(props.item);
+                props.onDoubleTap();
+              }}
+              selected={props.isSelected}
+            />
+          ),
+          filterColumns: mobileFilterColumns,
+          sortColumns: mobileSortColumns,
+          estimatedCardHeight: 160,
+          onScrollDirectionChange,
+        }}
       />
     </div>
   );
