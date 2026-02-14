@@ -61,13 +61,17 @@ export function ContractsPage() {
   // Fetch contracts
   const { data: rawData, isLoading, isError, error, refetch, isFetching } = useContracts(queryParams);
 
-  // Frontend'de yearly filtreleme ve sayıları hesaplama
+  // Frontend'de flow/yearly filtreleme ve sayıları hesaplama
   const { filteredData, periodCounts } = useMemo(() => {
     if (!rawData?.data) {
       return { filteredData: [], periodCounts: { yearly: 0, monthly: 0 } };
     }
 
-    const allData = rawData.data;
+    // Aktif kontratlarda ücretsiz olanları gösterme
+    const allData =
+      flow === "active"
+        ? rawData.data.filter((contract) => !contract.isFree)
+        : rawData.data;
     const yearlyCount = allData.filter((c) => c.yearly).length;
     const monthlyCount = allData.filter((c) => !c.yearly).length;
 
@@ -80,7 +84,7 @@ export function ContractsPage() {
       filteredData: periodFiltered,
       periodCounts: { yearly: yearlyCount, monthly: monthlyCount }
     };
-  }, [rawData?.data, yearly]);
+  }, [rawData?.data, yearly, flow]);
 
   // data objesini oluştur (eski yapıyla uyumlu)
   const data = useMemo(() => {

@@ -74,6 +74,7 @@ export const eDocCreditColumnDefs: GridColumnDef<EDocCreditItem>[] = [
     sortable: true,
     cell: (value, row) =>
       formatCurrency(value as number, (row as EDocCreditItem).currency),
+    cellClassName: "font-mono",
   },
   {
     id: "count",
@@ -81,6 +82,7 @@ export const eDocCreditColumnDefs: GridColumnDef<EDocCreditItem>[] = [
     accessorKey: "count",
     width: 80,
     sortable: true,
+    cellClassName: "font-mono",
     footer: { aggregate: "sum", label: "Toplam:" },
   },
   {
@@ -91,7 +93,7 @@ export const eDocCreditColumnDefs: GridColumnDef<EDocCreditItem>[] = [
     sortable: true,
     cell: (value, row) =>
       formatCurrency(value as number, (row as EDocCreditItem).currency),
-    cellClassName: "font-semibold",
+    cellClassName: "font-mono font-semibold",
     footer: {
       aggregate: "sum",
       format: (v) => formatCurrency(v),
@@ -117,8 +119,8 @@ export const eDocCreditColumnDefs: GridColumnDef<EDocCreditItem>[] = [
     cellClassName: (_value: unknown) => {
       const val = _value as string;
       return val
-        ? "text-green-600 dark:text-green-400 font-medium"
-        : "text-[var(--color-muted-foreground)]";
+        ? "font-mono font-medium text-[var(--color-success)]"
+        : "font-mono text-[var(--color-muted-foreground)]";
     },
   },
   {
@@ -141,7 +143,9 @@ export const eDocCreditColumnDefs: GridColumnDef<EDocCreditItem>[] = [
         : "-",
     cellClassName: (_value: unknown) => {
       const val = _value as number;
-      return val > 0 ? "font-semibold text-green-600 dark:text-green-400" : "";
+      return val > 0
+        ? "font-mono font-semibold text-[var(--color-success)]"
+        : "font-mono";
     },
   },
 ];

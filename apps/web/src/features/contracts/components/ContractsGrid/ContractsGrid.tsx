@@ -106,7 +106,8 @@ export function ContractsGrid({
           width: 90,
           sortable: true,
           resizable: true,
-          align: "center"
+          align: "right",
+          cell: (value) => <span className="font-mono">{String(value ?? "-")}</span>
         },
         {
           id: "brand",
@@ -194,7 +195,7 @@ export function ContractsGrid({
           sortable: true,
           resizable: true,
           align: "right",
-          cell: (value) => formatCurrency(value),
+          cell: (value) => <span className="font-mono">{formatCurrency(value)}</span>,
           filter: { type: "input", conditions: ["greaterThan", "lessThan", "between", "equals"] },
           footer: {
             aggregate: "sum",
@@ -230,7 +231,7 @@ export function ContractsGrid({
           sortable: true,
           resizable: true,
           align: "right",
-          cell: (value) => formatCurrency(value),
+          cell: (value) => <span className="font-mono">{formatCurrency(value)}</span>,
           filter: { type: "input", conditions: ["greaterThan", "lessThan", "between", "equals"] },
           footer: {
             aggregate: "sum",

@@ -138,7 +138,6 @@ function GridToolbarInner<TData>({
     setSettingsPanelOpen((prev) => !prev);
   }, []);
 
-  const hasBuiltInButtons = showExcel || showPdf || showColumns || showSettings;
   const hasCustomButtons = customButtons.length > 0;
 
   // Row count badge: shows "selected / total" or just "total"
@@ -203,6 +202,26 @@ function GridToolbarInner<TData>({
               onClick={onCancelAll ?? (() => {})}
               variant="danger"
             />
+          </>
+        )}
+
+        {/* Custom buttons - grouped with left side actions */}
+        {hasCustomButtons && (
+          <>
+            <ToolbarSeparator />
+            <div className="kz-toolbar__custom">
+              {customButtons.map((btn: ToolbarButtonConfig) => (
+                <ToolbarButton
+                  key={btn.id}
+                  label={btn.label}
+                  icon={btn.icon}
+                  onClick={btn.onClick}
+                  disabled={btn.disabled}
+                  variant={btn.variant}
+                  title={btn.title}
+                />
+              ))}
+            </div>
           </>
         )}
       </div>
@@ -311,22 +330,6 @@ function GridToolbarInner<TData>({
         )}
       </div>
 
-      {/* Custom buttons row - separate line on mobile */}
-      {hasCustomButtons && (
-        <div className="kz-toolbar__custom">
-          {customButtons.map((btn: ToolbarButtonConfig) => (
-            <ToolbarButton
-              key={btn.id}
-              label={btn.label}
-              icon={btn.icon}
-              onClick={btn.onClick}
-              disabled={btn.disabled}
-              variant={btn.variant}
-              title={btn.title}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

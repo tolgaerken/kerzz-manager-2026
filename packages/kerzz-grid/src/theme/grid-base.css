@@ -104,6 +104,7 @@
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .kz-toolbar__right {
@@ -111,6 +112,7 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .kz-toolbar__btn {
@@ -188,7 +190,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .kz-toolbar__separator {
@@ -1731,7 +1733,7 @@
    ============================ */
 
 @media (max-width: 767px) {
-  /* Toolbar - mobile layout: 2 rows (main + custom buttons) */
+  /* Toolbar - mobile layout */
   .kz-toolbar {
     flex-wrap: wrap;
     gap: 4px;
@@ -1742,7 +1744,7 @@
     flex: 1 1 0;
     order: 1;
     gap: 4px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     min-width: 0;
   }
 
@@ -1753,20 +1755,11 @@
     flex-wrap: nowrap;
   }
 
-  /* Custom buttons row - full width second line on mobile */
+  /* Keep custom buttons with left-side actions on mobile */
   .kz-toolbar__custom {
-    flex: 1 1 100%;
-    order: 3;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    flex: 0 1 auto;
     gap: 4px;
-    flex-wrap: nowrap;
-  }
-
-  .kz-toolbar__custom::-webkit-scrollbar {
-    display: none;
+    flex-wrap: wrap;
   }
 
   /* Search input - compact on mobile */

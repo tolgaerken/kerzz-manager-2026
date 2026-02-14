@@ -1,7 +1,14 @@
+const ssoBaseUrl = import.meta.env.VITE_SSO_BASE_URL;
+const ssoApiKey = import.meta.env.VITE_SSO_API_KEY;
+
+if (!ssoBaseUrl || !ssoApiKey) {
+  throw new Error("VITE_SSO_BASE_URL ve VITE_SSO_API_KEY .env dosyasinda tanimli olmali.");
+}
+
 export const AUTH_CONSTANTS = {
-  SSO_BASE_URL: "https://sso-service.kerzz.com:4500",
-  SSO_API_KEY: "e5788b40-ec7e-0fe0-daf8-80c17445ab9d!?@f8a4!e347**11d3",
-  
+  SSO_BASE_URL: ssoBaseUrl,
+  SSO_API_KEY: ssoApiKey,
+
   ENDPOINTS: {
     LOGIN: "/api/user/login",
     RESET_PASSWORD: "/api/user/resetpwd",

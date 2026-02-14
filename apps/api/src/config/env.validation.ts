@@ -50,7 +50,7 @@ class EnvironmentVariables {
   INVOICE_SERVICE_URL: string = "https://invoice-service.kerzz.com:4260";
 
   @IsString()
-  INVOICE_SERVICE_API_KEY: string = "T0dSbU5qZ3hOamt0YTJWeWVub3RaRE14T0Mxa05HSXhMV1JrWVRCa09XRmxORGd5TXlF";
+  INVOICE_SERVICE_API_KEY: string;
 }
 
 export function validate(config: Record<string, unknown>) {

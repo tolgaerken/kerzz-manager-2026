@@ -109,7 +109,8 @@ export function createInvoiceColumnDefs(
       accessorKey: "invoiceNumber",
       width: 140,
       sortable: true,
-      filter: { type: "input" }
+      filter: { type: "input" },
+      cellClassName: "font-mono"
     },
     {
       id: "name",
@@ -177,6 +178,7 @@ export function createInvoiceColumnDefs(
       sortable: true,
       align: "right",
       cell: (value) => formatCurrency(value as number),
+      cellClassName: "font-mono",
       footer: {
         aggregate: "sum",
         label: "",
@@ -191,6 +193,7 @@ export function createInvoiceColumnDefs(
       sortable: true,
       align: "right",
       cell: (value) => formatCurrency(value as number),
+      cellClassName: "font-mono",
       footer: {
         aggregate: "sum",
         label: "",
@@ -205,7 +208,7 @@ export function createInvoiceColumnDefs(
       sortable: true,
       align: "right",
       cell: (value) => formatCurrency(value as number),
-      cellClassName: "font-semibold text-blue-600",
+      cellClassName: "font-mono font-semibold text-[var(--color-primary)]",
       footer: {
         aggregate: "sum",
         label: "",
@@ -225,10 +228,10 @@ export function createInvoiceColumnDefs(
       },
       cell: (value) => formatCurrency(value as number | null),
       cellClassName: (value) => {
-        if (value === null || value === undefined) return "text-right";
+        if (value === null || value === undefined) return "font-mono text-right";
         return (value as number) < 0
-          ? "text-[var(--color-error)] font-semibold text-right"
-          : "text-right";
+          ? "font-mono text-[var(--color-error)] font-semibold text-right"
+          : "font-mono text-right";
       }
     },
     {

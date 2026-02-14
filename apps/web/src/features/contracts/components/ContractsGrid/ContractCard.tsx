@@ -115,7 +115,7 @@ export const ContractCard = memo(function ContractCard({
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="mb-0.5 flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-[var(--color-muted-foreground)]">#{contract.no}</span>
+            <span className="text-xs font-medium font-mono text-[var(--color-muted-foreground)]">#{contract.no}</span>
             <FlowBadge flow={contract.contractFlow} />
             {/* Log badge */}
             <LogBadge
@@ -161,7 +161,7 @@ export const ContractCard = memo(function ContractCard({
       <div className="flex items-center justify-between border-t border-[var(--color-border)]/50 pt-1.5">
         <div>
           <span className="text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">{periodLabel}</span>
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">{formatCurrency(displayTotal)}</p>
+          <p className="text-sm font-semibold font-mono text-[var(--color-foreground)]">{formatCurrency(displayTotal)}</p>
         </div>
         <div className="flex items-center gap-2">
           {contract.enabled ? (
