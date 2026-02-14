@@ -11,6 +11,7 @@ import {
   FileCheck,
   TrendingUp,
   UserCog,
+  Shield,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 
@@ -100,5 +101,17 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: Bell,
     label: "Bildirimler",
     path: "/system/notifications",
+  },
+  {
+    icon: Shield,
+    label: "SSO Yönetimi",
+    subItems: [
+      { label: "Dashboard", path: "/sso-management" },
+      { label: "Uygulamalar", path: "/sso-management/apps" },
+      { label: "Roller", path: "/sso-management/roles" },
+      { label: "İzinler", path: "/sso-management/perms" },
+      { label: "Kullanıcılar", path: "/sso-management/users" },
+      { label: "API Anahtarları", path: "/sso-management/api-keys" },
+    ],
   },
 ];

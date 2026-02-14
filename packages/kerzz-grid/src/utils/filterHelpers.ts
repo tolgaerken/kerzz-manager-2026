@@ -270,14 +270,18 @@ export function buildDateTree<TData>(
 /**
  * Get unique values and their counts from a data column.
  * @param filterAccessorFn - Optional custom accessor for filter values (used for computed/lookup columns)
+ * @param filterDisplayFn - Optional function to get display value for filter dropdown items
  */
 export function getColumnUniqueValues<TData>(
   data: TData[],
   accessorKey: string,
   accessorFn?: (row: TData) => unknown,
   filterAccessorFn?: (row: TData) => unknown,
+  filterDisplayFn?: (value: unknown) => string,
 ): { value: string; displayValue: string; count: number }[] {
   const counts = new Map<string, number>();
+  // Store display values for each unique raw value
+  const displayValues = new Map<string, string>();
 
   for (let i = 0; i < data.length; i++) {
     // Use filterAccessorFn if provided, otherwise fall back to accessorFn or accessorKey
@@ -288,20 +292,30 @@ export function getColumnUniqueValues<TData>(
         : (data[i] as Record<string, unknown>)[accessorKey];
     const key = raw == null || String(raw).trim() === '' ? '' : String(raw);
     counts.set(key, (counts.get(key) ?? 0) + 1);
+
+    // Store display value if filterDisplayFn is provided and we haven't stored it yet
+    if (filterDisplayFn && key !== '' && !displayValues.has(key)) {
+      displayValues.set(key, filterDisplayFn(raw));
+    }
   }
 
   const result: { value: string; displayValue: string; count: number }[] = [];
 
-  // Sort alphabetically, blanks last
+  // Sort alphabetically by display value, blanks last
   const entries = Array.from(counts.entries()).sort((a, b) => {
     if (a[0] === '') return 1;
     if (b[0] === '') return -1;
-    return a[0].localeCompare(b[0]);
+    // Sort by display value if filterDisplayFn is provided
+    const displayA = displayValues.get(a[0]) ?? a[0];
+    const displayB = displayValues.get(b[0]) ?? b[0];
+    return displayA.localeCompare(displayB);
   });
 
   for (const [value, count] of entries) {
     if (value !== '') {
-      result.push({ value, displayValue: value, count });
+      // Use filterDisplayFn result if available, otherwise use raw value
+      const displayValue = displayValues.get(value) ?? value;
+      result.push({ value, displayValue, count });
     }
   }
 

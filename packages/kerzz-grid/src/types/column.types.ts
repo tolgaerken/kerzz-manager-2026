@@ -25,6 +25,13 @@ export interface GridColumnDef<TData = unknown> {
    * If not provided, falls back to accessorFn or accessorKey.
    */
   sortAccessorFn?: (row: TData) => unknown;
+  /**
+   * Custom function to get display value for filter dropdown items.
+   * Use this when the filter dropdown should show a different value than the raw data.
+   * (e.g., showing app name instead of app ID in dropdown filter)
+   * The function receives the raw value and should return the display string.
+   */
+  filterDisplayFn?: (value: unknown) => string;
   /** Custom cell renderer */
   cell?: (value: unknown, row: TData, context?: Record<string, unknown>) => React.ReactNode;
   /** Column width in pixels */

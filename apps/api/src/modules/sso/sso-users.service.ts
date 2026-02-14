@@ -98,6 +98,49 @@ export class SsoUsersService {
   }
 
   /**
+   * Get all users from all applications
+   */
+  async getAllUsers(): Promise<AppUserDto[]> {
+    // Tüm user-app kayıtlarını al
+    const userApps = await this.ssoUserAppModel
+      .find({ isActive: { $ne: false } })
+      .sort({ user_name: 1 })
+      .lean()
+      .exec();
+
+    if (userApps.length === 0) {
+      return [];
+    }
+
+    // Benzersiz kullanıcı ID'lerini al
+    const userIds = [...new Set(userApps.map((ua) => ua.user_id))];
+    const users = await this.ssoUserModel.find({ id: { $in: userIds } }).lean().exec();
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    // Benzersiz kullanıcıları döndür (aynı kullanıcı birden fazla uygulamada olabilir)
+    const seenUserIds = new Set<string>();
+    const result: AppUserDto[] = [];
+
+    for (const ua of userApps) {
+      if (seenUserIds.has(ua.user_id)) continue;
+      seenUserIds.add(ua.user_id);
+
+      const user = userMap.get(ua.user_id);
+      if (user) {
+        result.push({
+          id: ua.user_id,
+          name: ua.user_name || user.name,
+          email: user.email,
+          phone: user.phone,
+          isActive: user.isActive,
+          assignedDate: ua.assignedDate
+        });
+      }
+    }
+    return result;
+  }
+
+  /**
    * Search users in SSO database
    */
   async searchUsers(query: string, limit = 20): Promise<SsoUser[]> {

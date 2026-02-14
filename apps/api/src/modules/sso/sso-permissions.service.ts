@@ -4,9 +4,10 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { SSO_DB_CONNECTION } from "../../database";
-import { SsoPermission, SsoPermissionDocument } from "./schemas";
+import { SsoPermission, SsoPermissionDocument, SsoRolePermission, SsoRolePermissionDocument } from "./schemas";
 
 export interface CreatePermissionDto {
+  app_id?: string;
   group: string;
   permission: string;
   description?: string;
@@ -34,7 +35,9 @@ export class SsoPermissionsService {
   constructor(
     private readonly configService: ConfigService,
     @InjectModel(SsoPermission.name, SSO_DB_CONNECTION)
-    private readonly ssoPermissionModel: Model<SsoPermissionDocument>
+    private readonly ssoPermissionModel: Model<SsoPermissionDocument>,
+    @InjectModel(SsoRolePermission.name, SSO_DB_CONNECTION)
+    private readonly ssoRolePermissionModel: Model<SsoRolePermissionDocument>
   ) {
     this.appId = this.configService.get<string>("APP_ID") || "kerzz-manager";
   }
@@ -45,6 +48,33 @@ export class SsoPermissionsService {
   async getPermissions(): Promise<SsoPermission[]> {
     return this.ssoPermissionModel
       .find({ app_id: this.appId, isActive: true })
+      .sort({ group: 1, permission: 1 })
+      .lean()
+      .exec();
+  }
+
+  /**
+   * Get all permissions from all applications
+   */
+  async getAllPermissions(includeInactive = false): Promise<SsoPermission[]> {
+    const filter = includeInactive ? {} : { isActive: true };
+    return this.ssoPermissionModel
+      .find(filter)
+      .sort({ app_id: 1, group: 1, permission: 1 })
+      .lean()
+      .exec();
+  }
+
+  /**
+   * Get permissions by application ID
+   */
+  async getPermissionsByAppId(appId: string, includeInactive = false): Promise<SsoPermission[]> {
+    const filter: Record<string, unknown> = { app_id: appId };
+    if (!includeInactive) {
+      filter.isActive = true;
+    }
+    return this.ssoPermissionModel
+      .find(filter)
       .sort({ group: 1, permission: 1 })
       .lean()
       .exec();
@@ -74,9 +104,39 @@ export class SsoPermissionsService {
   }
 
   /**
+   * Get all permissions grouped (from all apps)
+   */
+  async getAllPermissionsGrouped(includeInactive = false): Promise<PermissionGroup[]> {
+    const permissions = await this.getAllPermissions(includeInactive);
+
+    const groupMap = new Map<string, SsoPermission[]>();
+    for (const permission of permissions) {
+      const group = permission.group;
+      if (!groupMap.has(group)) {
+        groupMap.set(group, []);
+      }
+      groupMap.get(group)!.push(permission);
+    }
+
+    return Array.from(groupMap.entries())
+      .map(([group, permissions]) => ({
+        group,
+        permissions
+      }))
+      .sort((a, b) => a.group.localeCompare(b.group));
+  }
+
+  /**
    * Get a permission by ID
    */
   async getPermissionById(permissionId: string): Promise<SsoPermission | null> {
+    return this.ssoPermissionModel.findOne({ id: permissionId }).lean().exec();
+  }
+
+  /**
+   * Get a permission by ID for current app only
+   */
+  async getPermissionByIdForApp(permissionId: string): Promise<SsoPermission | null> {
     return this.ssoPermissionModel
       .findOne({ id: permissionId, app_id: this.appId })
       .lean()
@@ -98,9 +158,12 @@ export class SsoPermissionsService {
    * Create a new permission
    */
   async createPermission(dto: CreatePermissionDto): Promise<SsoPermission> {
-    // Check if permission already exists
+    // Use provided app_id or fall back to default
+    const appId = dto.app_id || this.appId;
+
+    // Check if permission already exists for this app
     const existing = await this.ssoPermissionModel
-      .findOne({ app_id: this.appId, group: dto.group, permission: dto.permission })
+      .findOne({ app_id: appId, group: dto.group, permission: dto.permission })
       .lean()
       .exec();
 
@@ -110,7 +173,7 @@ export class SsoPermissionsService {
 
     const permission = new this.ssoPermissionModel({
       id: uuidv4(),
-      app_id: this.appId,
+      app_id: appId,
       group: dto.group,
       permission: dto.permission,
       description: dto.description,
@@ -148,17 +211,27 @@ export class SsoPermissionsService {
   }
 
   /**
-   * Delete a permission (soft delete)
+   * Delete a permission and its role-permission associations
    */
   async deletePermission(permissionId: string): Promise<void> {
-    await this.ssoPermissionModel.updateOne(
-      { id: permissionId, app_id: this.appId },
-      { $set: { isActive: false, updatedAt: new Date() } }
-    );
+    const permission = await this.ssoPermissionModel
+      .findOne({ id: permissionId, app_id: this.appId })
+      .lean()
+      .exec();
+
+    if (!permission) {
+      throw new NotFoundException("İzin bulunamadı");
+    }
+
+    // İlişkili role-permission kayıtlarını sil
+    await this.ssoRolePermissionModel.deleteMany({ permission_id: permissionId });
+
+    // İzni veritabanından sil
+    await this.ssoPermissionModel.deleteOne({ id: permissionId, app_id: this.appId });
   }
 
   /**
-   * Get all unique permission groups
+   * Get all unique permission groups for current app
    */
   async getGroups(): Promise<string[]> {
     const permissions = await this.ssoPermissionModel
@@ -167,5 +240,15 @@ export class SsoPermissionsService {
       .exec();
 
     return permissions.sort();
+  }
+
+  /**
+   * Get all unique permission groups from all apps
+   */
+  async getAllGroups(includeInactive = false): Promise<string[]> {
+    const filter = includeInactive ? {} : { isActive: true };
+    const groups = await this.ssoPermissionModel.find(filter).distinct("group").exec();
+
+    return groups.sort();
   }
 }

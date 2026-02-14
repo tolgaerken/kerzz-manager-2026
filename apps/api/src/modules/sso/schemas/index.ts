@@ -4,3 +4,6 @@ export * from "./sso-role.schema";
 export * from "./sso-permission.schema";
 export * from "./sso-role-permission.schema";
 export * from "./sso-app-licence.schema";
+export * from "./sso-application.schema";
+export * from "./sso-api-key.schema";
+export * from "./sso-license.schema";

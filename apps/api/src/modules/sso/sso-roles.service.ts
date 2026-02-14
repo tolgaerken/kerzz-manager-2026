@@ -13,6 +13,7 @@ import {
 
 export interface CreateRoleDto {
   name: string;
+  app_id?: string;
   description?: string;
   developer?: boolean;
 }
@@ -55,9 +56,35 @@ export class SsoRolesService {
   }
 
   /**
+   * Get all roles from all applications
+   */
+  async getAllRoles(includeInactive = false): Promise<SsoRole[]> {
+    const filter = includeInactive ? {} : { isActive: true };
+    return this.ssoRoleModel.find(filter).sort({ app_id: 1, name: 1 }).lean().exec();
+  }
+
+  /**
+   * Get roles by application ID
+   */
+  async getRolesByAppId(appId: string, includeInactive = false): Promise<SsoRole[]> {
+    const filter: Record<string, unknown> = { app_id: appId };
+    if (!includeInactive) {
+      filter.isActive = true;
+    }
+    return this.ssoRoleModel.find(filter).sort({ name: 1 }).lean().exec();
+  }
+
+  /**
    * Get a role by ID
    */
   async getRoleById(roleId: string): Promise<SsoRole | null> {
+    return this.ssoRoleModel.findOne({ id: roleId }).lean().exec();
+  }
+
+  /**
+   * Get a role by ID for current app only
+   */
+  async getRoleByIdForApp(roleId: string): Promise<SsoRole | null> {
     return this.ssoRoleModel.findOne({ id: roleId, app_id: this.appId }).lean().exec();
   }
 
@@ -83,9 +110,12 @@ export class SsoRolesService {
    * Create a new role
    */
   async createRole(dto: CreateRoleDto): Promise<SsoRole> {
-    // Check if role name already exists
+    // Use provided app_id or fall back to default
+    const appId = dto.app_id || this.appId;
+
+    // Check if role name already exists for this app
     const existing = await this.ssoRoleModel
-      .findOne({ app_id: this.appId, name: dto.name })
+      .findOne({ app_id: appId, name: dto.name })
       .lean()
       .exec();
 
@@ -95,7 +125,7 @@ export class SsoRolesService {
 
     const role = new this.ssoRoleModel({
       id: uuidv4(),
-      app_id: this.appId,
+      app_id: appId,
       name: dto.name,
       description: dto.description,
       developer: dto.developer || false,

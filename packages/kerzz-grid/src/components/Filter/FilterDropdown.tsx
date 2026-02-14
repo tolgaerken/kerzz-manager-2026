@@ -30,12 +30,14 @@ function FilterDropdownInner<TData>({
   const isInitialRender = useRef(true);
 
   // Compute unique values (use filterAccessorFn if provided for computed/lookup columns)
+  // Use filterDisplayFn for display values in dropdown if provided
   const uniqueValues = useMemo(
     () => getColumnUniqueValues(
       data,
       column.accessorKey ?? column.id,
       column.accessorFn as ((row: TData) => unknown) | undefined,
       column.filterAccessorFn as ((row: TData) => unknown) | undefined,
+      column.filterDisplayFn,
     ),
     [data, column],
   );

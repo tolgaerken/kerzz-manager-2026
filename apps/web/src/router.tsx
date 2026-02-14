@@ -33,6 +33,14 @@ import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
 import { UsersPage } from "./pages/UsersPage";
+import {
+  SsoManagementPage,
+  ApplicationsPage,
+  RolesPage,
+  PermissionsPage,
+  UsersPage as SsoUsersPage,
+  ApiKeysPage
+} from "./features/sso-management";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -307,6 +315,43 @@ const notificationSettingsRoute = createRoute({
   component: NotificationSettingsPage,
 });
 
+// SSO Management routes
+const ssoManagementRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/sso-management",
+  component: SsoManagementPage,
+});
+
+const ssoApplicationsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/sso-management/apps",
+  component: ApplicationsPage,
+});
+
+const ssoRolesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/sso-management/roles",
+  component: RolesPage,
+});
+
+const ssoPermissionsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/sso-management/perms",
+  component: PermissionsPage,
+});
+
+const ssoUsersRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/sso-management/users",
+  component: SsoUsersPage,
+});
+
+const ssoApiKeysRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/sso-management/api-keys",
+  component: ApiKeysPage,
+});
+
 // Index redirect
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -353,6 +398,12 @@ const routeTree = rootRoute.addChildren([
     systemLogsRoute,
     notificationSettingsRoute,
     usersRoute,
+    ssoManagementRoute,
+    ssoApplicationsRoute,
+    ssoRolesRoute,
+    ssoPermissionsRoute,
+    ssoUsersRoute,
+    ssoApiKeysRoute,
   ]),
 ]);
 
