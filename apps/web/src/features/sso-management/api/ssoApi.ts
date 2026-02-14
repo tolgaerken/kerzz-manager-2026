@@ -16,7 +16,9 @@ import type {
   TLicense,
   TApiKey,
   ApiKeyFormData,
-  LicenseSearchParams
+  LicenseSearchParams,
+  AddUserFormData,
+  AddUserResponse
 } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3888/api";
@@ -164,7 +166,10 @@ export const usersApi = {
   assign: (data: { userId: string; userName: string; roles?: string[] }) =>
     apiPost<TUserApp>(`${API_BASE_URL}/sso/users/assign`, data),
 
-  remove: (userId: string) => apiDelete<void>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}`)
+  remove: (userId: string) => apiDelete<void>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}`),
+
+  addUser: (data: AddUserFormData) =>
+    apiPost<AddUserResponse>(`${API_BASE_URL}/sso/users/add`, data)
 };
 
 // ==================== User Apps ====================

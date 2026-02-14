@@ -1,6 +1,6 @@
 import { Box, Typography, Breadcrumbs, Link as MuiLink } from "@mui/material";
 import { Link } from "@tanstack/react-router";
-import { UserList, UserForm, UserLicenseModal } from "../components";
+import { UserList, UserForm, AddUserForm, UserLicenseModal } from "../components";
 
 export function UsersPage() {
   return (
@@ -16,6 +16,7 @@ export function UsersPage() {
 
       <UserList />
       <UserForm />
+      <AddUserForm />
       <UserLicenseModal />
     </Box>
   );

@@ -24,12 +24,15 @@ const initialState: SsoManagementState = {
   selectedUser: null,
   selectedLicense: null,
   selectedApiKey: null,
+  selectedAppIdForLicense: null,
 
   // Form visibility
   isApplicationFormOpen: false,
   isRoleFormOpen: false,
   isPermissionFormOpen: false,
   isUserFormOpen: false,
+  isAddUserFormOpen: false,
+  addUserFormAppId: null,
   isApiKeyFormOpen: false,
   isUserLicenseModalOpen: false,
   isPermissionMatrixOpen: false,
@@ -125,16 +128,30 @@ export const useSsoManagementStore = create<SsoManagementStore>((set) => ({
       selectedUser: null
     }),
 
-  openUserLicenseModal: (user: TUser) =>
+  openAddUserForm: (appId: string) =>
+    set({
+      isAddUserFormOpen: true,
+      addUserFormAppId: appId
+    }),
+
+  closeAddUserForm: () =>
+    set({
+      isAddUserFormOpen: false,
+      addUserFormAppId: null
+    }),
+
+  openUserLicenseModal: (user: TUser, appId: string) =>
     set({
       isUserLicenseModalOpen: true,
-      selectedUser: user
+      selectedUser: user,
+      selectedAppIdForLicense: appId
     }),
 
   closeUserLicenseModal: () =>
     set({
       isUserLicenseModalOpen: false,
-      selectedUser: null
+      selectedUser: null,
+      selectedAppIdForLicense: null
     }),
 
   // API Key actions

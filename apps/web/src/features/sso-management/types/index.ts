@@ -96,6 +96,19 @@ export interface UserFormData {
   isActive?: boolean;
 }
 
+export interface AddUserFormData {
+  name: string;
+  email?: string;
+  phone?: string;
+  appId: string;
+}
+
+export interface AddUserResponse {
+  user: TUser;
+  userApp: TUserApp;
+  isNewUser: boolean;
+}
+
 // ==================== User App ====================
 
 export interface TUserApp extends BaseModel {
@@ -238,12 +251,15 @@ export interface SsoManagementState {
   selectedUser: TUser | null;
   selectedLicense: TLicense | null;
   selectedApiKey: TApiKey | null;
+  selectedAppIdForLicense: string | null;
 
   // Form visibility
   isApplicationFormOpen: boolean;
   isRoleFormOpen: boolean;
   isPermissionFormOpen: boolean;
   isUserFormOpen: boolean;
+  isAddUserFormOpen: boolean;
+  addUserFormAppId: string | null;
   isApiKeyFormOpen: boolean;
   isUserLicenseModalOpen: boolean;
   isPermissionMatrixOpen: boolean;
@@ -290,7 +306,9 @@ export interface SsoManagementActions {
   setSelectedUser: (user: TUser | null) => void;
   openUserForm: (data?: UserFormData) => void;
   closeUserForm: () => void;
-  openUserLicenseModal: (user: TUser) => void;
+  openAddUserForm: (appId: string) => void;
+  closeAddUserForm: () => void;
+  openUserLicenseModal: (user: TUser, appId: string) => void;
   closeUserLicenseModal: () => void;
 
   // API Key actions

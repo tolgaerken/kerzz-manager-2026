@@ -12,7 +12,7 @@ import {
   HttpStatus
 } from "@nestjs/common";
 import { Request } from "express";
-import { SsoUsersService, AssignUserDto } from "./sso-users.service";
+import { SsoUsersService, AssignUserDto, AddUserToAppDto } from "./sso-users.service";
 import { SsoRolesService, CreateRoleDto, UpdateRoleDto } from "./sso-roles.service";
 import {
   SsoPermissionsService,
@@ -98,6 +98,18 @@ export class SsoController {
   @HttpCode(HttpStatus.CREATED)
   async assignUser(@Body() dto: AssignUserDto) {
     return this.usersService.assignUserToApp(dto);
+  }
+
+  /**
+   * Add a user to an application
+   * If user exists (by email or phone), use existing user
+   * If user doesn't exist, create new user first
+   */
+  @Post("users/add")
+  @RequirePermission("userOperations")
+  @HttpCode(HttpStatus.CREATED)
+  async addUser(@Body() dto: AddUserToAppDto) {
+    return this.usersService.addUserToApp(dto);
   }
 
   /**

@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState } from "react";
 import { Box, Typography, Chip, IconButton, Tooltip, Alert } from "@mui/material";
-import { Key, RefreshCw } from "lucide-react";
+import { Key, RefreshCw, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { Grid, type GridColumnDef, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useSsoUsers, useRemoveUser } from "../../hooks";
@@ -27,7 +27,7 @@ export function UserList() {
 
   const removeUser = useRemoveUser();
 
-  const { openUserForm, setSelectedUser, openUserLicenseModal } = useSsoManagementStore();
+  const { openUserForm, setSelectedUser, openUserLicenseModal, openAddUserForm } = useSsoManagementStore();
 
   const handleFetch = useCallback(() => {
     if (selectedAppId) {
@@ -133,8 +133,11 @@ export function UserList() {
               size="small"
               onClick={(e) => {
                 e.stopPropagation();
-                openUserLicenseModal(row);
+                if (selectedAppId) {
+                  openUserLicenseModal(row, selectedAppId);
+                }
               }}
+              disabled={!selectedAppId}
             >
               <Key size={16} />
             </IconButton>
@@ -205,11 +208,25 @@ export function UserList() {
         )
       }
     ],
-    [openUserLicenseModal, handleEdit, handleDelete]
+    [openUserLicenseModal, handleEdit, handleDelete, selectedAppId]
   );
+
+  const handleAddUser = useCallback(() => {
+    if (selectedAppId && selectedAppId !== "__all__") {
+      openAddUserForm(selectedAppId);
+    }
+  }, [selectedAppId, openAddUserForm]);
 
   const toolbarButtons: ToolbarButtonConfig[] = useMemo(
     () => [
+      {
+        id: "add-user",
+        label: "Kullanıcı Ekle",
+        icon: <UserPlus size={18} />,
+        onClick: handleAddUser,
+        variant: "primary",
+        disabled: !selectedAppId || selectedAppId === "__all__"
+      },
       {
         id: "refresh",
         label: "Yenile",
@@ -218,7 +235,7 @@ export function UserList() {
         variant: "secondary"
       }
     ],
-    [refetch]
+    [refetch, handleAddUser, selectedAppId]
   );
 
   const displayUsers = shouldFetch ? users : [];

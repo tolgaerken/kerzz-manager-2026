@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi, type UsersListParams } from "../api/ssoApi";
+import type { AddUserFormData } from "../types";
 
 const QUERY_KEY = "sso-users";
 
@@ -78,6 +79,18 @@ export function useRemoveUser() {
 
   return useMutation({
     mutationFn: (userId: string) => usersApi.remove(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ["sso-user-apps"] });
+    }
+  });
+}
+
+export function useAddUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: AddUserFormData) => usersApi.addUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: ["sso-user-apps"] });

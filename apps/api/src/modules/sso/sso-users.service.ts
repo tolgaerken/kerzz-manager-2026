@@ -1,7 +1,8 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 import { SSO_DB_CONNECTION } from "../../database";
 import {
   SsoUser,
@@ -25,6 +26,19 @@ export interface AssignUserDto {
   userId: string;
   userName: string;
   roles?: string[];
+}
+
+export interface AddUserToAppDto {
+  name: string;
+  email?: string;
+  phone?: string;
+  appId: string;
+}
+
+export interface AddUserToAppResult {
+  user: SsoUser;
+  userApp: SsoUserApp;
+  isNewUser: boolean;
 }
 
 @Injectable()
@@ -277,5 +291,95 @@ export class SsoUsersService {
       .exec();
 
     return !!userApp;
+  }
+
+  /**
+   * Add a user to an application
+   * If user exists (by email or phone), use existing user
+   * If user doesn't exist, create new user first
+   * Then add user-app assignment
+   */
+  async addUserToApp(dto: AddUserToAppDto): Promise<AddUserToAppResult> {
+    const { name, email, phone, appId } = dto;
+
+    // At least email or phone must be provided
+    if (!email && !phone) {
+      throw new BadRequestException("E-posta veya telefon numarasından en az biri gereklidir");
+    }
+
+    // Build search conditions for existing user
+    const searchConditions: Array<{ email?: string; phone?: string }> = [];
+    if (email) {
+      searchConditions.push({ email });
+    }
+    if (phone) {
+      searchConditions.push({ phone });
+    }
+
+    // Check if user already exists
+    let user = await this.ssoUserModel
+      .findOne({ $or: searchConditions })
+      .lean()
+      .exec();
+
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user
+      const newUserId = uuidv4();
+      const newUser = new this.ssoUserModel({
+        id: newUserId,
+        name,
+        email: email || "",
+        phone: phone || "",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await newUser.save();
+      user = newUser.toObject();
+      isNewUser = true;
+      this.logger.log(`New user created: ${newUserId} - ${name}`);
+    }
+
+    // Check if user-app assignment already exists
+    const existingUserApp = await this.ssoUserAppModel
+      .findOne({ app_id: appId, user_id: user.id })
+      .exec();
+
+    let userApp: SsoUserApp;
+
+    if (existingUserApp) {
+      // Reactivate existing assignment
+      existingUserApp.isActive = true;
+      existingUserApp.user_name = user.name;
+      existingUserApp.updatedAt = new Date();
+      await existingUserApp.save();
+      userApp = existingUserApp.toObject();
+      this.logger.log(`User-app assignment reactivated: ${appId} - ${user.id}`);
+    } else {
+      // Create new user-app assignment
+      const newUserApp = new this.ssoUserAppModel({
+        id: `${appId}-${user.id}`,
+        app_id: appId,
+        user_id: user.id,
+        user_name: user.name,
+        isActive: true,
+        assignedDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await newUserApp.save();
+      userApp = newUserApp.toObject();
+      this.logger.log(`New user-app assignment created: ${appId} - ${user.id}`);
+    }
+
+    return {
+      user,
+      userApp,
+      isNewUser
+    };
   }
 }

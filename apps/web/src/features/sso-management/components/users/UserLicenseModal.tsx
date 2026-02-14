@@ -5,17 +5,15 @@ import {
   Typography,
   Chip,
   CircularProgress,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Checkbox,
   FormControlLabel,
-  Stack
+  Stack,
+  Autocomplete,
+  TextField
 } from "@mui/material";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { Grid, type GridColumnDef } from "@kerzz/grid";
@@ -31,39 +29,61 @@ import {
 } from "../../hooks";
 import { useSsoManagementStore } from "../../store";
 import type { TAppLicense } from "../../types";
+import { useLicenses, type License } from "../../../licenses";
 
 export function UserLicenseModal() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditRolesDialogOpen, setIsEditRolesDialogOpen] = useState(false);
-  const [selectedAppId, setSelectedAppId] = useState("");
   const [selectedLicense, setSelectedLicense] = useState<TAppLicense | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  
+  // Lisans arama için state
+  const [licenseSearchQuery, setLicenseSearchQuery] = useState("");
+  const [selectedContractLicense, setSelectedContractLicense] = useState<License | null>(null);
 
-  const { isUserLicenseModalOpen, closeUserLicenseModal, selectedUser } = useSsoManagementStore();
+  const { 
+    isUserLicenseModalOpen, 
+    closeUserLicenseModal, 
+    selectedUser,
+    selectedAppIdForLicense 
+  } = useSsoManagementStore();
 
-  const { data: licenses = [], isLoading: licensesLoading } = useAppLicensesByUser(
+  // Kullanıcının tüm lisanslarını çek, sonra aktif uygulamaya göre filtrele
+  const { data: allUserLicenses = [], isLoading: licensesLoading } = useAppLicensesByUser(
     selectedUser?.id || null
   );
+  
+  // Aktif uygulamaya göre filtrele
+  const licenses = useMemo(() => {
+    if (!selectedAppIdForLicense) return allUserLicenses;
+    return allUserLicenses.filter((l) => l.app_id === selectedAppIdForLicense);
+  }, [allUserLicenses, selectedAppIdForLicense]);
+
   const { data: applications = [] } = useApplications(true);
-  const { data: roles = [] } = useRoles({ all: true });
+  
+  // Sadece aktif uygulamanın rollerini çek
+  const { data: roles = [] } = useRoles(
+    selectedAppIdForLicense 
+      ? { appId: selectedAppIdForLicense } 
+      : { appId: "__disabled__" }
+  );
+
+  // Lisans arama hook'u - ana lisans tablosundan (kerzz-contract)
+  const { data: licensesResponse, isLoading: searchingLicenses } = useLicenses(
+    licenseSearchQuery.length >= 2 
+      ? { search: licenseSearchQuery, limit: 20 } 
+      : { limit: 0 }
+  );
+  const searchedLicenses = licensesResponse?.data || [];
 
   const createAppLicense = useCreateAppLicense();
   const updateAppLicense = useUpdateAppLicense();
   const deleteAppLicense = useDeleteAppLicense();
 
-  // Get apps that user doesn't have license for
-  const availableApps = useMemo(() => {
-    const licensedAppIds = new Set(licenses.map((l) => l.app_id));
-    return applications.filter((app) => !licensedAppIds.has(app.id));
-  }, [applications, licenses]);
-
-  // Get app name by id, with fallback to license's app_name field
+  // Get app name by id
   const getAppName = useCallback(
-    (appId: string, license?: TAppLicense) => {
-      const fromList = applications.find((a) => a.id === appId)?.name;
-      if (fromList) return fromList;
-      if (license?.app_name) return license.app_name;
-      return appId;
+    (appId: string) => {
+      return applications.find((a) => a.id === appId)?.name || appId;
     },
     [applications]
   );
@@ -88,23 +108,27 @@ export function UserLicenseModal() {
   );
 
   const handleAddLicense = useCallback(async () => {
-    if (!selectedUser || !selectedAppId) return;
+    if (!selectedUser || !selectedAppIdForLicense || !selectedContractLicense) return;
 
     try {
       await createAppLicense.mutateAsync({
-        app_id: selectedAppId,
+        app_id: selectedAppIdForLicense,
         user_id: selectedUser.id,
         user_name: selectedUser.name,
-        app_name: getAppName(selectedAppId),
+        app_name: getAppName(selectedAppIdForLicense),
+        licance_id: selectedContractLicense._id,
+        brand: selectedContractLicense.brandName,
+        license_type: selectedContractLicense.type,
         roles: []
       });
       toast.success("Lisans başarıyla eklendi");
       setIsAddDialogOpen(false);
-      setSelectedAppId("");
-    } catch (error) {
+      setSelectedContractLicense(null);
+      setLicenseSearchQuery("");
+    } catch {
       toast.error("Lisans eklenirken hata oluştu");
     }
-  }, [selectedUser, selectedAppId, createAppLicense, getAppName]);
+  }, [selectedUser, selectedAppIdForLicense, selectedContractLicense, createAppLicense, getAppName]);
 
   const handleEditRoles = useCallback((license: TAppLicense) => {
     setSelectedLicense(license);
@@ -124,7 +148,7 @@ export function UserLicenseModal() {
       setIsEditRolesDialogOpen(false);
       setSelectedLicense(null);
       setSelectedRoles([]);
-    } catch (error) {
+    } catch {
       toast.error("Roller güncellenirken hata oluştu");
     }
   }, [selectedLicense, selectedRoles, updateAppLicense]);
@@ -138,7 +162,7 @@ export function UserLicenseModal() {
       try {
         await deleteAppLicense.mutateAsync(license.id!);
         toast.success("Lisans başarıyla kaldırıldı");
-      } catch (error) {
+      } catch {
         toast.error("Lisans kaldırılırken hata oluştu");
       }
     },
@@ -154,26 +178,20 @@ export function UserLicenseModal() {
     });
   }, []);
 
+  const handleCloseAddDialog = useCallback(() => {
+    setIsAddDialogOpen(false);
+    setSelectedContractLicense(null);
+    setLicenseSearchQuery("");
+  }, []);
+
+  // Grid sütunları - Uygulama sütunu kaldırıldı (tek uygulama bağlamında)
   const columns: GridColumnDef<TAppLicense>[] = useMemo(
     () => [
-      {
-        id: "app_id",
-        header: "Uygulama",
-        accessorKey: "app_id",
-        width: 180,
-        sortable: true,
-        resizable: true,
-        filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value: unknown) => getAppName(value as string),
-        cell: (value: unknown, row: TAppLicense) => (
-          <Chip label={getAppName(value as string, row)} size="small" />
-        )
-      },
       {
         id: "brand",
         header: "Lisans",
         accessorKey: "brand",
-        width: 200,
+        width: 250,
         sortable: true,
         resizable: true,
         filter: { type: "input", conditions: ["contains"] },
@@ -190,7 +208,7 @@ export function UserLicenseModal() {
         id: "roles",
         header: "Roller",
         accessorKey: "roles",
-        width: 300,
+        width: 350,
         sortable: false,
         resizable: true,
         cell: (value: unknown) => {
@@ -243,15 +261,19 @@ export function UserLicenseModal() {
         )
       }
     ],
-    [getAppName, getRoleNames, getLicenseInfo, handleEditRoles, handleDeleteLicense]
+    [getRoleNames, getLicenseInfo, handleEditRoles, handleDeleteLicense]
   );
+
+  // Modal başlığında uygulama adını göster
+  const appName = selectedAppIdForLicense ? getAppName(selectedAppIdForLicense) : "";
+  const modalTitle = `Lisans Yönetimi - ${selectedUser?.name || ""}${appName ? ` (${appName})` : ""}`;
 
   return (
     <>
       <SsoModal
         open={isUserLicenseModalOpen}
         onClose={closeUserLicenseModal}
-        title={`Lisans Yönetimi - ${selectedUser?.name || ""}`}
+        title={modalTitle}
         maxWidth="md"
         actions={
           <>
@@ -260,7 +282,6 @@ export function UserLicenseModal() {
               variant="contained"
               startIcon={<Plus size={18} />}
               onClick={() => setIsAddDialogOpen(true)}
-              disabled={availableApps.length === 0}
             >
               Lisans Ekle
             </Button>
@@ -273,7 +294,9 @@ export function UserLicenseModal() {
           </Box>
         ) : licenses.length === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-            <Typography color="text.secondary">Bu kullanıcının henüz lisansı yok</Typography>
+            <Typography color="text.secondary">
+              Bu kullanıcının {appName ? `"${appName}" uygulamasında` : ""} henüz lisansı yok
+            </Typography>
           </Box>
         ) : (
           <div style={{ height: 400 }}>
@@ -290,31 +313,88 @@ export function UserLicenseModal() {
         )}
       </SsoModal>
 
-      {/* Add License Dialog */}
-      <Dialog open={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)} maxWidth="xs" fullWidth>
+      {/* Add License Dialog - Autocomplete ile lisans seçimi */}
+      <Dialog open={isAddDialogOpen} onClose={handleCloseAddDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Yeni Lisans Ekle</DialogTitle>
         <DialogContent>
-          <FormControl fullWidth sx={{ mt: 1 }}>
-            <InputLabel>Uygulama</InputLabel>
-            <Select
-              value={selectedAppId}
-              onChange={(e) => setSelectedAppId(e.target.value)}
-              label="Uygulama"
-            >
-              {availableApps.map((app) => (
-                <MenuItem key={app.id} value={app.id}>
-                  {app.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ mt: 2 }}>
+            <Autocomplete<License>
+              options={searchedLicenses}
+              getOptionLabel={(option) => {
+                const parts: string[] = [];
+                if (option.brandName) parts.push(option.brandName);
+                if (option.customerName) parts.push(option.customerName);
+                return parts.join(" - ") || option._id;
+              }}
+              value={selectedContractLicense}
+              onChange={(_, newValue) => setSelectedContractLicense(newValue)}
+              inputValue={licenseSearchQuery}
+              onInputChange={(_, newInputValue) => setLicenseSearchQuery(newInputValue)}
+              loading={searchingLicenses}
+              noOptionsText={
+                licenseSearchQuery.length < 2 
+                  ? "En az 2 karakter yazın..." 
+                  : "Lisans bulunamadı"
+              }
+              loadingText="Aranıyor..."
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Lisans Ara"
+                  placeholder="Marka veya müşteri adı ile arayın..."
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {searchingLicenses ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    )
+                  }}
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props} key={option._id}>
+                  <Box>
+                    <Typography variant="body1">{option.brandName || "—"}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {option.customerName || option.email || ""} {option.type ? `(${option.type})` : ""}
+                    </Typography>
+                  </Box>
+                </li>
+              )}
+              isOptionEqualToValue={(option, value) => option._id === value._id}
+            />
+            
+            {selectedContractLicense && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Seçilen Lisans Bilgileri:
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Marka:</strong> {selectedContractLicense.brandName || "—"}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Müşteri:</strong> {selectedContractLicense.customerName || "—"}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Tip:</strong> {selectedContractLicense.type || "—"}
+                </Typography>
+                {selectedContractLicense.address?.city && (
+                  <Typography variant="body2">
+                    <strong>Şehir:</strong> {selectedContractLicense.address.city}
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsAddDialogOpen(false)}>İptal</Button>
+          <Button onClick={handleCloseAddDialog}>İptal</Button>
           <Button
             variant="contained"
             onClick={handleAddLicense}
-            disabled={!selectedAppId || createAppLicense.isPending}
+            disabled={!selectedContractLicense || createAppLicense.isPending}
           >
             {createAppLicense.isPending ? "Ekleniyor..." : "Ekle"}
           </Button>
@@ -332,26 +412,18 @@ export function UserLicenseModal() {
           Rolleri Düzenle
           {selectedLicense && (
             <Typography variant="body2" color="text.secondary">
-              {getAppName(selectedLicense.app_id, selectedLicense)}
+              {selectedLicense.brand || "Lisans"}
             </Typography>
           )}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={1} sx={{ mt: 1 }}>
-            {(() => {
-              const appRoles = selectedLicense
-                ? roles.filter((r) => r.app_id === selectedLicense.app_id)
-                : roles;
-
-              if (appRoles.length === 0) {
-                return (
-                  <Typography color="text.secondary">
-                    Bu uygulama için tanımlı rol bulunamadı
-                  </Typography>
-                );
-              }
-
-              return appRoles.map((role) => (
+            {roles.length === 0 ? (
+              <Typography color="text.secondary">
+                Bu uygulama için tanımlı rol bulunamadı
+              </Typography>
+            ) : (
+              roles.map((role) => (
                 <FormControlLabel
                   key={role.id}
                   control={
@@ -362,8 +434,8 @@ export function UserLicenseModal() {
                   }
                   label={role.name}
                 />
-              ));
-            })()}
+              ))
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
