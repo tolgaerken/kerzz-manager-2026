@@ -44,6 +44,8 @@ import {
   ApiKeysPage
 } from "./features/sso-management";
 import { BossUsersPage } from "./features/boss-users";
+import { EmployeeProfilesPage } from "./pages/EmployeeProfilesPage";
+import { MyProfilePage } from "./pages/MyProfilePage";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -449,6 +451,22 @@ const bossUsersRoute = createRoute({
   component: BossUsersPage,
 });
 
+// Employee Profiles page (Admin/İK)
+// TODO: SSO'da izin tanımlandıktan sonra beforeLoad kontrolünü aktif et
+const employeeProfilesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/employee-profiles",
+  // beforeLoad: () => checkPermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU),
+  component: EmployeeProfilesPage,
+});
+
+// My Profile page (Self-Service - tüm giriş yapmış kullanıcılar)
+const myProfileRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/my-profile",
+  component: MyProfilePage,
+});
+
 // Index redirect — dashboard yetkisi varsa oraya, yoksa welcome'a
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -506,6 +524,8 @@ const routeTree = rootRoute.addChildren([
     ssoUsersRoute,
     ssoApiKeysRoute,
     bossUsersRoute,
+    employeeProfilesRoute,
+    myProfileRoute,
   ]),
 ]);
 

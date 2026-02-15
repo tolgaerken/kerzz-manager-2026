@@ -13,6 +13,7 @@
   --kz-border: #e2e8f0;
   --kz-primary: #3b82f6;
   --kz-primary-hover: #2563eb;
+  --kz-primary-foreground: #ffffff;
   --kz-text: #1e293b;
   --kz-text-muted: #64748b;
   --kz-footer-bg: #f1f5f9;
@@ -143,7 +144,7 @@
 
 .kz-toolbar__btn--primary {
   background: var(--kz-primary);
-  color: #fff;
+  color: var(--kz-primary-foreground);
   border-color: var(--kz-primary);
 }
 
@@ -153,13 +154,13 @@
 }
 
 .kz-toolbar__btn--danger {
-  color: #ef4444;
-  border-color: #fca5a5;
+  color: var(--kz-error);
+  border-color: color-mix(in srgb, var(--kz-error) 35%, var(--kz-border));
 }
 
 .kz-toolbar__btn--danger:hover {
-  background: #fef2f2;
-  border-color: #ef4444;
+  background: color-mix(in srgb, var(--kz-error) 10%, var(--kz-bg));
+  border-color: var(--kz-error);
 }
 
 .kz-toolbar__btn--disabled {

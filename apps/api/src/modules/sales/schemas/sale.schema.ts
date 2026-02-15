@@ -25,6 +25,9 @@ export class SaleStageHistory {
 export class Sale {
   _id: Types.ObjectId;
 
+  @Prop({ type: String, default: "" })
+  id: string;
+
   @Prop({ type: Number, index: true, unique: true })
   no: number;
 

@@ -62,6 +62,8 @@ import { VersionModule } from "./modules/version";
 import { AuthModule, JwtAuthGuard, PermissionsGuard } from "./modules/auth";
 // SSO Module
 import { SsoModule } from "./modules/sso";
+// Employee Profile Module
+import { EmployeeProfileModule } from "./modules/employee-profile";
 // Boss Users Module
 import { BossUsersModule } from "./modules/boss-users";
 
@@ -76,6 +78,8 @@ import { BossUsersModule } from "./modules/boss-users";
     AuthModule,
     // SSO Module
     SsoModule,
+    // Employee Profile Module
+    EmployeeProfileModule,
     // Boss Users Module
     BossUsersModule,
     HealthModule,

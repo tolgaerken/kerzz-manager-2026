@@ -42,7 +42,17 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
 
   return (
     <Stack spacing={2} sx={{ pt: 1 }}>
-      <Alert severity="info">
+      <Alert
+        severity="info"
+        sx={{
+          color: "var(--color-info)",
+          border: "1px solid color-mix(in srgb, var(--color-info) 30%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--color-info) 10%, transparent)",
+          "& .MuiAlert-icon": {
+            color: "var(--color-info)"
+          }
+        }}
+      >
         Eklemek istediğiniz kullanıcının e-posta adresini veya telefon numarasını yazarak arayın.
         Kullanıcı bulunamazsa yeni oluşturabilirsiniz.
       </Alert>
@@ -75,13 +85,12 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
               onClick={() => onSelectUser(user)}
               disabled={isPending}
               sx={{
-                border: 1,
-                borderColor: "divider",
+                border: "1px solid var(--color-border)",
                 borderRadius: 1,
                 mb: 1,
                 "&:hover": {
-                  borderColor: "primary.main",
-                  bgcolor: "action.hover"
+                  borderColor: "var(--color-primary)",
+                  bgcolor: "var(--color-surface-hover)"
                 }
               }}
             >
@@ -131,7 +140,18 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
 
       {noResults && (
         <Stack spacing={2} alignItems="center" py={2}>
-          <Alert severity="warning" sx={{ width: "100%" }}>
+          <Alert
+            severity="warning"
+            sx={{
+              width: "100%",
+              color: "var(--color-warning)",
+              border: "1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)",
+              backgroundColor: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
+              "& .MuiAlert-icon": {
+                color: "var(--color-warning)"
+              }
+            }}
+          >
             &quot;{searchQuery}&quot; ile eşleşen kullanıcı bulunamadı.
           </Alert>
           <Button

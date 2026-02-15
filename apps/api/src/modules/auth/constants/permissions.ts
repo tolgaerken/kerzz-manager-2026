@@ -39,6 +39,18 @@ export const PERMISSIONS = {
 
   /** Kar/Zarar bilgilerini görüntüleme yetkisi */
   PROFIT_LOSS_VIEW: "Kar / Zarar Bilgilerini Görebilir",
+
+  /** Çalışan Profili menüsüne erişim yetkisi */
+  EMPLOYEE_PROFILE_MENU: "Çalışan Profili Menüsü",
+
+  /** Çalışan Profili - tüm profilleri düzenleme yetkisi (Admin/İK) */
+  EMPLOYEE_PROFILE_EDIT_ALL: "Çalışan Profili Tümünü Düzenle",
+
+  /** Çalışan Profili - kendi profilini düzenleme yetkisi (Self-Service) */
+  EMPLOYEE_PROFILE_EDIT_SELF: "Çalışan Profili Kendini Düzenle",
+
+  /** Çalışan Profili - hassas alanları görüntüleme yetkisi (TCKN, maaş vb.) */
+  EMPLOYEE_PROFILE_VIEW_SENSITIVE: "Çalışan Profili Hassas Bilgileri Gör",
 } as const;
 
 /** İzin tipi - type-safe kullanım için */

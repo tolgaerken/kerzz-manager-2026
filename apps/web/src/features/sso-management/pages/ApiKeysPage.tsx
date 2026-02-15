@@ -10,7 +10,7 @@ export function ApiKeysPage() {
           <MuiLink component={Link} to="/sso-management" underline="hover" color="inherit">
             SSO Yönetimi
           </MuiLink>
-          <Typography color="text.primary">API Anahtarları</Typography>
+          <Typography sx={{ color: "var(--color-foreground)" }}>API Anahtarları</Typography>
         </Breadcrumbs>
       </Box>
 

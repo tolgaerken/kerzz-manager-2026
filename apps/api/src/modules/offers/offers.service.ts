@@ -22,6 +22,7 @@ import {
 } from "../pipeline";
 import { LeadsService } from "../leads";
 import { CustomersService } from "../customers";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class OffersService {
@@ -399,6 +400,7 @@ export class OffersService {
       customerName,
       offerNote: lead.notes || "",
       ...extraData,
+      id: extraData?.id ?? randomUUID(),
     };
 
     const offer = await this.create(offerData);
@@ -420,7 +422,8 @@ export class OffersService {
       .exec();
 
     if (!offer) {
-      throw new NotFoundException(`Lead için teklif bulunamadı: ${leadId}`);
+      await this.leadsService.revertConversion(leadId);
+      return;
     }
 
     if (offer.status === "converted") {
@@ -601,6 +604,7 @@ export class OffersService {
     
     return {
       _id: offer._id.toString(),
+      id: offer.id || "",
       no: offer.no || 0,
       pipelineRef: offer.pipelineRef || "",
       leadId: offer.leadId || "",

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --max-warnings=0"
+    "lint:theme": "node ./scripts/check-theme-colors.mjs",
+    "lint": "npm run lint:theme && eslint src --max-warnings=0"
   },
   "dependencies": {
     "@emotion/react": "^11.11.0",

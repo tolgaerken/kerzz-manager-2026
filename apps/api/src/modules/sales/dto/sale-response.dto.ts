@@ -1,5 +1,6 @@
 export class SaleResponseDto {
   _id: string;
+  id: string;
   no: number;
   pipelineRef: string;
   offerId: string;

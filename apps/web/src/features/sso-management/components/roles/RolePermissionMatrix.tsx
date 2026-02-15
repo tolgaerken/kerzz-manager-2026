@@ -282,7 +282,18 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
           {selectedAppId && (
             <>
               {/* Stats */}
-              <Alert severity="info" sx={{ mb: 2 }}>
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 2,
+                  color: "var(--color-info)",
+                  border: "1px solid color-mix(in srgb, var(--color-info) 30%, transparent)",
+                  backgroundColor: "color-mix(in srgb, var(--color-info) 10%, transparent)",
+                  "& .MuiAlert-icon": {
+                    color: "var(--color-info)"
+                  }
+                }}
+              >
                 <Typography variant="body2">
                   <strong>Uygulama:</strong> {getAppName(selectedAppId)} |{" "}
                   <strong>Roller:</strong> {roles.length} |{" "}
@@ -314,7 +325,7 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                             minWidth: 200,
                             position: "sticky",
                             left: 0,
-                            backgroundColor: "background.paper",
+                            backgroundColor: "var(--color-surface)",
                             zIndex: 3
                           }}
                         >
@@ -345,12 +356,18 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                     </TableHead>
                     <TableBody>
                       {/* Quick actions row */}
-                      <TableRow sx={{ backgroundColor: "action.selected" }}>
+                      <TableRow
+                        sx={{
+                          backgroundColor:
+                            "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))"
+                        }}
+                      >
                         <TableCell
                           sx={{
                             position: "sticky",
                             left: 0,
-                            backgroundColor: "action.selected",
+                            backgroundColor:
+                              "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))",
                             zIndex: 1,
                             fontWeight: 600
                           }}
@@ -387,12 +404,12 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                         return (
                           <Fragment key={`group-${group}`}>
                             {/* Group header row */}
-                            <TableRow sx={{ backgroundColor: "action.hover" }}>
+                            <TableRow sx={{ backgroundColor: "var(--color-surface-hover)" }}>
                               <TableCell
                                 sx={{
                                   position: "sticky",
                                   left: 0,
-                                  backgroundColor: "action.hover",
+                                  backgroundColor: "var(--color-surface-hover)",
                                   zIndex: 1
                                 }}
                               >
@@ -428,7 +445,7 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                                   sx={{
                                     position: "sticky",
                                     left: 0,
-                                    backgroundColor: "background.paper",
+                                    backgroundColor: "var(--color-surface)",
                                     zIndex: 1
                                   }}
                                 >
@@ -456,12 +473,18 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                         );
                       })}
                       {/* Save buttons row */}
-                      <TableRow sx={{ backgroundColor: "action.selected" }}>
+                      <TableRow
+                        sx={{
+                          backgroundColor:
+                            "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))"
+                        }}
+                      >
                         <TableCell
                           sx={{
                             position: "sticky",
                             left: 0,
-                            backgroundColor: "action.selected",
+                            backgroundColor:
+                              "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))",
                             zIndex: 1,
                             fontWeight: 600
                           }}

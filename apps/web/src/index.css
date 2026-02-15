@@ -284,6 +284,7 @@ body {
   /* Primary renkler */
   --kz-primary: var(--color-primary) !important;
   --kz-primary-hover: var(--color-primary-hover) !important;
+  --kz-primary-foreground: var(--color-primary-foreground) !important;
   
   /* Metinler */
   --kz-text: var(--color-foreground) !important;

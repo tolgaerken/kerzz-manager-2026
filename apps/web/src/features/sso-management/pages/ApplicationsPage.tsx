@@ -10,7 +10,7 @@ export function ApplicationsPage() {
           <MuiLink component={Link} to="/sso-management" underline="hover" color="inherit">
             SSO Yönetimi
           </MuiLink>
-          <Typography color="text.primary">Uygulamalar</Typography>
+          <Typography sx={{ color: "var(--color-foreground)" }}>Uygulamalar</Typography>
         </Breadcrumbs>
       </Box>
 

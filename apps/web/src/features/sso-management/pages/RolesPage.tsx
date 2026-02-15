@@ -11,7 +11,7 @@ export function RolesPage() {
           <MuiLink component={Link} to="/sso-management" underline="hover" color="inherit">
             SSO Yönetimi
           </MuiLink>
-          <Typography color="text.primary">Roller</Typography>
+          <Typography sx={{ color: "var(--color-foreground)" }}>Roller</Typography>
         </Breadcrumbs>
       </Box>
 

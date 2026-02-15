@@ -10,7 +10,7 @@ export function PermissionsPage() {
           <MuiLink component={Link} to="/sso-management" underline="hover" color="inherit">
             SSO Yönetimi
           </MuiLink>
-          <Typography color="text.primary">İzinler</Typography>
+          <Typography sx={{ color: "var(--color-foreground)" }}>İzinler</Typography>
         </Breadcrumbs>
       </Box>
 

@@ -70,6 +70,9 @@ export type OfferDocument = Offer & Document;
 export class Offer {
   _id: Types.ObjectId;
 
+  @Prop({ type: String, default: "" })
+  id: string;
+
   @Prop({ type: Number, index: true, unique: true })
   no: number;
 

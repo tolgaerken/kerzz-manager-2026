@@ -160,7 +160,7 @@ export function PermissionList() {
           <div className="flex items-center justify-center gap-1">
             <button
               type="button"
-              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+              className="p-1.5 rounded hover:bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleEdit(row);
@@ -184,7 +184,7 @@ export function PermissionList() {
             </button>
             <button
               type="button"
-              className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
+              className="p-1.5 rounded hover:bg-[var(--color-error)]/10 text-[var(--color-error)]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDelete(row);
@@ -255,7 +255,18 @@ export function PermissionList() {
       />
 
       {!shouldFetch && (
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert
+          severity="info"
+          sx={{
+            mb: 2,
+            color: "var(--color-info)",
+            border: "1px solid color-mix(in srgb, var(--color-info) 30%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--color-info) 10%, transparent)",
+            "& .MuiAlert-icon": {
+              color: "var(--color-info)"
+            }
+          }}
+        >
           İzinleri görüntülemek için önce bir uygulama seçin ve "Getir" butonuna tıklayın.
         </Alert>
       )}

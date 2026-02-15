@@ -200,7 +200,7 @@ export function UserLicenseModal() {
           return info ? (
             <span>{info}</span>
           ) : (
-            <span className="text-gray-400">—</span>
+            <span className="text-[var(--color-muted-foreground)]">—</span>
           );
         }
       },
@@ -214,7 +214,7 @@ export function UserLicenseModal() {
         cell: (value: unknown) => {
           const roleIds = (value as string[]) || [];
           if (roleIds.length === 0) {
-            return <span className="text-gray-400">Rol atanmamış</span>;
+            return <span className="text-[var(--color-muted-foreground)]">Rol atanmamış</span>;
           }
           const names = getRoleNames(roleIds);
           return (
@@ -237,7 +237,7 @@ export function UserLicenseModal() {
           <div className="flex items-center justify-center gap-1">
             <button
               type="button"
-              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+              className="p-1.5 rounded hover:bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleEditRoles(row);
@@ -248,7 +248,7 @@ export function UserLicenseModal() {
             </button>
             <button
               type="button"
-              className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
+              className="p-1.5 rounded hover:bg-[var(--color-error)]/10 text-[var(--color-error)]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDeleteLicense(row);
@@ -367,7 +367,15 @@ export function UserLicenseModal() {
             />
             
             {selectedContractLicense && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  bgcolor: "var(--color-surface-elevated)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 1
+                }}
+              >
                 <Typography variant="subtitle2" gutterBottom>
                   Seçilen Lisans Bilgileri:
                 </Typography>

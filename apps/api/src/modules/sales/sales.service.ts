@@ -21,6 +21,7 @@ import {
   PipelineCounterService,
 } from "../pipeline";
 import { OffersService } from "../offers";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class SalesService {
@@ -377,6 +378,7 @@ export class SalesService {
       internalFirm: (offer as any).internalFirm,
       notes: (offer as any).offerNote || "",
       ...extraData,
+      id: extraData?.id ?? randomUUID(),
     };
 
     const saved = await this.saveWithRetry(saleData);
@@ -439,6 +441,7 @@ export class SalesService {
 
     return {
       _id: sale._id.toString(),
+      id: sale.id || "",
       no: sale.no || 0,
       pipelineRef: sale.pipelineRef || "",
       offerId: sale.offerId || "",

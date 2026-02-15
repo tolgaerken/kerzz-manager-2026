@@ -183,7 +183,18 @@ export function PermissionMatrix() {
         <Box>
           {/* App info and stats */}
           <Box mb={2}>
-            <Alert severity="info" sx={{ mb: 2 }}>
+            <Alert
+              severity="info"
+              sx={{
+                mb: 2,
+                color: "var(--color-info)",
+                border: "1px solid color-mix(in srgb, var(--color-info) 30%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--color-info) 10%, transparent)",
+                "& .MuiAlert-icon": {
+                  color: "var(--color-info)"
+                }
+              }}
+            >
               <Typography variant="body2">
                 <strong>Uygulama:</strong> {getAppName(selectedRoleForMatrix?.app_id || "")}
               </Typography>
@@ -234,7 +245,7 @@ export function PermissionMatrix() {
                     return (
                       <Fragment key={`group-${group}`}>
                         {/* Group header row */}
-                        <TableRow sx={{ backgroundColor: "action.hover" }}>
+                        <TableRow sx={{ backgroundColor: "var(--color-surface-hover)" }}>
                           <TableCell colSpan={2}>
                             <Box display="flex" alignItems="center" gap={1}>
                               <Chip label={group} size="small" color="primary" variant="outlined" />

@@ -130,10 +130,34 @@ export function PermissionForm() {
       title={isEditing ? "İzni Düzenle" : "Yeni İzin"}
       actions={
         <>
-          <Button onClick={closePermissionForm} disabled={isSubmitting}>
+          <Button
+            onClick={closePermissionForm}
+            disabled={isSubmitting}
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": {
+                backgroundColor: "var(--color-surface-hover)"
+              }
+            }}
+          >
             İptal
           </Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            sx={{
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              "&:hover": {
+                backgroundColor: "var(--color-primary)"
+              },
+              "&.Mui-disabled": {
+                backgroundColor: "var(--color-surface-hover)",
+                color: "var(--color-muted-foreground)"
+              }
+            }}
+          >
             {isSubmitting ? "Kaydediliyor..." : isEditing ? "Güncelle" : "Oluştur"}
           </Button>
         </>

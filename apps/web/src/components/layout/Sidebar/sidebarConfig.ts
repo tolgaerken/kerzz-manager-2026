@@ -12,6 +12,7 @@ import {
   TrendingUp,
   UserCog,
   Shield,
+  UserCircle,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 import { PERMISSIONS } from "../../../features/auth/constants/permissions";
@@ -127,6 +128,15 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "Kullanıcılar", path: "/sso-management/users" },
       { label: "API Anahtarları", path: "/sso-management/api-keys" },
       { label: "Kerzz Boss Kullanıcıları", path: "/boss-users" },
+    ],
+  },
+  {
+    icon: UserCircle,
+    label: "Çalışan Profilleri",
+    // requiredPermission: PERMISSIONS.EMPLOYEE_PROFILE_MENU, // TODO: SSO'da izin tanımlandıktan sonra aktif et
+    subItems: [
+      { label: "Tüm Profiller", path: "/employee-profiles" },
+      { label: "Profilim", path: "/my-profile" },
     ],
   },
 ];

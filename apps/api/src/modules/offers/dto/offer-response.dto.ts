@@ -24,6 +24,7 @@ export class OfferStageHistoryDto {
 
 export class OfferResponseDto {
   _id: string;
+  id: string;
   no: number;
   pipelineRef: string;
   leadId: string;

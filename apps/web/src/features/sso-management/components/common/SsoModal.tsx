@@ -29,19 +29,62 @@ export function SsoModal({
   fullWidth = true
 }: SsoModalProps) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth={maxWidth} fullWidth={fullWidth}>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={maxWidth}
+      fullWidth={fullWidth}
+      PaperProps={{
+        sx: {
+          backgroundColor: "var(--color-surface)",
+          color: "var(--color-foreground)",
+          border: "1px solid var(--color-border)"
+        }
+      }}
+    >
+      <DialogTitle
+        sx={{
+          borderBottom: "1px solid var(--color-border)"
+        }}
+      >
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" component="span">
+          <Typography variant="h6" component="span" sx={{ color: "var(--color-foreground)" }}>
             {title}
           </Typography>
-          <IconButton onClick={onClose} size="small" edge="end">
+          <IconButton
+            onClick={onClose}
+            size="small"
+            edge="end"
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": {
+                backgroundColor: "var(--color-surface-hover)"
+              }
+            }}
+          >
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent dividers>{children}</DialogContent>
-      {actions && <DialogActions sx={{ px: 3, py: 2 }}>{actions}</DialogActions>}
+      <DialogContent
+        dividers
+        sx={{
+          borderColor: "var(--color-border)"
+        }}
+      >
+        {children}
+      </DialogContent>
+      {actions && (
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: "1px solid var(--color-border)"
+          }}
+        >
+          {actions}
+        </DialogActions>
+      )}
     </Dialog>
   );
 }

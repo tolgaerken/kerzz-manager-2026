@@ -10,6 +10,10 @@ import {
 export class CreateSaleDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   pipelineRef?: string;
 
   @IsString()

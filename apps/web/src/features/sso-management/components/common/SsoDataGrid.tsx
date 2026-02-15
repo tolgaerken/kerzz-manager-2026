@@ -77,8 +77,14 @@ export function SsoDataGrid<T extends { id?: string }>({
             return (
               <Chip
                 label={value ? "Aktif" : "Pasif"}
-                color={value ? "success" : "default"}
                 size="small"
+                sx={value ? {
+                  bgcolor: "var(--color-success)",
+                  color: "var(--color-success-foreground)"
+                } : {
+                  bgcolor: "var(--color-surface-hover)",
+                  color: "var(--color-muted-foreground)"
+                }}
               />
             );
           }
@@ -88,8 +94,14 @@ export function SsoDataGrid<T extends { id?: string }>({
         gridCol.cell = (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
-            color={value ? "success" : "default"}
             size="small"
+            sx={value ? {
+              bgcolor: "var(--color-success)",
+              color: "var(--color-success-foreground)"
+            } : {
+              bgcolor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }}
           />
         );
       }
@@ -117,7 +129,7 @@ export function SsoDataGrid<T extends { id?: string }>({
             {onView && (
               <button
                 type="button"
-                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                className="p-1.5 rounded hover:bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   onView(row);
@@ -143,7 +155,7 @@ export function SsoDataGrid<T extends { id?: string }>({
             {onEdit && (
               <button
                 type="button"
-                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                className="p-1.5 rounded hover:bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(row);
@@ -169,7 +181,7 @@ export function SsoDataGrid<T extends { id?: string }>({
             {onDelete && (
               <button
                 type="button"
-                className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
+                className="p-1.5 rounded hover:bg-[var(--color-error)]/10 text-[var(--color-error)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(row);

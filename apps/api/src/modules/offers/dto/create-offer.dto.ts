@@ -44,6 +44,10 @@ export class OfferLossInfoDto {
 export class CreateOfferDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   pipelineRef?: string;
 
   @IsString()

@@ -6,8 +6,7 @@ import {
   Select,
   MenuItem,
   InputLabel,
-  FormHelperText,
-  TextFieldProps
+  FormHelperText
 } from "@mui/material";
 
 interface BaseFieldProps {
@@ -43,6 +42,31 @@ interface SelectFieldProps extends BaseFieldProps {
 
 type SsoFormFieldProps = TextFieldComponentProps | CheckboxFieldProps | SelectFieldProps;
 
+const fieldSx = {
+  "& .MuiInputLabel-root": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)"
+  },
+  "& .MuiInputBase-root": {
+    backgroundColor: "var(--color-surface-elevated)",
+    color: "var(--color-foreground)"
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: "var(--color-border)"
+  },
+  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+    borderColor: "var(--color-muted-foreground)"
+  },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: "var(--color-primary)"
+  },
+  "& .MuiFormHelperText-root": {
+    color: "var(--color-error)"
+  }
+} as const;
+
 export function SsoFormField(props: SsoFormFieldProps) {
   const { label, name, error, required, disabled, fullWidth = true } = props;
 
@@ -56,11 +80,20 @@ export function SsoFormField(props: SsoFormFieldProps) {
               checked={props.value}
               onChange={(e) => props.onChange(e.target.checked)}
               disabled={disabled}
+              sx={{
+                color: "var(--color-muted-foreground)",
+                "&.Mui-checked": {
+                  color: "var(--color-primary)"
+                }
+              }}
             />
           }
           label={label}
+          sx={{
+            color: "var(--color-foreground)"
+          }}
         />
-        {error && <FormHelperText>{error}</FormHelperText>}
+        {error && <FormHelperText sx={{ color: "var(--color-error)" }}>{error}</FormHelperText>}
       </FormControl>
     );
   }
@@ -68,7 +101,9 @@ export function SsoFormField(props: SsoFormFieldProps) {
   if (props.type === "select") {
     return (
       <FormControl fullWidth={fullWidth} error={!!error} required={required}>
-        <InputLabel id={`${name}-label`}>{label}</InputLabel>
+        <InputLabel id={`${name}-label`} sx={{ color: "var(--color-muted-foreground)" }}>
+          {label}
+        </InputLabel>
         <Select
           labelId={`${name}-label`}
           name={name}
@@ -76,6 +111,7 @@ export function SsoFormField(props: SsoFormFieldProps) {
           onChange={(e) => props.onChange(e.target.value)}
           label={label}
           disabled={disabled}
+          sx={fieldSx}
         >
           {props.options.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -83,7 +119,7 @@ export function SsoFormField(props: SsoFormFieldProps) {
             </MenuItem>
           ))}
         </Select>
-        {error && <FormHelperText>{error}</FormHelperText>}
+        {error && <FormHelperText sx={{ color: "var(--color-error)" }}>{error}</FormHelperText>}
       </FormControl>
     );
   }
@@ -104,6 +140,7 @@ export function SsoFormField(props: SsoFormFieldProps) {
       rows={props.rows}
       placeholder={props.placeholder}
       size="small"
+      sx={fieldSx}
     />
   );
 }

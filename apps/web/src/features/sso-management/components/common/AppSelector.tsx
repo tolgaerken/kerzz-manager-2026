@@ -48,9 +48,8 @@ export function AppSelector({
       sx={{
         p: 2,
         mb: 2,
-        backgroundColor: "background.default",
-        border: "1px solid",
-        borderColor: "divider",
+        backgroundColor: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
         borderRadius: 1
       }}
     >
@@ -64,7 +63,65 @@ export function AppSelector({
           getOptionLabel={(option) => option.name}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           loading={appsLoading}
-          sx={{ minWidth: 300, flex: 1, maxWidth: 400 }}
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: "var(--color-surface-elevated)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)",
+                boxShadow: "none"
+              }
+            },
+            popper: {
+              sx: {
+                "& .MuiAutocomplete-listbox": {
+                  backgroundColor: "var(--color-surface-elevated)",
+                  color: "var(--color-foreground)"
+                },
+                "& .MuiAutocomplete-option": {
+                  color: "var(--color-foreground)"
+                },
+                "& .MuiAutocomplete-option:hover": {
+                  backgroundColor: "var(--color-surface-hover)"
+                },
+                "& .MuiAutocomplete-option[aria-selected='true']": {
+                  backgroundColor:
+                    "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-elevated))"
+                },
+                "& .MuiAutocomplete-option[aria-selected='true'].Mui-focused": {
+                  backgroundColor:
+                    "color-mix(in srgb, var(--color-primary) 18%, var(--color-surface-elevated))"
+                },
+                "& .MuiAutocomplete-noOptions": {
+                  color: "var(--color-muted-foreground)"
+                }
+              }
+            }
+          }}
+          sx={{
+            minWidth: 300,
+            flex: 1,
+            maxWidth: 400,
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: "var(--color-surface-elevated)",
+              color: "var(--color-foreground)",
+              "& fieldset": {
+                borderColor: "var(--color-border)"
+              },
+              "&:hover fieldset": {
+                borderColor: "var(--color-muted-foreground)"
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "var(--color-primary)"
+              }
+            },
+            "& .MuiInputLabel-root": {
+              color: "var(--color-muted-foreground)"
+            },
+            "& .MuiInputLabel-root.Mui-focused": {
+              color: "var(--color-primary)"
+            }
+          }}
           renderInput={(params) => (
             <TextField
               {...params}
@@ -82,7 +139,7 @@ export function AppSelector({
                     {option.name}
                   </Box>
                   {option.description && (
-                    <Box fontSize="0.75rem" color="text.secondary">
+                    <Box fontSize="0.75rem" color="var(--color-muted-foreground)">
                       {option.description}
                     </Box>
                   )}
@@ -96,6 +153,17 @@ export function AppSelector({
           onClick={onFetch}
           disabled={!selectedAppId || loading}
           startIcon={<Search size={18} />}
+          sx={{
+            backgroundColor: "var(--color-primary)",
+            color: "var(--color-primary-foreground)",
+            "&:hover": {
+              backgroundColor: "var(--color-primary)"
+            },
+            "&.Mui-disabled": {
+              backgroundColor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }
+          }}
         >
           {loading ? "Yükleniyor..." : "Getir"}
         </Button>

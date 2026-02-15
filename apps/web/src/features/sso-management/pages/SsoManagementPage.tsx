@@ -18,20 +18,28 @@ function StatCard({ title, count, icon, href, loading }: StatCardProps) {
         sx={{
           height: "100%",
           cursor: "pointer",
+          backgroundColor: "var(--color-surface)",
+          color: "var(--color-foreground)",
+          border: "1px solid var(--color-border)",
           transition: "transform 0.2s, box-shadow 0.2s",
           "&:hover": {
             transform: "translateY(-4px)",
-            boxShadow: 4
+            boxShadow: 4,
+            borderColor: "var(--color-primary)"
           }
         }}
       >
         <CardContent>
           <Box display="flex" alignItems="center" justifyContent="space-between">
             <Box>
-              <Typography variant="h4" fontWeight="bold" color="primary">
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+                sx={{ color: "var(--color-primary)" }}
+              >
                 {loading ? "..." : count}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
                 {title}
               </Typography>
             </Box>
@@ -39,8 +47,8 @@ function StatCard({ title, count, icon, href, loading }: StatCardProps) {
               sx={{
                 p: 1.5,
                 borderRadius: 2,
-                backgroundColor: "primary.light",
-                color: "primary.contrastText",
+                backgroundColor: "var(--color-primary)",
+                color: "var(--color-primary-foreground)",
                 opacity: 0.8
               }}
             >
@@ -68,7 +76,7 @@ export function SsoManagementPage() {
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           SSO Yönetimi
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: "var(--color-muted-foreground)" }}>
           Uygulamalar, roller, izinler, kullanıcılar ve API anahtarlarını yönetin.
         </Typography>
       </Box>
@@ -126,11 +134,18 @@ export function SsoManagementPage() {
       </Grid>
 
       <Box mt={4}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper
+          sx={{
+            p: 3,
+            backgroundColor: "var(--color-surface)",
+            color: "var(--color-foreground)",
+            border: "1px solid var(--color-border)"
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ color: "var(--color-foreground)" }}>
             Hızlı Başlangıç
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }} paragraph>
             SSO (Single Sign-On) yönetim paneli, merkezi kimlik doğrulama ve yetkilendirme sistemini
             yönetmenizi sağlar.
           </Typography>
