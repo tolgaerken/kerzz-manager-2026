@@ -25,6 +25,7 @@ const AGGREGATION_OPTIONS: Array<{ value: FooterAggregationSetting; labelKey: ke
   { value: 'count', labelKey: 'footerCount' },
   { value: 'min', labelKey: 'footerMin' },
   { value: 'max', labelKey: 'footerMax' },
+  { value: 'distinctCount', labelKey: 'footerDistinctCount' },
 ];
 
 export const GridSettingsPanel = React.memo(function GridSettingsPanel({
@@ -46,14 +47,9 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
   // All columns with a header (show all in settings, not just those with filter config)
   const filterableColumns = columns.filter((c) => c.header);
 
-  // Columns that are numeric (can have footer aggregation)
-  const numericColumns = columns.filter((c) => {
-    // Check if column has numeric filter or accessor suggests numeric
-    if (c.filter?.type === 'numeric') return true;
-    // Check footer config
-    if (c.footer) return true;
-    return false;
-  });
+  // Columns that can have footer aggregation (all columns with header)
+  // distinctCount works for any column type, sum/avg/min/max only make sense for numeric
+  const aggregatableColumns = columns.filter((c) => c.header);
 
   const toggleSection = useCallback((sectionId: SectionId) => {
     setExpandedSections((prev) => {
@@ -180,7 +176,7 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
         )}
 
         {/* Footer Aggregation Section */}
-        {numericColumns.length > 0 && (
+        {aggregatableColumns.length > 0 && (
           <div className="kz-settings-panel__section">
             <button
               type="button"
@@ -193,7 +189,7 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
             {expandedSections.has('footer') && (
               <div className="kz-settings-panel__section-content">
                 <div className="kz-settings-panel__list">
-                  {numericColumns.map((col) => (
+                  {aggregatableColumns.map((col) => (
                     <div key={col.id} className="kz-settings-panel__select-item">
                       <span>{col.header}</span>
                       <select

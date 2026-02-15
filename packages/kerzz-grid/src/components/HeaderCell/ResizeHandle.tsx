@@ -3,11 +3,13 @@ import React, { useCallback } from 'react';
 interface ResizeHandleProps {
   columnId: string;
   onResizeStart: (columnId: string, e: React.MouseEvent | React.TouchEvent) => void;
+  className?: string;
 }
 
 export const ResizeHandle = React.memo(function ResizeHandle({
   columnId,
   onResizeStart,
+  className = 'kz-resize-handle',
 }: ResizeHandleProps) {
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -25,7 +27,7 @@ export const ResizeHandle = React.memo(function ResizeHandle({
 
   return (
     <div
-      className="kz-resize-handle"
+      className={className}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       role="separator"

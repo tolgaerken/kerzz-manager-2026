@@ -233,6 +233,7 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
   const footerAggregation = useFooterAggregation({
     data: filteredData,
     columns: orderedColumns,
+    footerAggregationSettings: stateStore.state.settings.footerAggregation,
   });
 
   // Sorting handler

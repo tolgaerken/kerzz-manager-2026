@@ -20,7 +20,8 @@ export function GridFooter<TData>({
   totalWidth,
   showSelectionCheckbox,
 }: GridFooterProps<TData>) {
-  const hasFooter = columns.some((c) => c.footer);
+  // Show footer if any column has static footer config OR dynamic aggregation from settings
+  const hasFooter = columns.some((c) => c.footer) || aggregation.size > 0;
   if (!hasFooter) return null;
 
   return (

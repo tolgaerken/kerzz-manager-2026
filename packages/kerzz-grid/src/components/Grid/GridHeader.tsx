@@ -3,6 +3,7 @@ import type { GridColumnDef } from '../../types/column.types';
 import type { ActiveFilter } from '../../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { HeaderCell } from '../HeaderCell/HeaderCell';
+import { ResizeHandle } from '../HeaderCell/ResizeHandle';
 import { SelectionHeaderCell } from '../Selection/SelectionHeaderCell';
 
 interface GridHeaderProps<TData> {
@@ -64,6 +65,8 @@ function GridHeaderInner<TData>({
   onDrop,
   onDragEnd,
 }: GridHeaderProps<TData>) {
+  const lastColumn = columns[columns.length - 1];
+
   return (
     <div className="kz-grid-header" style={{ width: totalWidth }}>
       {showSelectionCheckbox && (
@@ -99,6 +102,13 @@ function GridHeaderInner<TData>({
           onDragEnd={onDragEnd}
         />
       ))}
+      {lastColumn && (
+        <ResizeHandle
+          columnId={lastColumn.id}
+          onResizeStart={onResizeStart}
+          className="kz-resize-handle kz-resize-handle--trailing"
+        />
+      )}
     </div>
   );
 }
