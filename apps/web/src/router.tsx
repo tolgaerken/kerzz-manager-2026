@@ -42,6 +42,7 @@ import {
   UsersPage as SsoUsersPage,
   ApiKeysPage
 } from "./features/sso-management";
+import { BossUsersPage } from "./features/boss-users";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -431,6 +432,14 @@ const ssoApiKeysRoute = createRoute({
   component: ApiKeysPage,
 });
 
+// Boss Users page
+const bossUsersRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/boss-users",
+  beforeLoad: () => checkPermission(PERMISSIONS.SSO_MANAGEMENT_MENU),
+  component: BossUsersPage,
+});
+
 // Index redirect — dashboard yetkisi varsa oraya, yoksa welcome'a
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -486,6 +495,7 @@ const routeTree = rootRoute.addChildren([
     ssoPermissionsRoute,
     ssoUsersRoute,
     ssoApiKeysRoute,
+    bossUsersRoute,
   ]),
 ]);
 

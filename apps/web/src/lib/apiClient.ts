@@ -1,6 +1,6 @@
 import { AUTH_CONSTANTS } from "../features/auth/constants/auth.constants";
 
-const { STORAGE_KEYS } = AUTH_CONSTANTS;
+const { STORAGE_KEYS, SSO_API_KEY } = AUTH_CONSTANTS;
 
 /**
  * Login timestamp'ini güncelle - login başarılı olduğunda çağrılmalı
@@ -38,7 +38,11 @@ function getAuthHeaders(): Record<string, string> {
 
       if (token?.accessToken) {
         headers["Authorization"] = `Bearer ${token.accessToken}`;
+        headers["x-user-token"] = token.accessToken;
         console.log("[apiClient] Authorization header set");
+      }
+      if (SSO_API_KEY) {
+        headers["x-api-key"] = SSO_API_KEY;
       }
       if (token?.id) {
         headers["x-user-id"] = token.id;

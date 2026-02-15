@@ -61,6 +61,8 @@ import { VersionModule } from "./modules/version";
 import { AuthModule, JwtAuthGuard, PermissionsGuard } from "./modules/auth";
 // SSO Module
 import { SsoModule } from "./modules/sso";
+// Boss Users Module
+import { BossUsersModule } from "./modules/boss-users";
 
 @Module({
   imports: [
@@ -73,6 +75,8 @@ import { SsoModule } from "./modules/sso";
     AuthModule,
     // SSO Module
     SsoModule,
+    // Boss Users Module
+    BossUsersModule,
     HealthModule,
     VersionModule,
     ContractsModule,

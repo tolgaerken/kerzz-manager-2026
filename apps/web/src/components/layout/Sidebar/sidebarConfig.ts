@@ -125,6 +125,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "İzinler", path: "/sso-management/perms" },
       { label: "Kullanıcılar", path: "/sso-management/users" },
       { label: "API Anahtarları", path: "/sso-management/api-keys" },
+      { label: "Kerzz Boss Kullanıcıları", path: "/boss-users" },
     ],
   },
 ];

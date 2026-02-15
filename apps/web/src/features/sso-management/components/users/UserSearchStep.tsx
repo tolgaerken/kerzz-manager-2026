@@ -89,6 +89,8 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
                 <User size={20} />
               </ListItemIcon>
               <ListItemText
+                primaryTypographyProps={{ component: "div" }}
+                secondaryTypographyProps={{ component: "div" }}
                 primary={
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="body1" fontWeight={500}>
