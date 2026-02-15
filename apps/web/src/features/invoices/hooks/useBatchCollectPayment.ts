@@ -13,13 +13,52 @@ function generateId(): string {
   return `batch-collect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+/**
+ * Item sonuçlandırma bilgisi
+ */
+interface ItemResult {
+  index: number;
+  status: "completed" | "error";
+  error?: string;
+}
+
+/**
+ * Progress state'ini item sonucuna göre günceller
+ */
+function applyItemResult(
+  prev: BatchCollectProgress | null,
+  result: ItemResult
+): BatchCollectProgress | null {
+  if (!prev) return null;
+
+  const newItems = [...prev.items];
+  newItems[result.index] = {
+    ...newItems[result.index],
+    status: result.status,
+    error: result.error
+  };
+
+  const completedCount = newItems.filter(
+    (i) => i.status === "completed" || i.status === "error"
+  ).length;
+  const errorCount = newItems.filter((i) => i.status === "error").length;
+
+  return {
+    ...prev,
+    items: newItems,
+    completedCount,
+    errorCount
+  };
+}
+
 export function useBatchCollectPayment(): BatchCollectContextValue {
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState<BatchCollectProgress | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isPausedRef = useRef(false);
+  const isCancelledRef = useRef(false);
   const progressRef = useRef<BatchCollectProgress | null>(null);
-  const processNextItemRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const isProcessingRef = useRef(false);
 
   // State güncellerken ref'i de anlık senkronize eden yardımcı
   const updateProgress = useCallback(
@@ -33,196 +72,193 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
     []
   );
 
+  // Ref'i senkron olarak günceller (döngü içinde kullanım için)
+  const updateProgressSync = useCallback(
+    (updater: (prev: BatchCollectProgress | null) => BatchCollectProgress | null) => {
+      const next = updater(progressRef.current);
+      progressRef.current = next;
+      setProgress(next);
+    },
+    []
+  );
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isCancelledRef.current = true;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
   }, []);
 
-  const processNextItem = useCallback(
-    async () => {
-      const currentProgress = progressRef.current;
-      if (!currentProgress) return;
+  /**
+   * Batch işleme döngüsü - iteratif yaklaşım (rekürsif değil)
+   */
+  const runBatchLoop = useCallback(async () => {
+    // Çift çalışmayı önle
+    if (isProcessingRef.current) {
+      console.log("[BatchCollect] Döngü zaten çalışıyor, atlanıyor");
+      return;
+    }
+    isProcessingRef.current = true;
 
-      if (isPausedRef.current) {
-        console.log("[BatchCollect] Duraklatıldı, işlem bekliyor");
-        return;
-      }
-      if (currentProgress.status !== "running") {
-        console.log("[BatchCollect] Status running değil:", currentProgress.status);
-        return;
-      }
+    try {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        // Her iterasyonda güncel state'i oku
+        const currentProgress = progressRef.current;
 
-      const nextIndex = currentProgress.items.findIndex(
-        (item) => item.status === "pending"
-      );
+        // Çıkış koşulları
+        if (!currentProgress) {
+          console.log("[BatchCollect] Progress null, döngü sonlandırılıyor");
+          break;
+        }
 
-      if (nextIndex === -1) {
-        console.log("[BatchCollect] Tüm item'lar işlendi ✓");
-        updateProgress((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            status: "completed",
-            completedAt: new Date()
-          };
-        });
-        queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
-        return;
-      }
+        if (isCancelledRef.current) {
+          console.log("[BatchCollect] İptal edildi, döngü sonlandırılıyor");
+          break;
+        }
 
-      const item = currentProgress.items[nextIndex];
-      console.log(
-        `[BatchCollect] İşleniyor [${nextIndex + 1}/${currentProgress.totalCount}]`,
-        { invoiceNo: item.invoice.invoiceNumber, customerId: item.invoice.customerId, amount: item.invoice.grandTotal }
-      );
+        if (isPausedRef.current) {
+          console.log("[BatchCollect] Duraklatıldı, döngü bekliyor");
+          break;
+        }
 
-      // 0 TL veya negatif tutar kontrolü
-      if (item.invoice.grandTotal <= 0) {
-        console.log(
-          `[BatchCollect] ATLANDI [${nextIndex + 1}/${currentProgress.totalCount}] - Geçersiz tutar`,
-          { invoiceNo: item.invoice.invoiceNumber, amount: item.invoice.grandTotal }
+        if (currentProgress.status !== "running") {
+          console.log("[BatchCollect] Status running değil:", currentProgress.status);
+          break;
+        }
+
+        // Sıradaki pending item'ı bul
+        const nextIndex = currentProgress.items.findIndex(
+          (item) => item.status === "pending"
         );
 
-        updateProgress((prev) => {
+        // Tüm item'lar işlendi
+        if (nextIndex === -1) {
+          console.log("[BatchCollect] Tüm item'lar işlendi ✓");
+          updateProgressSync((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              status: "completed",
+              completedAt: new Date()
+            };
+          });
+          queryClient.invalidateQueries({ queryKey: invoicesKeys.lists() });
+          break;
+        }
+
+        const item = currentProgress.items[nextIndex];
+        console.log(
+          `[BatchCollect] İşleniyor [${nextIndex + 1}/${currentProgress.totalCount}]`,
+          {
+            invoiceNo: item.invoice.invoiceNumber,
+            customerId: item.invoice.customerId,
+            amount: item.invoice.grandTotal
+          }
+        );
+
+        // 0 TL veya negatif tutar kontrolü
+        if (item.invoice.grandTotal <= 0) {
+          console.log(
+            `[BatchCollect] ATLANDI [${nextIndex + 1}/${currentProgress.totalCount}] - Geçersiz tutar`,
+            { invoiceNo: item.invoice.invoiceNumber, amount: item.invoice.grandTotal }
+          );
+
+          updateProgressSync((prev) =>
+            applyItemResult(prev, {
+              index: nextIndex,
+              status: "error",
+              error: "Tahsilat tutarı 0 TL veya negatif olamaz"
+            })
+          );
+
+          // Döngü devam eder, rekürsif çağrı yok
+          continue;
+        }
+
+        // Item durumunu "processing" olarak güncelle
+        updateProgressSync((prev) => {
           if (!prev) return null;
           const newItems = [...prev.items];
-          newItems[nextIndex] = {
-            ...newItems[nextIndex],
-            status: "error",
-            error: "Tahsilat tutarı 0 TL veya negatif olamaz"
-          };
-
-          const completedCount = newItems.filter(
-            (i) => i.status === "completed" || i.status === "error"
-          ).length;
-          const errorCount = newItems.filter((i) => i.status === "error").length;
-
+          newItems[nextIndex] = { ...newItems[nextIndex], status: "processing" };
           return {
             ...prev,
             items: newItems,
-            completedCount,
-            errorCount
+            currentIndex: nextIndex
           };
         });
 
-        // Sonraki item'a geç
-        if (processNextItemRef.current) {
-          await processNextItemRef.current();
-        }
-        return;
-      }
-
-      // Item durumunu "processing" olarak güncelle
-      updateProgress((prev) => {
-        if (!prev) return null;
-        const newItems = [...prev.items];
-        newItems[nextIndex] = { ...newItems[nextIndex], status: "processing" };
-        return {
-          ...prev,
-          items: newItems,
-          currentIndex: nextIndex
-        };
-      });
-
-      try {
-        const result = await collectPayment({
-          customerId: item.invoice.customerId,
-          amount: item.invoice.grandTotal,
-          mode: "custom",
-          invoiceNo: item.invoice.invoiceNumber
-        });
-
-        // En güncel state üzerinden güncelle (stale closure önlemi)
-        updateProgress((prev) => {
-          if (!prev) return null;
-          const newItems = [...prev.items];
+        // API çağrısı
+        try {
+          const result = await collectPayment({
+            customerId: item.invoice.customerId,
+            amount: item.invoice.grandTotal,
+            mode: "custom",
+            invoiceNo: item.invoice.invoiceNumber
+          });
 
           if (!result.success) {
-            newItems[nextIndex] = {
-              ...newItems[nextIndex],
-              status: "error",
-              error: result.paymentError || result.message
-            };
             console.log(
-              `[BatchCollect] HATA [${nextIndex + 1}/${prev.totalCount}]`,
-              { invoiceNo: item.invoice.invoiceNumber, error: result.paymentError || result.message }
+              `[BatchCollect] HATA [${nextIndex + 1}/${currentProgress.totalCount}]`,
+              {
+                invoiceNo: item.invoice.invoiceNumber,
+                error: result.paymentError || result.message
+              }
+            );
+
+            updateProgressSync((prev) =>
+              applyItemResult(prev, {
+                index: nextIndex,
+                status: "error",
+                error: result.paymentError || result.message
+              })
             );
           } else {
-            newItems[nextIndex] = {
-              ...newItems[nextIndex],
-              status: "completed"
-            };
             console.log(
-              `[BatchCollect] BAŞARILI [${nextIndex + 1}/${prev.totalCount}]`,
+              `[BatchCollect] BAŞARILI [${nextIndex + 1}/${currentProgress.totalCount}]`,
               { invoiceNo: item.invoice.invoiceNumber }
             );
+
+            updateProgressSync((prev) =>
+              applyItemResult(prev, {
+                index: nextIndex,
+                status: "completed"
+              })
+            );
           }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Bilinmeyen hata";
+          console.error(
+            `[BatchCollect] EXCEPTION [${nextIndex + 1}/${currentProgress.totalCount}]`,
+            { invoiceNo: item.invoice.invoiceNumber, error: errorMessage }
+          );
 
-          const completedCount = newItems.filter(
-            (i) => i.status === "completed" || i.status === "error"
-          ).length;
-          const errorCount = newItems.filter((i) => i.status === "error").length;
+          updateProgressSync((prev) =>
+            applyItemResult(prev, {
+              index: nextIndex,
+              status: "error",
+              error: errorMessage
+            })
+          );
+        }
 
-          return {
-            ...prev,
-            items: newItems,
-            completedCount,
-            errorCount
-          };
-        });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
-        console.error(
-          `[BatchCollect] EXCEPTION [${nextIndex + 1}/${currentProgress.totalCount}]`,
-          { invoiceNo: item.invoice.invoiceNumber, error: errorMessage }
-        );
-
-        // En güncel state üzerinden hata durumunu güncelle
-        updateProgress((prev) => {
-          if (!prev) return null;
-          const newItems = [...prev.items];
-          newItems[nextIndex] = {
-            ...newItems[nextIndex],
-            status: "error",
-            error: errorMessage
-          };
-
-          const completedCount = newItems.filter(
-            (i) => i.status === "completed" || i.status === "error"
-          ).length;
-          const errorCount = newItems.filter((i) => i.status === "error").length;
-
-          return {
-            ...prev,
-            items: newItems,
-            completedCount,
-            errorCount
-          };
-        });
+        // Döngü devam eder
       }
-
-      // Sonraki item'a geç - ref üzerinden çağır (stale closure önlemi)
-      if (processNextItemRef.current) {
-        await processNextItemRef.current();
-      }
-    },
-    [queryClient, updateProgress]
-  );
-
-  // processNextItem ref'ini güncelle
-  useEffect(() => {
-    processNextItemRef.current = processNextItem;
-  }, [processNextItem]);
+    } finally {
+      isProcessingRef.current = false;
+    }
+  }, [queryClient, updateProgressSync]);
 
   const startBatchCollect = useCallback(
     (invoices: Invoice[]) => {
       if (invoices.length === 0) return;
 
       isPausedRef.current = false;
+      isCancelledRef.current = false;
       abortControllerRef.current = new AbortController();
 
       const items: BatchCollectItem[] = invoices.map((invoice) => ({
@@ -247,11 +283,16 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
         invoiceNos: invoices.map((inv) => inv.invoiceNumber)
       });
 
-      // Ref'i anlık senkronize et, ardından işlemi başlat
-      updateProgress(() => initialProgress);
-      processNextItem();
+      // Ref'i ve state'i senkron güncelle, ardından döngüyü başlat
+      progressRef.current = initialProgress;
+      setProgress(initialProgress);
+
+      // Döngüyü bir sonraki tick'te başlat (state'in yerleşmesi için)
+      setTimeout(() => {
+        runBatchLoop();
+      }, 0);
     },
-    [processNextItem, updateProgress]
+    [runBatchLoop]
   );
 
   const pauseBatchCollect = useCallback(() => {
@@ -266,19 +307,26 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
     isPausedRef.current = false;
     const currentProgress = progressRef.current;
     if (!currentProgress) return;
+
     console.log("[BatchCollect] Devam ediliyor", {
       completed: currentProgress.completedCount,
       total: currentProgress.totalCount
     });
+
     updateProgress((prev) => {
       if (!prev) return null;
-      return { ...prev, status: "running" as const };
+      return { ...prev, status: "running" };
     });
-    processNextItem();
-  }, [processNextItem, updateProgress]);
+
+    // Döngüyü yeniden başlat
+    setTimeout(() => {
+      runBatchLoop();
+    }, 0);
+  }, [runBatchLoop, updateProgress]);
 
   const cancelBatchCollect = useCallback(() => {
     isPausedRef.current = true;
+    isCancelledRef.current = true;
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -300,6 +348,7 @@ export function useBatchCollectPayment(): BatchCollectContextValue {
   }, [updateProgress]);
 
   const clearBatchCollect = useCallback(() => {
+    isCancelledRef.current = true;
     updateProgress(() => null);
   }, [updateProgress]);
 
