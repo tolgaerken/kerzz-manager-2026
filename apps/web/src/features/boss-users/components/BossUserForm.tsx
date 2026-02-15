@@ -49,6 +49,40 @@ const textFieldSx = {
   }
 } as const;
 
+const autocompleteSx = {
+  "& .MuiAutocomplete-popupIndicator": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiAutocomplete-clearIndicator": {
+    color: "var(--color-muted-foreground)"
+  }
+} as const;
+
+const autocompletePaperSx = {
+  bgcolor: "var(--color-surface)",
+  color: "var(--color-foreground)",
+  border: "1px solid var(--color-border)"
+} as const;
+
+const autocompleteListboxSx = {
+  bgcolor: "var(--color-surface)",
+  "& .MuiAutocomplete-option": {
+    color: "var(--color-foreground)",
+    "&.Mui-focused": {
+      bgcolor: "var(--color-surface-hover)"
+    },
+    "&.Mui-focusVisible": {
+      bgcolor: "var(--color-surface-hover)"
+    },
+    '&[aria-selected="true"]': {
+      bgcolor: "var(--color-surface-elevated)"
+    },
+    '&[aria-selected="true"].Mui-focused': {
+      bgcolor: "var(--color-surface-hover)"
+    }
+  }
+} as const;
+
 const getCustomerLabel = (customer: CustomerLookupItem): string =>
   customer.name || customer.companyName || customer.erpId || customer.id || customer._id;
 
@@ -335,6 +369,15 @@ export function BossUserForm({
           }}
           noOptionsText="Musteri bulunamadi"
           loadingText="Yukleniyor..."
+          sx={autocompleteSx}
+          slotProps={{
+            paper: {
+              sx: autocompletePaperSx
+            },
+            listbox: {
+              sx: autocompleteListboxSx
+            }
+          }}
           renderOption={(props, option) => (
             <li {...props} key={`${option._id}-${option.id}`}>
               <Box sx={{ display: "flex", flexDirection: "column" }}>

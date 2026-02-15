@@ -1,0 +1,1 @@
+export { InflationRateFormModal } from "./InflationRateFormModal";

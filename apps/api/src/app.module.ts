@@ -46,6 +46,7 @@ import { ErpModule } from "./modules/erp";
 import { LocationsModule } from "./modules/locations";
 // Utility Modules
 import { ExchangeRateModule } from "./modules/exchange-rate";
+import { InflationRatesModule } from "./modules/inflation-rates";
 import { ErpSettingsModule } from "./modules/erp-settings";
 import { BankTransactionsModule } from "./modules/bank-transactions";
 // Pipeline / CRM Modules
@@ -129,6 +130,7 @@ import { BossUsersModule } from "./modules/boss-users";
     LocationsModule,
     // Utility Modules
     ExchangeRateModule,
+    InflationRatesModule,
     ErpSettingsModule,
     // Pipeline / CRM Modules
     PipelineItemsModule,

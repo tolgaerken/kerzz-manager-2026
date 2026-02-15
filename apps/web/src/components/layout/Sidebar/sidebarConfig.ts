@@ -59,6 +59,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "Online Ödemeler", path: "/finance/payments" },
       { label: "Otomatik Ödemeler", path: "/finance/automated-payments" },
       { label: "Banka İşlemleri", path: "/finance/bank-transactions" },
+      { label: "Enflasyon Oranları", path: "/finance/inflation-rates" },
     ],
   },
   {

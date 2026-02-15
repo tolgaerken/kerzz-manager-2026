@@ -154,6 +154,7 @@ export function BossUserEditModal({ open, onClose, license }: BossUserEditModalP
             <BossLicenseManager
               userId={currentUserId}
               userName={currentUser?.name || license?.user_name}
+              initialLicense={license}
               onLicenseSelect={handleLicenseSelect}
             />
           </Box>

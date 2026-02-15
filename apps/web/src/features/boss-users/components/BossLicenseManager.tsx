@@ -80,12 +80,14 @@ const selectSx = {
 interface BossLicenseManagerProps {
   userId: string;
   userName?: string;
+  initialLicense?: BossLicenseUser | null;
   onLicenseSelect: (license: BossLicenseUser) => void;
 }
 
 export function BossLicenseManager({
   userId,
   userName,
+  initialLicense,
   onLicenseSelect
 }: BossLicenseManagerProps) {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -137,6 +139,11 @@ export function BossLicenseManager({
   const upsertLicense = useUpsertLicense();
   const deleteLicense = useDeleteLicense();
 
+  const effectiveUserLicenses = useMemo(() => {
+    if (userLicenses.length > 0) return userLicenses;
+    return initialLicense ? [initialLicense] : [];
+  }, [userLicenses, initialLicense]);
+
   // Lisans ekle
   const handleAddLicense = useCallback(async () => {
     if (!selectedLicenseOption) {
@@ -152,7 +159,7 @@ export function BossLicenseManager({
     // Şube servisi LISANS_NO (licenseId) formatını bekliyor.
     const licenseId = String(selectedLicenseOption.licenseId);
     const contractLicenseId = selectedLicenseOption.id;
-    const existing = userLicenses.find(
+    const existing = effectiveUserLicenses.find(
       (l) => l.licance_id === licenseId || l.licance_id === contractLicenseId
     );
     if (existing) {
@@ -175,7 +182,7 @@ export function BossLicenseManager({
     } catch (error) {
       toast.error("Lisans eklenemedi");
     }
-  }, [selectedLicenseOption, selectedRoles, userLicenses, userId, userName, upsertLicense]);
+  }, [selectedLicenseOption, selectedRoles, effectiveUserLicenses, userId, userName, upsertLicense]);
 
   // Lisans sil
   const handleDeleteLicense = useCallback(
@@ -352,7 +359,7 @@ export function BossLicenseManager({
       {/* Mevcut Lisanslar */}
       <Box>
         <Typography variant="body2" sx={{ mb: 1, color: "var(--color-muted-foreground)" }}>
-          Mevcut Lisanslar ({userLicenses.length})
+          Mevcut Lisanslar ({effectiveUserLicenses.length})
         </Typography>
         <Typography variant="caption" sx={{ display: "block", mb: 1, color: "var(--color-muted-foreground)" }}>
           Şube yetkilerini düzenlemek için lisans satırına tıklayın.
@@ -362,7 +369,7 @@ export function BossLicenseManager({
           <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
             <CircularProgress size={24} />
           </Box>
-        ) : userLicenses.length === 0 ? (
+        ) : effectiveUserLicenses.length === 0 ? (
           <Alert
             severity="info"
             sx={{
@@ -382,7 +389,7 @@ export function BossLicenseManager({
               border: "1px solid var(--color-border)"
             }}
           >
-            {userLicenses.map((license) => (
+            {effectiveUserLicenses.map((license) => (
               <ListItem
                 key={license.id}
                 sx={{

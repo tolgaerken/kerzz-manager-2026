@@ -17,6 +17,7 @@ import { PaymentsPage } from "./pages/PaymentsPage";
 import { AutomatedPaymentsPage } from "./pages/AutomatedPaymentsPage";
 import { BankTransactionsPage } from "./pages/BankTransactionsPage";
 import { ReceivablesPage } from "./pages/ReceivablesPage";
+import { InflationRatesPage } from "./pages/InflationRatesPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 import { NotificationSettingsPage } from "./pages/NotificationSettingsPage";
 import { EDocCreditsPage } from "./pages/EDocCreditsPage";
@@ -264,6 +265,14 @@ const receivablesRoute = createRoute({
   component: ReceivablesPage,
 });
 
+// Inflation Rates page
+const inflationRatesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/finance/inflation-rates",
+  beforeLoad: () => checkPermission(PERMISSIONS.FINANCE_MENU),
+  component: InflationRatesPage,
+});
+
 // Contract Invoices page
 const contractInvoicesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -482,6 +491,7 @@ const routeTree = rootRoute.addChildren([
     automatedPaymentsRoute,
     bankTransactionsRoute,
     receivablesRoute,
+    inflationRatesRoute,
     eDocCreditsRoute,
     eDocMembersRoute,
     eInvoicePricesRoute,
