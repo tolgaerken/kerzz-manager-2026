@@ -9,6 +9,8 @@ import { useIsMobile } from "../../../hooks/useIsMobile";
 export interface SubMenuItem {
   label: string;
   path: string;
+  /** Alt menü öğesine özel izin — tanımlanırsa kendi izin kontrolünü kullanır */
+  requiredPermission?: string;
 }
 
 export interface MenuItemProps {
@@ -16,6 +18,10 @@ export interface MenuItemProps {
   label: string;
   path?: string;
   subItems?: SubMenuItem[];
+  /** İzin bazlı görünürlük kontrolü için gerekli izin */
+  requiredPermission?: string;
+  /** Sadece admin kullanıcılarına göster (izin kontrolü yerine) */
+  adminOnly?: boolean;
 }
 
 export function SidebarMenuItem({ icon: Icon, label, path, subItems }: MenuItemProps) {

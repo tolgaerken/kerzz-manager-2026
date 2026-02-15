@@ -13,8 +13,11 @@ import { CreateOfferDto } from "./dto/create-offer.dto";
 import { UpdateOfferDto } from "./dto/update-offer.dto";
 import { OfferQueryDto } from "./dto/offer-query.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("offers")
+@RequirePermission(PERMISSIONS.SALES_MENU)
 export class OffersController {
   constructor(private readonly offersService: OffersService) {}
 

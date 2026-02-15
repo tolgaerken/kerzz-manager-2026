@@ -114,7 +114,7 @@ export function ApiKeyList() {
         sortable: true,
         resizable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => getAppName(value as string),
+        filterDisplayFn: (value: unknown) => getAppName(value as string),
         cell: (value) => (
           <Chip label={getAppName(value as string)} size="small" variant="outlined" />
         )
@@ -172,7 +172,7 @@ export function ApiKeyList() {
         align: "center",
         sortable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => (value ? "Aktif" : "Pasif"),
+        filterDisplayFn: (value: unknown) => (value ? "Aktif" : "Pasif"),
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
@@ -262,7 +262,7 @@ export function ApiKeyList() {
         label: "Yenile",
         icon: <RefreshCw size={18} />,
         onClick: () => refetch(),
-        variant: "secondary"
+        variant: "default"
       }
     ],
     [handleAdd, refetch]

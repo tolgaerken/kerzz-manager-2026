@@ -33,6 +33,7 @@ import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
 import { UsersPage } from "./pages/UsersPage";
+import { WelcomePage } from "./pages/WelcomePage";
 import {
   SsoManagementPage,
   ApplicationsPage,
@@ -44,6 +45,7 @@ import {
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
+import { PERMISSIONS } from "./features/auth/constants/permissions";
 
 // Auth kontrolü
 const checkAuth = () => {
@@ -67,6 +69,40 @@ const checkAuth = () => {
   }
 };
 
+/**
+ * İzin kontrolü yapan yardımcı fonksiyon
+ * Kullanıcının belirtilen izne sahip olup olmadığını kontrol eder
+ * Admin kullanıcıları tüm izinlere sahiptir
+ */
+const checkPermission = (permission: string) => {
+  const { hasPermission } = useAuthStore.getState();
+  if (!hasPermission(permission)) {
+    throw redirect({ to: "/welcome" });
+  }
+};
+
+/**
+ * Birden fazla izinden herhangi birine sahip olma kontrolü (OR mantığı)
+ * Örn: Dashboard sayfaları hem kendi modül izni hem de DASHBOARD_VIEW ile erişilebilir
+ */
+const checkAnyPermission = (...permissions: string[]) => {
+  const { hasAnyPermission } = useAuthStore.getState();
+  if (!hasAnyPermission(...permissions)) {
+    throw redirect({ to: "/welcome" });
+  }
+};
+
+/**
+ * Admin kontrolü yapan yardımcı fonksiyon
+ * Sadece admin kullanıcılarına erişim izni verir
+ */
+const checkAdmin = () => {
+  const { isAdmin } = useAuthStore.getState();
+  if (!isAdmin) {
+    throw redirect({ to: "/welcome" });
+  }
+};
+
 const rootRoute = createRootRoute();
 
 // Login route (public)
@@ -84,10 +120,18 @@ const dashboardLayoutRoute = createRoute({
   component: DashboardLayout,
 });
 
+// Welcome page (no permission required, just auth)
+const welcomeRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/welcome",
+  component: WelcomePage,
+});
+
 // Dashboard page
 const dashboardRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/dashboard",
+  beforeLoad: () => checkPermission(PERMISSIONS.DASHBOARD_VIEW),
   component: DashboardPage,
 });
 
@@ -95,6 +139,7 @@ const dashboardRoute = createRoute({
 const contractsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contracts",
+  beforeLoad: () => checkPermission(PERMISSIONS.CONTRACT_MENU),
   component: ContractsPage,
 });
 
@@ -102,6 +147,7 @@ const contractsRoute = createRoute({
 const customersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/customers",
+  beforeLoad: () => checkPermission(PERMISSIONS.CUSTOMER_MENU),
   component: CustomersPage,
 });
 
@@ -109,13 +155,15 @@ const customersRoute = createRoute({
 const licensesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/licenses",
+  beforeLoad: () => checkPermission(PERMISSIONS.LICENSE_MENU),
   component: LicensesPage,
 });
 
-// Sales page
+// Sales Dashboard — SALES_MENU veya DASHBOARD_VIEW yetkisi ile erişilebilir
 const salesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sales",
+  beforeLoad: () => checkAnyPermission(PERMISSIONS.SALES_MENU, PERMISSIONS.DASHBOARD_VIEW),
   component: SalesDashboardPage,
 });
 
@@ -123,6 +171,7 @@ const salesRoute = createRoute({
 const leadsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/leads",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: LeadsPage,
 });
 
@@ -130,6 +179,7 @@ const leadsRoute = createRoute({
 const offersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/offers",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: OffersPage,
 });
 
@@ -137,6 +187,7 @@ const offersRoute = createRoute({
 const pipelineSalesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/pipeline/sales",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: SalesPage,
 });
 
@@ -144,6 +195,7 @@ const pipelineSalesRoute = createRoute({
 const pipelineKanbanRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/pipeline/kanban",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: PipelineKanbanPage,
 });
 
@@ -151,6 +203,7 @@ const pipelineKanbanRoute = createRoute({
 const integratorRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/integrator",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: IntegratorPage,
 });
 
@@ -158,6 +211,7 @@ const integratorRoute = createRoute({
 const hardwareProductsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/products/hardware",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: HardwareProductsPage,
 });
 
@@ -165,6 +219,7 @@ const hardwareProductsRoute = createRoute({
 const softwareProductsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/products/software",
+  beforeLoad: () => checkPermission(PERMISSIONS.SALES_MENU),
   component: SoftwareProductsPage,
 });
 
@@ -172,6 +227,7 @@ const softwareProductsRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/finance/invoices",
+  beforeLoad: () => checkPermission(PERMISSIONS.FINANCE_MENU),
   component: InvoicesPage,
 });
 
@@ -179,6 +235,7 @@ const invoicesRoute = createRoute({
 const paymentsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/finance/payments",
+  beforeLoad: () => checkPermission(PERMISSIONS.FINANCE_MENU),
   component: PaymentsPage,
 });
 
@@ -186,6 +243,7 @@ const paymentsRoute = createRoute({
 const automatedPaymentsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/finance/automated-payments",
+  beforeLoad: () => checkPermission(PERMISSIONS.FINANCE_MENU),
   component: AutomatedPaymentsPage,
 });
 
@@ -193,6 +251,7 @@ const automatedPaymentsRoute = createRoute({
 const bankTransactionsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/finance/bank-transactions",
+  beforeLoad: () => checkPermission(PERMISSIONS.FINANCE_MENU),
   component: BankTransactionsPage,
 });
 
@@ -200,6 +259,7 @@ const bankTransactionsRoute = createRoute({
 const receivablesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/finance/receivables",
+  beforeLoad: () => checkPermission(PERMISSIONS.FINANCE_MENU),
   component: ReceivablesPage,
 });
 
@@ -207,34 +267,39 @@ const receivablesRoute = createRoute({
 const contractInvoicesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contract-invoices",
+  beforeLoad: () => checkPermission(PERMISSIONS.CONTRACT_MENU),
   component: ContractInvoicesPage,
 });
 
-// Contract Cash Registers page
+// Contract Cash Registers page — dashboard sekmesi var, DASHBOARD_VIEW ile de erişilebilir
 const contractCashRegistersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contracts/cash-registers",
+  beforeLoad: () => checkAnyPermission(PERMISSIONS.CONTRACT_MENU, PERMISSIONS.DASHBOARD_VIEW),
   component: ContractCashRegistersPage,
 });
 
-// Contract Supports page
+// Contract Supports page — dashboard sekmesi var, DASHBOARD_VIEW ile de erişilebilir
 const contractSupportsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contracts/supports",
+  beforeLoad: () => checkAnyPermission(PERMISSIONS.CONTRACT_MENU, PERMISSIONS.DASHBOARD_VIEW),
   component: ContractSupportsPage,
 });
 
-// Contract Versions page
+// Contract Versions page — dashboard sekmesi var, DASHBOARD_VIEW ile de erişilebilir
 const contractVersionsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contracts/versions",
+  beforeLoad: () => checkAnyPermission(PERMISSIONS.CONTRACT_MENU, PERMISSIONS.DASHBOARD_VIEW),
   component: ContractVersionsPage,
 });
 
-// Contract SaaS page
+// Contract SaaS page — dashboard sekmesi var, DASHBOARD_VIEW ile de erişilebilir
 const contractSaasRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contracts/saas",
+  beforeLoad: () => checkAnyPermission(PERMISSIONS.CONTRACT_MENU, PERMISSIONS.DASHBOARD_VIEW),
   component: ContractSaasPage,
 });
 
@@ -242,6 +307,7 @@ const contractSaasRoute = createRoute({
 const contractDocumentsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/contracts/documents",
+  beforeLoad: () => checkPermission(PERMISSIONS.CONTRACT_MENU),
   component: ContractDocumentsPage,
 });
 
@@ -249,6 +315,7 @@ const contractDocumentsRoute = createRoute({
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/e-documents/credits",
+  beforeLoad: () => checkPermission(PERMISSIONS.EDOC_MENU),
   component: EDocCreditsPage,
 });
 
@@ -256,6 +323,7 @@ const eDocCreditsRoute = createRoute({
 const eDocMembersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/e-documents/members",
+  beforeLoad: () => checkPermission(PERMISSIONS.EDOC_MENU),
   component: EDocMembersPage,
 });
 
@@ -263,6 +331,7 @@ const eDocMembersRoute = createRoute({
 const eInvoicePricesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/e-documents/invoice-prices",
+  beforeLoad: () => checkPermission(PERMISSIONS.EDOC_MENU),
   component: EInvoicePricesPage,
 });
 
@@ -270,6 +339,7 @@ const eInvoicePricesRoute = createRoute({
 const eDocStatusesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/e-documents/statuses",
+  beforeLoad: () => checkPermission(PERMISSIONS.EDOC_MENU),
   component: EDocStatusesPage,
 });
 
@@ -298,6 +368,7 @@ const publicPaymentErrorRoute = createRoute({
 const systemLogsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/system/logs",
+  beforeLoad: () => checkPermission(PERMISSIONS.SYSTEM_MENU),
   component: SystemLogsPage,
 });
 
@@ -305,6 +376,7 @@ const systemLogsRoute = createRoute({
 const usersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/system/users",
+  beforeLoad: () => checkPermission(PERMISSIONS.SYSTEM_MENU),
   component: UsersPage,
 });
 
@@ -312,52 +384,61 @@ const usersRoute = createRoute({
 const notificationSettingsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/system/notifications",
+  beforeLoad: () => checkPermission(PERMISSIONS.NOTIFICATION_MENU),
   component: NotificationSettingsPage,
 });
 
-// SSO Management routes
+// SSO Management Dashboard — SSO_MANAGEMENT_MENU veya DASHBOARD_VIEW yetkisi ile erişilebilir
 const ssoManagementRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sso-management",
+  beforeLoad: () => checkAnyPermission(PERMISSIONS.SSO_MANAGEMENT_MENU, PERMISSIONS.DASHBOARD_VIEW),
   component: SsoManagementPage,
 });
 
 const ssoApplicationsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sso-management/apps",
+  beforeLoad: () => checkPermission(PERMISSIONS.SSO_MANAGEMENT_MENU),
   component: ApplicationsPage,
 });
 
 const ssoRolesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sso-management/roles",
+  beforeLoad: () => checkPermission(PERMISSIONS.SSO_MANAGEMENT_MENU),
   component: RolesPage,
 });
 
 const ssoPermissionsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sso-management/perms",
+  beforeLoad: () => checkPermission(PERMISSIONS.SSO_MANAGEMENT_MENU),
   component: PermissionsPage,
 });
 
 const ssoUsersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sso-management/users",
+  beforeLoad: () => checkPermission(PERMISSIONS.SSO_MANAGEMENT_MENU),
   component: SsoUsersPage,
 });
 
 const ssoApiKeysRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/sso-management/api-keys",
+  beforeLoad: () => checkPermission(PERMISSIONS.SSO_MANAGEMENT_MENU),
   component: ApiKeysPage,
 });
 
-// Index redirect
+// Index redirect — dashboard yetkisi varsa oraya, yoksa welcome'a
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    throw redirect({ to: "/dashboard" });
+    const { hasPermission } = useAuthStore.getState();
+    const target = hasPermission(PERMISSIONS.DASHBOARD_VIEW) ? "/dashboard" : "/welcome";
+    throw redirect({ to: target });
   },
 });
 
@@ -368,6 +449,7 @@ const routeTree = rootRoute.addChildren([
   publicPaymentOkRoute,
   publicPaymentErrorRoute,
   dashboardLayoutRoute.addChildren([
+    welcomeRoute,
     dashboardRoute,
     contractsRoute,
     contractCashRegistersRoute,

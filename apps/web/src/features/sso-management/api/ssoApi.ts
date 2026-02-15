@@ -18,7 +18,8 @@ import type {
   ApiKeyFormData,
   LicenseSearchParams,
   AddUserFormData,
-  AddUserResponse
+  AddUserResponse,
+  UpdateUserData
 } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3888/api";
@@ -167,6 +168,9 @@ export const usersApi = {
     apiPost<TUserApp>(`${API_BASE_URL}/sso/users/assign`, data),
 
   remove: (userId: string) => apiDelete<void>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}`),
+
+  update: (userId: string, data: UpdateUserData) =>
+    apiPut<TUser>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}`, data),
 
   addUser: (data: AddUserFormData) =>
     apiPost<AddUserResponse>(`${API_BASE_URL}/sso/users/add`, data)

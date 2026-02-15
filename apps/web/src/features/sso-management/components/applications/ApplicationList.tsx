@@ -101,7 +101,7 @@ export function ApplicationList() {
         label: "Yenile",
         icon: <RefreshCw size={18} />,
         onClick: () => refetch(),
-        variant: "secondary"
+        variant: "default"
       }
     ],
     [handleAdd, refetch]

@@ -159,6 +159,21 @@ export class AuthService {
       throw new UnauthorizedException("Bu uygulamaya erişim yetkiniz yok");
     }
 
+    // 439 nolu lisans kontrolü - app-licances tablosundan licance_id kontrol et
+    const appLicence = await this.ssoAppLicenceModel
+      .findOne({ app_id: currentAppId, user_id: userId })
+      .lean()
+      .exec();
+
+    const REQUIRED_LICENCE_ID = "439";
+    if (!appLicence || appLicence.licance_id !== REQUIRED_LICENCE_ID) {
+      this.logger.warn(
+        `User ${userId} does not have required licence ${REQUIRED_LICENCE_ID}. ` +
+        `Current licance_id: ${appLicence?.licance_id ?? "none"}`
+      );
+      throw new UnauthorizedException("Bu uygulamayı kullanma yetkiniz yok");
+    }
+
     // Get user's roles and permissions for this app
     const { roles, permissions } = await this.getUserRolesAndPermissions(userId, currentAppId);
 

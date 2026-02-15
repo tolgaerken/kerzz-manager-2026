@@ -111,7 +111,7 @@ export function UserList() {
         align: "center",
         sortable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => (value ? "Aktif" : "Pasif"),
+        filterDisplayFn: (value: unknown) => (value ? "Aktif" : "Pasif"),
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
@@ -232,7 +232,7 @@ export function UserList() {
         label: "Yenile",
         icon: <RefreshCw size={18} />,
         onClick: () => refetch(),
-        variant: "secondary"
+        variant: "default"
       }
     ],
     [refetch, handleAddUser, selectedAppId]

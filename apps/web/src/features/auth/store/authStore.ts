@@ -5,6 +5,12 @@ import { setLoginTimestamp } from "../../../lib/apiClient";
 
 const { STORAGE_KEYS } = AUTH_CONSTANTS;
 
+/**
+ * Bu uygulama için gerekli lisans ID'si
+ * Kullanıcının bu lisansa sahip olması zorunludur
+ */
+const REQUIRED_LICENCE_ID = "439";
+
 interface AuthActions {
   setUserInfo: (userInfo: UserInfo) => void;
   setActiveLicance: (licanceId: string) => void;
@@ -55,11 +61,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   ...initialState,
 
   setUserInfo: (userInfo: UserInfo) => {
-    const activeLicanceId = localStorage.getItem(STORAGE_KEYS.ACTIVE_LICANCE);
-    const activeLicance =
-      userInfo.licances.find((l) => l.licanceId === activeLicanceId) ??
-      userInfo.licances[0] ??
-      null;
+    // 439 lisansını bul - bu lisans zorunludur
+    const licence439 = userInfo.licances.find(
+      (l) => l.licanceId === REQUIRED_LICENCE_ID
+    );
+
+    // 439 lisansı yoksa işlemi durdur (useAuth.validateLicances zaten hata fırlatacak)
+    if (!licence439) {
+      return;
+    }
+
+    // Active licance olarak 439 lisansını kullan
+    const activeLicance = licence439;
 
     const roles = determineRoles(activeLicance);
 

@@ -3,8 +3,11 @@ import { ContractsService } from "./contracts.service";
 import { ContractQueryDto } from "./dto/contract-query.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("contracts")
+@RequirePermission(PERMISSIONS.CONTRACT_MENU)
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 

@@ -14,8 +14,11 @@ import { UpdateLeadDto } from "./dto/update-lead.dto";
 import { LeadQueryDto } from "./dto/lead-query.dto";
 import { AddActivityDto } from "./dto/add-activity.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("leads")
+@RequirePermission(PERMISSIONS.SALES_MENU)
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 

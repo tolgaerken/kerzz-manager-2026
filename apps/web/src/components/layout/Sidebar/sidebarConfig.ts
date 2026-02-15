@@ -14,23 +14,26 @@ import {
   Shield,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
+import { PERMISSIONS } from "../../../features/auth/constants/permissions";
 
 export const sidebarMenuItems: MenuItemProps[] = [
   {
     icon: LayoutDashboard,
     label: "Dashboard",
     path: "/dashboard",
+    requiredPermission: PERMISSIONS.DASHBOARD_VIEW,
   },
   {
     icon: FileText,
     label: "Kontrat",
+    requiredPermission: PERMISSIONS.CONTRACT_MENU,
     subItems: [
       { label: "Kontratları Göster", path: "/contracts" },
       { label: "Sözleşme Faturaları", path: "/contract-invoices" },
-      { label: "Yazarkasalar", path: "/contracts/cash-registers" },
-      { label: "Destekler", path: "/contracts/supports" },
-      { label: "Versiyonlar", path: "/contracts/versions" },
-      { label: "SaaS", path: "/contracts/saas" },
+      { label: "Yazarkasalar", path: "/contracts/cash-registers", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
+      { label: "Destekler", path: "/contracts/supports", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
+      { label: "Versiyonlar", path: "/contracts/versions", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
+      { label: "SaaS", path: "/contracts/saas", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
       { label: "Dökümanlar", path: "/contracts/documents" },
     ],
   },
@@ -38,15 +41,18 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: Users,
     label: "Müşteriler",
     path: "/customers",
+    requiredPermission: PERMISSIONS.CUSTOMER_MENU,
   },
   {
     icon: Key,
     label: "Lisanslar",
     path: "/licenses",
+    requiredPermission: PERMISSIONS.LICENSE_MENU,
   },
   {
     icon: Wallet,
     label: "Finans",
+    requiredPermission: PERMISSIONS.FINANCE_MENU,
     subItems: [
       { label: "Faturalar", path: "/finance/invoices" },
       { label: "Alacak Listesi", path: "/finance/receivables" },
@@ -58,6 +64,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
   {
     icon: Package,
     label: "Ürünler",
+    requiredPermission: PERMISSIONS.SALES_MENU,
     subItems: [
       { label: "Donanım", path: "/products/hardware" },
       { label: "Yazılım", path: "/products/software" },
@@ -66,8 +73,9 @@ export const sidebarMenuItems: MenuItemProps[] = [
   {
     icon: TrendingUp,
     label: "Satış Yönetimi",
+    requiredPermission: PERMISSIONS.SALES_MENU,
     subItems: [
-      { label: "Dashboard", path: "/sales" },
+      { label: "Dashboard", path: "/sales", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
       { label: "Potansiyeller", path: "/leads" },
       { label: "Teklifler", path: "/offers" },
       { label: "Satışlar", path: "/pipeline/sales" },
@@ -78,10 +86,12 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: Plug,
     label: "Entegratör",
     path: "/integrator",
+    requiredPermission: PERMISSIONS.SALES_MENU,
   },
   {
     icon: FileCheck,
     label: "E-Belge",
+    requiredPermission: PERMISSIONS.EDOC_MENU,
     subItems: [
       { label: "E-Belge Durumları", path: "/e-documents/statuses" },
       { label: "Üye Yönetimi", path: "/e-documents/members" },
@@ -92,6 +102,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
   {
     icon: ScrollText,
     label: "Sistem",
+    requiredPermission: PERMISSIONS.SYSTEM_MENU,
     subItems: [
       { label: "Sistem Logları", path: "/system/logs" },
       { label: "Kullanıcı Yönetimi", path: "/system/users" },
@@ -101,12 +112,14 @@ export const sidebarMenuItems: MenuItemProps[] = [
     icon: Bell,
     label: "Bildirimler",
     path: "/system/notifications",
+    requiredPermission: PERMISSIONS.NOTIFICATION_MENU,
   },
   {
     icon: Shield,
     label: "SSO Yönetimi",
+    requiredPermission: PERMISSIONS.SSO_MANAGEMENT_MENU,
     subItems: [
-      { label: "Dashboard", path: "/sso-management" },
+      { label: "Dashboard", path: "/sso-management", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
       { label: "Uygulamalar", path: "/sso-management/apps" },
       { label: "Roller", path: "/sso-management/roles" },
       { label: "İzinler", path: "/sso-management/perms" },

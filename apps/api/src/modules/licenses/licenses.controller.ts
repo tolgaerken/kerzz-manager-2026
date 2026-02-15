@@ -15,8 +15,11 @@ import { LicenseQueryDto } from "./dto/license-query.dto";
 import { CreateLicenseDto } from "./dto/create-license.dto";
 import { UpdateLicenseDto } from "./dto/update-license.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("licenses")
+@RequirePermission(PERMISSIONS.LICENSE_MENU)
 export class LicensesController {
   constructor(private readonly licensesService: LicensesService) {}
 

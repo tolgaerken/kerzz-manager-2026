@@ -84,7 +84,7 @@ export function PermissionList() {
 
   const handleAdd = useCallback(() => {
     setSelectedPermission(null);
-    openPermissionForm(selectedAppId && selectedAppId !== "__all__" ? { app_id: selectedAppId } : undefined);
+    openPermissionForm(selectedAppId && selectedAppId !== "__all__" ? { app_id: selectedAppId, group: "", permission: "" } : undefined);
   }, [setSelectedPermission, openPermissionForm, selectedAppId]);
 
   const columns: GridColumnDef<TPermission>[] = useMemo(
@@ -97,7 +97,7 @@ export function PermissionList() {
         sortable: true,
         resizable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => getAppName(value as string),
+        filterDisplayFn: (value: unknown) => getAppName(value as string),
         cell: (value) => (
           <Chip label={getAppName(value as string)} size="small" variant="outlined" />
         )
@@ -140,7 +140,7 @@ export function PermissionList() {
         align: "center",
         sortable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => (value ? "Aktif" : "Pasif"),
+        filterDisplayFn: (value: unknown) => (value ? "Aktif" : "Pasif"),
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
@@ -230,7 +230,7 @@ export function PermissionList() {
         label: "Yenile",
         icon: <RefreshCw size={18} />,
         onClick: () => refetch(),
-        variant: "secondary"
+        variant: "default"
       }
     ],
     [handleAdd, refetch]

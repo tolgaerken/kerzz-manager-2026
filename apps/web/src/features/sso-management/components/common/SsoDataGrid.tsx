@@ -60,7 +60,7 @@ export function SsoDataGrid<T extends { id?: string }>({
       const gridCol: GridColumnDef<T> = {
         id: col.field as string,
         header: col.headerName,
-        accessorKey: col.field as string,
+        accessorKey: col.field as keyof T & string,
         width: col.width || col.minWidth || 150,
         sortable: col.sortable !== false,
         resizable: true,

@@ -170,8 +170,22 @@ export function useAuth() {
   };
 }
 
+/**
+ * Bu uygulama için gerekli lisans ID'si
+ * Kullanıcının bu lisansa sahip olması zorunludur
+ */
+const REQUIRED_LICENCE_ID = "439";
+
 function validateLicances(userInfo: UserInfo): void {
   if (!userInfo.licances || userInfo.licances.length === 0) {
     throw new Error("Bu uygulama için lisansınız bulunmamaktadır.");
+  }
+
+  // 439 nolu lisans kontrolü
+  const hasRequiredLicence = userInfo.licances.some(
+    (l) => l.licanceId === REQUIRED_LICENCE_ID
+  );
+  if (!hasRequiredLicence) {
+    throw new Error("Bu uygulamayı kullanma yetkiniz yok.");
   }
 }

@@ -13,8 +13,11 @@ import { CustomerQueryDto } from "./dto/customer-query.dto";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
 import { UpdateCustomerDto } from "./dto/update-customer.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("customers")
+@RequirePermission(PERMISSIONS.CUSTOMER_MENU)
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 

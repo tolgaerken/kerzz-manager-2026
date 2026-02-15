@@ -28,6 +28,13 @@ export interface AssignUserDto {
   roles?: string[];
 }
 
+export interface UpdateUserDto {
+  name?: string;
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+}
+
 export interface AddUserToAppDto {
   name: string;
   email?: string;
@@ -70,6 +77,27 @@ export class SsoUsersService {
    */
   async getUserByEmail(email: string): Promise<SsoUser | null> {
     return this.ssoUserModel.findOne({ email }).lean().exec();
+  }
+
+  /**
+   * Update a user's details
+   */
+  async updateUser(userId: string, dto: UpdateUserDto): Promise<SsoUser> {
+    const user = await this.ssoUserModel.findOne({ id: userId }).exec();
+    if (!user) {
+      throw new NotFoundException("Kullanıcı bulunamadı");
+    }
+
+    if (dto.name !== undefined) user.name = dto.name;
+    if (dto.email !== undefined) user.email = dto.email;
+    if (dto.phone !== undefined) user.phone = dto.phone;
+    if (dto.isActive !== undefined) user.isActive = dto.isActive;
+    user.updatedAt = new Date();
+
+    await user.save();
+    this.logger.log(`User updated: ${userId} - ${JSON.stringify(dto)}`);
+
+    return user.toObject();
   }
 
   /**
@@ -158,15 +186,35 @@ export class SsoUsersService {
    * Search users in SSO database
    */
   async searchUsers(query: string, limit = 20): Promise<SsoUser[]> {
-    const searchRegex = new RegExp(query, "i");
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = new RegExp(escapedQuery, "i");
 
-    return this.ssoUserModel
+    this.logger.debug(`searchUsers called - query: "${query}", escaped: "${escapedQuery}", limit: ${limit}`);
+
+    const results = await this.ssoUserModel
       .find({
         $or: [{ name: searchRegex }, { email: searchRegex }, { phone: searchRegex }]
       })
       .limit(limit)
       .lean()
       .exec();
+
+    this.logger.debug(`searchUsers results: ${results.length} users found`);
+    if (results.length > 0) {
+      this.logger.debug(`First result: ${JSON.stringify({ id: results[0].id, name: results[0].name, email: results[0].email, phone: results[0].phone })}`);
+    }
+
+    // Sonuç yoksa, koleksiyonda toplam kayıt sayısını logla
+    if (results.length === 0) {
+      const totalCount = await this.ssoUserModel.countDocuments();
+      this.logger.debug(`No results found. Total users in collection: ${totalCount}`);
+
+      // İlk 3 kaydı göster
+      const sampleUsers = await this.ssoUserModel.find().limit(3).lean().exec();
+      this.logger.debug(`Sample users: ${JSON.stringify(sampleUsers.map((u) => ({ id: u.id, name: u.name, email: u.email, phone: u.phone })))}`);
+    }
+
+    return results;
   }
 
   /**

@@ -15,8 +15,11 @@ import { InvoiceQueryDto } from "./dto/invoice-query.dto";
 import { CreateInvoiceDto } from "./dto/create-invoice.dto";
 import { UpdateInvoiceDto } from "./dto/update-invoice.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("invoices")
+@RequirePermission(PERMISSIONS.FINANCE_MENU)
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 

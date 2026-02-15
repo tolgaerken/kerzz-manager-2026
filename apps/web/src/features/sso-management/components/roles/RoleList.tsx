@@ -87,7 +87,7 @@ export function RoleList() {
   const handleAdd = useCallback(() => {
     setSelectedRole(null);
     // Seçili uygulama varsa form'a geçir
-    openRoleForm(selectedAppId && selectedAppId !== "__all__" ? { app_id: selectedAppId } : undefined);
+    openRoleForm(selectedAppId && selectedAppId !== "__all__" ? { name: "", app_id: selectedAppId } : undefined);
   }, [setSelectedRole, openRoleForm, selectedAppId]);
 
   const columns: GridColumnDef<TRole>[] = useMemo(
@@ -100,7 +100,7 @@ export function RoleList() {
         sortable: true,
         resizable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => getAppName(value as string),
+        filterDisplayFn: (value: unknown) => getAppName(value as string),
         cell: (value) => (
           <Chip label={getAppName(value as string)} size="small" variant="outlined" />
         )
@@ -131,7 +131,7 @@ export function RoleList() {
         align: "center",
         sortable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => (value ? "Evet" : "Hayır"),
+        filterDisplayFn: (value: unknown) => (value ? "Evet" : "Hayır"),
         cell: (value) => (
           <Chip
             label={value ? "Evet" : "Hayır"}
@@ -148,7 +148,7 @@ export function RoleList() {
         align: "center",
         sortable: true,
         filter: { type: "dropdown", showCounts: true },
-        filterDisplayFn: (value) => (value ? "Aktif" : "Pasif"),
+        filterDisplayFn: (value: unknown) => (value ? "Aktif" : "Pasif"),
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
@@ -259,14 +259,14 @@ export function RoleList() {
         label: "İzin Matrisi",
         icon: <Grid3X3 size={18} />,
         onClick: () => setIsMatrixOpen(true),
-        variant: "secondary"
+        variant: "default"
       },
       {
         id: "refresh",
         label: "Yenile",
         icon: <RefreshCw size={18} />,
         onClick: () => refetch(),
-        variant: "secondary"
+        variant: "default"
       }
     ],
     [handleAdd, refetch]

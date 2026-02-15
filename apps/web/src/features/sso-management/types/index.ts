@@ -96,6 +96,13 @@ export interface UserFormData {
   isActive?: boolean;
 }
 
+export interface UpdateUserData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+}
+
 export interface AddUserFormData {
   name: string;
   email?: string;

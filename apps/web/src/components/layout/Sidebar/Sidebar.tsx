@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { SidebarMenuItem } from "./SidebarMenuItem";
 import { sidebarMenuItems } from "./sidebarConfig";
@@ -7,6 +7,7 @@ import { useSidebarStore } from "../../../store/sidebarStore";
 import { Tooltip } from "../../ui";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { useVersion } from "../../../features/version";
+import { usePermissions } from "../../../features/auth/hooks/usePermissions";
 
 export function Sidebar() {
   const isMobile = useIsMobile();
@@ -14,6 +15,37 @@ export function Sidebar() {
   const { isCollapsed, isMobileOpen, toggleCollapsed, setMobileOpen } = useSidebarStore();
   const shouldCollapse = isCollapsed && !isMobile;
   const { data: versionData } = useVersion();
+  const { hasPermission, isAdmin } = usePermissions();
+
+  // İzin bazlı menü filtreleme (sub-item düzeyinde izin desteği ile)
+  const visibleMenuItems = useMemo(() => {
+    return sidebarMenuItems
+      .map((item) => {
+        // adminOnly menüler sadece admin kullanıcılarına gösterilir
+        if (item.adminOnly && !isAdmin) return null;
+
+        // Sub-item'ları varsa, her birinin iznini kontrol et
+        if (item.subItems) {
+          const visibleSubItems = item.subItems.filter((sub) => {
+            // Sub-item'ın kendi izni varsa onu kontrol et
+            if (sub.requiredPermission) return hasPermission(sub.requiredPermission);
+            // Yoksa parent'ın iznini kullan
+            return !item.requiredPermission || hasPermission(item.requiredPermission);
+          });
+
+          // Hiç görünür sub-item yoksa grubu gizle
+          if (visibleSubItems.length === 0) return null;
+
+          return { ...item, subItems: visibleSubItems };
+        }
+
+        // Sub-item'sız normal menü öğesi
+        if (item.requiredPermission && !hasPermission(item.requiredPermission)) return null;
+
+        return item;
+      })
+      .filter(Boolean) as typeof sidebarMenuItems;
+  }, [hasPermission, isAdmin]);
 
   useEffect(() => {
     if (isMobile) {
@@ -50,7 +82,7 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className={`flex-1 overflow-y-auto ${shouldCollapse ? "p-2" : "p-4"}`}>
           <ul className="space-y-1">
-            {sidebarMenuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <li key={item.label}>
                 <SidebarMenuItem {...item} />
               </li>

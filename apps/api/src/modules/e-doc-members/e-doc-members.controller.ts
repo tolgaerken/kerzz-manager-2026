@@ -14,8 +14,11 @@ import {
   CreateEDocMemberDto,
   UpdateEDocMemberDto,
 } from "./dto";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("e-doc-members")
+@RequirePermission(PERMISSIONS.EDOC_MENU)
 export class EDocMembersController {
   constructor(private readonly eDocMembersService: EDocMembersService) {}
 

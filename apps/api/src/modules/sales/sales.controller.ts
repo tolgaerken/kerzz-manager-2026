@@ -13,8 +13,11 @@ import { CreateSaleDto } from "./dto/create-sale.dto";
 import { UpdateSaleDto } from "./dto/update-sale.dto";
 import { SaleQueryDto } from "./dto/sale-query.dto";
 import { AuditLog } from "../system-logs";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("sales")
+@RequirePermission(PERMISSIONS.SALES_MENU)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 

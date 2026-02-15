@@ -58,7 +58,7 @@ import { PipelineGatewayModule } from "./modules/pipeline-gateway";
 import { OfferDocumentModule } from "./modules/offer-document";
 import { VersionModule } from "./modules/version";
 // Auth Module
-import { AuthModule, JwtAuthGuard } from "./modules/auth";
+import { AuthModule, JwtAuthGuard, PermissionsGuard } from "./modules/auth";
 // SSO Module
 import { SsoModule } from "./modules/sso";
 
@@ -141,6 +141,11 @@ import { SsoModule } from "./modules/sso";
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    // Global Permissions Guard - @RequirePermission dekoratörlerini aktif eder
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
     {
       provide: APP_INTERCEPTOR,

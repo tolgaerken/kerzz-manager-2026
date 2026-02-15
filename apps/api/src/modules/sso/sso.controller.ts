@@ -12,7 +12,7 @@ import {
   HttpStatus
 } from "@nestjs/common";
 import { Request } from "express";
-import { SsoUsersService, AssignUserDto, AddUserToAppDto } from "./sso-users.service";
+import { SsoUsersService, AssignUserDto, AddUserToAppDto, UpdateUserDto } from "./sso-users.service";
 import { SsoRolesService, CreateRoleDto, UpdateRoleDto } from "./sso-roles.service";
 import {
   SsoPermissionsService,
@@ -34,8 +34,10 @@ import { SsoUserAppsService, CreateUserAppDto, UpdateUserAppDto } from "./sso-us
 import { SsoLicensesService, LicenseSearchParams } from "./sso-licenses.service";
 import { RequirePermission } from "../auth/decorators/require-permission.decorator";
 import type { AuthenticatedUser } from "../auth/auth.types";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("sso")
+@RequirePermission(PERMISSIONS.SSO_MANAGEMENT_MENU)
 export class SsoController {
   constructor(
     private readonly usersService: SsoUsersService,
@@ -77,7 +79,6 @@ export class SsoController {
    * Search users in SSO database
    */
   @Get("users/search")
-  @RequirePermission("userOperations")
   async searchUsers(@Query("q") query: string, @Query("limit") limit?: number) {
     return this.usersService.searchUsers(query, limit);
   }
@@ -94,7 +95,6 @@ export class SsoController {
    * Assign a user to this application
    */
   @Post("users/assign")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async assignUser(@Body() dto: AssignUserDto) {
     return this.usersService.assignUserToApp(dto);
@@ -106,17 +106,23 @@ export class SsoController {
    * If user doesn't exist, create new user first
    */
   @Post("users/add")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async addUser(@Body() dto: AddUserToAppDto) {
     return this.usersService.addUserToApp(dto);
   }
 
   /**
+   * Update a user's details
+   */
+  @Put("users/:userId")
+  async updateUser(@Param("userId") userId: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.updateUser(userId, dto);
+  }
+
+  /**
    * Remove a user from this application
    */
   @Delete("users/:userId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeUser(@Param("userId") userId: string) {
     await this.usersService.removeUserFromApp(userId);
@@ -126,7 +132,6 @@ export class SsoController {
    * Update user's roles
    */
   @Put("users/:userId/roles")
-  @RequirePermission("userOperations")
   async updateUserRoles(@Param("userId") userId: string, @Body("roles") roles: string[]) {
     return this.usersService.updateUserRoles(userId, roles);
   }
@@ -178,7 +183,6 @@ export class SsoController {
    * Create a new role
    */
   @Post("roles")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async createRole(@Body() dto: CreateRoleDto) {
     return this.rolesService.createRole(dto);
@@ -188,7 +192,6 @@ export class SsoController {
    * Update a role
    */
   @Put("roles/:roleId")
-  @RequirePermission("userOperations")
   async updateRole(@Param("roleId") roleId: string, @Body() dto: UpdateRoleDto) {
     return this.rolesService.updateRole(roleId, dto);
   }
@@ -197,7 +200,6 @@ export class SsoController {
    * Delete a role
    */
   @Delete("roles/:roleId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteRole(@Param("roleId") roleId: string) {
     await this.rolesService.deleteRole(roleId);
@@ -207,7 +209,6 @@ export class SsoController {
    * Set permissions for a role
    */
   @Put("roles/:roleId/permissions")
-  @RequirePermission("userOperations")
   async setRolePermissions(
     @Param("roleId") roleId: string,
     @Body("permissions") permissions: string[]
@@ -283,7 +284,6 @@ export class SsoController {
    * Create a new permission
    */
   @Post("permissions")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async createPermission(@Body() dto: CreatePermissionDto) {
     return this.permissionsService.createPermission(dto);
@@ -293,7 +293,6 @@ export class SsoController {
    * Update a permission
    */
   @Put("permissions/:permissionId")
-  @RequirePermission("userOperations")
   async updatePermission(
     @Param("permissionId") permissionId: string,
     @Body() dto: UpdatePermissionDto
@@ -305,7 +304,6 @@ export class SsoController {
    * Delete a permission
    */
   @Delete("permissions/:permissionId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePermission(@Param("permissionId") permissionId: string) {
     await this.permissionsService.deletePermission(permissionId);
@@ -336,7 +334,6 @@ export class SsoController {
    * Create a new application
    */
   @Post("applications")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async createApplication(@Body() dto: CreateApplicationDto) {
     return this.applicationsService.createApplication(dto);
@@ -346,7 +343,6 @@ export class SsoController {
    * Update an application
    */
   @Put("applications/:applicationId")
-  @RequirePermission("userOperations")
   async updateApplication(
     @Param("applicationId") applicationId: string,
     @Body() dto: UpdateApplicationDto
@@ -358,7 +354,6 @@ export class SsoController {
    * Delete an application
    */
   @Delete("applications/:applicationId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteApplication(@Param("applicationId") applicationId: string) {
     await this.applicationsService.deleteApplication(applicationId);
@@ -394,7 +389,6 @@ export class SsoController {
    * Create a new API key
    */
   @Post("api-keys")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async createApiKey(@Body() dto: CreateApiKeyDto) {
     return this.apiKeysService.createApiKey(dto);
@@ -404,7 +398,6 @@ export class SsoController {
    * Update an API key
    */
   @Put("api-keys/:apiKeyId")
-  @RequirePermission("userOperations")
   async updateApiKey(@Param("apiKeyId") apiKeyId: string, @Body() dto: UpdateApiKeyDto) {
     return this.apiKeysService.updateApiKey(apiKeyId, dto);
   }
@@ -413,7 +406,6 @@ export class SsoController {
    * Delete an API key
    */
   @Delete("api-keys/:apiKeyId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteApiKey(@Param("apiKeyId") apiKeyId: string) {
     await this.apiKeysService.deleteApiKey(apiKeyId);
@@ -423,7 +415,6 @@ export class SsoController {
    * Regenerate an API key
    */
   @Post("api-keys/:apiKeyId/regenerate")
-  @RequirePermission("userOperations")
   async regenerateApiKey(@Param("apiKeyId") apiKeyId: string) {
     return this.apiKeysService.regenerateApiKey(apiKeyId);
   }
@@ -466,7 +457,6 @@ export class SsoController {
    * Create a new app license
    */
   @Post("app-licenses")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async createAppLicense(@Body() dto: CreateAppLicenseDto) {
     return this.appLicensesService.createAppLicense(dto);
@@ -476,7 +466,6 @@ export class SsoController {
    * Update an app license
    */
   @Put("app-licenses/:licenseId")
-  @RequirePermission("userOperations")
   async updateAppLicense(
     @Param("licenseId") licenseId: string,
     @Body() dto: UpdateAppLicenseDto
@@ -488,7 +477,6 @@ export class SsoController {
    * Delete an app license
    */
   @Delete("app-licenses/:licenseId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAppLicense(@Param("licenseId") licenseId: string) {
     await this.appLicensesService.deleteAppLicense(licenseId);
@@ -498,7 +486,6 @@ export class SsoController {
    * Update user roles in app license
    */
   @Put("app-licenses/user-roles/:appId/:userId")
-  @RequirePermission("userOperations")
   async updateUserRolesInLicense(
     @Param("appId") appId: string,
     @Param("userId") userId: string,
@@ -545,7 +532,6 @@ export class SsoController {
    * Create a new user-app assignment
    */
   @Post("user-apps")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.CREATED)
   async createUserApp(@Body() dto: CreateUserAppDto) {
     return this.userAppsService.createUserApp(dto);
@@ -555,7 +541,6 @@ export class SsoController {
    * Update a user-app assignment
    */
   @Put("user-apps/:userAppId")
-  @RequirePermission("userOperations")
   async updateUserApp(@Param("userAppId") userAppId: string, @Body() dto: UpdateUserAppDto) {
     return this.userAppsService.updateUserApp(userAppId, dto);
   }
@@ -564,7 +549,6 @@ export class SsoController {
    * Delete a user-app assignment
    */
   @Delete("user-apps/:userAppId")
-  @RequirePermission("userOperations")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUserApp(@Param("userAppId") userAppId: string) {
     await this.userAppsService.deleteUserApp(userAppId);

@@ -14,8 +14,11 @@ import { PaymentsService } from "./payments.service";
 import { CreatePaymentLinkDto } from "./dto/create-payment-link.dto";
 import { PaymentLinkQueryDto } from "./dto/payment-link-query.dto";
 import { Public } from "../auth/decorators/public.decorator";
+import { RequirePermission } from "../auth/decorators";
+import { PERMISSIONS } from "../auth/constants/permissions";
 
 @Controller("payments")
+@RequirePermission(PERMISSIONS.FINANCE_MENU)
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 

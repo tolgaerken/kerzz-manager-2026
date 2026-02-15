@@ -116,7 +116,7 @@ export function UserLicenseModal() {
         user_id: selectedUser.id,
         user_name: selectedUser.name,
         app_name: getAppName(selectedAppIdForLicense),
-        licance_id: selectedContractLicense._id,
+        licance_id: selectedContractLicense.id,
         brand: selectedContractLicense.brandName,
         license_type: selectedContractLicense.type,
         roles: []
