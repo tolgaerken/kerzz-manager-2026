@@ -196,8 +196,8 @@ export class OfferDocumentService {
 
         return {
           name: customer.name || "",
-          companyName: customer.companyName || "",
-          brandName: customer.companyName || customer.name || "", // brandName olarak companyName kullan
+          companyName: customer.name || "",
+          brandName: customer.brand || customer.name || "",
           address: fullAddress,
           city: addr.city || "",
           taxNo: customer.taxNo || "",

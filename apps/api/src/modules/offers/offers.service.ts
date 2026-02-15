@@ -383,13 +383,12 @@ export class OffersService {
       // Prospect müşteri oluştur
       const prospect = await this.customersService.create({
         type: "prospect",
-        name: lead.contactName,
-        companyName: lead.companyName,
+        name: lead.companyName || lead.contactName,
         phone: lead.contactPhone,
         email: lead.contactEmail,
       } as any);
       customerId = prospect._id;
-      customerName = prospect.companyName || prospect.name;
+      customerName = prospect.name;
     }
 
     // Offer oluştur
