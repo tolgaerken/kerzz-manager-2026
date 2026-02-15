@@ -34,7 +34,7 @@ export class EmployeeProfileResponseDto {
   titleName: string;
   managerUserId: string;
   location: string;
-  workType: WorkType;
+  workType?: WorkType;
 
   // Özlük bilgileri
   nationalId: string; // Maskelenmiş olabilir
@@ -45,7 +45,7 @@ export class EmployeeProfileResponseDto {
 
   // İstihdam bilgileri
   hireDate?: Date;
-  contractType: ContractType;
+  contractType?: ContractType;
   probationEndDate?: Date;
   payrollGroup: string;
   seniorityStartDate?: Date;
@@ -64,8 +64,8 @@ export class EmployeeProfileResponseDto {
   // Audit bilgileri
   creatorId?: string;
   updaterId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**

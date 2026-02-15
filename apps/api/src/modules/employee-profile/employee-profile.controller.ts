@@ -127,6 +127,26 @@ export class EmployeeProfileController {
   }
 
   /**
+   * Yöneticiye bağlı tüm alt çalışanları recursive olarak getir (tree yapısında)
+   * Sadece aktif çalışanları döndürür
+   */
+  @Get("hierarchy/:managerUserId")
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
+  async getHierarchy(@Param("managerUserId") managerUserId: string) {
+    return this.employeeProfileService.getHierarchy(managerUserId);
+  }
+
+  /**
+   * Yöneticiye bağlı tüm alt çalışanları recursive olarak getir (flat liste)
+   * Sadece aktif çalışanları döndürür
+   */
+  @Get("hierarchy-flat/:managerUserId")
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
+  async getHierarchyFlat(@Param("managerUserId") managerUserId: string) {
+    return this.employeeProfileService.getHierarchyFlat(managerUserId);
+  }
+
+  /**
    * Kullanıcı ID'sine göre profil getir
    */
   @Get(":userId")

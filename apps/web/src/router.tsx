@@ -46,6 +46,11 @@ import {
 import { BossUsersPage } from "./features/boss-users";
 import { EmployeeProfilesPage } from "./pages/EmployeeProfilesPage";
 import { MyProfilePage } from "./pages/MyProfilePage";
+import {
+  OrgDepartmentsPage,
+  OrgTitlesPage,
+  OrgLocationsPage,
+} from "./features/employee-org-lookup";
 import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
@@ -466,6 +471,28 @@ const myProfileRoute = createRoute({
   component: MyProfilePage,
 });
 
+// Org Lookup pages (Departman, Ünvan, Lokasyon tanımları)
+const orgDepartmentsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/org-lookups/departments",
+  beforeLoad: () => checkPermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU),
+  component: OrgDepartmentsPage,
+});
+
+const orgTitlesRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/org-lookups/titles",
+  beforeLoad: () => checkPermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU),
+  component: OrgTitlesPage,
+});
+
+const orgLocationsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/org-lookups/locations",
+  beforeLoad: () => checkPermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU),
+  component: OrgLocationsPage,
+});
+
 // Index redirect — dashboard yetkisi varsa oraya, yoksa welcome'a
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -525,6 +552,9 @@ const routeTree = rootRoute.addChildren([
     bossUsersRoute,
     employeeProfilesRoute,
     myProfileRoute,
+    orgDepartmentsRoute,
+    orgTitlesRoute,
+    orgLocationsRoute,
   ]),
 ]);
 

@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, FilterQuery } from "mongoose";
+import { Model } from "mongoose";
 import { SSO_DB_CONNECTION } from "../../database";
 import {
   EmployeeProfile,
@@ -15,6 +15,14 @@ import {
   EmploymentStatus,
 } from "./schemas/employee-profile.schema";
 import { SsoUser, SsoUserDocument, SsoUserApp, SsoUserAppDocument } from "../sso/schemas";
+import {
+  OrgDepartment,
+  OrgDepartmentDocument,
+  OrgTitle,
+  OrgTitleDocument,
+  OrgLocation,
+  OrgLocationDocument,
+} from "../employee-org-lookup/schemas";
 import {
   EmployeeProfileQueryDto,
   CreateEmployeeProfileDto,
@@ -24,6 +32,10 @@ import {
   PaginatedEmployeeProfileResponseDto,
   EmployeeProfileResponseDto,
   EnrichedEmployeeProfileResponseDto,
+  HierarchyNodeDto,
+  HierarchyResponseDto,
+  FlatHierarchyNodeDto,
+  FlatHierarchyResponseDto,
   maskNationalId,
   maskIban,
 } from "./dto";
@@ -47,7 +59,13 @@ export class EmployeeProfileService {
     @InjectModel(SsoUser.name, SSO_DB_CONNECTION)
     private readonly ssoUserModel: Model<SsoUserDocument>,
     @InjectModel(SsoUserApp.name, SSO_DB_CONNECTION)
-    private readonly ssoUserAppModel: Model<SsoUserAppDocument>
+    private readonly ssoUserAppModel: Model<SsoUserAppDocument>,
+    @InjectModel(OrgDepartment.name, SSO_DB_CONNECTION)
+    private readonly orgDepartmentModel: Model<OrgDepartmentDocument>,
+    @InjectModel(OrgTitle.name, SSO_DB_CONNECTION)
+    private readonly orgTitleModel: Model<OrgTitleDocument>,
+    @InjectModel(OrgLocation.name, SSO_DB_CONNECTION)
+    private readonly orgLocationModel: Model<OrgLocationDocument>
   ) {
     this.appId = this.configService.get<string>("APP_ID") || "kerzz-manager";
   }
@@ -100,7 +118,7 @@ export class EmployeeProfileService {
     const userAppMap = new Map(userApps.map((ua) => [ua.user_id, ua]));
 
     // SSO'dan bu kullanıcıların detaylarını al
-    const ssoFilter: FilterQuery<SsoUserDocument> = { id: { $in: appUserIds } };
+    const ssoFilter: Record<string, unknown> = { id: { $in: appUserIds } };
     
     // Arama filtresi (isim, email, phone)
     if (search) {
@@ -317,6 +335,14 @@ export class EmployeeProfileService {
       throw new BadRequestException(`Bu kullanıcı için zaten bir profil mevcut: ${dto.userId}`);
     }
 
+    // Lookup doğrulamaları
+    await this.validateLookupFields(dto);
+
+    // Manager cycle kontrolü
+    if (dto.managerUserId) {
+      await this.validateManagerAssignment(dto.userId, dto.managerUserId);
+    }
+
     const profile = new this.employeeProfileModel({
       ...dto,
       creatorId: context.userId,
@@ -346,6 +372,14 @@ export class EmployeeProfileService {
 
     if (!profile) {
       throw new NotFoundException(`Profil bulunamadı: ${userId}`);
+    }
+
+    // Lookup doğrulamaları
+    await this.validateLookupFields(dto);
+
+    // Manager cycle kontrolü
+    if (dto.managerUserId !== undefined && dto.managerUserId !== profile.managerUserId) {
+      await this.validateManagerAssignment(userId, dto.managerUserId);
     }
 
     // Güncelleme
@@ -460,6 +494,171 @@ export class EmployeeProfileService {
     return profiles.map((profile) =>
       this.toResponseDto(profile, context.canViewSensitiveData)
     );
+  }
+
+  /**
+   * Recursive hiyerarşi - yöneticiye bağlı tüm alt çalışanları getir (tree yapısında)
+   * Sadece aktif çalışanları döndürür
+   */
+  async getHierarchy(managerUserId: string): Promise<HierarchyResponseDto> {
+    // Manager'ın profilini ve SSO bilgilerini al
+    const managerProfile = await this.employeeProfileModel
+      .findOne({ userId: managerUserId })
+      .lean()
+      .exec();
+
+    const managerSso = await this.ssoUserModel
+      .findOne({ id: managerUserId })
+      .lean()
+      .exec();
+
+    if (!managerSso) {
+      throw new NotFoundException(`Yönetici bulunamadı: ${managerUserId}`);
+    }
+
+    // Root node oluştur
+    const rootNode: HierarchyNodeDto = {
+      userId: managerUserId,
+      userName: managerSso.name || "",
+      userEmail: managerSso.email || "",
+      employeeNumber: managerProfile?.employeeNumber || "",
+      departmentCode: managerProfile?.departmentCode || "",
+      departmentName: managerProfile?.departmentName || "",
+      titleCode: managerProfile?.titleCode || "",
+      titleName: managerProfile?.titleName || "",
+      location: managerProfile?.location || "",
+      employmentStatus: managerProfile?.employmentStatus || EmploymentStatus.ACTIVE,
+      level: 0,
+      subordinates: [],
+    };
+
+    // Recursive olarak alt çalışanları bul
+    let totalCount = 1;
+    const buildSubordinates = async (
+      parentUserId: string,
+      level: number
+    ): Promise<HierarchyNodeDto[]> => {
+      const subordinateProfiles = await this.employeeProfileModel
+        .find({
+          managerUserId: parentUserId,
+          employmentStatus: EmploymentStatus.ACTIVE,
+        })
+        .lean()
+        .exec();
+
+      const subordinateUserIds = subordinateProfiles.map((p) => p.userId);
+      const subordinateSsoUsers = await this.ssoUserModel
+        .find({ id: { $in: subordinateUserIds } })
+        .lean()
+        .exec();
+
+      const ssoMap = new Map(subordinateSsoUsers.map((u) => [u.id, u]));
+
+      const nodes: HierarchyNodeDto[] = [];
+
+      for (const profile of subordinateProfiles) {
+        const sso = ssoMap.get(profile.userId);
+        totalCount++;
+
+        const node: HierarchyNodeDto = {
+          userId: profile.userId,
+          userName: sso?.name || "",
+          userEmail: sso?.email || "",
+          employeeNumber: profile.employeeNumber || "",
+          departmentCode: profile.departmentCode || "",
+          departmentName: profile.departmentName || "",
+          titleCode: profile.titleCode || "",
+          titleName: profile.titleName || "",
+          location: profile.location || "",
+          employmentStatus: profile.employmentStatus,
+          level: level + 1,
+          subordinates: await buildSubordinates(profile.userId, level + 1),
+        };
+
+        nodes.push(node);
+      }
+
+      return nodes;
+    };
+
+    rootNode.subordinates = await buildSubordinates(managerUserId, 0);
+
+    return {
+      root: rootNode,
+      totalCount,
+    };
+  }
+
+  /**
+   * Recursive hiyerarşi - yöneticiye bağlı tüm alt çalışanları flat liste olarak getir
+   * Sadece aktif çalışanları döndürür
+   */
+  async getHierarchyFlat(managerUserId: string): Promise<FlatHierarchyResponseDto> {
+    const result: FlatHierarchyNodeDto[] = [];
+
+    // Manager'ın SSO bilgilerini al
+    const managerSso = await this.ssoUserModel
+      .findOne({ id: managerUserId })
+      .lean()
+      .exec();
+
+    if (!managerSso) {
+      throw new NotFoundException(`Yönetici bulunamadı: ${managerUserId}`);
+    }
+
+    // Recursive olarak alt çalışanları bul
+    const collectSubordinates = async (
+      parentUserId: string,
+      parentName: string,
+      level: number
+    ): Promise<void> => {
+      const subordinateProfiles = await this.employeeProfileModel
+        .find({
+          managerUserId: parentUserId,
+          employmentStatus: EmploymentStatus.ACTIVE,
+        })
+        .lean()
+        .exec();
+
+      const subordinateUserIds = subordinateProfiles.map((p) => p.userId);
+      const subordinateSsoUsers = await this.ssoUserModel
+        .find({ id: { $in: subordinateUserIds } })
+        .lean()
+        .exec();
+
+      const ssoMap = new Map(subordinateSsoUsers.map((u) => [u.id, u]));
+
+      for (const profile of subordinateProfiles) {
+        const sso = ssoMap.get(profile.userId);
+        const userName = sso?.name || "";
+
+        result.push({
+          userId: profile.userId,
+          userName,
+          userEmail: sso?.email || "",
+          employeeNumber: profile.employeeNumber || "",
+          departmentCode: profile.departmentCode || "",
+          departmentName: profile.departmentName || "",
+          titleCode: profile.titleCode || "",
+          titleName: profile.titleName || "",
+          location: profile.location || "",
+          employmentStatus: profile.employmentStatus,
+          managerUserId: parentUserId,
+          managerName: parentName,
+          level,
+        });
+
+        // Alt çalışanları recursive olarak topla
+        await collectSubordinates(profile.userId, userName, level + 1);
+      }
+    };
+
+    await collectSubordinates(managerUserId, managerSso.name || "", 1);
+
+    return {
+      data: result,
+      totalCount: result.length,
+    };
   }
 
   /**
@@ -620,5 +819,117 @@ export class EmployeeProfileService {
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
+  }
+
+  /**
+   * Lookup alanlarını doğrula (departman, ünvan, lokasyon)
+   */
+  private async validateLookupFields(
+    dto: CreateEmployeeProfileDto | UpdateEmployeeProfileDto
+  ): Promise<void> {
+    // Departman kodu doğrulama
+    if (dto.departmentCode) {
+      const department = await this.orgDepartmentModel
+        .findOne({ code: dto.departmentCode, isActive: true })
+        .lean()
+        .exec();
+
+      if (!department) {
+        throw new BadRequestException(
+          `Geçersiz veya pasif departman kodu: ${dto.departmentCode}`
+        );
+      }
+
+      // Departman adını otomatik doldur
+      if (!dto.departmentName) {
+        (dto as CreateEmployeeProfileDto).departmentName = department.name;
+      }
+    }
+
+    // Ünvan kodu doğrulama
+    if (dto.titleCode) {
+      const title = await this.orgTitleModel
+        .findOne({ code: dto.titleCode, isActive: true })
+        .lean()
+        .exec();
+
+      if (!title) {
+        throw new BadRequestException(`Geçersiz veya pasif ünvan kodu: ${dto.titleCode}`);
+      }
+
+      // Ünvan adını otomatik doldur
+      if (!dto.titleName) {
+        (dto as CreateEmployeeProfileDto).titleName = title.name;
+      }
+    }
+
+    // Lokasyon doğrulama
+    if (dto.location) {
+      const location = await this.orgLocationModel
+        .findOne({ name: dto.location, isActive: true })
+        .lean()
+        .exec();
+
+      if (!location) {
+        throw new BadRequestException(`Geçersiz veya pasif lokasyon: ${dto.location}`);
+      }
+    }
+
+    // Manager userId doğrulama (SSO'da var mı)
+    if (dto.managerUserId) {
+      const manager = await this.ssoUserModel
+        .findOne({ id: dto.managerUserId })
+        .lean()
+        .exec();
+
+      if (!manager) {
+        throw new BadRequestException(
+          `Yönetici kullanıcı bulunamadı: ${dto.managerUserId}`
+        );
+      }
+    }
+  }
+
+  /**
+   * Manager atamasında döngü (cycle) kontrolü
+   * A -> B -> C -> A gibi döngüsel hiyerarşi oluşmasını engeller
+   */
+  private async validateManagerAssignment(
+    userId: string,
+    managerUserId: string
+  ): Promise<void> {
+    if (!managerUserId) return;
+
+    // Kendini manager olarak atama kontrolü
+    if (userId === managerUserId) {
+      throw new BadRequestException("Bir çalışan kendi yöneticisi olamaz");
+    }
+
+    // Döngü kontrolü: manager'ın üst hiyerarşisinde userId var mı?
+    const visited = new Set<string>();
+    let currentManagerId: string | undefined = managerUserId;
+
+    while (currentManagerId) {
+      // Döngü tespit edildi
+      if (currentManagerId === userId) {
+        throw new BadRequestException(
+          "Bu atama döngüsel bir hiyerarşi oluşturacaktır. Yönetici zincirinde döngü tespit edildi."
+        );
+      }
+
+      // Sonsuz döngü koruması
+      if (visited.has(currentManagerId)) {
+        break;
+      }
+      visited.add(currentManagerId);
+
+      // Bir üst manager'ı bul
+      const managerProfile = await this.employeeProfileModel
+        .findOne({ userId: currentManagerId })
+        .lean()
+        .exec();
+
+      currentManagerId = managerProfile?.managerUserId || undefined;
+    }
   }
 }

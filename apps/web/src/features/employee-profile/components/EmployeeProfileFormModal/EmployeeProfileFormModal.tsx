@@ -23,6 +23,12 @@ import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCreateEmployeeProfile, useUpdateEmployeeProfile } from "../../hooks";
 import {
+  DepartmentLookupSelect,
+  TitleLookupSelect,
+  LocationLookupSelect,
+  ManagerLookupSelect,
+} from "../lookups";
+import {
   WORK_TYPE_OPTIONS,
   CONTRACT_TYPE_OPTIONS,
   EMPLOYMENT_STATUS_OPTIONS,
@@ -136,12 +142,14 @@ export function EmployeeProfileFormModal({
   const createMutation = useCreateEmployeeProfile();
   const updateMutation = useUpdateEmployeeProfile();
 
-  const isEditMode = !!profile;
+  // hasProfile false ise yeni profil oluşturma modunda olmalı
+  const isEditMode = !!profile && profile.hasProfile !== false;
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   // Form verilerini profile'dan doldur
   useEffect(() => {
-    if (profile) {
+    if (profile && profile.hasProfile !== false) {
+      // Mevcut profili düzenleme
       setFormData({
         userId: profile.userId,
         employeeNumber: profile.employeeNumber || "",
@@ -182,6 +190,45 @@ export function EmployeeProfileFormModal({
         salaryCurrency: profile.salaryCurrency || "TRY",
         notes: profile.notes || "",
       });
+    } else if (profile && profile.hasProfile === false) {
+      // Profili olmayan kullanıcı için yeni profil oluşturma - userId'yi doldur
+      setFormData((prev) => ({
+        ...prev,
+        userId: profile.userId,
+        employeeNumber: "",
+        departmentCode: "",
+        departmentName: "",
+        titleCode: "",
+        titleName: "",
+        managerUserId: "",
+        location: "",
+        workType: undefined,
+        nationalId: "",
+        birthDate: "",
+        gender: undefined,
+        address: {
+          street: "",
+          city: "",
+          district: "",
+          postalCode: "",
+          country: "",
+        },
+        emergencyContact: {
+          name: "",
+          phone: "",
+          relationship: "",
+        },
+        hireDate: "",
+        contractType: undefined,
+        probationEndDate: "",
+        payrollGroup: "",
+        seniorityStartDate: "",
+        employmentStatus: undefined,
+        iban: "",
+        salary: undefined,
+        salaryCurrency: "TRY",
+        notes: "",
+      }));
     } else if (userId) {
       setFormData((prev) => ({ ...prev, userId }));
     }
@@ -334,60 +381,33 @@ export function EmployeeProfileFormModal({
               sx={muiFieldSx}
             />
 
-            <Box display="flex" gap={2}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Departman Kodu"
-                value={formData.departmentCode}
-                onChange={(e) => handleFieldChange("departmentCode", e.target.value)}
-                sx={muiFieldSx}
-              />
-              <TextField
-                fullWidth
-                size="small"
-                label="Departman Adı"
-                value={formData.departmentName}
-                onChange={(e) => handleFieldChange("departmentName", e.target.value)}
-                sx={muiFieldSx}
-              />
-            </Box>
-
-            <Box display="flex" gap={2}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Unvan Kodu"
-                value={formData.titleCode}
-                onChange={(e) => handleFieldChange("titleCode", e.target.value)}
-                sx={muiFieldSx}
-              />
-              <TextField
-                fullWidth
-                size="small"
-                label="Unvan Adı"
-                value={formData.titleName}
-                onChange={(e) => handleFieldChange("titleName", e.target.value)}
-                sx={muiFieldSx}
-              />
-            </Box>
-
-            <TextField
-              fullWidth
-              size="small"
-              label="Yönetici Kullanıcı ID"
-              value={formData.managerUserId}
-              onChange={(e) => handleFieldChange("managerUserId", e.target.value)}
-              sx={muiFieldSx}
+            <DepartmentLookupSelect
+              value={formData.departmentCode || ""}
+              onChange={(code, name) => {
+                handleFieldChange("departmentCode", code);
+                handleFieldChange("departmentName", name);
+              }}
             />
 
-            <TextField
-              fullWidth
-              size="small"
-              label="Lokasyon"
-              value={formData.location}
-              onChange={(e) => handleFieldChange("location", e.target.value)}
-              sx={muiFieldSx}
+            <TitleLookupSelect
+              value={formData.titleCode || ""}
+              onChange={(code, name) => {
+                handleFieldChange("titleCode", code);
+                handleFieldChange("titleName", name);
+              }}
+            />
+
+            <ManagerLookupSelect
+              value={formData.managerUserId || ""}
+              onChange={(userId) => {
+                handleFieldChange("managerUserId", userId);
+              }}
+              excludeUserId={formData.userId}
+            />
+
+            <LocationLookupSelect
+              value={formData.location || ""}
+              onChange={(name) => handleFieldChange("location", name)}
             />
 
             <FormControl fullWidth size="small" sx={muiFieldSx}>

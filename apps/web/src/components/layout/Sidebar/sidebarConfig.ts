@@ -13,6 +13,7 @@ import {
   UserCog,
   Shield,
   UserCircle,
+  Building2,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 import { PERMISSIONS } from "../../../features/auth/constants/permissions";
@@ -136,6 +137,16 @@ export const sidebarMenuItems: MenuItemProps[] = [
     subItems: [
       { label: "Tüm Profiller", path: "/employee-profiles", requiredPermission: PERMISSIONS.EMPLOYEE_PROFILE_MENU },
       { label: "Profilim", path: "/my-profile" },
+    ],
+  },
+  {
+    icon: Building2,
+    label: "Organizasyon Tanımları",
+    requiredPermission: PERMISSIONS.EMPLOYEE_PROFILE_MENU,
+    subItems: [
+      { label: "Departmanlar", path: "/org-lookups/departments" },
+      { label: "Ünvanlar", path: "/org-lookups/titles" },
+      { label: "Lokasyonlar", path: "/org-lookups/locations" },
     ],
   },
 ];

@@ -205,7 +205,7 @@ export function MyProfileCard() {
           </Box>
           <Box display="flex" gap={1} mt={1}>
             <Chip
-              label={WORK_TYPE_LABELS[profile.workType] || profile.workType}
+              label={profile.workType ? (WORK_TYPE_LABELS[profile.workType] || profile.workType) : "-"}
               size="small"
               variant="outlined"
               sx={{

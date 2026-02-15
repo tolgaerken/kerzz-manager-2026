@@ -1,10 +1,26 @@
 import { useMemo, useCallback, useState } from "react";
-import { Box, Typography, Chip, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Autocomplete,
+  TextField,
+  CircularProgress,
+} from "@mui/material";
 import { RefreshCw, UserPlus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Grid, type GridColumnDef, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useEmployeeProfiles, useSoftDeleteEmployeeProfile } from "../../hooks";
 import { EmployeeProfileFormModal } from "../EmployeeProfileFormModal";
+import {
+  useOrgDepartmentsActive,
+  useOrgTitlesActive,
+  useOrgLocationsActive,
+} from "../../../employee-org-lookup/hooks";
 import {
   EMPLOYMENT_STATUS_OPTIONS,
   WORK_TYPE_OPTIONS,
@@ -63,6 +79,11 @@ export function EmployeeProfileGrid() {
 
   const { data, isLoading, refetch } = useEmployeeProfiles(queryParams);
   const softDeleteMutation = useSoftDeleteEmployeeProfile();
+
+  // Lookup verileri
+  const { data: departments, isLoading: depsLoading } = useOrgDepartmentsActive();
+  const { data: titles, isLoading: titlesLoading } = useOrgTitlesActive();
+  const { data: locations, isLoading: locsLoading } = useOrgLocationsActive();
 
   const profiles = data?.data || [];
 
@@ -125,7 +146,7 @@ export function EmployeeProfileGrid() {
         filter: { type: "input", conditions: ["contains"] },
         cell: (value, row) => (
           <div className="flex flex-col">
-            <span className="font-medium">{value || "-"}</span>
+            <span className="font-medium">{(value as string) || "-"}</span>
             <span className="text-xs text-[var(--color-muted-foreground)]">
               {row.userEmail || ""}
             </span>
@@ -140,7 +161,7 @@ export function EmployeeProfileGrid() {
         sortable: true,
         resizable: true,
         filter: { type: "input", conditions: ["contains", "equals"] },
-        cell: (value) => value || "-",
+        cell: (value) => (value as string) || "-",
       },
       {
         id: "departmentName",
@@ -150,7 +171,7 @@ export function EmployeeProfileGrid() {
         sortable: true,
         resizable: true,
         filter: { type: "input", conditions: ["contains"] },
-        cell: (value) => value || "-",
+        cell: (value) => (value as string) || "-",
       },
       {
         id: "titleName",
@@ -160,7 +181,7 @@ export function EmployeeProfileGrid() {
         sortable: true,
         resizable: true,
         filter: { type: "input", conditions: ["contains"] },
-        cell: (value) => value || "-",
+        cell: (value) => (value as string) || "-",
       },
       {
         id: "location",
@@ -170,7 +191,7 @@ export function EmployeeProfileGrid() {
         sortable: true,
         resizable: true,
         filter: { type: "input", conditions: ["contains"] },
-        cell: (value) => value || "-",
+        cell: (value) => (value as string) || "-",
       },
       {
         id: "workType",
@@ -184,13 +205,13 @@ export function EmployeeProfileGrid() {
         cell: (value) =>
           value ? (
             <Chip
-              label={WORK_TYPE_LABELS[value as WorkType] || value}
+              label={WORK_TYPE_LABELS[value as WorkType] || String(value)}
               size="small"
               variant="outlined"
               sx={chipBaseSx}
             />
           ) : (
-            "-"
+            <span>-</span>
           ),
       },
       {
@@ -328,6 +349,120 @@ export function EmployeeProfileGrid() {
 
       {/* Filtreler */}
       <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+        {/* Departman Filtresi */}
+        <Autocomplete
+          size="small"
+          sx={{ minWidth: 180 }}
+          options={departments || []}
+          getOptionLabel={(opt) => `${opt.code} - ${opt.name}`}
+          loading={depsLoading}
+          value={
+            departments?.find((d) => d.code === queryParams.departmentCode) || null
+          }
+          onChange={(_, newVal) =>
+            handleFilterChange("departmentCode", newVal?.code || undefined)
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Departman"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {depsLoading ? <CircularProgress size={16} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+              sx={muiFieldSx}
+            />
+          )}
+          componentsProps={{
+            paper: {
+              sx: {
+                backgroundColor: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+              },
+            },
+          }}
+        />
+
+        {/* Ünvan Filtresi */}
+        <Autocomplete
+          size="small"
+          sx={{ minWidth: 180 }}
+          options={titles || []}
+          getOptionLabel={(opt) => `${opt.code} - ${opt.name}`}
+          loading={titlesLoading}
+          value={titles?.find((t) => t.code === queryParams.titleCode) || null}
+          onChange={(_, newVal) =>
+            handleFilterChange("titleCode", newVal?.code || undefined)
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Ünvan"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {titlesLoading ? <CircularProgress size={16} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+              sx={muiFieldSx}
+            />
+          )}
+          componentsProps={{
+            paper: {
+              sx: {
+                backgroundColor: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+              },
+            },
+          }}
+        />
+
+        {/* Lokasyon Filtresi */}
+        <Autocomplete
+          size="small"
+          sx={{ minWidth: 160 }}
+          options={locations || []}
+          getOptionLabel={(opt) => opt.name}
+          loading={locsLoading}
+          value={locations?.find((l) => l.name === queryParams.location) || null}
+          onChange={(_, newVal) =>
+            handleFilterChange("location", newVal?.name || undefined)
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Lokasyon"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {locsLoading ? <CircularProgress size={16} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+              sx={muiFieldSx}
+            />
+          )}
+          componentsProps={{
+            paper: {
+              sx: {
+                backgroundColor: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+              },
+            },
+          }}
+        />
+
+        {/* İstihdam Durumu Filtresi */}
         <FormControl size="small" sx={{ minWidth: 150, ...muiFieldSx }}>
           <InputLabel>İstihdam Durumu</InputLabel>
           <Select
@@ -352,6 +487,7 @@ export function EmployeeProfileGrid() {
           </Select>
         </FormControl>
 
+        {/* Çalışma Tipi Filtresi */}
         <FormControl size="small" sx={{ minWidth: 150, ...muiFieldSx }}>
           <InputLabel>Çalışma Tipi</InputLabel>
           <Select

@@ -64,6 +64,8 @@ import { AuthModule, JwtAuthGuard, PermissionsGuard } from "./modules/auth";
 import { SsoModule } from "./modules/sso";
 // Employee Profile Module
 import { EmployeeProfileModule } from "./modules/employee-profile";
+// Employee Org Lookup Module
+import { EmployeeOrgLookupModule } from "./modules/employee-org-lookup";
 // Boss Users Module
 import { BossUsersModule } from "./modules/boss-users";
 
@@ -80,6 +82,8 @@ import { BossUsersModule } from "./modules/boss-users";
     SsoModule,
     // Employee Profile Module
     EmployeeProfileModule,
+    // Employee Org Lookup Module
+    EmployeeOrgLookupModule,
     // Boss Users Module
     BossUsersModule,
     HealthModule,
