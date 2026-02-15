@@ -39,3 +39,4 @@ export const SsoPermissionSchema = SchemaFactory.createForClass(SsoPermission);
 SsoPermissionSchema.index({ app_id: 1 });
 SsoPermissionSchema.index({ id: 1 });
 SsoPermissionSchema.index({ app_id: 1, group: 1 });
+SsoPermissionSchema.index({ app_id: 1, permission: 1 }, { unique: true });

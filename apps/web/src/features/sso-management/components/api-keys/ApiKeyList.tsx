@@ -116,7 +116,12 @@ export function ApiKeyList() {
         filter: { type: "dropdown", showCounts: true },
         filterDisplayFn: (value: unknown) => getAppName(value as string),
         cell: (value) => (
-          <Chip label={getAppName(value as string)} size="small" variant="outlined" />
+          <Chip
+            label={getAppName(value as string)}
+            size="small"
+            variant="outlined"
+            sx={{ borderColor: "var(--color-border)", color: "var(--color-foreground)" }}
+          />
         )
       },
       {
@@ -140,12 +145,26 @@ export function ApiKeyList() {
                 {isVisible ? keyStr : maskedKey}
               </Typography>
               <Tooltip title={isVisible ? "Gizle" : "Göster"}>
-                <IconButton size="small" onClick={() => toggleShowKey(row.id)}>
+                <IconButton
+                  size="small"
+                  onClick={() => toggleShowKey(row.id)}
+                  sx={{
+                    color: "var(--color-muted-foreground)",
+                    "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+                  }}
+                >
                   {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
                 </IconButton>
               </Tooltip>
               <Tooltip title="Kopyala">
-                <IconButton size="small" onClick={() => copyToClipboard(keyStr)}>
+                <IconButton
+                  size="small"
+                  onClick={() => copyToClipboard(keyStr)}
+                  sx={{
+                    color: "var(--color-muted-foreground)",
+                    "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+                  }}
+                >
                   <Copy size={14} />
                 </IconButton>
               </Tooltip>
@@ -155,6 +174,10 @@ export function ApiKeyList() {
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRegenerate(row);
+                  }}
+                  sx={{
+                    color: "var(--color-muted-foreground)",
+                    "&:hover": { backgroundColor: "var(--color-surface-hover)" }
                   }}
                 >
                   <RefreshCw size={14} />
@@ -176,8 +199,14 @@ export function ApiKeyList() {
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
-            color={value ? "success" : "default"}
             size="small"
+            sx={value ? {
+              bgcolor: "var(--color-success)",
+              color: "var(--color-success-foreground)"
+            } : {
+              bgcolor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }}
           />
         )
       },

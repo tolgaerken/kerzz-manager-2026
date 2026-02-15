@@ -29,10 +29,8 @@ import { PERMISSIONS } from "../auth/constants/permissions";
  * 
  * Yetkilendirme:
  * - GET /employee-profiles, GET /employee-profiles/:userId -> EMPLOYEE_PROFILE_MENU
- * - POST, PATCH /:userId, DELETE -> EMPLOYEE_PROFILE_EDIT_ALL
+ * - POST, PATCH /:userId, DELETE -> EMPLOYEE_PROFILE_EDIT_ALL (henüz SSO'da tanımlı değil)
  * - PATCH /me -> EMPLOYEE_PROFILE_EDIT_SELF (veya herhangi bir giriş yapmış kullanıcı)
- * 
- * TODO: SSO'da izinler tanımlandıktan sonra @RequirePermission decorator'larını aktif et
  */
 @Controller("employee-profiles")
 export class EmployeeProfileController {
@@ -62,7 +60,7 @@ export class EmployeeProfileController {
    * Tüm çalışan profillerini listele (sayfalanmış)
    */
   @Get()
-  // @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU) // TODO: SSO'da izin tanımlandıktan sonra aktif et
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
   async findAll(
     @Req() req: Request & { user?: AuthenticatedUser },
     @Query() query: EmployeeProfileQueryDto
@@ -75,7 +73,7 @@ export class EmployeeProfileController {
    * İstatistikleri getir
    */
   @Get("stats")
-  // @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU) // TODO: SSO'da izin tanımlandıktan sonra aktif et
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
   async getStats() {
     return this.employeeProfileService.getStats();
   }
@@ -106,7 +104,7 @@ export class EmployeeProfileController {
    * Departmana göre çalışanları getir
    */
   @Get("by-department/:departmentCode")
-  // @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU) // TODO: SSO'da izin tanımlandıktan sonra aktif et
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
   async findByDepartment(
     @Req() req: Request & { user?: AuthenticatedUser },
     @Param("departmentCode") departmentCode: string
@@ -119,7 +117,7 @@ export class EmployeeProfileController {
    * Yöneticiye bağlı çalışanları getir
    */
   @Get("by-manager/:managerUserId")
-  // @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU) // TODO: SSO'da izin tanımlandıktan sonra aktif et
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
   async findByManager(
     @Req() req: Request & { user?: AuthenticatedUser },
     @Param("managerUserId") managerUserId: string
@@ -132,7 +130,7 @@ export class EmployeeProfileController {
    * Kullanıcı ID'sine göre profil getir
    */
   @Get(":userId")
-  // @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU) // TODO: SSO'da izin tanımlandıktan sonra aktif et
+  @RequirePermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU)
   async findByUserId(
     @Req() req: Request & { user?: AuthenticatedUser },
     @Param("userId") userId: string

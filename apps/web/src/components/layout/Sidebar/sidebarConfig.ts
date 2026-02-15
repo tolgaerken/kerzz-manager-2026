@@ -133,9 +133,8 @@ export const sidebarMenuItems: MenuItemProps[] = [
   {
     icon: UserCircle,
     label: "Çalışan Profilleri",
-    // requiredPermission: PERMISSIONS.EMPLOYEE_PROFILE_MENU, // TODO: SSO'da izin tanımlandıktan sonra aktif et
     subItems: [
-      { label: "Tüm Profiller", path: "/employee-profiles" },
+      { label: "Tüm Profiller", path: "/employee-profiles", requiredPermission: PERMISSIONS.EMPLOYEE_PROFILE_MENU },
       { label: "Profilim", path: "/my-profile" },
     ],
   },

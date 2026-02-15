@@ -14,6 +14,9 @@ const initialFormData: PermissionFormData = {
   isActive: true
 };
 
+// Permission code format validation: UPPER_CASE_WITH_UNDERSCORES
+const PERMISSION_CODE_PATTERN = /^[A-Z][A-Z0-9_]*$/;
+
 export function PermissionForm() {
   const [formData, setFormData] = useState<PermissionFormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -72,7 +75,9 @@ export function PermissionForm() {
     }
 
     if (!formData.permission.trim()) {
-      newErrors.permission = "İzin adı zorunludur";
+      newErrors.permission = "İzin kodu zorunludur";
+    } else if (!PERMISSION_CODE_PATTERN.test(formData.permission.trim())) {
+      newErrors.permission = "Format: BUYUK_HARF_VE_UNDERSCORE (örn: EMPLOYEE_PROFILE_MENU)";
     }
 
     setErrors(newErrors);
@@ -196,19 +201,20 @@ export function PermissionForm() {
             onChange={(value) => handleFieldChange("group", value)}
             error={errors.group}
             required
-            placeholder="Örn: userOperations"
+            placeholder="Örn: employeeProfile"
           />
         )}
 
         <SsoFormField
           type="text"
-          label="İzin Adı"
+          label="İzin Kodu"
           name="permission"
           value={formData.permission}
           onChange={(value) => handleFieldChange("permission", value)}
           error={errors.permission}
           required
-          placeholder="Örn: createUser"
+          placeholder="Örn: EMPLOYEE_PROFILE_MENU"
+          helperText="Kod formatı: BUYUK_HARF_VE_UNDERSCORE"
         />
 
         <SsoFormField
@@ -217,8 +223,8 @@ export function PermissionForm() {
           name="description"
           value={formData.description || ""}
           onChange={(value) => handleFieldChange("description", value)}
-          multiline
-          rows={3}
+          placeholder="Örn: Çalışan Profili Menüsü"
+          helperText="Kullanıcı dostu açıklama (opsiyonel)"
         />
 
         <SsoFormField

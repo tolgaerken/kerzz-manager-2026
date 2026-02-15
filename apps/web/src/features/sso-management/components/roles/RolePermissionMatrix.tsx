@@ -247,7 +247,17 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
       onClose={handleClose}
       title="Rol İzin Matrisi"
       maxWidth="lg"
-      actions={<Button onClick={handleClose}>Kapat</Button>}
+      actions={
+        <Button
+          onClick={handleClose}
+          sx={{
+            color: "var(--color-muted-foreground)",
+            "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+          }}
+        >
+          Kapat
+        </Button>
+      }
     >
       {isLoading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
@@ -257,7 +267,14 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
         <Box>
           {/* App selector */}
           <Box mb={3}>
-            <FormControl fullWidth size="small">
+            <FormControl
+              fullWidth
+              size="small"
+              sx={{
+                "& .MuiInputLabel-root": { color: "var(--color-muted-foreground)" },
+                "& .MuiInputLabel-root.Mui-focused": { color: "var(--color-primary)" }
+              }}
+            >
               <InputLabel>Uygulama Seçin</InputLabel>
               <Select
                 value={selectedAppId}
@@ -266,12 +283,42 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                   setHasChanges(false);
                 }}
                 label="Uygulama Seçin"
+                sx={{
+                  backgroundColor: "var(--color-surface-elevated)",
+                  color: "var(--color-foreground)",
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-border)" },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-muted-foreground)" },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary)" },
+                  "& .MuiSvgIcon-root": { color: "var(--color-muted-foreground)" }
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: "var(--color-surface-elevated)",
+                      color: "var(--color-foreground)",
+                      border: "1px solid var(--color-border)"
+                    }
+                  }
+                }}
               >
-                <MenuItem value="">
+                <MenuItem value="" sx={{ color: "var(--color-muted-foreground)" }}>
                   <em>Seçiniz...</em>
                 </MenuItem>
                 {activeApps.map((app) => (
-                  <MenuItem key={app.id} value={app.id}>
+                  <MenuItem
+                    key={app.id}
+                    value={app.id}
+                    sx={{
+                      color: "var(--color-foreground)",
+                      "&:hover": { backgroundColor: "var(--color-surface-hover)" },
+                      "&.Mui-selected": {
+                        backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-elevated))"
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "color-mix(in srgb, var(--color-primary) 18%, var(--color-surface-elevated))"
+                      }
+                    }}
+                  >
                     {app.name}
                   </MenuItem>
                 ))}
@@ -307,15 +354,23 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                   <Typography sx={{ ml: 2 }}>Rol izinleri yükleniyor...</Typography>
                 </Box>
               ) : roles.length === 0 ? (
-                <Typography color="text.secondary" textAlign="center" py={4}>
+                <Typography sx={{ color: "var(--color-muted-foreground)" }} textAlign="center" py={4}>
                   Bu uygulama için henüz rol tanımlanmamış
                 </Typography>
               ) : permissions.length === 0 ? (
-                <Typography color="text.secondary" textAlign="center" py={4}>
+                <Typography sx={{ color: "var(--color-muted-foreground)" }} textAlign="center" py={4}>
                   Bu uygulama için henüz izin tanımlanmamış
                 </Typography>
               ) : (
-                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 500 }}>
+                <TableContainer
+                  component={Paper}
+                  variant="outlined"
+                  sx={{
+                    maxHeight: 500,
+                    backgroundColor: "var(--color-surface)",
+                    borderColor: "var(--color-border)"
+                  }}
+                >
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -326,6 +381,8 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                             position: "sticky",
                             left: 0,
                             backgroundColor: "var(--color-surface)",
+                            color: "var(--color-foreground)",
+                            borderBottomColor: "var(--color-border)",
                             zIndex: 3
                           }}
                         >
@@ -335,17 +392,31 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                           <TableCell
                             key={role.id}
                             align="center"
-                            sx={{ fontWeight: 600, minWidth: 140 }}
+                            sx={{
+                              fontWeight: 600,
+                              minWidth: 140,
+                              backgroundColor: "var(--color-surface)",
+                              color: "var(--color-foreground)",
+                              borderBottomColor: "var(--color-border)"
+                            }}
                           >
                             <Box>
-                              <Typography variant="body2" fontWeight={600}>
+                              <Typography variant="body2" fontWeight={600} sx={{ color: "var(--color-foreground)" }}>
                                 {role.name}
                               </Typography>
                               {role.developer && (
-                                <Chip label="Dev" size="small" color="warning" sx={{ mt: 0.5 }} />
+                                <Chip
+                                  label="Dev"
+                                  size="small"
+                                  sx={{
+                                    mt: 0.5,
+                                    bgcolor: "var(--color-warning)",
+                                    color: "var(--color-warning-foreground)"
+                                  }}
+                                />
                               )}
                               <Box mt={0.5}>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="caption" sx={{ color: "var(--color-muted-foreground)" }}>
                                   {(rolePermissions[role.id]?.size || 0)}/{permissions.length}
                                 </Typography>
                               </Box>
@@ -381,7 +452,12 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                                 size="small"
                                 variant="text"
                                 onClick={() => handleSelectAllForRole(role.id)}
-                                sx={{ fontSize: "0.7rem", py: 0 }}
+                                sx={{
+                                  fontSize: "0.7rem",
+                                  py: 0,
+                                  color: "var(--color-primary)",
+                                  "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+                                }}
                               >
                                 Tümü
                               </Button>
@@ -389,7 +465,12 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                                 size="small"
                                 variant="text"
                                 onClick={() => handleDeselectAllForRole(role.id)}
-                                sx={{ fontSize: "0.7rem", py: 0 }}
+                                sx={{
+                                  fontSize: "0.7rem",
+                                  py: 0,
+                                  color: "var(--color-muted-foreground)",
+                                  "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+                                }}
                               >
                                 Hiçbiri
                               </Button>
@@ -416,8 +497,8 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                                 <Chip
                                   label={`${group} (${groupPerms.length})`}
                                   size="small"
-                                  color="primary"
                                   variant="outlined"
+                                  sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
                                 />
                               </TableCell>
                               {roles.map((role) => {
@@ -427,12 +508,17 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                                   !allSelected && groupPerms.some((p) => rolePerms.has(p.id));
 
                                 return (
-                                  <TableCell key={role.id} align="center">
+                                  <TableCell key={role.id} align="center" sx={{ borderBottomColor: "var(--color-border)" }}>
                                     <Checkbox
                                       checked={allSelected}
                                       indeterminate={someSelected}
                                       onChange={() => handleToggleGroupForRole(role.id, group)}
                                       size="small"
+                                      sx={{
+                                        color: "var(--color-muted-foreground)",
+                                        "&.Mui-checked": { color: "var(--color-primary)" },
+                                        "&.MuiCheckbox-indeterminate": { color: "var(--color-primary)" }
+                                      }}
                                     />
                                   </TableCell>
                                 );
@@ -440,17 +526,25 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                             </TableRow>
                             {/* Permission rows */}
                             {groupPerms.map((perm) => (
-                              <TableRow key={perm.id} hover>
+                              <TableRow
+                                key={perm.id}
+                                hover
+                                sx={{
+                                  "&:hover": { backgroundColor: "var(--color-surface-hover)" },
+                                  "& td": { borderBottomColor: "var(--color-border)" }
+                                }}
+                              >
                                 <TableCell
                                   sx={{
                                     position: "sticky",
                                     left: 0,
                                     backgroundColor: "var(--color-surface)",
+                                    color: "var(--color-foreground)",
                                     zIndex: 1
                                   }}
                                 >
                                   <Tooltip title={perm.description || ""} placement="right">
-                                    <Typography variant="body2" sx={{ pl: 2 }}>
+                                    <Typography variant="body2" sx={{ pl: 2, color: "var(--color-foreground)" }}>
                                       {perm.permission}
                                     </Typography>
                                   </Tooltip>
@@ -463,6 +557,10 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                                         checked={rolePerms.has(perm.id)}
                                         onChange={() => handleTogglePermission(role.id, perm.id)}
                                         size="small"
+                                        sx={{
+                                          color: "var(--color-muted-foreground)",
+                                          "&.Mui-checked": { color: "var(--color-primary)" }
+                                        }}
                                       />
                                     </TableCell>
                                   );
@@ -492,12 +590,21 @@ export function RolePermissionMatrix({ open, onClose, initialAppId }: RolePermis
                           Kaydet
                         </TableCell>
                         {roles.map((role) => (
-                          <TableCell key={role.id} align="center">
+                          <TableCell key={role.id} align="center" sx={{ borderBottomColor: "var(--color-border)" }}>
                             <Button
                               size="small"
                               variant="contained"
                               onClick={() => handleSaveRole(role.id)}
                               disabled={savingRoleId === role.id}
+                              sx={{
+                                backgroundColor: "var(--color-primary)",
+                                color: "var(--color-primary-foreground)",
+                                "&:hover": { backgroundColor: "var(--color-primary)" },
+                                "&.Mui-disabled": {
+                                  backgroundColor: "var(--color-surface-hover)",
+                                  color: "var(--color-muted-foreground)"
+                                }
+                              }}
                             >
                               {savingRoleId === role.id ? "..." : "Kaydet"}
                             </Button>

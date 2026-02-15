@@ -88,13 +88,28 @@ export function UserForm() {
       title="Kullanıcı Düzenle"
       actions={
         <>
-          <Button onClick={closeUserForm} color="inherit">
+          <Button
+            onClick={closeUserForm}
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+            }}
+          >
             İptal
           </Button>
           <Button
             onClick={handleSubmit}
             variant="contained"
             disabled={updateUserMutation.isPending}
+            sx={{
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              "&:hover": { backgroundColor: "var(--color-primary)" },
+              "&.Mui-disabled": {
+                backgroundColor: "var(--color-surface-hover)",
+                color: "var(--color-muted-foreground)"
+              }
+            }}
           >
             {updateUserMutation.isPending ? "Kaydediliyor..." : "Kaydet"}
           </Button>
@@ -103,7 +118,16 @@ export function UserForm() {
     >
       <Stack spacing={2} sx={{ pt: 1 }}>
         {selectedUser && (
-          <Alert severity="info" sx={{ fontSize: "0.8rem" }}>
+          <Alert
+            severity="info"
+            sx={{
+              fontSize: "0.8rem",
+              color: "var(--color-info)",
+              border: "1px solid color-mix(in srgb, var(--color-info) 30%, transparent)",
+              backgroundColor: "color-mix(in srgb, var(--color-info) 10%, transparent)",
+              "& .MuiAlert-icon": { color: "var(--color-info)" }
+            }}
+          >
             Kullanıcı ID: {selectedUser.id}
           </Alert>
         )}

@@ -99,7 +99,12 @@ export function PermissionList() {
         filter: { type: "dropdown", showCounts: true },
         filterDisplayFn: (value: unknown) => getAppName(value as string),
         cell: (value) => (
-          <Chip label={getAppName(value as string)} size="small" variant="outlined" />
+          <Chip
+            label={getAppName(value as string)}
+            size="small"
+            variant="outlined"
+            sx={{ borderColor: "var(--color-border)", color: "var(--color-foreground)" }}
+          />
         )
       },
       {
@@ -111,7 +116,12 @@ export function PermissionList() {
         resizable: true,
         filter: { type: "dropdown", showCounts: true },
         cell: (value) => (
-          <Chip label={value as string} size="small" color="primary" variant="outlined" />
+          <Chip
+            label={value as string}
+            size="small"
+            variant="outlined"
+            sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
+          />
         )
       },
       {
@@ -144,8 +154,14 @@ export function PermissionList() {
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
-            color={value ? "success" : "default"}
             size="small"
+            sx={value ? {
+              bgcolor: "var(--color-success)",
+              color: "var(--color-success-foreground)"
+            } : {
+              bgcolor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }}
           />
         )
       },

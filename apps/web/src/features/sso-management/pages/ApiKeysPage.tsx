@@ -6,8 +6,13 @@ export function ApiKeysPage() {
   return (
     <Box>
       <Box mb={3}>
-        <Breadcrumbs>
-          <MuiLink component={Link} to="/sso-management" underline="hover" color="inherit">
+        <Breadcrumbs sx={{ "& .MuiBreadcrumbs-separator": { color: "var(--color-muted-foreground)" } }}>
+          <MuiLink
+            component={Link}
+            to="/sso-management"
+            underline="hover"
+            sx={{ color: "var(--color-muted-foreground)", "&:hover": { color: "var(--color-primary)" } }}
+          >
             SSO Yönetimi
           </MuiLink>
           <Typography sx={{ color: "var(--color-foreground)" }}>API Anahtarları</Typography>

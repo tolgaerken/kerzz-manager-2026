@@ -60,6 +60,8 @@ export interface SsoRole {
 
 /**
  * Permission structure from SSO
+ * permission: İzin kodu (örn: "EMPLOYEE_PROFILE_MENU")
+ * description: Açıklamalı ad (örn: "Çalışan Profili Menüsü")
  */
 export interface SsoPermissionInfo {
   id: string;

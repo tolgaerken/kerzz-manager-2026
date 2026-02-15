@@ -52,9 +52,9 @@ export function useAuth() {
     try {
       const response = await authApi.getMe(accessToken);
 
-      // Update permissions from backend
-      const permissionNames = response.user.permissions.map((p) => p.permission);
-      setPermissions(permissionNames);
+      // Update permissions from backend (permission = kod)
+      const permissionCodes = response.user.permissions.map((p) => p.permission);
+      setPermissions(permissionCodes);
 
       // Update app users
       setAppUsers(response.appUsers);

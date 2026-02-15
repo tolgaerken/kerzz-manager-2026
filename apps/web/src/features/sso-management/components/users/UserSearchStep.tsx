@@ -66,7 +66,7 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
       />
 
       {searchQuery.length > 0 && searchQuery.length < 3 && (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
+        <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)", textAlign: "center" }}>
           En az 3 karakter giriniz
         </Typography>
       )}
@@ -106,9 +106,19 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
                       {user.name}
                     </Typography>
                     {user.isActive ? (
-                      <Chip label="Aktif" size="small" color="success" variant="outlined" />
+                      <Chip
+                        label="Aktif"
+                        size="small"
+                        variant="outlined"
+                        sx={{ borderColor: "var(--color-success)", color: "var(--color-success)" }}
+                      />
                     ) : (
-                      <Chip label="Pasif" size="small" color="default" variant="outlined" />
+                      <Chip
+                        label="Pasif"
+                        size="small"
+                        variant="outlined"
+                        sx={{ borderColor: "var(--color-border)", color: "var(--color-muted-foreground)" }}
+                      />
                     )}
                   </Box>
                 }
@@ -117,7 +127,7 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
                     {user.email && (
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <Mail size={14} />
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
                           {user.email}
                         </Typography>
                       </Box>
@@ -125,7 +135,7 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
                     {user.phone && (
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <Phone size={14} />
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
                           {user.phone}
                         </Typography>
                       </Box>
@@ -158,6 +168,14 @@ export function UserSearchStep({ onSelectUser, onCreateNew, isPending }: UserSea
             variant="outlined"
             startIcon={<UserPlus size={18} />}
             onClick={() => onCreateNew(searchQuery)}
+            sx={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-foreground)",
+              "&:hover": {
+                borderColor: "var(--color-primary)",
+                backgroundColor: "var(--color-surface-hover)"
+              }
+            }}
           >
             Yeni Kullanıcı Oluştur
           </Button>

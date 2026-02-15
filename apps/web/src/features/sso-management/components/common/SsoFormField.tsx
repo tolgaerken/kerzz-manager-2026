@@ -25,6 +25,7 @@ interface TextFieldComponentProps extends BaseFieldProps {
   multiline?: boolean;
   rows?: number;
   placeholder?: string;
+  helperText?: string;
 }
 
 interface CheckboxFieldProps extends BaseFieldProps {
@@ -100,8 +101,17 @@ export function SsoFormField(props: SsoFormFieldProps) {
 
   if (props.type === "select") {
     return (
-      <FormControl fullWidth={fullWidth} error={!!error} required={required}>
-        <InputLabel id={`${name}-label`} sx={{ color: "var(--color-muted-foreground)" }}>
+      <FormControl
+        fullWidth={fullWidth}
+        error={!!error}
+        required={required}
+        sx={{
+          "& .MuiInputLabel-root": { color: "var(--color-muted-foreground)" },
+          "& .MuiInputLabel-root.Mui-focused": { color: "var(--color-primary)" },
+          "& .MuiInputLabel-root.Mui-disabled": { color: "var(--color-muted-foreground)" }
+        }}
+      >
+        <InputLabel id={`${name}-label`}>
           {label}
         </InputLabel>
         <Select
@@ -111,7 +121,53 @@ export function SsoFormField(props: SsoFormFieldProps) {
           onChange={(e) => props.onChange(e.target.value)}
           label={label}
           disabled={disabled}
-          sx={fieldSx}
+          size="small"
+          sx={{
+            backgroundColor: "var(--color-surface-elevated)",
+            color: "var(--color-foreground)",
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: "var(--color-border)"
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "var(--color-muted-foreground)"
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: "var(--color-primary)"
+            },
+            "&.Mui-disabled": {
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-foreground)",
+              opacity: 0.6,
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "var(--color-border)"
+              }
+            },
+            "& .MuiSvgIcon-root": {
+              color: "var(--color-muted-foreground)"
+            }
+          }}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                backgroundColor: "var(--color-surface-elevated)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+                "& .MuiMenuItem-root": {
+                  color: "var(--color-foreground)",
+                  "&:hover": {
+                    backgroundColor: "var(--color-surface-hover)"
+                  },
+                  "&.Mui-selected": {
+                    backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-elevated))"
+                  },
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "color-mix(in srgb, var(--color-primary) 18%, var(--color-surface-elevated))"
+                  }
+                }
+              }
+            }
+          }}
         >
           {props.options.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -133,14 +189,30 @@ export function SsoFormField(props: SsoFormFieldProps) {
       value={props.value}
       onChange={(e) => props.onChange(e.target.value)}
       error={!!error}
-      helperText={error}
+      helperText={error || props.helperText}
       required={required}
       disabled={disabled}
       multiline={props.multiline}
       rows={props.rows}
       placeholder={props.placeholder}
       size="small"
-      sx={fieldSx}
+      sx={{
+        ...fieldSx,
+        "& .MuiInputBase-root.Mui-disabled": {
+          backgroundColor: "var(--color-surface)",
+          color: "var(--color-foreground)",
+          opacity: 0.6,
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--color-border)"
+          }
+        },
+        "& .MuiInputLabel-root.Mui-disabled": {
+          color: "var(--color-muted-foreground)"
+        },
+        "& .MuiFormHelperText-root": {
+          color: error ? "var(--color-error)" : "var(--color-muted-foreground)"
+        }
+      }}
     />
   );
 }

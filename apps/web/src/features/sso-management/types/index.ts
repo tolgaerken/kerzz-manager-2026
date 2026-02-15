@@ -48,6 +48,11 @@ export interface RoleFormData {
 
 // ==================== Permission ====================
 
+/**
+ * Permission model
+ * permission: İzin kodu (örn: "EMPLOYEE_PROFILE_MENU")
+ * description: Açıklamalı ad (örn: "Çalışan Profili Menüsü")
+ */
 export interface TPermission extends BaseModel {
   app_id: string;
   group: string;

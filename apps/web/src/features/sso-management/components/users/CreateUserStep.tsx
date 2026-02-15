@@ -87,18 +87,41 @@ export function CreateUserStep({
       <Button
         startIcon={<ArrowLeft size={18} />}
         onClick={onBack}
-        sx={{ alignSelf: "flex-start" }}
+        sx={{
+          alignSelf: "flex-start",
+          color: "var(--color-muted-foreground)",
+          "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+        }}
         size="small"
-        color="inherit"
       >
         Aramaya Dön
       </Button>
 
-      <Alert severity="info">
+      <Alert
+        severity="info"
+        sx={{
+          color: "var(--color-info)",
+          border: "1px solid color-mix(in srgb, var(--color-info) 30%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--color-info) 10%, transparent)",
+          "& .MuiAlert-icon": { color: "var(--color-info)" }
+        }}
+      >
         Yeni bir SSO kullanıcısı oluşturulacak ve uygulamaya eklenecektir.
       </Alert>
 
-      {errors.general && <Alert severity="warning">{errors.general}</Alert>}
+      {errors.general && (
+        <Alert
+          severity="warning"
+          sx={{
+            color: "var(--color-warning)",
+            border: "1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
+            "& .MuiAlert-icon": { color: "var(--color-warning)" }
+          }}
+        >
+          {errors.general}
+        </Alert>
+      )}
 
       <SsoFormField
         type="text"
@@ -135,6 +158,15 @@ export function CreateUserStep({
         onClick={handleSubmit}
         disabled={isPending}
         fullWidth
+        sx={{
+          backgroundColor: "var(--color-primary)",
+          color: "var(--color-primary-foreground)",
+          "&:hover": { backgroundColor: "var(--color-primary)" },
+          "&.Mui-disabled": {
+            backgroundColor: "var(--color-surface-hover)",
+            color: "var(--color-muted-foreground)"
+          }
+        }}
       >
         {isPending ? "Oluşturuluyor..." : "Oluştur ve Ekle"}
       </Button>

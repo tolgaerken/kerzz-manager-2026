@@ -162,13 +162,29 @@ export function PermissionMatrix() {
       maxWidth="md"
       actions={
         <>
-          <Button onClick={handleClose} disabled={setRolePermissions.isPending}>
+          <Button
+            onClick={handleClose}
+            disabled={setRolePermissions.isPending}
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+            }}
+          >
             İptal
           </Button>
           <Button
             variant="contained"
             onClick={handleSave}
             disabled={!hasChanges || setRolePermissions.isPending}
+            sx={{
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              "&:hover": { backgroundColor: "var(--color-primary)" },
+              "&.Mui-disabled": {
+                backgroundColor: "var(--color-surface-hover)",
+                color: "var(--color-muted-foreground)"
+              }
+            }}
           >
             {setRolePermissions.isPending ? "Kaydediliyor..." : "Kaydet"}
           </Button>
@@ -205,10 +221,34 @@ export function PermissionMatrix() {
 
             {/* Quick actions */}
             <Box display="flex" gap={1}>
-              <Button size="small" variant="outlined" onClick={handleSelectAll}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleSelectAll}
+                sx={{
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-foreground)",
+                  "&:hover": {
+                    borderColor: "var(--color-primary)",
+                    backgroundColor: "var(--color-surface-hover)"
+                  }
+                }}
+              >
                 Tümünü Seç
               </Button>
-              <Button size="small" variant="outlined" onClick={handleDeselectAll}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleDeselectAll}
+                sx={{
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-foreground)",
+                  "&:hover": {
+                    borderColor: "var(--color-primary)",
+                    backgroundColor: "var(--color-surface-hover)"
+                  }
+                }}
+              >
                 Tümünü Kaldır
               </Button>
             </Box>
@@ -216,18 +256,54 @@ export function PermissionMatrix() {
 
           {permissions.length === 0 ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-              <Typography color="text.secondary">
+              <Typography sx={{ color: "var(--color-muted-foreground)" }}>
                 Bu uygulama için henüz izin tanımlanmamış
               </Typography>
             </Box>
           ) : (
-            <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 450 }}>
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{
+                maxHeight: 450,
+                backgroundColor: "var(--color-surface)",
+                borderColor: "var(--color-border)"
+              }}
+            >
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 600, width: 150 }}>Grup</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>İzin</TableCell>
-                    <TableCell sx={{ fontWeight: 600, width: 80 }} align="center">
+                    <TableCell
+                      sx={{
+                        fontWeight: 600,
+                        width: 150,
+                        backgroundColor: "var(--color-surface)",
+                        color: "var(--color-foreground)",
+                        borderBottomColor: "var(--color-border)"
+                      }}
+                    >
+                      Grup
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: 600,
+                        backgroundColor: "var(--color-surface)",
+                        color: "var(--color-foreground)",
+                        borderBottomColor: "var(--color-border)"
+                      }}
+                    >
+                      İzin
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: 600,
+                        width: 80,
+                        backgroundColor: "var(--color-surface)",
+                        color: "var(--color-foreground)",
+                        borderBottomColor: "var(--color-border)"
+                      }}
+                    >
                       Seçili
                     </TableCell>
                   </TableRow>
@@ -246,32 +322,51 @@ export function PermissionMatrix() {
                       <Fragment key={`group-${group}`}>
                         {/* Group header row */}
                         <TableRow sx={{ backgroundColor: "var(--color-surface-hover)" }}>
-                          <TableCell colSpan={2}>
+                          <TableCell colSpan={2} sx={{ borderBottomColor: "var(--color-border)" }}>
                             <Box display="flex" alignItems="center" gap={1}>
-                              <Chip label={group} size="small" color="primary" variant="outlined" />
-                              <Typography variant="body2" color="text.secondary">
+                              <Chip
+                                label={group}
+                                size="small"
+                                variant="outlined"
+                                sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
+                              />
+                              <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
                                 ({selectedInGroup}/{groupPerms.length} izin)
                               </Typography>
                             </Box>
                           </TableCell>
-                          <TableCell align="center">
+                          <TableCell align="center" sx={{ borderBottomColor: "var(--color-border)" }}>
                             <Checkbox
                               checked={allSelected}
                               indeterminate={someSelected}
                               onChange={() => handleToggleGroup(group)}
                               size="small"
+                              sx={{
+                                color: "var(--color-muted-foreground)",
+                                "&.Mui-checked": { color: "var(--color-primary)" },
+                                "&.MuiCheckbox-indeterminate": { color: "var(--color-primary)" }
+                              }}
                             />
                           </TableCell>
                         </TableRow>
                         {/* Permission rows */}
                         {groupPerms.map((perm) => (
-                          <TableRow key={perm.id} hover>
+                          <TableRow
+                            key={perm.id}
+                            hover
+                            sx={{
+                              "&:hover": { backgroundColor: "var(--color-surface-hover)" },
+                              "& td": { borderBottomColor: "var(--color-border)" }
+                            }}
+                          >
                             <TableCell />
                             <TableCell>
                               <Box>
-                                <Typography variant="body2">{perm.permission}</Typography>
+                                <Typography variant="body2" sx={{ color: "var(--color-foreground)" }}>
+                                  {perm.permission}
+                                </Typography>
                                 {perm.description && (
-                                  <Typography variant="caption" color="text.secondary">
+                                  <Typography variant="caption" sx={{ color: "var(--color-muted-foreground)" }}>
                                     {perm.description}
                                   </Typography>
                                 )}
@@ -282,6 +377,10 @@ export function PermissionMatrix() {
                                 checked={selectedPermissions.has(perm.id)}
                                 onChange={() => handleTogglePermission(perm.id)}
                                 size="small"
+                                sx={{
+                                  color: "var(--color-muted-foreground)",
+                                  "&.Mui-checked": { color: "var(--color-primary)" }
+                                }}
                               />
                             </TableCell>
                           </TableRow>

@@ -452,11 +452,10 @@ const bossUsersRoute = createRoute({
 });
 
 // Employee Profiles page (Admin/İK)
-// TODO: SSO'da izin tanımlandıktan sonra beforeLoad kontrolünü aktif et
 const employeeProfilesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: "/employee-profiles",
-  // beforeLoad: () => checkPermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU),
+  beforeLoad: () => checkPermission(PERMISSIONS.EMPLOYEE_PROFILE_MENU),
   component: EmployeeProfilesPage,
 });
 

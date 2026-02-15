@@ -161,14 +161,14 @@ export class SsoPermissionsService {
     // Use provided app_id or fall back to default
     const appId = dto.app_id || this.appId;
 
-    // Check if permission already exists for this app
+    // Check if permission (code) already exists for this app
     const existing = await this.ssoPermissionModel
-      .findOne({ app_id: appId, group: dto.group, permission: dto.permission })
+      .findOne({ app_id: appId, permission: dto.permission })
       .lean()
       .exec();
 
     if (existing) {
-      throw new ConflictException("Bu izin zaten mevcut");
+      throw new ConflictException("Bu izin kodu zaten mevcut");
     }
 
     const permission = new this.ssoPermissionModel({
@@ -197,6 +197,18 @@ export class SsoPermissionsService {
 
     if (!permission) {
       throw new NotFoundException("İzin bulunamadı");
+    }
+
+    // Check if new permission code is unique within the app (if changed)
+    if (dto.permission !== undefined && dto.permission !== permission.permission) {
+      const existingPermission = await this.ssoPermissionModel
+        .findOne({ app_id: this.appId, permission: dto.permission, id: { $ne: permissionId } })
+        .lean()
+        .exec();
+
+      if (existingPermission) {
+        throw new ConflictException("Bu izin kodu zaten kullanılıyor");
+      }
     }
 
     if (dto.group !== undefined) permission.group = dto.group;

@@ -95,7 +95,13 @@ export function AddUserForm() {
       onClose={handleClose}
       title={step === "search" ? "Kullanıcı Ekle" : "Yeni Kullanıcı Oluştur"}
       actions={
-        <Button onClick={handleClose} color="inherit">
+        <Button
+          onClick={handleClose}
+          sx={{
+            color: "var(--color-muted-foreground)",
+            "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+          }}
+        >
           İptal
         </Button>
       }

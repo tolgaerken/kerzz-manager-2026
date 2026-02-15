@@ -102,7 +102,12 @@ export function RoleList() {
         filter: { type: "dropdown", showCounts: true },
         filterDisplayFn: (value: unknown) => getAppName(value as string),
         cell: (value) => (
-          <Chip label={getAppName(value as string)} size="small" variant="outlined" />
+          <Chip
+            label={getAppName(value as string)}
+            size="small"
+            variant="outlined"
+            sx={{ borderColor: "var(--color-border)", color: "var(--color-foreground)" }}
+          />
         )
       },
       {
@@ -135,8 +140,14 @@ export function RoleList() {
         cell: (value) => (
           <Chip
             label={value ? "Evet" : "Hayır"}
-            color={value ? "primary" : "default"}
             size="small"
+            sx={value ? {
+              bgcolor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)"
+            } : {
+              bgcolor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }}
           />
         )
       },
@@ -152,8 +163,14 @@ export function RoleList() {
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
-            color={value ? "success" : "default"}
             size="small"
+            sx={value ? {
+              bgcolor: "var(--color-success)",
+              color: "var(--color-success-foreground)"
+            } : {
+              bgcolor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }}
           />
         )
       },
@@ -171,6 +188,10 @@ export function RoleList() {
               onClick={(e) => {
                 e.stopPropagation();
                 openPermissionMatrix(row);
+              }}
+              sx={{
+                color: "var(--color-muted-foreground)",
+                "&:hover": { backgroundColor: "var(--color-surface-hover)" }
               }}
             >
               <Shield size={16} />

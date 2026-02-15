@@ -45,8 +45,14 @@ export function ApplicationList() {
         cell: (value) => (
           <Chip
             label={value ? "Aktif" : "Pasif"}
-            color={value ? "success" : "default"}
             size="small"
+            sx={value ? {
+              bgcolor: "var(--color-success)",
+              color: "var(--color-success-foreground)"
+            } : {
+              bgcolor: "var(--color-surface-hover)",
+              color: "var(--color-muted-foreground)"
+            }}
           />
         )
       }

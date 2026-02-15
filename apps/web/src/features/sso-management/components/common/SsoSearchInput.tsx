@@ -58,6 +58,24 @@ export function SsoSearchInput({
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
       placeholder={placeholder}
+      sx={{
+        "& .MuiInputBase-root": {
+          backgroundColor: "var(--color-surface-elevated)",
+          color: "var(--color-foreground)"
+        },
+        "& .MuiOutlinedInput-notchedOutline": {
+          borderColor: "var(--color-border)"
+        },
+        "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+          borderColor: "var(--color-muted-foreground)"
+        },
+        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          borderColor: "var(--color-primary)"
+        },
+        "& .MuiSvgIcon-root, & svg": {
+          color: "var(--color-muted-foreground)"
+        }
+      }}
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">
@@ -66,7 +84,15 @@ export function SsoSearchInput({
         ),
         endAdornment: localValue ? (
           <InputAdornment position="end">
-            <IconButton onClick={handleClear} size="small" edge="end">
+            <IconButton
+              onClick={handleClear}
+              size="small"
+              edge="end"
+              sx={{
+                color: "var(--color-muted-foreground)",
+                "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+              }}
+            >
               <X size={16} />
             </IconButton>
           </InputAdornment>

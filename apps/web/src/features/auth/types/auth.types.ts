@@ -26,6 +26,11 @@ export interface Role {
   description?: string;
 }
 
+/**
+ * Permission model
+ * permission: İzin kodu (örn: "EMPLOYEE_PROFILE_MENU")
+ * description: Açıklamalı ad (örn: "Çalışan Profili Menüsü")
+ */
 export interface Permission {
   id: string;
   name?: string;

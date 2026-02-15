@@ -2,55 +2,57 @@
  * Uygulama izin sabitleri
  * Bu izinler SSO sistemindeki permission değerleriyle eşleşmelidir
  * Yeni izinler eklendiğinde bu dosya güncellenmelidir
+ *
+ * Format: KERZZ_MANAGER_<MODUL>_<ISLEM>
  */
 export const PERMISSIONS = {
   /** Dashboard'ları görüntüleme yetkisi */
-  DASHBOARD_VIEW: "Dashboardları Görebilir",
+  DASHBOARD_VIEW: "KERZZ_MANAGER_DASHBOARD_VIEW",
 
   /** Kontrat menüsüne erişim yetkisi */
-  CONTRACT_MENU: "Kontrat Menüsü",
+  CONTRACT_MENU: "KERZZ_MANAGER_CONTRACT_MENU",
 
   /** Müşteriler menüsüne erişim yetkisi */
-  CUSTOMER_MENU: "Müşteriler Menüsü",
+  CUSTOMER_MENU: "KERZZ_MANAGER_CUSTOMER_MENU",
 
   /** Lisans menüsüne erişim yetkisi */
-  LICENSE_MENU: "Lisans Menüsü",
+  LICENSE_MENU: "KERZZ_MANAGER_LICENSE_MENU",
 
   /** Finans menüsüne erişim yetkisi */
-  FINANCE_MENU: "Finans Menüsü",
+  FINANCE_MENU: "KERZZ_MANAGER_FINANCE_MENU",
 
   /** Satış menüsüne erişim yetkisi */
-  SALES_MENU: "Satış Menüsü",
+  SALES_MENU: "KERZZ_MANAGER_SALES_MENU",
 
   /** E-Belge menüsüne erişim yetkisi */
-  EDOC_MENU: "E-Belge Menüsü",
+  EDOC_MENU: "KERZZ_MANAGER_EDOC_MENU",
 
   /** Sistem menüsüne erişim yetkisi */
-  SYSTEM_MENU: "Sistem Menüsü",
+  SYSTEM_MENU: "KERZZ_MANAGER_SYSTEM_MENU",
 
   /** Bildirimler menüsüne erişim yetkisi */
-  NOTIFICATION_MENU: "Bildirimler Menüsü",
+  NOTIFICATION_MENU: "KERZZ_MANAGER_NOTIFICATION_MENU",
 
   /** SSO Yönetim menüsüne erişim yetkisi */
-  SSO_MANAGEMENT_MENU: "SSO Yönetim Menüsü",
+  SSO_MANAGEMENT_MENU: "KERZZ_MANAGER_SSO_MANAGEMENT_MENU",
 
   /** Grid toplamlarını görüntüleme yetkisi */
-  GRID_TOTALS_VIEW: "Grid Toplamlarını Görebilir",
+  GRID_TOTALS_VIEW: "KERZZ_MANAGER_GRID_TOTALS_VIEW",
 
   /** Kar/Zarar bilgilerini görüntüleme yetkisi */
-  PROFIT_LOSS_VIEW: "Kar / Zarar Bilgilerini Görebilir",
+  PROFIT_LOSS_VIEW: "KERZZ_MANAGER_PROFIT_LOSS_VIEW",
 
   /** Çalışan Profili menüsüne erişim yetkisi */
-  EMPLOYEE_PROFILE_MENU: "Çalışan Profili Menüsü",
+  EMPLOYEE_PROFILE_MENU: "KERZZ_MANAGER_EMPLOYEE_PROFILE_MENU",
 
   /** Çalışan Profili - tüm profilleri düzenleme yetkisi (Admin/İK) */
-  EMPLOYEE_PROFILE_EDIT_ALL: "Çalışan Profili Tümünü Düzenle",
+  EMPLOYEE_PROFILE_EDIT_ALL: "KERZZ_MANAGER_EMPLOYEE_PROFILE_EDIT_ALL",
 
   /** Çalışan Profili - kendi profilini düzenleme yetkisi (Self-Service) */
-  EMPLOYEE_PROFILE_EDIT_SELF: "Çalışan Profili Kendini Düzenle",
+  EMPLOYEE_PROFILE_EDIT_SELF: "KERZZ_MANAGER_EMPLOYEE_PROFILE_EDIT_SELF",
 
   /** Çalışan Profili - hassas alanları görüntüleme yetkisi (TCKN, maaş vb.) */
-  EMPLOYEE_PROFILE_VIEW_SENSITIVE: "Çalışan Profili Hassas Bilgileri Gör",
+  EMPLOYEE_PROFILE_VIEW_SENSITIVE: "KERZZ_MANAGER_EMPLOYEE_PROFILE_VIEW_SENSITIVE",
 } as const;
 
 /** İzin tipi - type-safe kullanım için */

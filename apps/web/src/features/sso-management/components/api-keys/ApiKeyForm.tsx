@@ -142,10 +142,30 @@ export function ApiKeyForm() {
       title={isEditing ? "API Anahtarını Düzenle" : "Yeni API Anahtarı"}
       actions={
         <>
-          <Button onClick={closeApiKeyForm} disabled={isSubmitting}>
+          <Button
+            onClick={closeApiKeyForm}
+            disabled={isSubmitting}
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+            }}
+          >
             İptal
           </Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            sx={{
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              "&:hover": { backgroundColor: "var(--color-primary)" },
+              "&.Mui-disabled": {
+                backgroundColor: "var(--color-surface-hover)",
+                color: "var(--color-muted-foreground)"
+              }
+            }}
+          >
             {isSubmitting ? "Kaydediliyor..." : isEditing ? "Güncelle" : "Oluştur"}
           </Button>
         </>
@@ -186,7 +206,7 @@ export function ApiKeyForm() {
         />
 
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)", mb: 1 }}>
             API Anahtarı
           </Typography>
           <TextField
@@ -197,6 +217,21 @@ export function ApiKeyForm() {
             error={!!errors.api_key}
             helperText={errors.api_key}
             disabled={isEditing}
+            sx={{
+              "& .MuiInputBase-root": {
+                backgroundColor: "var(--color-surface-elevated)",
+                color: "var(--color-foreground)"
+              },
+              "& .MuiInputBase-root.Mui-disabled": {
+                backgroundColor: "var(--color-surface)",
+                color: "var(--color-foreground)",
+                opacity: 0.6
+              },
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-border)" },
+              "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-muted-foreground)" },
+              "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary)" },
+              "& .MuiFormHelperText-root": { color: "var(--color-error)" }
+            }}
             InputProps={{
               readOnly: isEditing,
               sx: { fontFamily: "monospace", fontSize: "0.85rem" },
@@ -204,13 +239,27 @@ export function ApiKeyForm() {
                 <InputAdornment position="end">
                   {!isEditing && (
                     <Tooltip title="Yeni Anahtar Oluştur">
-                      <IconButton size="small" onClick={handleGenerateKey}>
+                      <IconButton
+                        size="small"
+                        onClick={handleGenerateKey}
+                        sx={{
+                          color: "var(--color-muted-foreground)",
+                          "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+                        }}
+                      >
                         <RefreshCw size={16} />
                       </IconButton>
                     </Tooltip>
                   )}
                   <Tooltip title="Kopyala">
-                    <IconButton size="small" onClick={handleCopyKey}>
+                    <IconButton
+                      size="small"
+                      onClick={handleCopyKey}
+                      sx={{
+                        color: "var(--color-muted-foreground)",
+                        "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+                      }}
+                    >
                       <Copy size={16} />
                     </IconButton>
                   </Tooltip>

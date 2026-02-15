@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     const roles = determineRoles(activeLicance);
 
-    // Extract permissions from active licence
+    // Extract permissions from active licence (permission = kod)
     const permissions = activeLicance?.allPermissions?.map((p) => p.permission) ?? [];
 
     localStorage.setItem(
@@ -106,6 +106,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     const activeLicance = userInfo.licances.find((l) => l.licanceId === licanceId) ?? null;
     const roles = determineRoles(activeLicance ?? undefined);
+    // Extract permissions (permission = kod)
     const permissions = activeLicance?.allPermissions?.map((p) => p.permission) ?? [];
 
     localStorage.setItem(STORAGE_KEYS.ACTIVE_LICANCE, licanceId);

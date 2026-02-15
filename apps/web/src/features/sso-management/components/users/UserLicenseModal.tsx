@@ -220,7 +220,13 @@ export function UserLicenseModal() {
           return (
             <div className="flex flex-wrap gap-1">
               {names.map((name, idx) => (
-                <Chip key={idx} label={name} size="small" variant="outlined" />
+                <Chip
+                  key={idx}
+                  label={name}
+                  size="small"
+                  variant="outlined"
+                  sx={{ borderColor: "var(--color-border)", color: "var(--color-foreground)" }}
+                />
               ))}
             </div>
           );
@@ -277,11 +283,24 @@ export function UserLicenseModal() {
         maxWidth="md"
         actions={
           <>
-            <Button onClick={closeUserLicenseModal}>Kapat</Button>
+            <Button
+              onClick={closeUserLicenseModal}
+              sx={{
+                color: "var(--color-muted-foreground)",
+                "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+              }}
+            >
+              Kapat
+            </Button>
             <Button
               variant="contained"
               startIcon={<Plus size={18} />}
               onClick={() => setIsAddDialogOpen(true)}
+              sx={{
+                backgroundColor: "var(--color-primary)",
+                color: "var(--color-primary-foreground)",
+                "&:hover": { backgroundColor: "var(--color-primary)" }
+              }}
             >
               Lisans Ekle
             </Button>
@@ -294,7 +313,7 @@ export function UserLicenseModal() {
           </Box>
         ) : licenses.length === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-            <Typography color="text.secondary">
+            <Typography sx={{ color: "var(--color-muted-foreground)" }}>
               Bu kullanıcının {appName ? `"${appName}" uygulamasında` : ""} henüz lisansı yok
             </Typography>
           </Box>
@@ -314,9 +333,23 @@ export function UserLicenseModal() {
       </SsoModal>
 
       {/* Add License Dialog - Autocomplete ile lisans seçimi */}
-      <Dialog open={isAddDialogOpen} onClose={handleCloseAddDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Yeni Lisans Ekle</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={isAddDialogOpen}
+        onClose={handleCloseAddDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "var(--color-surface)",
+            color: "var(--color-foreground)",
+            border: "1px solid var(--color-border)"
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: "var(--color-foreground)", borderBottom: "1px solid var(--color-border)" }}>
+          Yeni Lisans Ekle
+        </DialogTitle>
+        <DialogContent sx={{ borderColor: "var(--color-border)" }}>
           <Box sx={{ mt: 2 }}>
             <Autocomplete<License>
               options={searchedLicenses}
@@ -337,6 +370,43 @@ export function UserLicenseModal() {
                   : "Lisans bulunamadı"
               }
               loadingText="Aranıyor..."
+              slotProps={{
+                paper: {
+                  sx: {
+                    backgroundColor: "var(--color-surface-elevated)",
+                    color: "var(--color-foreground)",
+                    border: "1px solid var(--color-border)"
+                  }
+                },
+                popper: {
+                  sx: {
+                    "& .MuiAutocomplete-listbox": {
+                      backgroundColor: "var(--color-surface-elevated)",
+                      color: "var(--color-foreground)"
+                    },
+                    "& .MuiAutocomplete-option:hover": {
+                      backgroundColor: "var(--color-surface-hover)"
+                    },
+                    "& .MuiAutocomplete-option[aria-selected='true']": {
+                      backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-elevated))"
+                    },
+                    "& .MuiAutocomplete-noOptions": {
+                      color: "var(--color-muted-foreground)"
+                    }
+                  }
+                }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "var(--color-surface-elevated)",
+                  color: "var(--color-foreground)",
+                  "& fieldset": { borderColor: "var(--color-border)" },
+                  "&:hover fieldset": { borderColor: "var(--color-muted-foreground)" },
+                  "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" }
+                },
+                "& .MuiInputLabel-root": { color: "var(--color-muted-foreground)" },
+                "& .MuiInputLabel-root.Mui-focused": { color: "var(--color-primary)" }
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -356,8 +426,10 @@ export function UserLicenseModal() {
               renderOption={(props, option) => (
                 <li {...props} key={option._id}>
                   <Box>
-                    <Typography variant="body1">{option.brandName || "—"}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body1" sx={{ color: "var(--color-foreground)" }}>
+                      {option.brandName || "—"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
                       {option.customerName || option.email || ""} {option.type ? `(${option.type})` : ""}
                     </Typography>
                   </Box>
@@ -397,12 +469,29 @@ export function UserLicenseModal() {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAddDialog}>İptal</Button>
+        <DialogActions sx={{ borderTop: "1px solid var(--color-border)", px: 3, py: 2 }}>
+          <Button
+            onClick={handleCloseAddDialog}
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+            }}
+          >
+            İptal
+          </Button>
           <Button
             variant="contained"
             onClick={handleAddLicense}
             disabled={!selectedContractLicense || createAppLicense.isPending}
+            sx={{
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              "&:hover": { backgroundColor: "var(--color-primary)" },
+              "&.Mui-disabled": {
+                backgroundColor: "var(--color-surface-hover)",
+                color: "var(--color-muted-foreground)"
+              }
+            }}
           >
             {createAppLicense.isPending ? "Ekleniyor..." : "Ekle"}
           </Button>
@@ -415,19 +504,26 @@ export function UserLicenseModal() {
         onClose={() => setIsEditRolesDialogOpen(false)}
         maxWidth="xs"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "var(--color-surface)",
+            color: "var(--color-foreground)",
+            border: "1px solid var(--color-border)"
+          }
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: "var(--color-foreground)", borderBottom: "1px solid var(--color-border)" }}>
           Rolleri Düzenle
           {selectedLicense && (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
               {selectedLicense.brand || "Lisans"}
             </Typography>
           )}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ borderColor: "var(--color-border)" }}>
           <Stack spacing={1} sx={{ mt: 1 }}>
             {roles.length === 0 ? (
-              <Typography color="text.secondary">
+              <Typography sx={{ color: "var(--color-muted-foreground)" }}>
                 Bu uygulama için tanımlı rol bulunamadı
               </Typography>
             ) : (
@@ -438,20 +534,42 @@ export function UserLicenseModal() {
                     <Checkbox
                       checked={selectedRoles.includes(role.id)}
                       onChange={() => handleToggleRole(role.id)}
+                      sx={{
+                        color: "var(--color-muted-foreground)",
+                        "&.Mui-checked": { color: "var(--color-primary)" }
+                      }}
                     />
                   }
                   label={role.name}
+                  sx={{ color: "var(--color-foreground)" }}
                 />
               ))
             )}
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsEditRolesDialogOpen(false)}>İptal</Button>
+        <DialogActions sx={{ borderTop: "1px solid var(--color-border)", px: 3, py: 2 }}>
+          <Button
+            onClick={() => setIsEditRolesDialogOpen(false)}
+            sx={{
+              color: "var(--color-muted-foreground)",
+              "&:hover": { backgroundColor: "var(--color-surface-hover)" }
+            }}
+          >
+            İptal
+          </Button>
           <Button
             variant="contained"
             onClick={handleSaveRoles}
             disabled={updateAppLicense.isPending}
+            sx={{
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              "&:hover": { backgroundColor: "var(--color-primary)" },
+              "&.Mui-disabled": {
+                backgroundColor: "var(--color-surface-hover)",
+                color: "var(--color-muted-foreground)"
+              }
+            }}
           >
             {updateAppLicense.isPending ? "Kaydediliyor..." : "Kaydet"}
           </Button>
