@@ -25,8 +25,8 @@ export class Contract {
   @Prop()
   company: string;
 
-  @Prop()
-  contractFlow: string; // "active" | "archive" | "future"
+  @Prop({ default: "future" })
+  contractFlow: string; // "future" | "past" - Fatura kesim zamanlaması (future: ay başı/peşinat, past: ay sonu/vadeli)
 
   @Prop()
   contractId: string;
@@ -78,6 +78,9 @@ export class Contract {
 
   @Prop({ default: false })
   isExtendable: boolean;
+
+  @Prop({ default: true })
+  isActive: boolean; // Kontrat aktif mi? (eskiye uyumluluk için default true)
 
   @Prop({ default: false })
   isFree: boolean;

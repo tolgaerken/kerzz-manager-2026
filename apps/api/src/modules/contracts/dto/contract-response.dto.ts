@@ -15,6 +15,7 @@ export interface ContractResponseDto {
   enabled: boolean;
   blockedLicance: boolean;
   isFree: boolean;
+  isActive: boolean;
   no: number;
   customerId: string;
   internalFirm: string;

@@ -24,6 +24,11 @@ const INCRASE_PERIODS = [
   { id: "12-month", name: "12 Aylık" }
 ];
 
+const BILLING_TYPES = [
+  { id: "future", name: "Ay Başı (Peşinat)" },
+  { id: "past", name: "Ay Sonu (Vadeli)" }
+];
+
 export function ContractFormModal({
   isOpen,
   onClose,
@@ -53,7 +58,9 @@ export function ContractFormModal({
     incraseRateType: "yi-ufe",
     incrasePeriod: "3-month",
     noVat: false,
-    noNotification: false
+    noNotification: false,
+    contractFlow: "future",
+    isActive: true
   });
 
   const [selectedCustomerName, setSelectedCustomerName] = useState("");
@@ -75,7 +82,9 @@ export function ContractFormModal({
         incraseRateType: "yi-ufe",
         incrasePeriod: "3-month",
         noVat: false,
-        noNotification: false
+        noNotification: false,
+        contractFlow: "future",
+        isActive: true
       });
       setSelectedCustomerName("");
       setCustomerSearch("");
@@ -368,6 +377,25 @@ export function ContractFormModal({
                       ))}
                     </select>
                   </div>
+
+                  <div>
+                    <label htmlFor="contractFlow" className={labelClasses}>
+                      Fatura Kesim Zamanlaması
+                    </label>
+                    <select
+                      id="contractFlow"
+                      name="contractFlow"
+                      value={formData.contractFlow}
+                      onChange={handleChange}
+                      className={selectClasses}
+                    >
+                      {BILLING_TYPES.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -409,6 +437,19 @@ export function ContractFormModal({
                     />
                     <span className="text-sm text-[var(--color-foreground)]">
                       Bildirim Gönderme
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-[var(--color-foreground)]">
+                      Kontrat Aktif
                     </span>
                   </label>
                 </div>

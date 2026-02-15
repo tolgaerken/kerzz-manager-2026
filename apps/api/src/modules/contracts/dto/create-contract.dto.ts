@@ -3,7 +3,8 @@ import {
   IsBoolean,
   IsNumber,
   IsOptional,
-  IsDateString
+  IsDateString,
+  IsIn
 } from "class-validator";
 
 export class CreateContractDto {
@@ -56,4 +57,12 @@ export class CreateContractDto {
   @IsOptional()
   @IsBoolean()
   noNotification?: boolean = false;
+
+  @IsOptional()
+  @IsIn(["future", "past"])
+  contractFlow?: string = "future";
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean = true;
 }

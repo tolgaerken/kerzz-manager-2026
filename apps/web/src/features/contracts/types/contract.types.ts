@@ -1,11 +1,15 @@
+// Filtreleme için kullanılan flow tipi (tarih bazlı hesaplanır)
 export type ContractFlow = "active" | "free" | "archive" | "future" | "all";
+
+// Fatura kesim zamanlaması tipi
+export type BillingType = "future" | "past";
 
 export interface Contract {
   _id: string;
   id: string;
   brand: string;
   company: string;
-  contractFlow: string;
+  contractFlow: string; // "future" | "past" - Fatura kesim zamanlaması
   contractId: string;
   description: string;
   startDate: string;
@@ -17,6 +21,7 @@ export interface Contract {
   enabled: boolean;
   blockedLicance: boolean;
   isFree: boolean;
+  isActive: boolean;
   no: number;
   customerId: string;
   internalFirm: string;
@@ -72,6 +77,8 @@ export interface CreateContractInput {
   incrasePeriod?: string;
   noVat?: boolean;
   noNotification?: boolean;
+  contractFlow?: BillingType;
+  isActive?: boolean;
 }
 
 export interface UpdateContractInput extends CreateContractInput {

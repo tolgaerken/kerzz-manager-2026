@@ -95,6 +95,13 @@ export function ContractSummaryTab({ contract, onContractUpdated }: ContractSumm
             <p className="text-[10px] sm:text-xs text-muted-foreground">Ödeme Tipi</p>
             <p className="text-sm sm:text-base font-medium text-foreground">{contract.yearly ? "Yıllık" : "Aylık"}</p>
           </div>
+          <div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Fatura Kesim Zamanlaması</p>
+            <p className="text-sm sm:text-base font-medium text-foreground">
+              {contract.contractFlow === "future" ? "Ay Başı (Peşinat)" : 
+               contract.contractFlow === "past" ? "Ay Sonu (Vadeli)" : "-"}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -155,12 +162,21 @@ export function ContractSummaryTab({ contract, onContractUpdated }: ContractSumm
         <div className="flex flex-wrap gap-2 sm:gap-3">
           <span
             className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
+              (contract.isActive ?? true)
+                ? "bg-success/10 text-success"
+                : "bg-error/10 text-error"
+            }`}
+          >
+            {(contract.isActive ?? true) ? "Kontrat Aktif" : "Kontrat Pasif"}
+          </span>
+          <span
+            className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
               contract.enabled
                 ? "bg-success/10 text-success"
                 : "bg-muted/20 text-muted-foreground"
             }`}
           >
-            {contract.enabled ? "Aktif" : "Pasif"}
+            {contract.enabled ? "Enabled" : "Disabled"}
           </span>
           {contract.blockedLicance && (
             <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium bg-error/10 text-error">

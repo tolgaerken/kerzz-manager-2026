@@ -36,8 +36,24 @@ function formatCurrency(value: number | undefined): string {
   }).format(value);
 }
 
-// Flow badge component
-function FlowBadge({ flow }: { flow: string }) {
+// Tarih bazlı kontrat durumu hesaplama
+function calculateContractStatus(startDate: string, endDate: string): "active" | "archive" | "future" {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+  
+  if (start && start > monthEnd) return "future";
+  if (end && end < monthStart) return "archive";
+  return "active";
+}
+
+// Tarih bazlı durum badge component
+function StatusBadge({ startDate, endDate }: { startDate: string; endDate: string }) {
+  const status = calculateContractStatus(startDate, endDate);
+  
   const config: Record<string, { label: string; className: string }> = {
     active: {
       label: "Aktif",
@@ -50,15 +66,33 @@ function FlowBadge({ flow }: { flow: string }) {
     future: {
       label: "Gelecek",
       className: "bg-[var(--color-info)]/10 text-[var(--color-info)]"
-    },
-    free: {
-      label: "Ücretsiz",
-      className: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
     }
   };
 
-  const { label, className } = config[flow] ?? {
-    label: flow,
+  const { label, className } = config[status];
+
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${className}`}>
+      {label}
+    </span>
+  );
+}
+
+// Fatura tipi badge component
+function BillingTypeBadge({ billingType }: { billingType: string }) {
+  const config: Record<string, { label: string; className: string }> = {
+    future: {
+      label: "Peşinat",
+      className: "bg-[#8b5cf6]/10 text-[#8b5cf6]"
+    },
+    past: {
+      label: "Vadeli",
+      className: "bg-[#f59e0b]/10 text-[#f59e0b]"
+    }
+  };
+
+  const { label, className } = config[billingType] ?? {
+    label: "-",
     className: "bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)]"
   };
 
@@ -116,7 +150,8 @@ export const ContractCard = memo(function ContractCard({
         <div className="flex-1 min-w-0">
           <div className="mb-0.5 flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium font-mono text-[var(--color-muted-foreground)]">#{contract.no}</span>
-            <FlowBadge flow={contract.contractFlow} />
+            <StatusBadge startDate={contract.startDate} endDate={contract.endDate} />
+            <BillingTypeBadge billingType={contract.contractFlow} />
             {/* Log badge */}
             <LogBadge
               lastLogAt={lastLogAt}
@@ -164,13 +199,13 @@ export const ContractCard = memo(function ContractCard({
           <p className="text-sm font-semibold font-mono text-[var(--color-foreground)]">{formatCurrency(displayTotal)}</p>
         </div>
         <div className="flex items-center gap-2">
-          {contract.enabled ? (
+          {(contract.isActive ?? true) ? (
             <span className="flex items-center gap-1 text-[10px] text-[var(--color-success)]">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Aktif
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-[10px] text-[var(--color-muted-foreground)]">
+            <span className="flex items-center gap-1 text-[10px] text-[var(--color-error)]">
               <XCircle className="h-3.5 w-3.5" />
               Pasif
             </span>

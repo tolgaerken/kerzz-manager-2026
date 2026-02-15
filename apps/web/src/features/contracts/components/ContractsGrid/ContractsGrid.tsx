@@ -42,29 +42,17 @@ function formatCurrency(value: unknown): string {
   }).format(value as number);
 }
 
-// Contract flow formatter
-function formatFlow(value: unknown): string {
-  const flowMap: Record<string, string> = {
-    active: "Aktif",
-    archive: "Arşiv",
-    future: "Gelecek"
-  };
-  return flowMap[value as string] || (value as string) || "-";
-}
-
 // Mobil filtre konfigürasyonu
 const mobileFilterColumns: MobileFilterColumnConfig[] = [
   { id: "no", header: "No", type: "number", accessorKey: "no" },
   { id: "brand", header: "Marka", type: "text", accessorKey: "brand" },
   { id: "company", header: "Firma", type: "text", accessorKey: "company" },
   { id: "description", header: "Açıklama", type: "text", accessorKey: "description" },
-  { id: "contractFlow", header: "Durum", type: "select", accessorKey: "contractFlow" },
   { id: "yearly", header: "Periyot", type: "boolean", accessorKey: "yearly" },
   { id: "internalFirm", header: "İç Firma", type: "select", accessorKey: "internalFirm" },
-  { id: "enabled", header: "Aktif", type: "boolean", accessorKey: "enabled" },
+  { id: "isActive", header: "Kontrat Aktif", type: "boolean", accessorKey: "isActive" },
   { id: "total", header: "Aylık Tutar", type: "number", accessorKey: "total" },
   { id: "yearlyTotal", header: "Yıllık Tutar", type: "number", accessorKey: "yearlyTotal" },
-  { id: "saasTotal", header: "SaaS Tutar", type: "number", accessorKey: "saasTotal" },
 ];
 
 // Mobil sıralama konfigürasyonu
@@ -72,11 +60,9 @@ const mobileSortColumns: MobileSortColumnConfig[] = [
   { id: "no", header: "No", accessorKey: "no" },
   { id: "brand", header: "Marka", accessorKey: "brand" },
   { id: "company", header: "Firma", accessorKey: "company" },
-  { id: "contractFlow", header: "Durum", accessorKey: "contractFlow" },
   { id: "yearly", header: "Periyot", accessorKey: "yearly" },
   { id: "total", header: "Aylık Tutar", accessorKey: "total" },
   { id: "yearlyTotal", header: "Yıllık Tutar", accessorKey: "yearlyTotal" },
-  { id: "saasTotal", header: "SaaS Tutar", accessorKey: "saasTotal" },
   { id: "startDate", header: "Başlangıç", accessorKey: "startDate" },
   { id: "endDate", header: "Bitiş", accessorKey: "endDate" },
 ];
@@ -137,24 +123,6 @@ export function ContractsGrid({
           filter: { type: "input", conditions: ["contains"] }
         },
         {
-          id: "contractFlow",
-          header: "Durum",
-          accessorKey: "contractFlow",
-          width: 110,
-          sortable: true,
-          resizable: true,
-          filter: { type: "dropdown", showCounts: true },
-          cell: (value) => {
-            const flowColors: Record<string, string> = {
-              active: "#10b981",
-              archive: "#6b7280",
-              future: "#3b82f6"
-            };
-            const color = flowColors[value as string] ?? "#666";
-            return <span style={{ color, fontWeight: 500 }}>{formatFlow(value)}</span>;
-          }
-        },
-        {
           id: "yearly",
           header: "Periyot",
           accessorKey: "yearly",
@@ -204,23 +172,6 @@ export function ContractsGrid({
         });
       }
 
-      // SaaS Tutar kolonu - her zaman göster
-      baseColumns.push({
-        id: "saasTotal",
-        header: "SaaS Tutar",
-        accessorKey: "saasTotal",
-        width: 140,
-        sortable: true,
-        resizable: true,
-        align: "right",
-        cell: (value) => formatCurrency(value),
-        filter: { type: "input", conditions: ["greaterThan", "lessThan", "between", "equals"] },
-        footer: {
-          aggregate: "sum",
-          format: (v) => formatCurrency(v)
-        }
-      });
-
       // Aylık Tutar kolonu (total) - sadece aylık filtre seçiliyken veya filtre yokken göster
       if (yearlyFilter === false || yearlyFilter === undefined) {
         baseColumns.push({
@@ -242,24 +193,6 @@ export function ContractsGrid({
 
       // Diğer kolonlar
       baseColumns.push(
-        {
-          id: "enabled",
-          header: "Aktif",
-          accessorKey: "enabled",
-          width: 80,
-          sortable: true,
-          resizable: true,
-          cell: (value) => (value ? "Evet" : "Hayır")
-        },
-        {
-          id: "blockedLicance",
-          header: "Lisans Engeli",
-          accessorKey: "blockedLicance",
-          width: 120,
-          sortable: true,
-          resizable: true,
-          cell: (value) => (value ? "Evet" : "Hayır")
-        },
         {
           id: "internalFirm",
           header: "İç Firma",

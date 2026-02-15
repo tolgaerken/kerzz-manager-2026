@@ -4,6 +4,7 @@ import { Model, SortOrder } from "mongoose";
 import { Contract, ContractDocument } from "./schemas/contract.schema";
 import { ContractQueryDto } from "./dto/contract-query.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
+import { UpdateContractDto } from "./dto/update-contract.dto";
 import {
   PaginatedContractsResponseDto,
   ContractResponseDto
@@ -230,10 +231,11 @@ export class ContractsService {
       incrasePeriood: dto.incrasePeriod || "3-month",
       noVat: dto.noVat ?? false,
       noNotification: dto.noNotification ?? false,
+      contractFlow: dto.contractFlow || "future",
+      isActive: dto.isActive ?? true,
       // Default values
       brand: "",
       company: "",
-      contractFlow: "future",
       total: 0,
       yearlyTotal: 0,
       supportTotal: 0,
@@ -263,6 +265,51 @@ export class ContractsService {
     const saved = await contract.save();
 
     return this.mapToResponseDto(saved.toObject());
+  }
+
+  /**
+   * Kontrat günceller
+   */
+  async update(
+    id: string,
+    dto: UpdateContractDto
+  ): Promise<ContractResponseDto | null> {
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date()
+    };
+
+    // DTO'dan gelen alanları güncelleme verisine ekle
+    if (dto.customerId !== undefined) updateData.customerId = dto.customerId;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.startDate !== undefined)
+      updateData.startDate = new Date(dto.startDate);
+    if (dto.endDate !== undefined)
+      updateData.endDate = dto.endDate ? new Date(dto.endDate) : null;
+    if (dto.noEndDate !== undefined) updateData.noEndDate = dto.noEndDate;
+    if (dto.internalFirm !== undefined)
+      updateData.internalFirm = dto.internalFirm;
+    if (dto.yearly !== undefined) updateData.yearly = dto.yearly;
+    if (dto.maturity !== undefined) updateData.maturity = dto.maturity;
+    if (dto.lateFeeType !== undefined) updateData.lateFeeType = dto.lateFeeType;
+    if (dto.incraseRateType !== undefined)
+      updateData.incraseRateType = dto.incraseRateType;
+    if (dto.incrasePeriod !== undefined) {
+      updateData.incrasePeriod = dto.incrasePeriod;
+      updateData.incrasePeriood = dto.incrasePeriod;
+    }
+    if (dto.noVat !== undefined) updateData.noVat = dto.noVat;
+    if (dto.noNotification !== undefined)
+      updateData.noNotification = dto.noNotification;
+    if (dto.contractFlow !== undefined)
+      updateData.contractFlow = dto.contractFlow;
+    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+
+    const updated = await this.contractModel
+      .findByIdAndUpdate(id, { $set: updateData }, { new: true })
+      .lean()
+      .exec();
+
+    return updated ? this.mapToResponseDto(updated) : null;
   }
 
   /**
@@ -311,6 +358,7 @@ export class ContractsService {
       enabled: contract.enabled,
       blockedLicance: contract.blockedLicance,
       isFree: contract.isFree,
+      isActive: contract.isActive ?? true,
       no: contract.no,
       customerId: contract.customerId,
       internalFirm: contract.internalFirm,

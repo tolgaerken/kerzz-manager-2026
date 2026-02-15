@@ -1,10 +1,19 @@
-import type { Contract, CreateContractInput } from "../types";
+import type { Contract, CreateContractInput, BillingType } from "../types";
 
 const getDateInputValue = (value?: string) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toISOString().split("T")[0];
+};
+
+// contractFlow değerini BillingType'a dönüştür (eskiye uyumluluk)
+const normalizeBillingType = (contractFlow?: string): BillingType => {
+  if (contractFlow === "future" || contractFlow === "past") {
+    return contractFlow;
+  }
+  // Eski değerler için varsayılan
+  return "future";
 };
 
 export function contractToFormData(contract: Contract): CreateContractInput {
@@ -24,6 +33,8 @@ export function contractToFormData(contract: Contract): CreateContractInput {
     incraseRateType: "yi-ufe",
     incrasePeriod: "3-month",
     noVat: false,
-    noNotification: false
+    noNotification: false,
+    contractFlow: normalizeBillingType(contract.contractFlow),
+    isActive: contract.isActive ?? true
   };
 }
