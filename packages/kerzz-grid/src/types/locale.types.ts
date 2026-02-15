@@ -69,6 +69,8 @@ export interface GridLocale {
   // Settings panel
   settingsTitle: string;
   settingsSelectionMode: string;
+  settingsAppearance: string;
+  settingsStripedRows: string;
   settingsHeaderFilters: string;
   settingsFooterAggregation: string;
   settingsResetSorting: string;

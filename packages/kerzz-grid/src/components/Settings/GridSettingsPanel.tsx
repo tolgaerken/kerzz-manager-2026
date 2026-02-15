@@ -11,12 +11,13 @@ interface GridSettingsPanelProps {
   onSelectionModeChange: (mode: SelectionMode) => void;
   onHeaderFilterChange: (columnId: string, enabled: boolean) => void;
   onFooterAggregationChange: (columnId: string, aggregation: FooterAggregationSetting) => void;
+  onStripedRowsChange: (enabled: boolean) => void;
   onResetSorting: () => void;
   onResetAll: () => void;
   onClose: () => void;
 }
 
-type SectionId = 'selection' | 'filters' | 'footer' | 'actions';
+type SectionId = 'selection' | 'appearance' | 'filters' | 'footer' | 'actions';
 
 const AGGREGATION_OPTIONS: Array<{ value: FooterAggregationSetting; labelKey: keyof ReturnType<typeof useLocale> }> = [
   { value: 'none', labelKey: 'aggregationNone' },
@@ -34,6 +35,7 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
   onSelectionModeChange,
   onHeaderFilterChange,
   onFooterAggregationChange,
+  onStripedRowsChange,
   onResetSorting,
   onResetAll,
   onClose,
@@ -41,7 +43,7 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
   const locale = useLocale();
   const panelRef = useRef<HTMLDivElement>(null);
   const [expandedSections, setExpandedSections] = useState<Set<SectionId>>(
-    new Set(['selection', 'filters', 'footer', 'actions'])
+    new Set(['selection', 'appearance', 'filters', 'footer', 'actions'])
   );
 
   // All columns with a header (show all in settings, not just those with filter config)
@@ -139,6 +141,32 @@ export const GridSettingsPanel = React.memo(function GridSettingsPanel({
                     onChange={() => onSelectionModeChange('multiple')}
                   />
                   <span>{locale.selectionMultiple}</span>
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Appearance Section */}
+        <div className="kz-settings-panel__section">
+          <button
+            type="button"
+            className="kz-settings-panel__section-header"
+            onClick={() => toggleSection('appearance')}
+          >
+            <span>{locale.settingsAppearance}</span>
+            <ChevronIcon expanded={expandedSections.has('appearance')} />
+          </button>
+          {expandedSections.has('appearance') && (
+            <div className="kz-settings-panel__section-content">
+              <div className="kz-settings-panel__list">
+                <label className="kz-settings-panel__toggle-item">
+                  <span>{locale.settingsStripedRows}</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.stripedRows}
+                    onChange={(e) => onStripedRowsChange(e.target.checked)}
+                  />
                 </label>
               </div>
             </div>

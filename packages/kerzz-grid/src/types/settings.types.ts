@@ -17,6 +17,8 @@ export interface GridSettings {
   headerFilters: Record<string, boolean>;
   /** Footer aggregation type per column (columnId -> aggregation type or 'none') */
   footerAggregation: Record<string, FooterAggregationSetting>;
+  /** Enable alternating row colors (zebra striping) */
+  stripedRows: boolean;
 }
 
 /**
@@ -26,4 +28,5 @@ export const DEFAULT_GRID_SETTINGS: GridSettings = {
   selectionMode: 'single',
   headerFilters: {},
   footerAggregation: {},
+  stripedRows: false,
 };

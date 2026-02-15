@@ -70,6 +70,8 @@ export const tr: GridLocale = {
   // Settings panel
   settingsTitle: 'Ayarlar',
   settingsSelectionMode: 'Seçim Modu',
+  settingsAppearance: 'Görünüm',
+  settingsStripedRows: 'Çizgili Satırlar',
   settingsHeaderFilters: 'Sütun Filtreleri',
   settingsFooterAggregation: 'Alt Toplam',
   settingsResetSorting: 'Sıralamayı Sıfırla',

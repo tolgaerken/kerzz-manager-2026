@@ -28,6 +28,11 @@ export class BossUsersService {
   private readonly logger = new Logger(BossUsersService.name);
   private readonly ssoServiceUrl: string;
 
+  private getUserMail(user: (SsoUser & { mail?: string }) | null | undefined): string | undefined {
+    if (!user) return undefined;
+    return user.email || user.mail;
+  }
+
   constructor(
     @InjectModel(SsoAppLicence.name, SSO_DB_CONNECTION)
     private readonly appLicenceModel: Model<SsoAppLicenceDocument>,
@@ -82,7 +87,8 @@ export class BossUsersService {
         start_date: license.start_date,
         end_date: license.end_date,
         is_active: license.is_active,
-        mail: user?.email,
+        customerId: user?.customerId,
+        mail: this.getUserMail(user),
         phone: user?.phone,
         lastLoginDate: user?.lastLoginDate,
         createdAt: license.createdAt,
@@ -119,7 +125,8 @@ export class BossUsersService {
       start_date: license.start_date,
       end_date: license.end_date,
       is_active: license.is_active,
-      mail: user?.email,
+      customerId: user?.customerId,
+      mail: this.getUserMail(user),
       phone: user?.phone,
       lastLoginDate: user?.lastLoginDate,
       createdAt: license.createdAt,
@@ -184,7 +191,8 @@ export class BossUsersService {
       start_date: license.start_date,
       end_date: license.end_date,
       is_active: license.is_active,
-      mail: user?.email,
+      customerId: user?.customerId,
+      mail: this.getUserMail(user),
       phone: user?.phone,
       lastLoginDate: user?.lastLoginDate,
       createdAt: license.createdAt,
@@ -238,7 +246,8 @@ export class BossUsersService {
       start_date: license.start_date,
       end_date: license.end_date,
       is_active: license.is_active,
-      mail: user?.email,
+      customerId: user?.customerId,
+      mail: this.getUserMail(user),
       phone: user?.phone,
       lastLoginDate: user?.lastLoginDate,
       createdAt: license.createdAt,
@@ -353,7 +362,11 @@ export class BossUsersService {
     }
 
     if (!user && dto.email) {
-      user = await this.userModel.findOne({ email: dto.email }).exec();
+      user = await this.userModel
+        .findOne({
+          $or: [{ email: dto.email }, { mail: dto.email }]
+        })
+        .exec();
     }
 
     if (!user && dto.phone) {
@@ -364,7 +377,9 @@ export class BossUsersService {
       // Güncelle
       user.name = dto.name;
       user.email = dto.email;
+      user.mail = dto.email;
       if (dto.phone) user.phone = dto.phone;
+      user.customerId = dto.customerId;
       user.updatedAt = new Date();
       await user.save();
       return user.toObject();
@@ -375,7 +390,9 @@ export class BossUsersService {
       id: uuidv4(),
       name: dto.name,
       email: dto.email,
+      mail: dto.email,
       phone: dto.phone,
+      customerId: dto.customerId,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -395,7 +412,12 @@ export class BossUsersService {
    * Kullanıcıyı email ile ara
    */
   async findUserByEmail(email: string): Promise<SsoUser | null> {
-    return this.userModel.findOne({ email }).lean().exec();
+    return this.userModel
+      .findOne({
+        $or: [{ email }, { mail: email }]
+      })
+      .lean()
+      .exec();
   }
 
   /**

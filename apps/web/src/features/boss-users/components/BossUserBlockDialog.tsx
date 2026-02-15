@@ -27,6 +27,53 @@ interface BossUserBlockDialogProps {
   license: BossLicenseUser | null;
 }
 
+const textFieldSx = {
+  "& .MuiInputLabel-root": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)"
+  },
+  "& .MuiOutlinedInput-root": {
+    color: "var(--color-foreground)",
+    bgcolor: "var(--color-surface)",
+    "& fieldset": {
+      borderColor: "var(--color-border)"
+    },
+    "&:hover fieldset": {
+      borderColor: "var(--color-primary)"
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--color-primary)"
+    }
+  },
+  "& .MuiFormHelperText-root": {
+    color: "var(--color-muted-foreground)"
+  }
+} as const;
+
+const selectSx = {
+  "& .MuiInputLabel-root": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)"
+  },
+  "& .MuiOutlinedInput-root": {
+    color: "var(--color-foreground)",
+    bgcolor: "var(--color-surface)",
+    "& fieldset": {
+      borderColor: "var(--color-border)"
+    },
+    "&:hover fieldset": {
+      borderColor: "var(--color-primary)"
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--color-primary)"
+    }
+  }
+} as const;
+
 export function BossUserBlockDialog({ open, onClose, license }: BossUserBlockDialogProps) {
   const [blockType, setBlockType] = useState<"block" | "info">("block");
   const [message, setMessage] = useState("");
@@ -69,35 +116,66 @@ export function BossUserBlockDialog({ open, onClose, license }: BossUserBlockDia
   const isBlocking = blockUser.isPending;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: "var(--color-surface)",
+          color: "var(--color-foreground)",
+          border: "1px solid var(--color-border)"
+        }
+      }}
+    >
+      <DialogTitle sx={{ borderBottom: "1px solid var(--color-border)" }}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
             {blockType === "block" ? (
-              <Ban className="text-red-500" size={20} />
+              <Ban size={20} color="var(--color-error)" />
             ) : (
-              <AlertTriangle className="text-yellow-500" size={20} />
+              <AlertTriangle size={20} color="var(--color-warning)" />
             )}
-            <Typography variant="h6" component="span">
+            <Typography variant="h6" component="span" sx={{ color: "var(--color-foreground)" }}>
               {blockType === "block" ? "Kullanıcı Engelle" : "Bilgi Mesajı Gönder"}
             </Typography>
           </Box>
-          <IconButton onClick={handleClose} size="small" edge="end">
+          <IconButton
+            onClick={handleClose}
+            size="small"
+            edge="end"
+            sx={{ color: "var(--color-muted-foreground)" }}
+          >
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent
+        dividers
+        sx={{
+          bgcolor: "var(--color-surface)",
+          borderColor: "var(--color-border)"
+        }}
+      >
         {license && (
-          <Alert severity="info" sx={{ mb: 2 }}>
+          <Alert
+            severity="info"
+            sx={{
+              mb: 2,
+              bgcolor: "var(--color-surface-elevated)",
+              color: "var(--color-foreground)",
+              border: "1px solid var(--color-info)"
+            }}
+          >
             <strong>{license.user_name}</strong> - {license.brand}
           </Alert>
         )}
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Engelleme Tipi */}
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" sx={selectSx}>
             <InputLabel>İşlem Tipi</InputLabel>
             <Select
               value={blockType}
@@ -106,13 +184,13 @@ export function BossUserBlockDialog({ open, onClose, license }: BossUserBlockDia
             >
               <MenuItem value="block">
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Ban size={16} className="text-red-500" />
+                  <Ban size={16} color="var(--color-error)" />
                   Engelle (Kullanıcı uygulamaya giremez)
                 </Box>
               </MenuItem>
               <MenuItem value="info">
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <AlertTriangle size={16} className="text-yellow-500" />
+                  <AlertTriangle size={16} color="var(--color-warning)" />
                   Bilgi (Uyarı mesajı gösterilir)
                 </Box>
               </MenuItem>
@@ -133,6 +211,7 @@ export function BossUserBlockDialog({ open, onClose, license }: BossUserBlockDia
             rows={3}
             fullWidth
             required
+            sx={textFieldSx}
           />
 
           {/* Ödeme Linki (Opsiyonel) */}
@@ -143,17 +222,21 @@ export function BossUserBlockDialog({ open, onClose, license }: BossUserBlockDia
             placeholder="https://..."
             fullWidth
             helperText="Kullanıcıya gösterilecek ödeme sayfası linki"
+            sx={textFieldSx}
           />
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isBlocking}>
+      <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid var(--color-border)" }}>
+        <Button
+          onClick={handleClose}
+          disabled={isBlocking}
+          sx={{ color: "var(--color-muted-foreground)" }}
+        >
           İptal
         </Button>
         <Button
           variant="contained"
-          color={blockType === "block" ? "error" : "warning"}
           onClick={handleBlock}
           disabled={isBlocking || !message.trim()}
           startIcon={
@@ -165,6 +248,16 @@ export function BossUserBlockDialog({ open, onClose, license }: BossUserBlockDia
               <AlertTriangle size={16} />
             )
           }
+          sx={{
+            bgcolor: blockType === "block" ? "var(--color-error)" : "var(--color-warning)",
+            color:
+              blockType === "block"
+                ? "var(--color-error-foreground)"
+                : "var(--color-warning-foreground)",
+            "&:hover": {
+              bgcolor: blockType === "block" ? "var(--color-error)" : "var(--color-warning)"
+            }
+          }}
         >
           {blockType === "block" ? "Engelle" : "Bilgi Gönder"}
         </Button>

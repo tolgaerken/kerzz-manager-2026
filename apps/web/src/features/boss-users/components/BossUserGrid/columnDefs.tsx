@@ -85,9 +85,9 @@ export function createActionsColumn(handlers: ActionHandlers): GridColumnDef<Bos
                   e.stopPropagation();
                   handlers.onBlock(row);
                 }}
-                className="rounded p-1.5 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+                className="rounded p-1.5 transition-colors hover:bg-[var(--color-error)]/10"
               >
-                <Ban className="h-4 w-4 text-red-500" />
+                <Ban className="h-4 w-4 text-[var(--color-error)]" />
               </button>
 
               <button
@@ -97,9 +97,9 @@ export function createActionsColumn(handlers: ActionHandlers): GridColumnDef<Bos
                   e.stopPropagation();
                   handlers.onInfo(row);
                 }}
-                className="rounded p-1.5 transition-colors hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                className="rounded p-1.5 transition-colors hover:bg-[var(--color-warning)]/10"
               >
-                <Info className="h-4 w-4 text-yellow-500" />
+                <Info className="h-4 w-4 text-[var(--color-warning)]" />
               </button>
             </>
           )}
@@ -112,9 +112,9 @@ export function createActionsColumn(handlers: ActionHandlers): GridColumnDef<Bos
                 e.stopPropagation();
                 handlers.onUnblock(row);
               }}
-              className="rounded p-1.5 transition-colors hover:bg-green-100 dark:hover:bg-green-900/30"
+              className="rounded p-1.5 transition-colors hover:bg-[var(--color-success)]/10"
             >
-              <ShieldOff className="h-4 w-4 text-green-500" />
+              <ShieldOff className="h-4 w-4 text-[var(--color-success)]" />
             </button>
           )}
 
@@ -125,9 +125,9 @@ export function createActionsColumn(handlers: ActionHandlers): GridColumnDef<Bos
               e.stopPropagation();
               handlers.onDelete(row);
             }}
-            className="rounded p-1.5 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+            className="rounded p-1.5 transition-colors hover:bg-[var(--color-error)]/10"
           >
-            <Trash2 className="h-4 w-4 text-red-500" />
+            <Trash2 className="h-4 w-4 text-[var(--color-error)]" />
           </button>
         </div>
       );
@@ -152,7 +152,10 @@ const mapRolesToNames = (roles: string[], roleMap: Map<string, string>): string[
 /**
  * Grid kolon tanımları oluştur (rol map'i ile)
  */
-export function createBossUserColumnDefs(roleMap: Map<string, string>): GridColumnDef<BossLicenseUser>[] {
+export function createBossUserColumnDefs(
+  roleMap: Map<string, string>,
+  resolveCustomerName: (customerId: string | undefined) => string
+): GridColumnDef<BossLicenseUser>[] {
   return [
     {
       id: "brand",
@@ -163,10 +166,29 @@ export function createBossUserColumnDefs(roleMap: Map<string, string>): GridColu
       filter: { type: "dropdown", showCounts: true },
       cell: (value: unknown, row: BossLicenseUser) => {
         const blocked = isBlocked(row);
-        const brand = (value as string) || row.licance_id || "-";
+        const brand = (typeof value === "string" && value) || row.licance_id || "-";
         return (
-          <span className={blocked ? "text-red-500 line-through" : ""}>
+          <span className={blocked ? "text-[var(--color-error)] line-through" : ""}>
             {brand}
+          </span>
+        );
+      }
+    },
+    {
+      id: "customer",
+      header: "Müşteri",
+      accessorFn: (row: BossLicenseUser) => {
+        if (row.customerName) return row.customerName;
+        return resolveCustomerName(row.customerId);
+      },
+      minWidth: 180,
+      sortable: true,
+      filter: { type: "dropdown", showCounts: true },
+      cell: (value: unknown) => {
+        const customerName = typeof value === "string" ? value : "-";
+        return (
+          <span className="text-[var(--color-foreground)]">
+            {customerName || "-"}
           </span>
         );
       }
@@ -205,7 +227,7 @@ export function createBossUserColumnDefs(roleMap: Map<string, string>): GridColu
       sortable: false,
       filter: { type: "dropdown", showCounts: true },
       cell: (value: unknown) => {
-        const roles = value as string;
+        const roles = typeof value === "string" ? value : "";
         if (!roles) return "-";
         return (
           <span className="text-xs text-[var(--color-muted-foreground)]">
@@ -221,7 +243,7 @@ export function createBossUserColumnDefs(roleMap: Map<string, string>): GridColu
       width: 160,
       sortable: true,
       filter: { type: "dateTree" },
-      cell: (value: unknown) => formatDate(value as string)
+      cell: (value: unknown) => formatDate(typeof value === "string" ? value : null)
     },
     {
       id: "statusText",
@@ -238,20 +260,20 @@ export function createBossUserColumnDefs(roleMap: Map<string, string>): GridColu
         const parsed = parseStatusText(row.statusText);
         if (!parsed) {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            <span className="inline-flex items-center rounded-full border border-[var(--color-success)]/30 bg-[var(--color-success)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-success)]">
               Aktif
             </span>
           );
         }
         if (parsed.type === "block") {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+            <span className="inline-flex items-center rounded-full border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-error)]">
               Engelli
             </span>
           );
         }
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+          <span className="inline-flex items-center rounded-full border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-warning)]">
             Bilgi
           </span>
         );

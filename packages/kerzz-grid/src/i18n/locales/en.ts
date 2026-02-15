@@ -70,6 +70,8 @@ export const en: GridLocale = {
   // Settings panel
   settingsTitle: 'Settings',
   settingsSelectionMode: 'Selection Mode',
+  settingsAppearance: 'Appearance',
+  settingsStripedRows: 'Striped Rows',
   settingsHeaderFilters: 'Column Filters',
   settingsFooterAggregation: 'Footer Aggregation',
   settingsResetSorting: 'Reset Sorting',

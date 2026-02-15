@@ -4,6 +4,7 @@ import type { ToolbarButtonConfig, ToolbarConfig } from "@kerzz/grid";
 import { RefreshCw, Plus } from "lucide-react";
 import { GRID_STATE_KEY } from "../../constants";
 import { createBossUserColumnDefs, createActionsColumn } from "./columnDefs";
+import { useCustomerLookup } from "../../../lookup";
 import type { BossLicenseUser } from "../../types";
 
 interface RoleInfo {
@@ -40,6 +41,7 @@ export function BossUserGrid({
 }: BossUserGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
+  const { getCustomerName } = useCustomerLookup();
 
   // Rol ID -> Name map'i oluştur
   const roleMap = useMemo(() => {
@@ -83,8 +85,8 @@ export function BossUserGrid({
 
   // Tüm kolonları birleştir (rol map'i ile)
   const columns = useMemo(
-    () => [...createBossUserColumnDefs(roleMap), actionsColumn],
-    [roleMap, actionsColumn]
+    () => [...createBossUserColumnDefs(roleMap, getCustomerName), actionsColumn],
+    [roleMap, getCustomerName, actionsColumn]
   );
 
   // Çift tıklama handler

@@ -42,6 +42,8 @@ interface GridToolbarProps<TData> {
   onHeaderFilterChange?: (columnId: string, enabled: boolean) => void;
   /** Called when footer aggregation changes */
   onFooterAggregationChange?: (columnId: string, aggregation: FooterAggregationSetting) => void;
+  /** Called when striped rows setting changes */
+  onStripedRowsChange?: (enabled: boolean) => void;
   /** Called when reset sorting is clicked */
   onResetSorting?: () => void;
   /** Called when reset all is clicked */
@@ -72,6 +74,7 @@ function GridToolbarInner<TData>({
   onSelectionModeChange,
   onHeaderFilterChange,
   onFooterAggregationChange,
+  onStripedRowsChange,
   onResetSorting,
   onResetAll,
   selectedCount = 0,
@@ -319,6 +322,7 @@ function GridToolbarInner<TData>({
                     onSelectionModeChange={onSelectionModeChange ?? (() => {})}
                     onHeaderFilterChange={onHeaderFilterChange ?? (() => {})}
                     onFooterAggregationChange={onFooterAggregationChange ?? (() => {})}
+                    onStripedRowsChange={onStripedRowsChange ?? (() => {})}
                     onResetSorting={onResetSorting ?? (() => {})}
                     onResetAll={onResetAll ?? (() => {})}
                     onClose={() => setSettingsPanelOpen(false)}

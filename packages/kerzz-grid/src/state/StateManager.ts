@@ -65,6 +65,10 @@ export class StateManager {
     if (!migrated.columnPinned) {
       migrated.columnPinned = {};
     }
+    // Ensure stripedRows exists in settings for backward compat
+    if (migrated.settings.stripedRows === undefined) {
+      migrated.settings.stripedRows = DEFAULT_GRID_SETTINGS.stripedRows;
+    }
     return migrated;
   }
 

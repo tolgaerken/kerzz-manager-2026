@@ -25,6 +25,31 @@ interface BossNotificationDialogProps {
   license: BossLicenseUser | null;
 }
 
+const textFieldSx = {
+  "& .MuiInputLabel-root": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)"
+  },
+  "& .MuiOutlinedInput-root": {
+    color: "var(--color-foreground)",
+    bgcolor: "var(--color-surface)",
+    "& fieldset": {
+      borderColor: "var(--color-border)"
+    },
+    "&:hover fieldset": {
+      borderColor: "var(--color-primary)"
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--color-primary)"
+    }
+  },
+  "& .MuiFormHelperText-root": {
+    color: "var(--color-muted-foreground)"
+  }
+} as const;
+
 export function BossNotificationDialog({
   open,
   onClose,
@@ -95,34 +120,73 @@ export function BossNotificationDialog({
   const hasEmail = !!license?.mail;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: "var(--color-surface)",
+          color: "var(--color-foreground)",
+          border: "1px solid var(--color-border)"
+        }
+      }}
+    >
+      <DialogTitle sx={{ borderBottom: "1px solid var(--color-border)" }}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
-            <Send className="text-blue-500" size={20} />
-            <Typography variant="h6" component="span">
+            <Send size={20} color="var(--color-info)" />
+            <Typography variant="h6" component="span" sx={{ color: "var(--color-foreground)" }}>
               Bildirim Gönder
             </Typography>
           </Box>
-          <IconButton onClick={handleClose} size="small" edge="end">
+          <IconButton
+            onClick={handleClose}
+            size="small"
+            edge="end"
+            sx={{ color: "var(--color-muted-foreground)" }}
+          >
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent
+        dividers
+        sx={{
+          bgcolor: "var(--color-surface)",
+          borderColor: "var(--color-border)"
+        }}
+      >
         {license && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Typography variant="body2">
+          <Alert
+            severity="info"
+            sx={{
+              mb: 2,
+              bgcolor: "var(--color-surface-elevated)",
+              color: "var(--color-foreground)",
+              border: "1px solid var(--color-info)"
+            }}
+          >
+            <Typography variant="body2" sx={{ color: "var(--color-foreground)" }}>
               <strong>{license.user_name}</strong>
             </Typography>
             {license.phone && (
-              <Typography variant="caption" display="block">
+              <Typography
+                variant="caption"
+                display="block"
+                sx={{ color: "var(--color-muted-foreground)" }}
+              >
                 Telefon: {license.phone}
               </Typography>
             )}
             {license.mail && (
-              <Typography variant="caption" display="block">
+              <Typography
+                variant="caption"
+                display="block"
+                sx={{ color: "var(--color-muted-foreground)" }}
+              >
                 Email: {license.mail}
               </Typography>
             )}
@@ -132,7 +196,7 @@ export function BossNotificationDialog({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Bildirim Yöntemleri */}
           <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{ mb: 1, color: "var(--color-muted-foreground)" }}>
               Bildirim Yöntemi
             </Typography>
             <Box sx={{ display: "flex", gap: 2 }}>
@@ -146,10 +210,10 @@ export function BossNotificationDialog({
                 }
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <MessageSquare size={16} />
+                    <MessageSquare size={16} color="var(--color-foreground)" />
                     SMS
                     {!hasPhone && (
-                      <Typography variant="caption" color="error">
+                      <Typography variant="caption" sx={{ color: "var(--color-error)" }}>
                         (Telefon yok)
                       </Typography>
                     )}
@@ -166,10 +230,10 @@ export function BossNotificationDialog({
                 }
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Mail size={16} />
+                    <Mail size={16} color="var(--color-foreground)" />
                     Email
                     {!hasEmail && (
-                      <Typography variant="caption" color="error">
+                      <Typography variant="caption" sx={{ color: "var(--color-error)" }}>
                         (Email yok)
                       </Typography>
                     )}
@@ -189,20 +253,29 @@ export function BossNotificationDialog({
             rows={3}
             fullWidth
             helperText="Varsayılan: Kerzz Boss uygulamasına erişiminiz tanımlandı..."
+            sx={textFieldSx}
           />
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isSending}>
+      <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid var(--color-border)" }}>
+        <Button
+          onClick={handleClose}
+          disabled={isSending}
+          sx={{ color: "var(--color-muted-foreground)" }}
+        >
           İptal
         </Button>
         <Button
           variant="contained"
-          color="primary"
           onClick={handleSend}
           disabled={isSending || (!sendSms && !sendEmail)}
           startIcon={isSending ? <CircularProgress size={16} /> : <Send size={16} />}
+          sx={{
+            bgcolor: "var(--color-primary)",
+            color: "var(--color-primary-foreground)",
+            "&:hover": { bgcolor: "var(--color-primary)" }
+          }}
         >
           Gönder
         </Button>

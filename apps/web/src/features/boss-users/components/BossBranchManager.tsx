@@ -135,7 +135,14 @@ export function BossBranchManager({ license }: BossBranchManagerProps) {
 
   if (orderedBranches.length === 0) {
     return (
-      <Alert severity="warning">
+      <Alert
+        severity="warning"
+        sx={{
+          bgcolor: "var(--color-surface-elevated)",
+          color: "var(--color-foreground)",
+          border: "1px solid var(--color-warning)"
+        }}
+      >
         Bu lisans için şube bilgisi bulunamadı
       </Alert>
     );
@@ -161,10 +168,19 @@ export function BossBranchManager({ license }: BossBranchManagerProps) {
               checked={allSelected}
               indeterminate={someSelected}
               onChange={handleToggleAll}
+              sx={{
+                color: "var(--color-muted-foreground)",
+                "&.Mui-checked": {
+                  color: "var(--color-primary)"
+                },
+                "&.MuiCheckbox-indeterminate": {
+                  color: "var(--color-primary)"
+                }
+              }}
             />
           }
           label={
-            <Typography variant="body2" fontWeight={500}>
+            <Typography variant="body2" fontWeight={500} sx={{ color: "var(--color-foreground)" }}>
               Tümünü Seç ({selectedVisibleCount}/{orderedBranches.length})
             </Typography>
           }
@@ -175,6 +191,13 @@ export function BossBranchManager({ license }: BossBranchManagerProps) {
           onClick={handleSave}
           disabled={isSaving}
           startIcon={isSaving ? <CircularProgress size={16} /> : <Save size={16} />}
+          sx={{
+            bgcolor: "var(--color-primary)",
+            color: "var(--color-primary-foreground)",
+            "&:hover": {
+              bgcolor: "var(--color-primary)"
+            }
+          }}
         >
           Kaydet
         </Button>
@@ -210,6 +233,12 @@ export function BossBranchManager({ license }: BossBranchManagerProps) {
                     tabIndex={-1}
                     disableRipple
                     size="small"
+                    sx={{
+                      color: "var(--color-muted-foreground)",
+                      "&.Mui-checked": {
+                        color: "var(--color-primary)"
+                      }
+                    }}
                   />
                 </ListItemIcon>
                 <ListItemText
@@ -226,7 +255,7 @@ export function BossBranchManager({ license }: BossBranchManagerProps) {
                   secondary={!branch.isActive ? "Pasif" : undefined}
                   secondaryTypographyProps={{
                     variant: "caption",
-                    color: "error"
+                    sx: { color: "var(--color-error)" }
                   }}
                 />
               </ListItemButton>

@@ -33,6 +33,50 @@ import type { TRole } from "../../sso-management/types";
 
 const normalizeRoleKey = (value: string): string => value.trim().toLowerCase();
 
+const textFieldSx = {
+  "& .MuiInputLabel-root": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)"
+  },
+  "& .MuiOutlinedInput-root": {
+    color: "var(--color-foreground)",
+    bgcolor: "var(--color-surface)",
+    "& fieldset": {
+      borderColor: "var(--color-border)"
+    },
+    "&:hover fieldset": {
+      borderColor: "var(--color-primary)"
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--color-primary)"
+    }
+  }
+} as const;
+
+const selectSx = {
+  "& .MuiInputLabel-root": {
+    color: "var(--color-muted-foreground)"
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "var(--color-primary)"
+  },
+  "& .MuiOutlinedInput-root": {
+    color: "var(--color-foreground)",
+    bgcolor: "var(--color-surface)",
+    "& fieldset": {
+      borderColor: "var(--color-border)"
+    },
+    "&:hover fieldset": {
+      borderColor: "var(--color-primary)"
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--color-primary)"
+    }
+  }
+} as const;
+
 interface BossLicenseManagerProps {
   userId: string;
   userName?: string;
@@ -160,6 +204,20 @@ export function BossLicenseManager({
   const isAdding = upsertLicense.isPending;
   const isDeleting = deleteLicense.isPending;
 
+  const handleRolesChange = useCallback((value: unknown) => {
+    if (Array.isArray(value)) {
+      setSelectedRoles(value.filter((role): role is string => typeof role === "string"));
+      return;
+    }
+
+    if (typeof value === "string") {
+      setSelectedRoles(value.split(",").filter(Boolean));
+      return;
+    }
+
+    setSelectedRoles([]);
+  }, []);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* Lisans Ekleme Formu */}
@@ -174,7 +232,7 @@ export function BossLicenseManager({
           border: "1px solid var(--color-border)"
         }}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: "var(--color-muted-foreground)" }}>
           Yeni lisans ekle
         </Typography>
 
@@ -193,6 +251,7 @@ export function BossLicenseManager({
               label="Lisans Ara"
               placeholder="Marka veya lisans ID ile ara..."
               size="small"
+              sx={textFieldSx}
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (
@@ -208,7 +267,7 @@ export function BossLicenseManager({
             <li {...props} key={option._id}>
               <Box>
                 <Typography variant="body2">{option.brandName || "-"}</Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: "var(--color-muted-foreground)" }}>
                   {option.licenseId} {option.customerName && `- ${option.customerName}`}
                 </Typography>
               </Box>
@@ -216,24 +275,53 @@ export function BossLicenseManager({
           )}
           noOptionsText="Lisans bulunamadı"
           loadingText="Aranıyor..."
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: "var(--color-surface)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)"
+              }
+            }
+          }}
         />
 
         {/* Rol Seçici */}
-        <FormControl size="small" fullWidth>
+        <FormControl size="small" fullWidth sx={selectSx}>
           <InputLabel>Roller</InputLabel>
           <Select
             multiple
             value={selectedRoles}
-            onChange={(e) => setSelectedRoles(e.target.value as string[])}
+            onChange={(e) => handleRolesChange(e.target.value)}
             label="Roller"
             renderValue={(selected) => (
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                {selected.map((roleId) => (
-                  <Chip key={roleId} label={getRoleName(roleId)} size="small" />
-                ))}
+                {Array.isArray(selected)
+                  ? selected.map((roleId) => (
+                      <Chip
+                        key={String(roleId)}
+                        label={getRoleName(String(roleId))}
+                        size="small"
+                        sx={{
+                          bgcolor: "var(--color-surface-elevated)",
+                          color: "var(--color-foreground)",
+                          border: "1px solid var(--color-border)"
+                        }}
+                      />
+                    ))
+                  : null}
               </Box>
             )}
             disabled={rolesLoading}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  bgcolor: "var(--color-surface)",
+                  color: "var(--color-foreground)",
+                  border: "1px solid var(--color-border)"
+                }
+              }
+            }}
           >
             {roles.map((role: TRole) => (
               <MenuItem key={role.id} value={role.id}>
@@ -249,6 +337,13 @@ export function BossLicenseManager({
           onClick={handleAddLicense}
           disabled={isAdding || !selectedLicenseOption || selectedRoles.length === 0}
           startIcon={isAdding ? <CircularProgress size={16} /> : <Plus size={16} />}
+          sx={{
+            bgcolor: "var(--color-primary)",
+            color: "var(--color-primary-foreground)",
+            "&:hover": {
+              bgcolor: "var(--color-primary)"
+            }
+          }}
         >
           Lisans Ekle
         </Button>
@@ -256,8 +351,11 @@ export function BossLicenseManager({
 
       {/* Mevcut Lisanslar */}
       <Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        <Typography variant="body2" sx={{ mb: 1, color: "var(--color-muted-foreground)" }}>
           Mevcut Lisanslar ({userLicenses.length})
+        </Typography>
+        <Typography variant="caption" sx={{ display: "block", mb: 1, color: "var(--color-muted-foreground)" }}>
+          Şube yetkilerini düzenlemek için lisans satırına tıklayın.
         </Typography>
 
         {licensesLoading ? (
@@ -265,9 +363,25 @@ export function BossLicenseManager({
             <CircularProgress size={24} />
           </Box>
         ) : userLicenses.length === 0 ? (
-          <Alert severity="info">Henüz lisans eklenmemiş</Alert>
+          <Alert
+            severity="info"
+            sx={{
+              bgcolor: "var(--color-surface-elevated)",
+              color: "var(--color-foreground)",
+              border: "1px solid var(--color-info)"
+            }}
+          >
+            Henüz lisans eklenmemiş
+          </Alert>
         ) : (
-          <List dense sx={{ bgcolor: "var(--color-surface)", borderRadius: 1 }}>
+          <List
+            dense
+            sx={{
+              bgcolor: "var(--color-surface)",
+              borderRadius: 1,
+              border: "1px solid var(--color-border)"
+            }}
+          >
             {userLicenses.map((license) => (
               <ListItem
                 key={license.id}
@@ -283,15 +397,22 @@ export function BossLicenseManager({
                   secondaryTypographyProps={{ component: "div" }}
                   primary={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Typography variant="body2" fontWeight={500}>
+                      <Typography
+                        variant="body2"
+                        fontWeight={500}
+                        sx={{ color: "var(--color-foreground)" }}
+                      >
                         {license.brand || license.licance_id}
                       </Typography>
                       {license.statusText && (
                         <Chip
                           label="Engelli"
                           size="small"
-                          color="error"
-                          sx={{ height: 20 }}
+                          sx={{
+                            height: 20,
+                            bgcolor: "var(--color-error)",
+                            color: "var(--color-error-foreground)"
+                          }}
                         />
                       )}
                     </Box>
@@ -304,7 +425,12 @@ export function BossLicenseManager({
                           label={getRoleName(roleId)}
                           size="small"
                           variant="outlined"
-                          sx={{ height: 20, fontSize: "0.7rem" }}
+                          sx={{
+                            height: 20,
+                            fontSize: "0.7rem",
+                            borderColor: "var(--color-border)",
+                            color: "var(--color-muted-foreground)"
+                          }}
                         />
                       ))}
                     </Box>
@@ -320,12 +446,13 @@ export function BossLicenseManager({
                     }}
                     disabled={isDeleting}
                   >
-                    <Trash2 size={16} className="text-red-500" />
+                    <Trash2 size={16} color="var(--color-error)" />
                   </IconButton>
                   <IconButton
                     edge="end"
                     size="small"
                     onClick={() => handleSelectLicense(license)}
+                    sx={{ color: "var(--color-muted-foreground)" }}
                   >
                     <ChevronRight size={16} />
                   </IconButton>

@@ -28,6 +28,7 @@ export interface UseStateStoreReturn {
   setSelectionMode: (mode: SelectionMode) => void;
   setHeaderFilterEnabled: (columnId: string, enabled: boolean) => void;
   setFooterAggregation: (columnId: string, aggregation: FooterAggregationSetting) => void;
+  setStripedRows: (enabled: boolean) => void;
   resetState: () => void;
 }
 
@@ -46,6 +47,7 @@ type StateAction =
   | { type: 'SET_SELECTION_MODE'; mode: SelectionMode }
   | { type: 'SET_HEADER_FILTER_ENABLED'; columnId: string; enabled: boolean }
   | { type: 'SET_FOOTER_AGGREGATION'; columnId: string; aggregation: FooterAggregationSetting }
+  | { type: 'SET_STRIPED_ROWS'; enabled: boolean }
   | { type: 'RESET'; defaultState: GridState };
 
 function stateReducer(state: GridState, action: StateAction): GridState {
@@ -105,6 +107,11 @@ function stateReducer(state: GridState, action: StateAction): GridState {
           },
         },
       };
+    case 'SET_STRIPED_ROWS':
+      return {
+        ...state,
+        settings: { ...state.settings, stripedRows: action.enabled },
+      };
     case 'RESET':
       return action.defaultState;
     default:
@@ -153,6 +160,10 @@ export function useStateStore({
         if (!stored.settings) stored.settings = { ...DEFAULT_GRID_SETTINGS };
         // Ensure columnPinned exists for backward compat
         if (!stored.columnPinned) stored.columnPinned = {};
+        // Ensure stripedRows exists in settings for backward compat
+        if (stored.settings.stripedRows === undefined) {
+          stored.settings.stripedRows = DEFAULT_GRID_SETTINGS.stripedRows;
+        }
         return stored;
       }
     }
@@ -254,6 +265,13 @@ export function useStateStore({
     [],
   );
 
+  const setStripedRows = useCallback(
+    (enabled: boolean) => {
+      dispatch({ type: 'SET_STRIPED_ROWS', enabled });
+    },
+    [],
+  );
+
   const resetState = useCallback(() => {
     managerRef.current?.remove();
     dispatch({ type: 'RESET', defaultState: createDefaultState() });
@@ -273,6 +291,7 @@ export function useStateStore({
     setSelectionMode,
     setHeaderFilterEnabled,
     setFooterAggregation,
+    setStripedRows,
     resetState,
   };
 }

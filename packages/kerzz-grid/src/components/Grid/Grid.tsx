@@ -62,6 +62,9 @@ function GridInner<TData>(
   // Effective selection mode: use settings if available, otherwise use prop
   const effectiveSelectionMode: SelectionMode = grid.state.settings?.selectionMode ?? selectionMode;
 
+  // Effective striped rows: use settings if available, otherwise use prop
+  const effectiveStripedRows: boolean = grid.state.settings?.stripedRows ?? stripedRows;
+
   const pendingRowIdSet = useMemo(() => {
     if (!getRowId || pendingNewRows.length === 0) return new Set<string>();
     const ids = pendingNewRows
@@ -259,6 +262,13 @@ function GridInner<TData>(
     grid.stateStore.setSorting([]);
   }, [grid.stateStore]);
 
+  const handleStripedRowsChange = useCallback(
+    (enabled: boolean) => {
+      grid.stateStore.setStripedRows(enabled);
+    },
+    [grid.stateStore],
+  );
+
   // Scroll to first selected row in displayData
   const handleScrollToFirstSelected = useCallback(() => {
     if (selection.selectedCount === 0) return;
@@ -320,6 +330,7 @@ function GridInner<TData>(
             onSelectionModeChange={handleSelectionModeChange}
             onHeaderFilterChange={handleHeaderFilterChange}
             onFooterAggregationChange={handleFooterAggregationChange}
+            onStripedRowsChange={handleStripedRowsChange}
             onResetSorting={handleResetSorting}
             onResetAll={grid.resetState}
             selectedCount={selection.selectedCount}
@@ -393,6 +404,7 @@ function GridInner<TData>(
           onSelectionModeChange={handleSelectionModeChange}
           onHeaderFilterChange={handleHeaderFilterChange}
           onFooterAggregationChange={handleFooterAggregationChange}
+          onStripedRowsChange={handleStripedRowsChange}
           onResetSorting={handleResetSorting}
           onResetAll={grid.resetState}
           selectedCount={selection.selectedCount}
@@ -490,7 +502,7 @@ function GridInner<TData>(
           totalHeight={grid.totalHeight}
           totalWidth={grid.totalWidth}
           getColumnWidth={grid.columnResize.getColumnWidth}
-          stripedRows={stripedRows}
+          stripedRows={effectiveStripedRows}
           scrollContainerRef={grid.scrollContainerRef}
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}

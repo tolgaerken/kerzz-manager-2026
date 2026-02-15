@@ -15,6 +15,9 @@ export class SsoUser {
   email: string;
 
   @Prop()
+  mail?: string;
+
+  @Prop()
   phone?: string;
 
   @Prop()
@@ -40,6 +43,9 @@ export class SsoUser {
 
   @Prop()
   updaterId?: string;
+
+  @Prop()
+  customerId?: string;
 }
 
 export const SsoUserSchema = SchemaFactory.createForClass(SsoUser);

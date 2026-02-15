@@ -17,6 +17,7 @@ export interface BossLicenseUserDto {
   end_date?: Date;
   is_active?: boolean;
   // User bilgileri (join)
+  customerId?: string;
   mail?: string;
   phone?: string;
   lastLoginDate?: Date;
@@ -163,4 +164,7 @@ export class UpsertUserDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsString()
+  customerId: string;
 }

@@ -15,6 +15,8 @@ export interface BossLicenseUser {
   end_date?: string;
   is_active?: boolean;
   // User bilgileri (join)
+  customerId?: string;
+  customerName?: string;
   mail?: string;
   phone?: string;
   lastLoginDate?: string;
@@ -40,6 +42,7 @@ export interface SsoUser {
   name: string;
   email: string;
   phone?: string;
+  customerId?: string;
   isActive: boolean;
   lastLoginDate?: string;
   createdAt?: string;
@@ -106,6 +109,7 @@ export interface UpsertUserDto {
   name: string;
   email: string;
   phone?: string;
+  customerId: string;
 }
 
 /**
