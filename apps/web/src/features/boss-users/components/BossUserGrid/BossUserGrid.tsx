@@ -12,7 +12,7 @@ interface RoleInfo {
   name: string;
 }
 
-const normalizeRoleKey = (value: string): string => value.trim().toLowerCase();
+const normalizeRoleKey = (value?: string | null): string => (value ?? "").trim().toLowerCase();
 
 interface BossUserGridProps {
   data: BossLicenseUser[];
@@ -47,10 +47,18 @@ export function BossUserGrid({
   const roleMap = useMemo(() => {
     const map = new Map<string, string>();
     roles.forEach((role) => {
-      map.set(role.id, role.name);
-      map.set(role.name, role.name); // name ile de eşleştir (eski veriler için)
-      map.set(normalizeRoleKey(role.id), role.name);
-      map.set(normalizeRoleKey(role.name), role.name);
+      const roleId = role.id?.trim();
+      const roleName = role.name?.trim();
+      if (!roleName) return;
+
+      if (roleId) {
+        map.set(roleId, roleName);
+        map.set(normalizeRoleKey(roleId), roleName);
+      }
+
+      // name ile de eşleştir (eski veriler için)
+      map.set(roleName, roleName);
+      map.set(normalizeRoleKey(roleName), roleName);
     });
     return map;
   }, [roles]);

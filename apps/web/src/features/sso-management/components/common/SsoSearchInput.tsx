@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { TextField, InputAdornment, IconButton } from "@mui/material";
 import { Search, X } from "lucide-react";
 
@@ -22,20 +22,29 @@ export function SsoSearchInput({
   size = "small"
 }: SsoSearchInputProps) {
   const [localValue, setLocalValue] = useState(value);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
 
   useEffect(() => {
+    if (localValue === value) {
+      return;
+    }
+
     const timer = setTimeout(() => {
       if (localValue.length >= minLength || localValue.length === 0) {
-        onChange(localValue);
+        onChangeRef.current(localValue);
       }
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [localValue, onChange, debounceMs, minLength]);
+  }, [localValue, value, debounceMs, minLength]);
 
   const handleClear = useCallback(() => {
     setLocalValue("");
