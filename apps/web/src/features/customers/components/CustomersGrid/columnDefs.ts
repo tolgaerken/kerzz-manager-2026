@@ -13,19 +13,19 @@ export const customerColumnDefs: GridColumnDef<Customer>[] = [
   },
   {
     id: "name",
-    header: "Ad",
+    header: "Şirket Adı",
     accessorKey: "name",
-    width: 150,
-    minWidth: 150,
+    width: 250,
+    minWidth: 200,
     sortable: true,
     filter: { type: "input" }
   },
   {
-    id: "companyName",
-    header: "Şirket Adı",
-    accessorKey: "companyName",
-    width: 250,
-    minWidth: 200,
+    id: "brand",
+    header: "Marka",
+    accessorKey: "brand",
+    width: 150,
+    minWidth: 150,
     sortable: true,
     filter: { type: "input" }
   },
@@ -72,6 +72,6 @@ export const customerColumnDefs: GridColumnDef<Customer>[] = [
     width: 100,
     sortable: true,
     cell: (value) => (value ? "Aktif" : "Pasif"),
-    cellClassName: (value) => (value ? "text-green-600" : "text-red-600")
+    cellClassName: (value) => (value ? "text-[var(--color-success)]" : "text-[var(--color-error)]")
   }
 ];

@@ -25,7 +25,7 @@ export function CustomerFormModal({
   const [formData, setFormData] = useState<CreateCustomerInput>({
     taxNo: "",
     name: "",
-    companyName: "",
+    brand: "",
     address: { ...EMPTY_ADDRESS },
     phone: "",
     email: "",
@@ -46,7 +46,7 @@ export function CustomerFormModal({
       setFormData({
         taxNo: customer.taxNo,
         name: customer.name,
-        companyName: customer.companyName,
+        brand: customer.brand,
         address: customer.address || { ...EMPTY_ADDRESS },
         phone: customer.phone,
         email: customer.email,
@@ -57,7 +57,7 @@ export function CustomerFormModal({
       setFormData({
         taxNo: "",
         name: "",
-        companyName: "",
+        brand: "",
         address: { ...EMPTY_ADDRESS },
         phone: "",
         email: "",
@@ -142,10 +142,10 @@ export function CustomerFormModal({
             )}
           </div>
 
-          {/* Ad */}
+          {/* Şirket Adı */}
           <div>
             <label htmlFor="name" className={labelClasses}>
-              Ad
+              Şirket Adı
             </label>
             <input
               type="text"
@@ -154,23 +154,23 @@ export function CustomerFormModal({
               value={formData.name}
               onChange={handleChange}
               className={inputClasses}
-              placeholder="Ad"
+              placeholder="Şirket adı"
             />
           </div>
 
-          {/* Şirket Adı */}
-          <div className="md:col-span-2">
-            <label htmlFor="companyName" className={labelClasses}>
-              Şirket Adı
+          {/* Marka */}
+          <div>
+            <label htmlFor="brand" className={labelClasses}>
+              Marka
             </label>
             <input
               type="text"
-              id="companyName"
-              name="companyName"
-              value={formData.companyName}
+              id="brand"
+              name="brand"
+              value={formData.brand}
               onChange={handleChange}
               className={inputClasses}
-              placeholder="Şirket adı"
+              placeholder="Marka"
             />
           </div>
         </div>

@@ -53,7 +53,7 @@ export class Customer {
   name: string;
 
   @Prop({ type: String })
-  companyName: string;
+  brand: string;
 
   @Prop({ type: CustomerAddress, default: () => ({}) })
   address: CustomerAddress;
@@ -82,4 +82,4 @@ export const CustomerSchema = SchemaFactory.createForClass(Customer);
 // Index for taxNo (frequently queried)
 CustomerSchema.index({ taxNo: 1 });
 CustomerSchema.index({ name: 1 });
-CustomerSchema.index({ companyName: 1 });
+CustomerSchema.index({ brand: 1 });

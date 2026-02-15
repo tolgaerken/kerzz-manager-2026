@@ -17,7 +17,7 @@ export class CustomerResponseDto {
   erpId: string;
   taxNo: string;
   name: string;
-  companyName: string;
+  brand: string;
   address: CustomerAddressDto;
   phone: string;
   email: string;

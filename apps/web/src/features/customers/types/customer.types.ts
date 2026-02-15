@@ -9,7 +9,7 @@ export interface Customer {
   erpId: string;
   taxNo: string;
   name: string;
-  companyName: string;
+  brand: string;
   address: AddressData;
   phone: string;
   email: string;
@@ -46,7 +46,7 @@ export interface CreateCustomerInput {
   type?: CustomerType;
   taxNo?: string;
   name?: string;
-  companyName?: string;
+  brand?: string;
   address?: AddressData;
   phone?: string;
   email?: string;
@@ -58,7 +58,7 @@ export interface UpdateCustomerInput {
   type?: CustomerType;
   taxNo?: string;
   name?: string;
-  companyName?: string;
+  brand?: string;
   address?: AddressData;
   phone?: string;
   email?: string;

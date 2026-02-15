@@ -60,7 +60,7 @@ export class CustomersService {
       const searchFilter = {
         $or: [
           { name: { $regex: search, $options: "i" } },
-          { companyName: { $regex: search, $options: "i" } },
+          { brand: { $regex: search, $options: "i" } },
           { erpId: { $regex: search, $options: "i" } },
           { taxNo: { $regex: search, $options: "i" } },
           { "address.city": { $regex: search, $options: "i" } },
@@ -213,7 +213,7 @@ export class CustomersService {
       _id: String(customer._id),
       id: (customer.id as string) || "",
       name: customer.name as string | undefined,
-      companyName: customer.companyName as string | undefined,
+      brand: customer.brand as string | undefined,
       erpId: customer.erpId as string | undefined,
       taxNo: customer.taxNo as string | undefined
     };
@@ -228,7 +228,7 @@ export class CustomersService {
       erpId: customer.erpId || "",
       taxNo: customer.taxNo || "",
       name: customer.name || "",
-      companyName: customer.companyName || "",
+      brand: customer.brand || "",
       address: {
         address: addr.address || "",
         cityId: addr.cityId || 0,

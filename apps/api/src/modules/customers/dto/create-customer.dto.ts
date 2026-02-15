@@ -65,7 +65,7 @@ export class CreateCustomerDto {
 
   @IsString()
   @IsOptional()
-  companyName?: string;
+  brand?: string;
 
   @IsOptional()
   @ValidateNested()

@@ -18,7 +18,7 @@ export class UpdateCustomerDto {
 
   @IsString()
   @IsOptional()
-  companyName?: string;
+  brand?: string;
 
   @IsOptional()
   @ValidateNested()
