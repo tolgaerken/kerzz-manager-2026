@@ -373,10 +373,10 @@ export function BossUserForm({
           slotProps={{
             paper: {
               sx: autocompletePaperSx
-            },
-            listbox: {
-              sx: autocompleteListboxSx
             }
+          }}
+          ListboxProps={{
+            sx: autocompleteListboxSx
           }}
           renderOption={(props, option) => (
             <li {...props} key={`${option._id}-${option.id}`}>
