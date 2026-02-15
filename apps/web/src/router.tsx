@@ -30,6 +30,7 @@ import { ContractSupportsPage } from "./pages/ContractSupportsPage";
 import { ContractVersionsPage } from "./pages/ContractVersionsPage";
 import { ContractSaasPage } from "./pages/ContractSaasPage";
 import { ContractDocumentsPage } from "./pages/ContractDocumentsPage";
+import { ProratedReportPage } from "./pages/ProratedReportPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
@@ -328,6 +329,14 @@ const contractDocumentsRoute = createRoute({
   component: ContractDocumentsPage,
 });
 
+// Prorated Report (Kıst Raporu) page
+const proratedReportRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/prorated-report",
+  beforeLoad: () => checkPermission(PERMISSIONS.CONTRACT_MENU),
+  component: ProratedReportPage,
+});
+
 // E-Document Credits page
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -519,6 +528,7 @@ const routeTree = rootRoute.addChildren([
     contractVersionsRoute,
     contractSaasRoute,
     contractDocumentsRoute,
+    proratedReportRoute,
     customersRoute,
     licensesRoute,
     hardwareProductsRoute,

@@ -45,6 +45,11 @@ export class ContractSupportsController {
     return this.contractSupportsService.update(id, dto);
   }
 
+  @Patch(":id/activate")
+  async activate(@Param("id") id: string) {
+    return this.contractSupportsService.activate(id);
+  }
+
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractSupportsService.delete(id);

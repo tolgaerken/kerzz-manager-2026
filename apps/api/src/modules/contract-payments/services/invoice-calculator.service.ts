@@ -144,7 +144,7 @@ export class InvoiceCalculatorService {
       : EFTPOS_DESCRIPTION;
 
     const eftPosRows = await this.groupAndProcess(
-      cashRegisters.filter((o) => o.enabled),
+      cashRegisters.filter((o) => this.isBillable(o)),
       eftPosDescription,
       eftPosErpId,
     );
@@ -153,7 +153,7 @@ export class InvoiceCalculatorService {
     // Destek satirlari
     const supportErpId = this.erpSettingsService.getErpId("support");
     const supportRows = await this.groupAndProcess(
-      supports.filter((o) => o.enabled),
+      supports.filter((o) => this.isBillable(o)),
       SUPPORT_DESCRIPTION,
       supportErpId,
     );
@@ -162,18 +162,18 @@ export class InvoiceCalculatorService {
     // Surum satirlari
     const versionErpId = this.erpSettingsService.getErpId("version");
     const versionRows = await this.groupAndProcess(
-      versions.filter((o) => o.enabled),
+      versions.filter((o) => this.isBillable(o)),
       VERSION_DESCRIPTION,
       versionErpId,
     );
     rows.push(...versionRows);
 
     // Kalem satirlari (items - her birini ayri isle)
-    const itemRows = await this.processItems(items.filter((o) => o.enabled));
+    const itemRows = await this.processItems(items.filter((o) => this.isBillable(o)));
     rows.push(...itemRows);
 
     // SaaS satirlari (batch product lookup ile)
-    const saasRows = await this.processSaas(saasItems.filter((o) => o.enabled));
+    const saasRows = await this.processSaas(saasItems.filter((o) => this.isBillable(o)));
     rows.push(...saasRows);
 
     // Toplami 0 olan satirlari filtrele
@@ -206,20 +206,20 @@ export class InvoiceCalculatorService {
     versions: ContractVersion[],
   ): Promise<SubTotals> {
     const saasTotal = await this.calculateTotal(
-      saasItems.filter((o) => o.enabled),
+      saasItems.filter((o) => this.isBillable(o)),
     );
     const supportTotal = await this.calculateTotal(
-      supports.filter((o) => o.enabled),
+      supports.filter((o) => this.isBillable(o)),
     );
     const cashRegisterTotal = await this.calculateTotal(
-      cashRegisters.filter((o) => o.enabled),
+      cashRegisters.filter((o) => this.isBillable(o)),
     );
     const itemsTotal = await this.calculateTotal(
-      items.filter((o) => o.enabled),
+      items.filter((o) => this.isBillable(o)),
       true,
     );
     const versionTotal = await this.calculateTotal(
-      versions.filter((o) => o.enabled),
+      versions.filter((o) => this.isBillable(o)),
     );
 
     const oldSaasTotal = await this.calculateOldTotal(saasItems);
@@ -413,6 +413,14 @@ export class InvoiceCalculatorService {
       sum += oldPrice * rate * (item.qty || 1);
     }
     return this.safeRound(sum);
+  }
+
+  /**
+   * Bir kalemin faturalanabilir olup olmadigini kontrol eder.
+   * Faturalama kosulu: enabled VE activated VE expired degil.
+   */
+  private isBillable(item: { enabled: boolean; activated?: boolean; expired?: boolean }): boolean {
+    return item.enabled && (item.activated ?? true) && !(item.expired ?? false);
   }
 
   private safeRound(value: number): number {

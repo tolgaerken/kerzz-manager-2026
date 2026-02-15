@@ -112,6 +112,9 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     blocked: false,
     productId: "",
     total: 0,
+    startDate: new Date().toISOString(),
+    activated: false,
+    activatedAt: undefined,
     editDate: new Date().toISOString(),
     editUser: ""
   }), [contractId]);

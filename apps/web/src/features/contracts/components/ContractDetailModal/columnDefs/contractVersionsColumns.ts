@@ -1,5 +1,6 @@
 import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractVersion } from "../../../types";
+import { DateCellEditor } from "../shared/cellEditors/DateCellEditor";
 
 const currencyOptions = [
   { id: "tl", name: "TL" },
@@ -100,6 +101,44 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     minWidth: 100,
     filter: { type: "dropdown" },
     editable: false
+  },
+  {
+    id: "startDate",
+    accessorKey: "startDate",
+    header: "Başlangıç",
+    width: 110,
+    minWidth: 100,
+    filter: { type: "dropdown" },
+    editable: true,
+    cellEditor: { type: "custom", customEditor: DateCellEditor },
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
+    }
+  },
+  {
+    id: "activated",
+    accessorKey: "activated",
+    header: "Kuruldu",
+    width: 90,
+    minWidth: 80,
+    filter: { type: "dropdown" },
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "Evet" : "Hayır")
+  },
+  {
+    id: "activatedAt",
+    accessorKey: "activatedAt",
+    header: "Kurulum T.",
+    width: 110,
+    minWidth: 100,
+    filter: { type: "dropdown" },
+    editable: false,
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
+    }
   },
   {
     id: "editDate",

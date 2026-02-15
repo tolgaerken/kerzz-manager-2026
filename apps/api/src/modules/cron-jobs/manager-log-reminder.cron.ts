@@ -1,16 +1,20 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { ManagerLogService } from "../manager-log/manager-log.service";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
 import { SystemLogsService, SystemLogAction } from "../system-logs";
+import { NotificationSettingsService } from "../notification-settings";
 
 @Injectable()
 export class ManagerLogReminderCron {
+  private readonly logger = new Logger(ManagerLogReminderCron.name);
+
   constructor(
     private managerLogService: ManagerLogService,
     private managerNotificationService: ManagerNotificationService,
-    private systemLogsService: SystemLogsService
+    private systemLogsService: SystemLogsService,
+    private settingsService: NotificationSettingsService
   ) {}
 
   /**
@@ -19,6 +23,11 @@ export class ManagerLogReminderCron {
    */
   @Cron("0 */15 * * * *") // Her 15 dakika
   async handlePendingReminders(): Promise<void> {
+    const settings = await this.settingsService.getSettings();
+    if (!settings.managerLogReminderCronEnabled) {
+      return; // Sessizce çık — 15 dakikada bir çalıştığı için log spam'i önle
+    }
+
     const startTime = Date.now();
 
     try {

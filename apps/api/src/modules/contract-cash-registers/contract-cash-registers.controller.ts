@@ -45,6 +45,11 @@ export class ContractCashRegistersController {
     return this.contractCashRegistersService.update(id, dto);
   }
 
+  @Patch(":id/activate")
+  async activate(@Param("id") id: string) {
+    return this.contractCashRegistersService.activate(id);
+  }
+
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractCashRegistersService.delete(id);

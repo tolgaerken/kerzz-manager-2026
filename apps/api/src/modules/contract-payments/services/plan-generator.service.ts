@@ -125,8 +125,13 @@ export class PlanGeneratorService {
     const bulkOps: AnyBulkWriteOperation<ContractPaymentDocument>[] = [];
     const finalPlans: ContractPayment[] = [];
 
+    // Kist planlari senkronizasyondan haric tut (bagimsiz akis)
+    const regularExistingPlans = existingPlans.filter(
+      (p) => (p.type || "regular") === "regular",
+    );
+
     // Faturasi kesilmis planlari koru ve guncelle
-    const invoicedPlans = existingPlans.filter(
+    const invoicedPlans = regularExistingPlans.filter(
       (p) => p.invoiceNo && p.invoiceNo !== "",
     );
 
@@ -280,7 +285,12 @@ export class PlanGeneratorService {
     const result = await this.paymentModel
       .deleteMany({
         contractId,
-        $or: [{ invoiceNo: "" }, { invoiceNo: { $exists: false } }],
+        $and: [
+          // Sadece regular (normal) planlari sil, kist planlara dokunma
+          { $or: [{ type: "regular" }, { type: { $exists: false } }] },
+          // Faturasi kesilmemis planlari sil
+          { $or: [{ invoiceNo: "" }, { invoiceNo: { $exists: false } }] },
+        ],
       })
       .exec();
 

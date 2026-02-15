@@ -73,6 +73,11 @@ export interface NotificationSettings {
   smsEnabled: boolean;
   cronTime: string;
   cronEnabled: boolean;
+  invoiceNotificationCronEnabled: boolean;
+  contractNotificationCronEnabled: boolean;
+  proratedInvoiceCronEnabled: boolean;
+  stalePipelineCronEnabled: boolean;
+  managerLogReminderCronEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,6 +91,11 @@ export interface UpdateNotificationSettingsDto {
   smsEnabled?: boolean;
   cronTime?: string;
   cronEnabled?: boolean;
+  invoiceNotificationCronEnabled?: boolean;
+  contractNotificationCronEnabled?: boolean;
+  proratedInvoiceCronEnabled?: boolean;
+  stalePipelineCronEnabled?: boolean;
+  managerLogReminderCronEnabled?: boolean;
 }
 
 // ==================== NOTIFICATION LOG TYPES ====================

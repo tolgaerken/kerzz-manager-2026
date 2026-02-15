@@ -5,6 +5,7 @@ import { InvoiceNotificationCron } from "./invoice-notification.cron";
 import { ContractNotificationCron } from "./contract-notification.cron";
 import { StalePipelineCron } from "./stale-pipeline.cron";
 import { ManagerLogReminderCron } from "./manager-log-reminder.cron";
+import { ProratedInvoiceCron } from "./prorated-invoice.cron";
 import { Invoice, InvoiceSchema } from "../invoices/schemas/invoice.schema";
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
@@ -21,6 +22,8 @@ import {
 } from "../manager-notification/schemas/manager-notification.schema";
 import { ManagerNotificationModule } from "../manager-notification";
 import { ManagerLogModule } from "../manager-log/manager-log.module";
+import { ContractPaymentsModule } from "../contract-payments";
+import { ContractInvoicesModule } from "../contract-invoices/contract-invoices.module";
 
 @Module({
   imports: [
@@ -44,18 +47,22 @@ import { ManagerLogModule } from "../manager-log/manager-log.module";
     SystemLogsModule,
     ManagerNotificationModule,
     ManagerLogModule,
+    ContractPaymentsModule,
+    ContractInvoicesModule,
   ],
   providers: [
     InvoiceNotificationCron,
     ContractNotificationCron,
     StalePipelineCron,
     ManagerLogReminderCron,
+    ProratedInvoiceCron,
   ],
   exports: [
     InvoiceNotificationCron,
     ContractNotificationCron,
     StalePipelineCron,
     ManagerLogReminderCron,
+    ProratedInvoiceCron,
   ],
 })
 export class CronJobsModule {}

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsBoolean } from "class-validator";
+import { IsOptional, IsString, IsNumber, IsBoolean, IsDateString } from "class-validator";
 
 export class ContractCashRegisterQueryDto {
   @IsOptional()
@@ -31,6 +31,9 @@ export class ContractCashRegisterResponseDto {
   expired: boolean;
   eftPosActive: boolean;
   folioClose: boolean;
+  startDate: Date;
+  activated: boolean;
+  activatedAt: Date;
   editDate: Date;
   editUser: string;
 }
@@ -75,6 +78,10 @@ export class CreateContractCashRegisterDto {
   @IsOptional()
   @IsBoolean()
   yearly?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
 }
 
 export class UpdateContractCashRegisterDto {
@@ -121,6 +128,14 @@ export class UpdateContractCashRegisterDto {
   @IsOptional()
   @IsBoolean()
   folioClose?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activated?: boolean;
 }
 
 // ─── Stats DTO'ları ──────────────────────────────────────────

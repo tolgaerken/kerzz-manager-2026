@@ -48,6 +48,26 @@ export class UpdateNotificationSettingsDto {
   @IsBoolean()
   @IsOptional()
   cronEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  invoiceNotificationCronEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  contractNotificationCronEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  proratedInvoiceCronEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  stalePipelineCronEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  managerLogReminderCronEnabled?: boolean;
 }
 
 export class NotificationSettingsResponseDto {
@@ -61,6 +81,11 @@ export class NotificationSettingsResponseDto {
   smsEnabled: boolean;
   cronTime: string;
   cronEnabled: boolean;
+  invoiceNotificationCronEnabled: boolean;
+  contractNotificationCronEnabled: boolean;
+  proratedInvoiceCronEnabled: boolean;
+  stalePipelineCronEnabled: boolean;
+  managerLogReminderCronEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

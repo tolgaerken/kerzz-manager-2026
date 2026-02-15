@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ContractCashRegister, ContractCashRegisterDocument } from "./schemas/contract-cash-register.schema";
@@ -16,12 +16,15 @@ import {
   MonthlyTrendDto
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
+import { EFTPOS_DESCRIPTION } from "../contract-payments/constants/invoice.constants";
 
 @Injectable()
 export class ContractCashRegistersService {
   constructor(
     @InjectModel(ContractCashRegister.name, CONTRACT_DB_CONNECTION)
-    private contractCashRegisterModel: Model<ContractCashRegisterDocument>
+    private contractCashRegisterModel: Model<ContractCashRegisterDocument>,
+    private readonly proratedPlanService: ProratedPlanService,
   ) {}
 
   async findAll(query: ContractCashRegisterQueryDto): Promise<ContractCashRegistersListResponseDto> {
@@ -64,6 +67,8 @@ export class ContractCashRegistersService {
     const cashRegister = new this.contractCashRegisterModel({
       ...dto,
       id,
+      startDate: dto.startDate ? new Date(dto.startDate) : now,
+      activated: false,
       editDate: now,
       editUser: "system"
     });
@@ -73,6 +78,17 @@ export class ContractCashRegistersService {
   }
 
   async update(id: string, dto: UpdateContractCashRegisterDto): Promise<ContractCashRegisterResponseDto> {
+    // activated true geldiyse aktivasyon mantığını çalıştır
+    if (dto.activated === true) {
+      const existing = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+      if (!existing) {
+        throw new NotFoundException(`Contract cash register with id ${id} not found`);
+      }
+      if (!existing.activated) {
+        return this.activate(id);
+      }
+    }
+
     const updated = await this.contractCashRegisterModel
       .findOneAndUpdate(
         { id },
@@ -96,6 +112,54 @@ export class ContractCashRegistersService {
     }
   }
 
+  /**
+   * Kalemi aktive eder (kuruldu/devreye alindi).
+   * startDate gunceller ve kist plan olusturur.
+   */
+  async activate(id: string): Promise<ContractCashRegisterResponseDto> {
+    const item = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+    if (!item) {
+      throw new NotFoundException(`Contract cash register with id ${id} not found`);
+    }
+    if (item.activated) {
+      throw new BadRequestException("Bu kalem zaten aktive edilmis");
+    }
+
+    const now = new Date();
+
+    const updateData: Record<string, unknown> = {
+      activated: true,
+      activatedAt: now,
+      editDate: now,
+    };
+
+    // startDate henuz set edilmemisse bugune guncelle
+    if (!item.startDate) {
+      updateData.startDate = now;
+    }
+
+    const updated = await this.contractCashRegisterModel
+      .findOneAndUpdate({ id }, updateData, { new: true })
+      .lean()
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException(`Contract cash register with id ${id} not found`);
+    }
+
+    // Kist plan olustur (ayin 1'i degilse)
+    const startDate = (updateData.startDate as Date) || item.startDate;
+    if (new Date(startDate).getUTCDate() !== 1) {
+      await this.proratedPlanService.createProratedPlan(
+        item.contractId,
+        { price: item.price, currency: item.currency, startDate: new Date(startDate) },
+        EFTPOS_DESCRIPTION,
+      );
+    }
+
+    return this.mapToResponseDto(updated);
+  }
+
   private mapToResponseDto(cr: ContractCashRegister): ContractCashRegisterResponseDto {
     return {
       _id: cr._id.toString(),
@@ -114,6 +178,9 @@ export class ContractCashRegistersService {
       expired: cr.expired || false,
       eftPosActive: cr.eftPosActive || false,
       folioClose: cr.folioClose || false,
+      startDate: cr.startDate,
+      activated: cr.activated || false,
+      activatedAt: cr.activatedAt,
       editDate: cr.editDate,
       editUser: cr.editUser || ""
     };

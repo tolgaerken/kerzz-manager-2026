@@ -6,18 +6,23 @@ import {
   createContractSupport,
   updateContractSupport,
   deleteContractSupport,
+  activateContractSupport,
   createContractSaas,
   updateContractSaas,
   deleteContractSaas,
+  activateContractSaas,
   createContractCashRegister,
   updateContractCashRegister,
   deleteContractCashRegister,
+  activateContractCashRegister,
   createContractVersion,
   updateContractVersion,
   deleteContractVersion,
+  activateContractVersion,
   createContractItem,
   updateContractItem,
   deleteContractItem,
+  activateContractItem,
   createContractDocument,
   updateContractDocument,
   deleteContractDocument,
@@ -100,6 +105,16 @@ export function useDeleteContractSupport(contractId: string) {
   });
 }
 
+export function useActivateContractSupport(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => activateContractSupport(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contract-supports", contractId] });
+    }
+  });
+}
+
 // Contract Saas Mutations
 export function useCreateContractSaas(contractId: string) {
   const queryClient = useQueryClient();
@@ -126,6 +141,16 @@ export function useDeleteContractSaas(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteContractSaas(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contract-saas", contractId] });
+    }
+  });
+}
+
+export function useActivateContractSaas(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => activateContractSaas(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contract-saas", contractId] });
     }
@@ -169,6 +194,16 @@ export function useDeleteContractCashRegister(contractId: string) {
   });
 }
 
+export function useActivateContractCashRegister(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => activateContractCashRegister(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contract-cash-registers", contractId] });
+    }
+  });
+}
+
 // Contract Versions Mutations
 export function useCreateContractVersion(contractId: string) {
   const queryClient = useQueryClient();
@@ -201,6 +236,16 @@ export function useDeleteContractVersion(contractId: string) {
   });
 }
 
+export function useActivateContractVersion(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => activateContractVersion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contract-versions", contractId] });
+    }
+  });
+}
+
 // Contract Items Mutations
 export function useCreateContractItem(contractId: string) {
   const queryClient = useQueryClient();
@@ -227,6 +272,16 @@ export function useDeleteContractItem(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteContractItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contract-items", contractId] });
+    }
+  });
+}
+
+export function useActivateContractItem(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => activateContractItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contract-items", contractId] });
     }

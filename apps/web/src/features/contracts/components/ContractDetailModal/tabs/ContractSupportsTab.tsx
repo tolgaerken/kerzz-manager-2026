@@ -96,6 +96,9 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     expired: false,
     lastOnlineDay: 0,
     calulatedPrice: 0,
+    startDate: new Date().toISOString(),
+    activated: false,
+    activatedAt: undefined,
     editDate: new Date().toISOString(),
     editUser: ""
   }), [contractId]);

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ContractSaas, ContractSaasDocument } from "./schemas/contract-saas.schema";
@@ -16,12 +16,14 @@ import {
   MonthlyTrendDto
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
 
 @Injectable()
 export class ContractSaasService {
   constructor(
     @InjectModel(ContractSaas.name, CONTRACT_DB_CONNECTION)
-    private contractSaasModel: Model<ContractSaasDocument>
+    private contractSaasModel: Model<ContractSaasDocument>,
+    private readonly proratedPlanService: ProratedPlanService,
   ) {}
 
   async findAll(query: ContractSaasQueryDto): Promise<ContractSaasListResponseDto> {
@@ -61,6 +63,8 @@ export class ContractSaasService {
     const saas = new this.contractSaasModel({
       ...dto,
       id,
+      startDate: dto.startDate ? new Date(dto.startDate) : now,
+      activated: false,
       editDate: now,
       editUser: "system"
     });
@@ -70,6 +74,17 @@ export class ContractSaasService {
   }
 
   async update(id: string, dto: UpdateContractSaasDto): Promise<ContractSaasResponseDto> {
+    // activated true geldiyse aktivasyon mantığını çalıştır
+    if (dto.activated === true) {
+      const existing = await this.contractSaasModel.findOne({ id }).lean().exec();
+      if (!existing) {
+        throw new NotFoundException(`Contract saas with id ${id} not found`);
+      }
+      if (!existing.activated) {
+        return this.activate(id);
+      }
+    }
+
     const updated = await this.contractSaasModel
       .findOneAndUpdate(
         { id },
@@ -93,6 +108,55 @@ export class ContractSaasService {
     }
   }
 
+  /**
+   * Kalemi aktive eder (kuruldu/devreye alindi).
+   */
+  async activate(id: string): Promise<ContractSaasResponseDto> {
+    const item = await this.contractSaasModel.findOne({ id }).lean().exec();
+    if (!item) {
+      throw new NotFoundException(`Contract saas with id ${id} not found`);
+    }
+    if (item.activated) {
+      throw new BadRequestException("Bu kalem zaten aktive edilmis");
+    }
+
+    const now = new Date();
+    const updateData: Record<string, unknown> = {
+      activated: true,
+      activatedAt: now,
+      editDate: now,
+    };
+
+    if (!item.startDate) {
+      updateData.startDate = now;
+    }
+
+    const updated = await this.contractSaasModel
+      .findOneAndUpdate({ id }, updateData, { new: true })
+      .lean()
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException(`Contract saas with id ${id} not found`);
+    }
+
+    const startDate = (updateData.startDate as Date) || item.startDate;
+    if (new Date(startDate).getUTCDate() !== 1) {
+      await this.proratedPlanService.createProratedPlan(
+        item.contractId,
+        {
+          price: item.price,
+          currency: item.currency,
+          startDate: new Date(startDate),
+          qty: item.qty,
+        },
+        item.description || "SaaS Hizmeti",
+      );
+    }
+
+    return this.mapToResponseDto(updated);
+  }
+
   private mapToResponseDto(saas: ContractSaas): ContractSaasResponseDto {
     return {
       _id: saas._id.toString(),
@@ -111,6 +175,9 @@ export class ContractSaasService {
       blocked: saas.blocked || false,
       productId: saas.productId || "",
       total: saas.total || 0,
+      startDate: saas.startDate,
+      activated: saas.activated || false,
+      activatedAt: saas.activatedAt,
       editDate: saas.editDate,
       editUser: saas.editUser || ""
     };

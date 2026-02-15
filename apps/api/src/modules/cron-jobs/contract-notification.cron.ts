@@ -60,7 +60,7 @@ export class ContractNotificationCron {
       const settings = await this.settingsService.getSettings();
 
       // Cron devre dışıysa çık
-      if (!settings.cronEnabled) {
+      if (!settings.cronEnabled || !settings.contractNotificationCronEnabled) {
         console.log("⏸️ Kontrat bildirim cron'u devre dışı");
         return;
       }

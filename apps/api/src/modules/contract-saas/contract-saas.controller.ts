@@ -45,6 +45,11 @@ export class ContractSaasController {
     return this.contractSaasService.update(id, dto);
   }
 
+  @Patch(":id/activate")
+  async activate(@Param("id") id: string) {
+    return this.contractSaasService.activate(id);
+  }
+
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractSaasService.delete(id);

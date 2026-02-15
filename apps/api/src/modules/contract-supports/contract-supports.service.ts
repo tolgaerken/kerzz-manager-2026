@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ContractSupport, ContractSupportDocument } from "./schemas/contract-support.schema";
@@ -16,12 +16,15 @@ import {
   MonthlyTrendDto
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
+import { SUPPORT_DESCRIPTION } from "../contract-payments/constants/invoice.constants";
 
 @Injectable()
 export class ContractSupportsService {
   constructor(
     @InjectModel(ContractSupport.name, CONTRACT_DB_CONNECTION)
-    private contractSupportModel: Model<ContractSupportDocument>
+    private contractSupportModel: Model<ContractSupportDocument>,
+    private readonly proratedPlanService: ProratedPlanService,
   ) {}
 
   async findAll(query: ContractSupportQueryDto): Promise<ContractSupportsListResponseDto> {
@@ -61,6 +64,8 @@ export class ContractSupportsService {
     const support = new this.contractSupportModel({
       ...dto,
       id,
+      startDate: dto.startDate ? new Date(dto.startDate) : now,
+      activated: false,
       editDate: now,
       editUser: "system"
     });
@@ -70,6 +75,17 @@ export class ContractSupportsService {
   }
 
   async update(id: string, dto: UpdateContractSupportDto): Promise<ContractSupportResponseDto> {
+    // activated true geldiyse aktivasyon mantığını çalıştır
+    if (dto.activated === true) {
+      const existing = await this.contractSupportModel.findOne({ id }).lean().exec();
+      if (!existing) {
+        throw new NotFoundException(`Contract support with id ${id} not found`);
+      }
+      if (!existing.activated) {
+        return this.activate(id);
+      }
+    }
+
     const updated = await this.contractSupportModel
       .findOneAndUpdate(
         { id },
@@ -93,6 +109,50 @@ export class ContractSupportsService {
     }
   }
 
+  /**
+   * Kalemi aktive eder (kuruldu/devreye alindi).
+   */
+  async activate(id: string): Promise<ContractSupportResponseDto> {
+    const item = await this.contractSupportModel.findOne({ id }).lean().exec();
+    if (!item) {
+      throw new NotFoundException(`Contract support with id ${id} not found`);
+    }
+    if (item.activated) {
+      throw new BadRequestException("Bu kalem zaten aktive edilmis");
+    }
+
+    const now = new Date();
+    const updateData: Record<string, unknown> = {
+      activated: true,
+      activatedAt: now,
+      editDate: now,
+    };
+
+    if (!item.startDate) {
+      updateData.startDate = now;
+    }
+
+    const updated = await this.contractSupportModel
+      .findOneAndUpdate({ id }, updateData, { new: true })
+      .lean()
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException(`Contract support with id ${id} not found`);
+    }
+
+    const startDate = (updateData.startDate as Date) || item.startDate;
+    if (new Date(startDate).getUTCDate() !== 1) {
+      await this.proratedPlanService.createProratedPlan(
+        item.contractId,
+        { price: item.price, currency: item.currency, startDate: new Date(startDate) },
+        SUPPORT_DESCRIPTION,
+      );
+    }
+
+    return this.mapToResponseDto(updated);
+  }
+
   private mapToResponseDto(support: ContractSupport): ContractSupportResponseDto {
     return {
       _id: support._id.toString(),
@@ -110,6 +170,9 @@ export class ContractSupportsService {
       expired: support.expired || false,
       lastOnlineDay: support.lastOnlineDay || 0,
       calulatedPrice: support.calulatedPrice || 0,
+      startDate: support.startDate,
+      activated: support.activated || false,
+      activatedAt: support.activatedAt,
       editDate: support.editDate,
       editUser: support.editUser || ""
     };

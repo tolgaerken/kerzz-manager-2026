@@ -8,6 +8,7 @@ import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module"
 import { PaymentPlanService } from "./services/payment-plan.service";
 import { InvoiceCalculatorService } from "./services/invoice-calculator.service";
 import { PlanGeneratorService } from "./services/plan-generator.service";
+import { ProratedPlanService } from "./services/prorated-plan.service";
 // Bagimliliklardaki schema'lar (dogrudan model erisimi icin)
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
@@ -46,7 +47,8 @@ import { ErpSettingsModule } from "../erp-settings";
     PaymentPlanService,
     InvoiceCalculatorService,
     PlanGeneratorService,
+    ProratedPlanService,
   ],
-  exports: [ContractPaymentsService, PaymentPlanService],
+  exports: [ContractPaymentsService, PaymentPlanService, ProratedPlanService],
 })
 export class ContractPaymentsModule {}

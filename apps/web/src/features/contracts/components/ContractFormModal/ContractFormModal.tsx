@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, FileText, Calendar, Building2, Settings } from "lucide-react";
 import type { CreateContractInput } from "../../types";
 import { useCustomers } from "../../../customers/hooks/useCustomers";
+import type { Customer } from "../../../customers/types";
 import { useCompanies } from "../../../companies/hooks";
 
 interface ContractFormModalProps {
@@ -95,9 +96,9 @@ export function ContractFormModal({
     }
   };
 
-  const handleCustomerSelect = (customer: { _id: string; name: string; companyName: string }) => {
+  const handleCustomerSelect = (customer: Customer) => {
     setFormData((prev) => ({ ...prev, customerId: customer._id }));
-    setSelectedCustomerName(customer.name || customer.companyName);
+    setSelectedCustomerName(customer.name || customer.brand);
     setCustomerSearch("");
     setShowCustomerDropdown(false);
     if (errors.customerId) {
@@ -197,7 +198,7 @@ export function ContractFormModal({
                             className="w-full px-4 py-2 text-left hover:bg-[var(--color-border)] transition-colors"
                           >
                             <div className="font-medium text-[var(--color-foreground)]">
-                              {customer.name || customer.companyName}
+                              {customer.name || customer.brand}
                             </div>
                             <div className="text-sm text-[var(--color-foreground-muted)]">
                               {customer.taxNo}

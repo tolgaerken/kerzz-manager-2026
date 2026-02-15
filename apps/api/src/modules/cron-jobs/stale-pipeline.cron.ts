@@ -10,6 +10,7 @@ import {
   ManagerNotificationDocument,
 } from "../manager-notification/schemas/manager-notification.schema";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
+import { NotificationSettingsService } from "../notification-settings";
 
 @Injectable()
 export class StalePipelineCron {
@@ -23,7 +24,8 @@ export class StalePipelineCron {
     private offerModel: Model<OfferDocument>,
     @InjectModel(ManagerNotification.name)
     private notificationModel: Model<ManagerNotificationDocument>,
-    private notificationService: ManagerNotificationService
+    private notificationService: ManagerNotificationService,
+    private settingsService: NotificationSettingsService
   ) {}
 
   /**
@@ -32,6 +34,12 @@ export class StalePipelineCron {
    */
   @Cron("0 15 9 * * *")
   async handleStalePipeline(): Promise<void> {
+    const settings = await this.settingsService.getSettings();
+    if (!settings.stalePipelineCronEnabled) {
+      this.logger.log("⏸️ Hareketsiz pipeline cron'u devre dışı");
+      return;
+    }
+
     const now = new Date();
     const staleBefore = new Date(now);
     staleBefore.setDate(now.getDate() - this.staleDays);

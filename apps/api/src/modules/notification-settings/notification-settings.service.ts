@@ -41,6 +41,11 @@ export class NotificationSettingsService implements OnModuleInit {
         smsEnabled: false,
         cronTime: "09:00",
         cronEnabled: true,
+        invoiceNotificationCronEnabled: true,
+        contractNotificationCronEnabled: true,
+        proratedInvoiceCronEnabled: true,
+        stalePipelineCronEnabled: true,
+        managerLogReminderCronEnabled: true,
       });
       await settings.save();
       console.log("✅ Bildirim ayarları varsayılan değerlerle oluşturuldu");
@@ -104,6 +109,12 @@ export class NotificationSettingsService implements OnModuleInit {
       smsEnabled: doc.smsEnabled,
       cronTime: doc.cronTime,
       cronEnabled: doc.cronEnabled,
+      invoiceNotificationCronEnabled: doc.invoiceNotificationCronEnabled ?? true,
+      contractNotificationCronEnabled:
+        doc.contractNotificationCronEnabled ?? true,
+      proratedInvoiceCronEnabled: doc.proratedInvoiceCronEnabled ?? true,
+      stalePipelineCronEnabled: doc.stalePipelineCronEnabled ?? true,
+      managerLogReminderCronEnabled: doc.managerLogReminderCronEnabled ?? true,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };

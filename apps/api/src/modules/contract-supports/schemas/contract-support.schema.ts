@@ -49,6 +49,15 @@ export class ContractSupport {
   @Prop({ default: 0 })
   calulatedPrice: number;
 
+  @Prop({ type: Date })
+  startDate: Date;
+
+  @Prop({ default: false })
+  activated: boolean;
+
+  @Prop({ type: Date })
+  activatedAt: Date;
+
   @Prop({ index: true })
   editDate: Date;
 

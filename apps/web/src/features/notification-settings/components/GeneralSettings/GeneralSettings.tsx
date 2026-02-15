@@ -2,6 +2,52 @@ import { useState, useEffect } from "react";
 import { Save, RefreshCw } from "lucide-react";
 import { useNotificationSettings, useUpdateNotificationSettings } from "../../hooks";
 
+// ── Toggle bileşeni ──
+function ToggleSwitch({
+  label,
+  description,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <label className="text-sm text-[var(--color-muted)]">{label}</label>
+        {description && (
+          <p className="text-xs text-[var(--color-muted)]/70 mt-0.5">
+            {description}
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+          disabled ? "opacity-50 cursor-not-allowed" : ""
+        } ${
+          checked
+            ? "bg-[var(--color-primary)]"
+            : "bg-[var(--color-border)]"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            checked ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 export function GeneralSettings() {
   const { data: settings, isLoading, refetch } = useNotificationSettings();
   const updateMutation = useUpdateNotificationSettings();
@@ -15,6 +61,11 @@ export function GeneralSettings() {
     smsEnabled: false,
     cronTime: "09:00",
     cronEnabled: true,
+    invoiceNotificationCronEnabled: true,
+    contractNotificationCronEnabled: true,
+    proratedInvoiceCronEnabled: true,
+    stalePipelineCronEnabled: true,
+    managerLogReminderCronEnabled: true,
   });
 
   // Ham string değerlerini ayrı tutuyoruz ki kullanıcı serbestçe yazabilsin
@@ -36,6 +87,12 @@ export function GeneralSettings() {
         smsEnabled: settings.smsEnabled,
         cronTime: settings.cronTime,
         cronEnabled: settings.cronEnabled,
+        invoiceNotificationCronEnabled: settings.invoiceNotificationCronEnabled,
+        contractNotificationCronEnabled:
+          settings.contractNotificationCronEnabled,
+        proratedInvoiceCronEnabled: settings.proratedInvoiceCronEnabled,
+        stalePipelineCronEnabled: settings.stalePipelineCronEnabled,
+        managerLogReminderCronEnabled: settings.managerLogReminderCronEnabled,
       });
       setDraftInputs({
         invoiceDueReminderDays: settings.invoiceDueReminderDays.join(", "),
@@ -88,38 +145,22 @@ export function GeneralSettings() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-      {/* Cron Ayarları */}
+      {/* Genel Cron Ayarları */}
       <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4 space-y-4">
         <h3 className="text-sm font-medium text-[var(--color-foreground)]">
-          Cron Ayarları
+          Genel Ayarlar
         </h3>
 
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-[var(--color-muted)]">
-            Otomatik Bildirim Aktif
-          </label>
-          <button
-            type="button"
-            onClick={() =>
-              setFormData((prev) => ({ ...prev, cronEnabled: !prev.cronEnabled }))
-            }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.cronEnabled
-                ? "bg-[var(--color-primary)]"
-                : "bg-[var(--color-border)]"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                formData.cronEnabled ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-        </div>
+        <ToggleSwitch
+          label="Tüm Cron Job'lar Aktif"
+          description="Kapatıldığında tüm otomatik görevler durur"
+          checked={formData.cronEnabled}
+          onChange={(v) => setFormData((prev) => ({ ...prev, cronEnabled: v }))}
+        />
 
         <div>
           <label className="block text-sm text-[var(--color-muted)] mb-1">
-            Çalışma Saati (HH:mm)
+            Bildirim Çalışma Saati (HH:mm)
           </label>
           <input
             type="time"
@@ -132,57 +173,115 @@ export function GeneralSettings() {
         </div>
       </div>
 
+      {/* Cron Job Detayları */}
+      <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4 space-y-4">
+        <h3 className="text-sm font-medium text-[var(--color-foreground)]">
+          Cron Job Yönetimi
+        </h3>
+
+        {!formData.cronEnabled && (
+          <div className="p-2.5 text-xs bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 rounded-md text-[var(--color-warning-foreground)]">
+            Genel cron anahtarı kapalı — aşağıdaki ayarlar etkisiz.
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <ToggleSwitch
+            label="Fatura Bildirim"
+            description="Her gün 09:00 — Vadesi gelen/geçen fatura bildirimleri"
+            checked={formData.invoiceNotificationCronEnabled}
+            disabled={!formData.cronEnabled}
+            onChange={(v) =>
+              setFormData((prev) => ({
+                ...prev,
+                invoiceNotificationCronEnabled: v,
+              }))
+            }
+          />
+
+          <div className="border-t border-[var(--color-border)]" />
+
+          <ToggleSwitch
+            label="Kontrat Bildirim"
+            description="Her gün 09:30 — Bitiş tarihi yaklaşan kontrat bildirimleri"
+            checked={formData.contractNotificationCronEnabled}
+            disabled={!formData.cronEnabled}
+            onChange={(v) =>
+              setFormData((prev) => ({
+                ...prev,
+                contractNotificationCronEnabled: v,
+              }))
+            }
+          />
+
+          <div className="border-t border-[var(--color-border)]" />
+
+          <ToggleSwitch
+            label="Kıst Fatura"
+            description="Her gün 09:00 — Kıst ödeme planlarından otomatik fatura kesimi"
+            checked={formData.proratedInvoiceCronEnabled}
+            disabled={!formData.cronEnabled}
+            onChange={(v) =>
+              setFormData((prev) => ({
+                ...prev,
+                proratedInvoiceCronEnabled: v,
+              }))
+            }
+          />
+
+          <div className="border-t border-[var(--color-border)]" />
+
+          <ToggleSwitch
+            label="Hareketsiz Pipeline"
+            description="Her gün 09:15 — 14 gündür güncellenmemiş lead/teklif bildirimleri"
+            checked={formData.stalePipelineCronEnabled}
+            disabled={!formData.cronEnabled}
+            onChange={(v) =>
+              setFormData((prev) => ({
+                ...prev,
+                stalePipelineCronEnabled: v,
+              }))
+            }
+          />
+
+          <div className="border-t border-[var(--color-border)]" />
+
+          <ToggleSwitch
+            label="Log Hatırlatma"
+            description="Her 15 dakika — Zamanı gelen manager log hatırlatmaları"
+            checked={formData.managerLogReminderCronEnabled}
+            disabled={!formData.cronEnabled}
+            onChange={(v) =>
+              setFormData((prev) => ({
+                ...prev,
+                managerLogReminderCronEnabled: v,
+              }))
+            }
+          />
+        </div>
+      </div>
+
       {/* Bildirim Kanalları */}
       <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4 space-y-4">
         <h3 className="text-sm font-medium text-[var(--color-foreground)]">
           Bildirim Kanalları
         </h3>
 
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-[var(--color-muted)]">
-            E-posta Bildirimi
-          </label>
-          <button
-            type="button"
-            onClick={() =>
-              setFormData((prev) => ({ ...prev, emailEnabled: !prev.emailEnabled }))
-            }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.emailEnabled
-                ? "bg-[var(--color-primary)]"
-                : "bg-[var(--color-border)]"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                formData.emailEnabled ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-        </div>
+        <ToggleSwitch
+          label="E-posta Bildirimi"
+          checked={formData.emailEnabled}
+          onChange={(v) =>
+            setFormData((prev) => ({ ...prev, emailEnabled: v }))
+          }
+        />
 
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-[var(--color-muted)]">
-            SMS Bildirimi
-          </label>
-          <button
-            type="button"
-            onClick={() =>
-              setFormData((prev) => ({ ...prev, smsEnabled: !prev.smsEnabled }))
-            }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.smsEnabled
-                ? "bg-[var(--color-primary)]"
-                : "bg-[var(--color-border)]"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                formData.smsEnabled ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-        </div>
+        <ToggleSwitch
+          label="SMS Bildirimi"
+          checked={formData.smsEnabled}
+          onChange={(v) =>
+            setFormData((prev) => ({ ...prev, smsEnabled: v }))
+          }
+        />
       </div>
 
       {/* Fatura Hatırlatma Günleri */}
@@ -291,13 +390,13 @@ export function GeneralSettings() {
       </div>
 
       {updateMutation.isSuccess && (
-        <div className="p-3 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 rounded-md">
+        <div className="p-3 text-sm text-[var(--color-success-foreground)] bg-[var(--color-success)]/10 rounded-md">
           Ayarlar başarıyla kaydedildi.
         </div>
       )}
 
       {updateMutation.isError && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-md">
+        <div className="p-3 text-sm text-[var(--color-error-foreground)] bg-[var(--color-error)]/10 rounded-md">
           Hata: {updateMutation.error?.message}
         </div>
       )}

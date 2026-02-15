@@ -40,7 +40,7 @@ export function EInvoicePriceFilters({
     return withErpId.filter(
       (c) =>
         c.name?.toLowerCase().includes(lower) ||
-        c.companyName?.toLowerCase().includes(lower) ||
+        c.brand?.toLowerCase().includes(lower) ||
         c.erpId?.toLowerCase().includes(lower),
     );
   }, [customersData, customerSearch]);
@@ -51,7 +51,7 @@ export function EInvoicePriceFilters({
     const found = (customersData?.data ?? []).find(
       (c) => c.erpId === selectedCustomerErpId,
     );
-    return found?.companyName || found?.name || selectedCustomerErpId;
+    return found?.brand || found?.name || selectedCustomerErpId;
   }, [selectedCustomerErpId, customersData]);
 
   // Dropdown disina tiklanirsa kapat
@@ -71,7 +71,7 @@ export function EInvoicePriceFilters({
 
   const handleSelectCustomer = useCallback(
     (customer: Customer) => {
-      onCustomerChange(customer.erpId, customer.companyName || customer.name);
+      onCustomerChange(customer.erpId, customer.brand || customer.name);
       setIsDropdownOpen(false);
       setCustomerSearch("");
     },
@@ -161,7 +161,7 @@ export function EInvoicePriceFilters({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-[var(--color-foreground)] truncate">
-                        {customer.companyName || customer.name}
+                        {customer.brand || customer.name}
                       </div>
                       <div className="text-xs text-[var(--color-muted-foreground)] font-mono">
                         ERP: {customer.erpId}

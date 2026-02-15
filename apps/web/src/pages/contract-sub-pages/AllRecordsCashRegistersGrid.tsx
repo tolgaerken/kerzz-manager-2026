@@ -79,13 +79,13 @@ export function AllRecordsCashRegistersGrid() {
 
   /** customerId -> Customer mapping (erpId bilgisi için) */
   const customerMap = useMemo(() => {
-    const map = new Map<string, { erpId?: string; name?: string; companyName?: string }>();
+    const map = new Map<string, { erpId?: string; name?: string; brand?: string }>();
     const customers = customersData?.data || [];
     for (const customer of customers) {
       map.set(customer._id, {
         erpId: customer.erpId,
         name: customer.name,
-        companyName: customer.companyName,
+        brand: customer.brand,
       });
     }
     return map;

@@ -37,6 +37,15 @@ export class ContractVersion {
   @Prop({ default: false })
   expired: boolean;
 
+  @Prop({ type: Date })
+  startDate: Date;
+
+  @Prop({ default: false })
+  activated: boolean;
+
+  @Prop({ type: Date })
+  activatedAt: Date;
+
   @Prop()
   editDate: Date;
 

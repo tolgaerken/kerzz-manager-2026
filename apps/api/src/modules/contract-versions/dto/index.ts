@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsBoolean } from "class-validator";
+import { IsOptional, IsString, IsNumber, IsBoolean, IsDateString } from "class-validator";
 
 export class ContractVersionQueryDto {
   @IsOptional()
@@ -22,6 +22,9 @@ export class ContractVersionResponseDto {
   type: string;
   enabled: boolean;
   expired: boolean;
+  startDate: Date;
+  activated: boolean;
+  activatedAt: Date;
   editDate: Date;
   editUser: string;
 }
@@ -54,6 +57,10 @@ export class CreateContractVersionDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
 }
 
 export class UpdateContractVersionDto {
@@ -80,4 +87,12 @@ export class UpdateContractVersionDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activated?: boolean;
 }

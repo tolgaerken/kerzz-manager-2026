@@ -88,6 +88,15 @@ export class ContractPayment {
   @Prop({ default: false })
   block: boolean;
 
+  @Prop({ default: "regular" })
+  type: string; // "regular" | "prorated"
+
+  @Prop()
+  proratedDays: number;
+
+  @Prop()
+  proratedStartDate: Date;
+
   @Prop()
   editDate: Date;
 
@@ -120,3 +129,4 @@ ContractPaymentSchema.index({ payDate: -1 });
 ContractPaymentSchema.index({ payDate: -1, contractId: 1 });
 ContractPaymentSchema.index({ payDate: -1, paid: 1 });
 ContractPaymentSchema.index({ contractId: 1, payDate: -1 });
+ContractPaymentSchema.index({ type: 1, invoiceNo: 1 }); // Kıst fatura cron sorgusu için

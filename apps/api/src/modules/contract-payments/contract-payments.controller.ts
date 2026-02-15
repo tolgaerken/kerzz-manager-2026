@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { ContractPaymentsService } from "./contract-payments.service";
 import { PaymentPlanService } from "./services/payment-plan.service";
+import { ProratedPlanService } from "./services/prorated-plan.service";
 import {
   ContractPaymentQueryDto,
   CreateContractPaymentDto,
@@ -21,6 +22,7 @@ export class ContractPaymentsController {
   constructor(
     private readonly contractPaymentsService: ContractPaymentsService,
     private readonly paymentPlanService: PaymentPlanService,
+    private readonly proratedPlanService: ProratedPlanService,
   ) {}
 
   // ─── Payment Plan Endpoint'leri (spesifik route'lar once tanimlanmali) ───
@@ -55,6 +57,32 @@ export class ContractPaymentsController {
   @Get("monthly-fee/:contractId")
   async calculateMonthlyFee(@Param("contractId") contractId: string) {
     return this.paymentPlanService.calculateMonthlyFee(contractId);
+  }
+
+  // ─── Kist Raporu ─────────────────────────────────────────────────
+
+  /**
+   * Tum kist planlarini listeler (rapor sayfasi icin).
+   * Query params: paid, invoiced, contractId
+   */
+  @Get("prorated-report")
+  async getProratedReport(
+    @Query("paid") paid?: string,
+    @Query("invoiced") invoiced?: string,
+    @Query("contractId") contractId?: string,
+  ) {
+    const filter: { paid?: boolean; invoiced?: boolean; contractId?: string } = {};
+
+    if (paid === "true") filter.paid = true;
+    else if (paid === "false") filter.paid = false;
+
+    if (invoiced === "true") filter.invoiced = true;
+    else if (invoiced === "false") filter.invoiced = false;
+
+    if (contractId) filter.contractId = contractId;
+
+    const data = await this.proratedPlanService.findAllProratedPlans(filter);
+    return { data, total: data.length };
   }
 
   // ─── CRUD Endpoint'leri ───────────────────────────────────────────

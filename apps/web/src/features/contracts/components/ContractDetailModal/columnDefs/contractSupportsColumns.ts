@@ -2,6 +2,7 @@ import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractSupport } from "../../../types";
 import { CURRENCY_OPTIONS, SUPPORT_TYPES } from "../../../constants";
 import { LicenseAutocompleteEditor } from "../shared/cellEditors/LicenseAutocompleteEditor";
+import { DateCellEditor } from "../shared/cellEditors/DateCellEditor";
 
 interface License {
   id: string;
@@ -150,6 +151,41 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     filter: { type: "dropdown" },
     editable: false,
     cell: (value) => (value ? "✓" : "✗")
+  },
+  {
+    id: "startDate",
+    accessorKey: "startDate",
+    header: "Başlangıç",
+    width: 110,
+    filter: { type: "dropdown" },
+    editable: true,
+    cellEditor: { type: "custom", customEditor: DateCellEditor },
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
+    }
+  },
+  {
+    id: "activated",
+    accessorKey: "activated",
+    header: "Kuruldu",
+    width: 80,
+    filter: { type: "dropdown" },
+    editable: true,
+    cellEditor: { type: "boolean" },
+    cell: (value) => (value ? "✓" : "✗")
+  },
+  {
+    id: "activatedAt",
+    accessorKey: "activatedAt",
+    header: "Kurulum T.",
+    width: 110,
+    filter: { type: "dropdown" },
+    editable: false,
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR");
+    }
   },
   {
     id: "editDate",

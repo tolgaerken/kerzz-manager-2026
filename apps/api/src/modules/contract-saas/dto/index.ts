@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsBoolean } from "class-validator";
+import { IsOptional, IsString, IsNumber, IsBoolean, IsDateString } from "class-validator";
 
 export class ContractSaasQueryDto {
   @IsOptional()
@@ -27,6 +27,9 @@ export class ContractSaasResponseDto {
   blocked: boolean;
   productId: string;
   total: number;
+  startDate: Date;
+  activated: boolean;
+  activatedAt: Date;
   editDate: Date;
   editUser: string;
 }
@@ -71,6 +74,10 @@ export class CreateContractSaasDto {
   @IsOptional()
   @IsString()
   productId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
 }
 
 export class UpdateContractSaasDto {
@@ -109,6 +116,14 @@ export class UpdateContractSaasDto {
   @IsOptional()
   @IsString()
   productId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activated?: boolean;
 }
 
 // ─── Stats DTO'ları ──────────────────────────────────────────

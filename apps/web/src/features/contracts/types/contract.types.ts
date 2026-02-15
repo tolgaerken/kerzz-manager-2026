@@ -109,6 +109,9 @@ export interface ContractSupport {
   expired: boolean;
   lastOnlineDay: number;
   calulatedPrice: number;
+  startDate?: string;
+  activated?: boolean;
+  activatedAt?: string;
   editDate: string;
   editUser: string;
 }
@@ -130,6 +133,9 @@ export interface ContractSaas {
   blocked: boolean;
   productId: string;
   total: number;
+  startDate?: string;
+  activated?: boolean;
+  activatedAt?: string;
   editDate: string;
   editUser: string;
 }
@@ -151,6 +157,9 @@ export interface ContractCashRegister {
   expired: boolean;
   eftPosActive: boolean;
   folioClose: boolean;
+  startDate?: string;
+  activated?: boolean;
+  activatedAt?: string;
   editDate: string;
   editUser: string;
 }
@@ -167,6 +176,9 @@ export interface ContractVersion {
   type: string;
   enabled: boolean;
   expired: boolean;
+  startDate?: string;
+  activated?: boolean;
+  activatedAt?: string;
   editDate: string;
   editUser: string;
 }
@@ -186,6 +198,9 @@ export interface ContractItem {
   enabled: boolean;
   expired: boolean;
   erpId: string;
+  startDate?: string;
+  activated?: boolean;
+  activatedAt?: string;
   editDate: string;
   editUser: string;
 }

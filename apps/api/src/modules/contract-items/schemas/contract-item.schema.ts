@@ -46,6 +46,15 @@ export class ContractItem {
   @Prop()
   erpId: string;
 
+  @Prop({ type: Date })
+  startDate: Date;
+
+  @Prop({ default: false })
+  activated: boolean;
+
+  @Prop({ type: Date })
+  activatedAt: Date;
+
   @Prop()
   editDate: Date;
 

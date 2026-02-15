@@ -100,7 +100,7 @@ export class InvoiceNotificationCron {
       const settings = await this.settingsService.getSettings();
 
       // Cron devre dışıysa çık
-      if (!settings.cronEnabled) {
+      if (!settings.cronEnabled || !settings.invoiceNotificationCronEnabled) {
         console.log("⏸️ Fatura bildirim cron'u devre dışı");
         return;
       }

@@ -31,7 +31,7 @@ export function DeleteConfirmModal({
         </p>
 
         <p className="text-sm text-[var(--color-foreground-muted)] mb-6">
-          <strong>{customer.companyName || customer.name}</strong> ({customer.taxNo})
+          <strong>{customer.brand || customer.name}</strong> ({customer.taxNo})
         </p>
 
         <div className="flex gap-3 w-full">

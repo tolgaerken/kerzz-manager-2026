@@ -53,6 +53,9 @@ export function ContractItemsTab({ contractId }: ContractItemsTabProps) {
     enabled: true,
     expired: false,
     erpId: "",
+    startDate: new Date().toISOString(),
+    activated: false,
+    activatedAt: undefined,
     editDate: new Date().toISOString(),
     editUser: ""
   }), [contractId]);

@@ -39,6 +39,11 @@ export class ContractVersionsController {
     return this.contractVersionsService.update(id, dto);
   }
 
+  @Patch(":id/activate")
+  async activate(@Param("id") id: string) {
+    return this.contractVersionsService.activate(id);
+  }
+
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractVersionsService.delete(id);

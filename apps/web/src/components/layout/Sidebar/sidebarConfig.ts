@@ -37,6 +37,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "Versiyonlar", path: "/contracts/versions", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
       { label: "SaaS", path: "/contracts/saas", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
       { label: "Dökümanlar", path: "/contracts/documents" },
+      { label: "Kıst Raporu", path: "/contracts/prorated-report" },
     ],
   },
   {

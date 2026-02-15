@@ -116,6 +116,9 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     expired: false,
     eftPosActive: false,
     folioClose: false,
+    startDate: new Date().toISOString(),
+    activated: false,
+    activatedAt: undefined,
     editDate: new Date().toISOString(),
     editUser: ""
   }), [contractId]);

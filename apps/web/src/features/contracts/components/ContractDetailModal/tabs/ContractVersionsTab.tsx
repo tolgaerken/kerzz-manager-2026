@@ -50,6 +50,9 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
     type: "",
     enabled: true,
     expired: false,
+    startDate: new Date().toISOString(),
+    activated: false,
+    activatedAt: undefined,
     editDate: new Date().toISOString(),
     editUser: ""
   }), [contractId]);

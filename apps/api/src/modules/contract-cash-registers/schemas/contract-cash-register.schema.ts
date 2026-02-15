@@ -52,6 +52,15 @@ export class ContractCashRegister {
   @Prop({ default: false })
   folioClose: boolean;
 
+  @Prop({ type: Date })
+  startDate: Date;
+
+  @Prop({ default: false })
+  activated: boolean;
+
+  @Prop({ type: Date })
+  activatedAt: Date;
+
   @Prop({ index: true })
   editDate: Date;
 

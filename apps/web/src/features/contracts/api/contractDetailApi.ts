@@ -144,6 +144,27 @@ export async function fetchContractCashRegisterStats(
   return apiGet(url);
 }
 
+// Activate API functions
+export async function activateContractCashRegister(id: string): Promise<ContractCashRegister> {
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}/${encodeURIComponent(id)}/activate`, {});
+}
+
+export async function activateContractSaas(id: string): Promise<ContractSaas> {
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}/${encodeURIComponent(id)}/activate`, {});
+}
+
+export async function activateContractSupport(id: string): Promise<ContractSupport> {
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}/${encodeURIComponent(id)}/activate`, {});
+}
+
+export async function activateContractVersion(id: string): Promise<ContractVersion> {
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_VERSIONS}/${encodeURIComponent(id)}/activate`, {});
+}
+
+export async function activateContractItem(id: string): Promise<ContractItem> {
+  return apiPatch(`${API_BASE_URL}${ENDPOINTS.CONTRACT_ITEMS}/${encodeURIComponent(id)}/activate`, {});
+}
+
 // Contract Versions API
 export async function fetchContractVersions(
   contractId?: string

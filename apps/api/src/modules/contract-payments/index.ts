@@ -4,6 +4,7 @@ export * from "./dto";
 export * from "./services/payment-plan.service";
 export * from "./services/invoice-calculator.service";
 export * from "./services/plan-generator.service";
+export * from "./services/prorated-plan.service";
 export * from "./interfaces/payment-plan.interfaces";
 export * from "./utils/id-generator";
 export * from "./constants/invoice.constants";

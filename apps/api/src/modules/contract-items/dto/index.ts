@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsBoolean } from "class-validator";
+import { IsOptional, IsString, IsNumber, IsBoolean, IsDateString } from "class-validator";
 
 export class ContractItemQueryDto {
   @IsString()
@@ -24,6 +24,9 @@ export class ContractItemResponseDto {
   enabled: boolean;
   expired: boolean;
   erpId: string;
+  startDate: Date;
+  activated: boolean;
+  activatedAt: Date;
   editDate: Date;
   editUser: string;
 }
@@ -68,6 +71,10 @@ export class CreateContractItemDto {
   @IsOptional()
   @IsString()
   erpId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
 }
 
 export class UpdateContractItemDto {
@@ -106,4 +113,12 @@ export class UpdateContractItemDto {
   @IsOptional()
   @IsString()
   erpId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activated?: boolean;
 }

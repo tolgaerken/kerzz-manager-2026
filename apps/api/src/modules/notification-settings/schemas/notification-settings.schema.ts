@@ -38,9 +38,31 @@ export class NotificationSettings {
   @Prop({ default: "09:00" })
   cronTime: string;
 
-  // Cron aktif mi
+  // Genel cron aktif mi (eski alan — geriye uyumluluk)
   @Prop({ default: true })
   cronEnabled: boolean;
+
+  // ── Her cron job için ayrı enable/disable ──
+
+  // Fatura bildirim cron'u (her gün 09:00)
+  @Prop({ default: true })
+  invoiceNotificationCronEnabled: boolean;
+
+  // Kontrat bildirim cron'u (her gün 09:30)
+  @Prop({ default: true })
+  contractNotificationCronEnabled: boolean;
+
+  // Kıst fatura cron'u (her gün 09:00)
+  @Prop({ default: true })
+  proratedInvoiceCronEnabled: boolean;
+
+  // Hareketsiz pipeline cron'u (her gün 09:15)
+  @Prop({ default: true })
+  stalePipelineCronEnabled: boolean;
+
+  // Manager log hatırlatma cron'u (her 15 dakika)
+  @Prop({ default: true })
+  managerLogReminderCronEnabled: boolean;
 
   @Prop()
   createdAt: Date;

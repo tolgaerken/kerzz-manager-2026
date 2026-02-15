@@ -1,16 +1,18 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ContractVersionsController } from "./contract-versions.controller";
 import { ContractVersionsService } from "./contract-versions.service";
 import { ContractVersion, ContractVersionSchema } from "./schemas/contract-version.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { ContractPaymentsModule } from "../contract-payments";
 
 @Module({
   imports: [
     MongooseModule.forFeature(
       [{ name: ContractVersion.name, schema: ContractVersionSchema }],
       CONTRACT_DB_CONNECTION
-    )
+    ),
+    forwardRef(() => ContractPaymentsModule),
   ],
   controllers: [ContractVersionsController],
   providers: [ContractVersionsService],
