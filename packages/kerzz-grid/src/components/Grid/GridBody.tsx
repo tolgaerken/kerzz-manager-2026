@@ -1,13 +1,13 @@
 import React, { useCallback } from 'react';
 import type { VirtualItem } from '@tanstack/react-virtual';
-import type { GridColumnDef } from '../../types/column.types';
+import type { ColumnWithStickyMeta } from '../../core/useGridInstance';
 import type { NavigationDirection } from '../../types/editing.types';
 import type { SelectionMode } from '../../types/selection.types';
 import { GridRow } from './GridRow';
 
 interface GridBodyProps<TData> {
   data: TData[];
-  columns: GridColumnDef<TData>[];
+  columns: ColumnWithStickyMeta<TData>[];
   virtualRows: VirtualItem[];
   totalHeight: number;
   totalWidth: number;

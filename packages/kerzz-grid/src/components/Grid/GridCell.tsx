@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
+import type { ColumnStickyMeta } from '../../core/useGridInstance';
 import type { CellEditorProps, SelectEditorOption, NavigationDirection } from '../../types/editing.types';
 import { TextEditor } from '../Editors/TextEditor';
 import { NumberEditor } from '../Editors/NumberEditor';
@@ -12,6 +13,8 @@ interface GridCellProps<TData> {
   rowIndex: number;
   width: number;
   value: unknown;
+  /** Sticky metadata for pinned columns */
+  stickyMeta?: ColumnStickyMeta;
   isEditing?: boolean;
   /** Whether the grid is in batch edit mode */
   editMode?: boolean;
@@ -47,6 +50,7 @@ function GridCellInner<TData>({
   rowIndex,
   width,
   value,
+  stickyMeta,
   isEditing,
   editMode,
   pendingValue,
@@ -68,6 +72,26 @@ function GridCellInner<TData>({
     typeof column.cellClassName === 'function'
       ? column.cellClassName(displayValue, row)
       : column.cellClassName ?? '';
+
+  // Sticky styles for pinned columns
+  const stickyStyle: React.CSSProperties = {};
+  if (stickyMeta?.pinnedSide === 'left') {
+    stickyStyle.position = 'sticky';
+    stickyStyle.left = stickyMeta.stickyOffset;
+    stickyStyle.zIndex = 1;
+  } else if (stickyMeta?.pinnedSide === 'right') {
+    stickyStyle.position = 'sticky';
+    stickyStyle.right = stickyMeta.stickyOffset;
+    stickyStyle.zIndex = 1;
+  }
+
+  // Pinned class names
+  const pinnedClasses = [
+    stickyMeta?.pinnedSide === 'left' && 'kz-grid-cell--pinned-left',
+    stickyMeta?.pinnedSide === 'right' && 'kz-grid-cell--pinned-right',
+    stickyMeta?.isLastLeftPinned && 'kz-grid-cell--last-left-pinned',
+    stickyMeta?.isFirstRightPinned && 'kz-grid-cell--first-right-pinned',
+  ].filter(Boolean).join(' ');
 
   // Double-click: always starts editing (entry point for edit mode)
   const handleDoubleClick = useCallback(() => {
@@ -138,7 +162,7 @@ function GridCellInner<TData>({
 
     return (
       <div
-        className={`kz-grid-cell kz-grid-cell--editing ${alignClass} ${className}`.trim()}
+        className={`kz-grid-cell kz-grid-cell--editing ${alignClass} ${pinnedClasses} ${className}`.trim()}
         style={{
           width,
           minWidth: column.minWidth ?? 50,
@@ -146,6 +170,7 @@ function GridCellInner<TData>({
           flexBasis: width,
           flexGrow: 0,
           flexShrink: 0,
+          ...stickyStyle,
         }}
       >
         {editor}
@@ -167,6 +192,7 @@ function GridCellInner<TData>({
     editable && 'kz-grid-cell--editable',
     hasPendingChange && 'kz-grid-cell--changed',
     alignClass,
+    pinnedClasses,
     className,
   ]
     .filter(Boolean)
@@ -182,6 +208,7 @@ function GridCellInner<TData>({
         flexBasis: width,
         flexGrow: 0,
         flexShrink: 0,
+        ...stickyStyle,
       }}
       onDoubleClick={handleDoubleClick}
       onClick={handleClick}

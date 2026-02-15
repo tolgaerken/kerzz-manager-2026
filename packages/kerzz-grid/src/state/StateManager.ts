@@ -3,7 +3,7 @@ import type { StorageAdapter } from './adapters/types';
 import { localStorageAdapter } from './adapters/localStorageAdapter';
 import { DEFAULT_GRID_SETTINGS } from '../types/settings.types';
 
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 export class StateManager {
   private adapter: StorageAdapter;
@@ -61,6 +61,10 @@ export class StateManager {
     if (!migrated.settings) {
       migrated.settings = { ...DEFAULT_GRID_SETTINGS };
     }
+    // Ensure columnPinned exists for older persisted states (v3 migration)
+    if (!migrated.columnPinned) {
+      migrated.columnPinned = {};
+    }
     return migrated;
   }
 
@@ -69,6 +73,7 @@ export class StateManager {
       columnWidths: {},
       columnOrder: [],
       columnVisibility: {},
+      columnPinned: {},
       sorting: [],
       filters: {},
       disabledFilters: {},

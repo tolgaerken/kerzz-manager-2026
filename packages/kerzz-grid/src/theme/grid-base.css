@@ -1909,3 +1909,115 @@
   display: flex;
   flex-direction: column;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STICKY / PINNED COLUMNS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Pinned header cells */
+.kz-header-cell--pinned-left,
+.kz-header-cell--pinned-right {
+  background: var(--kz-header-bg);
+}
+
+/* Pinned body cells */
+.kz-grid-cell--pinned-left,
+.kz-grid-cell--pinned-right {
+  background: var(--kz-row-bg);
+}
+
+/* Striped row pinned cells */
+.kz-grid-row--striped .kz-grid-cell--pinned-left,
+.kz-grid-row--striped .kz-grid-cell--pinned-right {
+  background: var(--kz-row-alt-bg);
+}
+
+/* Selected row pinned cells */
+.kz-grid-row--selected .kz-grid-cell--pinned-left,
+.kz-grid-row--selected .kz-grid-cell--pinned-right {
+  background: var(--kz-row-selected);
+}
+
+/* Hover state pinned cells */
+.kz-grid-row:hover .kz-grid-cell--pinned-left,
+.kz-grid-row:hover .kz-grid-cell--pinned-right {
+  background: var(--kz-row-hover);
+}
+
+/* Changed row pinned cells */
+.kz-grid-row--changed .kz-grid-cell--pinned-left,
+.kz-grid-row--changed .kz-grid-cell--pinned-right {
+  background: color-mix(in srgb, var(--kz-primary) 4%, var(--kz-row-bg));
+}
+
+/* Pending new row pinned cells */
+.kz-grid-row--pending-new .kz-grid-cell--pinned-left,
+.kz-grid-row--pending-new .kz-grid-cell--pinned-right {
+  background: color-mix(in srgb, var(--kz-primary) 6%, var(--kz-row-bg));
+}
+
+/* Shadow/border for last left-pinned column */
+.kz-header-cell--last-left-pinned,
+.kz-grid-cell--last-left-pinned {
+  box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Shadow/border for first right-pinned column */
+.kz-header-cell--first-right-pinned,
+.kz-grid-cell--first-right-pinned {
+  box-shadow: -2px 0 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER CONTEXT MENU
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.kz-header-context-menu {
+  min-width: 160px;
+  background: var(--kz-filter-bg);
+  border: var(--kz-border-width) solid var(--kz-filter-border);
+  border-radius: var(--kz-border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  font-size: var(--kz-filter-font-size);
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.kz-header-context-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--kz-text);
+  font-size: var(--kz-filter-font-size);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.kz-header-context-menu__item:hover {
+  background: var(--kz-row-hover);
+}
+
+.kz-header-context-menu__item--active {
+  color: var(--kz-primary);
+  font-weight: 500;
+}
+
+.kz-header-context-menu__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.kz-header-context-menu__check {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--kz-primary);
+}

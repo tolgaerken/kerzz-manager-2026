@@ -465,6 +465,8 @@ function GridInner<TData>(
           isAllSelected={selection.isAllSelected}
           isIndeterminate={selection.isIndeterminate}
           onToggleAll={handleToggleAll}
+          onPinChange={grid.setColumnPinned}
+          locale={props.locale}
           onSort={grid.handleSort}
           onResizeStart={grid.columnResize.handleResizeStart}
           onFilterApply={handleFilterApply}

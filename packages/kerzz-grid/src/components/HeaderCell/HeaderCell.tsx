@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
+import type { ColumnPinPosition } from '../../types/grid.types';
+import type { ColumnStickyMeta } from '../../core/useGridInstance';
 import type { ActiveFilter, ActiveDropdownFilter, ActiveInputFilter, ActiveDateTreeFilter, ActiveNumericFilter, DropdownFilterConfig, InputFilterConfig, DateTreeFilterConfig, NumericFilterConfig } from '../../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { SortIndicator } from './SortIndicator';
@@ -8,6 +10,7 @@ import { FilterDropdown } from '../Filter/FilterDropdown';
 import { FilterInput } from '../Filter/FilterInput';
 import { FilterDateTree } from '../Filter/FilterDateTree';
 import { FilterNumeric } from '../Filter/FilterNumeric';
+import { HeaderContextMenu } from './HeaderContextMenu';
 import { Portal } from '../Portal/Portal';
 import { usePopoverPosition } from '../../core/usePopoverPosition';
 import { useGridTheme } from '../../theme/ThemeProvider';
@@ -21,6 +24,12 @@ interface HeaderCellProps<TData> {
   data: TData[];
   /** Whether the filter button is enabled/visible (from settings) */
   filterEnabled?: boolean;
+  /** Sticky metadata for pinned columns */
+  stickyMeta?: ColumnStickyMeta;
+  /** Callback when column pin position changes */
+  onPinChange?: (columnId: string, position: ColumnPinPosition) => void;
+  /** Locale for translations */
+  locale?: 'tr' | 'en';
   onSort: (columnId: string) => void;
   onResizeStart: (columnId: string, e: React.MouseEvent | React.TouchEvent) => void;
   onFilterApply: (columnId: string, filter: ActiveFilter) => void;
@@ -42,6 +51,9 @@ function HeaderCellInner<TData>({
   activeFilter,
   data,
   filterEnabled = true,
+  stickyMeta,
+  onPinChange,
+  locale = 'tr',
   onSort,
   onResizeStart,
   onFilterApply,
@@ -55,6 +67,8 @@ function HeaderCellInner<TData>({
   onDragEnd,
 }: HeaderCellProps<TData>) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ top: 0, left: 0 });
   const filterBtnRef = useRef<HTMLButtonElement>(null);
   const theme = useGridTheme();
   const cssVars = useMemo(() => themeToCssVars(theme), [theme]);
@@ -95,6 +109,22 @@ function HeaderCellInner<TData>({
   const handleFilterClear = useCallback(() => {
     onFilterClear(column.id);
   }, [column.id, onFilterClear]);
+
+  // Context menu handlers
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuPosition({ top: e.clientY, left: e.clientX });
+    setContextMenuOpen(true);
+  }, []);
+
+  const handlePinChange = useCallback((position: ColumnPinPosition) => {
+    onPinChange?.(column.id, position);
+  }, [column.id, onPinChange]);
+
+  const handleContextMenuClose = useCallback(() => {
+    setContextMenuOpen(false);
+  }, []);
 
   // Calculate position from filter button
   const getPopoverPosition = useCallback(() => {
@@ -139,10 +169,26 @@ function HeaderCellInner<TData>({
     column.sortable !== false && 'kz-header-cell--sortable',
     isDragging && 'kz-header-cell--dragging',
     isDragOver && 'kz-header-cell--drag-over',
+    stickyMeta?.pinnedSide === 'left' && 'kz-header-cell--pinned-left',
+    stickyMeta?.pinnedSide === 'right' && 'kz-header-cell--pinned-right',
+    stickyMeta?.isLastLeftPinned && 'kz-header-cell--last-left-pinned',
+    stickyMeta?.isFirstRightPinned && 'kz-header-cell--first-right-pinned',
     column.headerClassName,
   ]
     .filter(Boolean)
     .join(' ');
+
+  // Sticky styles for pinned columns
+  const stickyStyle: React.CSSProperties = {};
+  if (stickyMeta?.pinnedSide === 'left') {
+    stickyStyle.position = 'sticky';
+    stickyStyle.left = stickyMeta.stickyOffset;
+    stickyStyle.zIndex = 2;
+  } else if (stickyMeta?.pinnedSide === 'right') {
+    stickyStyle.position = 'sticky';
+    stickyStyle.right = stickyMeta.stickyOffset;
+    stickyStyle.zIndex = 2;
+  }
 
   const popoverPos = filterOpen ? getPopoverPosition() : { top: 0, left: 0 };
 
@@ -156,8 +202,10 @@ function HeaderCellInner<TData>({
         flexBasis: width,
         flexGrow: 0,
         flexShrink: 0,
+        ...stickyStyle,
       }}
       draggable={column.draggable !== false}
+      onContextMenu={handleContextMenu}
       onDragStart={(e) => onDragStart(column.id, e)}
       onDragOver={(e) => onDragOver(column.id, e)}
       onDragLeave={onDragLeave}
@@ -297,6 +345,32 @@ function HeaderCellInner<TData>({
               onApply={handleFilterApply}
               onClear={handleFilterClear}
               onClose={() => setFilterOpen(false)}
+            />
+          </div>
+        </Portal>
+      )}
+
+      {/* Context menu for column pinning */}
+      {contextMenuOpen && (
+        <Portal>
+          <div
+            className="kz-grid"
+            style={{
+              ...cssVars,
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              zIndex: 100000,
+              border: 'none',
+              background: 'transparent',
+            }}
+          >
+            <HeaderContextMenu
+              currentPinPosition={stickyMeta?.pinnedSide ?? false}
+              position={contextMenuPosition}
+              onPinChange={handlePinChange}
+              onClose={handleContextMenuClose}
+              locale={locale}
             />
           </div>
         </Portal>

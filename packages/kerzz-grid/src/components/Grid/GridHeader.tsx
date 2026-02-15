@@ -1,5 +1,7 @@
 import React from 'react';
 import type { GridColumnDef } from '../../types/column.types';
+import type { ColumnPinPosition } from '../../types/grid.types';
+import type { ColumnWithStickyMeta } from '../../core/useGridInstance';
 import type { ActiveFilter } from '../../types/filter.types';
 import type { SortingState } from '@tanstack/react-table';
 import { HeaderCell } from '../HeaderCell/HeaderCell';
@@ -7,7 +9,7 @@ import { ResizeHandle } from '../HeaderCell/ResizeHandle';
 import { SelectionHeaderCell } from '../Selection/SelectionHeaderCell';
 
 interface GridHeaderProps<TData> {
-  columns: GridColumnDef<TData>[];
+  columns: ColumnWithStickyMeta<TData>[];
   /** Original unfiltered data - used for computing filter unique values */
   filterData: TData[];
   sorting: SortingState;
@@ -26,6 +28,10 @@ interface GridHeaderProps<TData> {
   isIndeterminate?: boolean;
   /** Callback when header checkbox is toggled */
   onToggleAll?: () => void;
+  /** Callback when column pin position changes */
+  onPinChange?: (columnId: string, position: ColumnPinPosition) => void;
+  /** Locale for translations */
+  locale?: 'tr' | 'en';
   onSort: (columnId: string) => void;
   onResizeStart: (columnId: string, e: React.MouseEvent | React.TouchEvent) => void;
   onFilterApply: (columnId: string, filter: ActiveFilter) => void;
@@ -53,6 +59,8 @@ function GridHeaderInner<TData>({
   isAllSelected,
   isIndeterminate,
   onToggleAll,
+  onPinChange,
+  locale,
   onSort,
   onResizeStart,
   onFilterApply,
@@ -89,6 +97,9 @@ function GridHeaderInner<TData>({
           activeFilter={filters[col.id]}
           data={filterData}
           filterEnabled={headerFilters?.[col.id] !== false}
+          stickyMeta={col.stickyMeta}
+          onPinChange={onPinChange}
+          locale={locale}
           onSort={onSort}
           onResizeStart={onResizeStart}
           onFilterApply={onFilterApply}

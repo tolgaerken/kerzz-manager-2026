@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import type { GridColumnDef } from '../../types/column.types';
+import type { ColumnWithStickyMeta } from '../../core/useGridInstance';
 import type { NavigationDirection } from '../../types/editing.types';
 import type { SelectionMode } from '../../types/selection.types';
 import { GridCell } from './GridCell';
@@ -8,7 +9,7 @@ import { SelectionCell } from '../Selection/SelectionCell';
 interface GridRowProps<TData> {
   row: TData;
   rowIndex: number;
-  columns: GridColumnDef<TData>[];
+  columns: ColumnWithStickyMeta<TData>[];
   getColumnWidth: (columnId: string, defaultWidth?: number) => number;
   isStriped: boolean;
   style: React.CSSProperties;
@@ -148,6 +149,7 @@ function GridRowInner<TData>({
             rowIndex={rowIndex}
             width={getColumnWidth(col.id, col.width ?? 150)}
             value={value}
+            stickyMeta={col.stickyMeta}
             isEditing={isEditing?.(rowIndex, col.id)}
             editMode={editMode}
             pendingValue={pendingVal}

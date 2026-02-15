@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect, useReducer } from 'react';
-import type { GridState } from '../types/grid.types';
+import type { GridState, ColumnPinPosition } from '../types/grid.types';
 import type { GridColumnDef } from '../types/column.types';
 import type { FilterState, DisabledFilterState } from '../types/filter.types';
 import type { GridSettings, FooterAggregationSetting } from '../types/settings.types';
@@ -20,6 +20,7 @@ export interface UseStateStoreReturn {
   setColumnWidth: (columnId: string, width: number) => void;
   setColumnOrder: (order: string[]) => void;
   setColumnVisibility: (visibility: Record<string, boolean>) => void;
+  setColumnPinned: (columnId: string, position: ColumnPinPosition) => void;
   setSorting: (sorting: SortingState) => void;
   setFilters: (filters: FilterState) => void;
   setDisabledFilters: (disabledFilters: DisabledFilterState) => void;
@@ -37,6 +38,7 @@ type StateAction =
   | { type: 'SET_COLUMN_WIDTH'; columnId: string; width: number }
   | { type: 'SET_COLUMN_ORDER'; order: string[] }
   | { type: 'SET_COLUMN_VISIBILITY'; visibility: Record<string, boolean> }
+  | { type: 'SET_COLUMN_PINNED'; columnId: string; position: ColumnPinPosition }
   | { type: 'SET_SORTING'; sorting: SortingState }
   | { type: 'SET_FILTERS'; filters: FilterState }
   | { type: 'SET_DISABLED_FILTERS'; disabledFilters: DisabledFilterState }
@@ -59,6 +61,15 @@ function stateReducer(state: GridState, action: StateAction): GridState {
       return { ...state, columnOrder: action.order };
     case 'SET_COLUMN_VISIBILITY':
       return { ...state, columnVisibility: action.visibility };
+    case 'SET_COLUMN_PINNED': {
+      const newPinned = { ...state.columnPinned };
+      if (action.position === false) {
+        delete newPinned[action.columnId];
+      } else {
+        newPinned[action.columnId] = action.position;
+      }
+      return { ...state, columnPinned: newPinned };
+    }
     case 'SET_SORTING':
       return { ...state, sorting: action.sorting };
     case 'SET_FILTERS':
@@ -121,6 +132,12 @@ export function useStateStore({
         .filter((c) => c.width != null)
         .map((c) => [c.id, c.width!]),
     );
+    // Initialize pinned state from column definitions
+    defaults.columnPinned = Object.fromEntries(
+      columns
+        .filter((c) => c.pinned === 'left' || c.pinned === 'right')
+        .map((c) => [c.id, c.pinned as 'left' | 'right']),
+    );
     return defaults;
   }, [columns]);
 
@@ -134,6 +151,8 @@ export function useStateStore({
         if (!stored.disabledFilters) stored.disabledFilters = {};
         // Ensure settings exists for backward compat
         if (!stored.settings) stored.settings = { ...DEFAULT_GRID_SETTINGS };
+        // Ensure columnPinned exists for backward compat
+        if (!stored.columnPinned) stored.columnPinned = {};
         return stored;
       }
     }
@@ -175,6 +194,13 @@ export function useStateStore({
   const setColumnVisibility = useCallback(
     (visibility: Record<string, boolean>) => {
       dispatch({ type: 'SET_COLUMN_VISIBILITY', visibility });
+    },
+    [],
+  );
+
+  const setColumnPinned = useCallback(
+    (columnId: string, position: ColumnPinPosition) => {
+      dispatch({ type: 'SET_COLUMN_PINNED', columnId, position });
     },
     [],
   );
@@ -239,6 +265,7 @@ export function useStateStore({
     setColumnWidth,
     setColumnOrder,
     setColumnVisibility,
+    setColumnPinned,
     setSorting,
     setFilters,
     setDisabledFilters,

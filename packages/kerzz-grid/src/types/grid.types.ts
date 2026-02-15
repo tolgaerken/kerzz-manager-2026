@@ -135,10 +135,14 @@ export interface GridProps<TData = unknown> {
   onEditCancel?: () => void;
 }
 
+/** Pin direction for sticky columns */
+export type ColumnPinPosition = 'left' | 'right' | false;
+
 export interface GridState {
   columnWidths: Record<string, number>;
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
+  columnPinned: Record<string, ColumnPinPosition>;
   sorting: SortingState;
   filters: FilterState;
   disabledFilters: DisabledFilterState;

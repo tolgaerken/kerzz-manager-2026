@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import type { GridColumnDef } from '../types/column.types';
-import type { GridProps } from '../types/grid.types';
+import type { GridProps, ColumnPinPosition } from '../types/grid.types';
 import { useStateStore } from './useStateStore';
 import { useGridFilter } from './useGridFilter';
 import { useGlobalSearch } from './useGlobalSearch';
@@ -11,6 +11,23 @@ import { useColumnVisibility } from './useColumnVisibility';
 import { useFooterAggregation } from './useFooterAggregation';
 import { useGridTheme } from '../theme/ThemeProvider';
 import type { SortingState } from '@tanstack/react-table';
+
+/** Sticky metadata for a column */
+export interface ColumnStickyMeta {
+  /** Pin side: 'left' | 'right' | false */
+  pinnedSide: ColumnPinPosition;
+  /** Sticky offset in pixels (left offset for left-pinned, right offset for right-pinned) */
+  stickyOffset: number;
+  /** Whether this is the last left-pinned column (for shadow/border) */
+  isLastLeftPinned: boolean;
+  /** Whether this is the first right-pinned column (for shadow/border) */
+  isFirstRightPinned: boolean;
+}
+
+/** Column with sticky metadata attached */
+export interface ColumnWithStickyMeta<TData = unknown> extends GridColumnDef<TData> {
+  stickyMeta: ColumnStickyMeta;
+}
 
 export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 0) {
   const {
@@ -180,6 +197,92 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     });
   }, [orderedColumns, data]);
 
+  // Partition columns into left-pinned, center, right-pinned and compute sticky offsets
+  const columnsWithStickyMeta = useMemo((): ColumnWithStickyMeta<TData>[] => {
+    const columnWidths = stateStore.state.columnWidths;
+    const columnPinned = stateStore.state.columnPinned;
+
+    // Helper to get effective pin position (state overrides column definition)
+    const getPinPosition = (col: GridColumnDef<TData>): ColumnPinPosition => {
+      if (columnPinned[col.id] !== undefined) {
+        return columnPinned[col.id];
+      }
+      return col.pinned ?? false;
+    };
+
+    // Helper to get column width
+    const getColWidth = (col: GridColumnDef<TData>): number => {
+      const w = columnWidths[col.id] ?? col.width ?? 150;
+      const min = col.minWidth ?? 50;
+      return Math.max(w, min);
+    };
+
+    // Partition columns
+    const leftPinned: GridColumnDef<TData>[] = [];
+    const center: GridColumnDef<TData>[] = [];
+    const rightPinned: GridColumnDef<TData>[] = [];
+
+    for (const col of resolvedColumns) {
+      const pin = getPinPosition(col);
+      if (pin === 'left') {
+        leftPinned.push(col);
+      } else if (pin === 'right') {
+        rightPinned.push(col);
+      } else {
+        center.push(col);
+      }
+    }
+
+    // Compute sticky offsets for left-pinned (cumulative from left)
+    const leftWithMeta: ColumnWithStickyMeta<TData>[] = [];
+    let leftOffset = 0;
+    for (let i = 0; i < leftPinned.length; i++) {
+      const col = leftPinned[i];
+      leftWithMeta.push({
+        ...col,
+        stickyMeta: {
+          pinnedSide: 'left',
+          stickyOffset: leftOffset,
+          isLastLeftPinned: i === leftPinned.length - 1,
+          isFirstRightPinned: false,
+        },
+      });
+      leftOffset += getColWidth(col);
+    }
+
+    // Center columns (no sticky)
+    const centerWithMeta: ColumnWithStickyMeta<TData>[] = center.map((col) => ({
+      ...col,
+      stickyMeta: {
+        pinnedSide: false,
+        stickyOffset: 0,
+        isLastLeftPinned: false,
+        isFirstRightPinned: false,
+      },
+    }));
+
+    // Compute sticky offsets for right-pinned (cumulative from right)
+    const rightWithMeta: ColumnWithStickyMeta<TData>[] = [];
+    let rightOffset = 0;
+    // Process from right to left to compute offsets correctly
+    for (let i = rightPinned.length - 1; i >= 0; i--) {
+      const col = rightPinned[i];
+      rightWithMeta.unshift({
+        ...col,
+        stickyMeta: {
+          pinnedSide: 'right',
+          stickyOffset: rightOffset,
+          isLastLeftPinned: false,
+          isFirstRightPinned: i === 0,
+        },
+      });
+      rightOffset += getColWidth(col);
+    }
+
+    // Return in order: left-pinned, center, right-pinned
+    return [...leftWithMeta, ...centerWithMeta, ...rightWithMeta];
+  }, [resolvedColumns, stateStore.state.columnWidths, stateStore.state.columnPinned]);
+
   // Virtualization
   const virtualization = useVirtualization({
     rowCount: filteredData.length + extraRowCount,
@@ -209,6 +312,13 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
       onColumnVisibilityChange?.(visibility);
     },
     [stateStore.setColumnVisibility, onColumnVisibilityChange],
+  );
+
+  const handleColumnPinnedChange = useCallback(
+    (columnId: string, position: ColumnPinPosition) => {
+      stateStore.setColumnPinned(columnId, position);
+    },
+    [stateStore.setColumnPinned],
   );
 
   // Column resize
@@ -261,18 +371,18 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
   // columnWidths dependency ensures recalculation when any column is resized
   const totalWidth = useMemo(() => {
     const columnWidths = stateStore.state.columnWidths;
-    return orderedColumns.reduce((sum, col) => {
+    return columnsWithStickyMeta.reduce((sum, col) => {
       const w = columnWidths[col.id] ?? col.width ?? 150;
       const min = col.minWidth ?? 50;
       return sum + Math.max(w, min);
     }, 0);
-  }, [orderedColumns, stateStore.state.columnWidths]);
+  }, [columnsWithStickyMeta, stateStore.state.columnWidths]);
 
   return {
     // Data
     originalData: data,
     filteredData,
-    orderedColumns: resolvedColumns,
+    orderedColumns: columnsWithStickyMeta,
     totalRowCount: data.length,
     filteredRowCount: filteredData.length,
 
@@ -312,6 +422,10 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     columnDrag,
     columnVisibility,
     totalWidth,
+
+    // Column pinning
+    columnPinned: stateStore.state.columnPinned,
+    setColumnPinned: handleColumnPinnedChange,
 
     // Footer
     footerAggregation,

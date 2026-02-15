@@ -48,7 +48,8 @@ export { exportToPrint } from './utils/exportPrint';
 export { getFilterSummary } from './utils/filterHelpers';
 
 // Types
-export type { GridProps, GridState, GridRef, SortingState, MobileConfig, MobileCardRenderProps } from './types/grid.types';
+export type { GridProps, GridState, GridRef, SortingState, MobileConfig, MobileCardRenderProps, ColumnPinPosition } from './types/grid.types';
+export type { ColumnStickyMeta, ColumnWithStickyMeta } from './core/useGridInstance';
 export type { GridColumnDef } from './types/column.types';
 export type {
   GridTheme,
