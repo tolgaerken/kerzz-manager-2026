@@ -12,8 +12,23 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
     "test": {
       "dependsOn": ["^test"]
+    },
+    "mobile:start": {
+      "cache": false,
+      "persistent": true
+    },
+    "mobile:ios": {
+      "cache": false,
+      "dependsOn": ["^build"]
+    },
+    "mobile:android": {
+      "cache": false,
+      "dependsOn": ["^build"]
     }
   }
 }

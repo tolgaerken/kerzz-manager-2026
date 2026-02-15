@@ -1,0 +1,15 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["jest"],
+    "baseUrl": ".",
+    "paths": {
+      "@kerzz/shared": ["../../packages/shared/src"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "App.tsx"],
+  "exclude": ["**/node_modules", "**/Pods", "ios", "android"]
+}
