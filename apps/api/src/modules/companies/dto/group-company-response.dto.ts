@@ -10,6 +10,7 @@ export class GroupCompanyResponseDto {
   noVat: boolean;
   exemptionReason: string;
   description: string;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

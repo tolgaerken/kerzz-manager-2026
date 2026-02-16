@@ -1,17 +1,13 @@
-import { IsString, IsOptional, IsBoolean, IsNotEmpty } from "class-validator";
+import { IsString, IsOptional, IsBoolean } from "class-validator";
 
-export class CreateGroupCompanyDto {
+export class UpdateGroupCompanyDto {
   @IsString()
-  @IsNotEmpty({ message: "Firma kodu zorunludur" })
-  id: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "Firma kısa kodu zorunludur" })
-  idc: string;
+  @IsOptional()
+  idc?: string;
 
   @IsString()
-  @IsNotEmpty({ message: "Firma adı zorunludur" })
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
   @IsOptional()

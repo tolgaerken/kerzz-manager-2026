@@ -4,6 +4,7 @@ import { Model } from "mongoose";
 import { GroupCompany, GroupCompanyDocument } from "./schemas/group-company.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { CreateGroupCompanyDto } from "./dto/create-group-company.dto";
+import { UpdateGroupCompanyDto } from "./dto/update-group-company.dto";
 
 @Injectable()
 export class CompaniesService implements OnModuleInit {
@@ -18,8 +19,9 @@ export class CompaniesService implements OnModuleInit {
     await this.seed();
   }
 
-  async findAll(): Promise<GroupCompanyDocument[]> {
-    return this.groupCompanyModel.find().sort({ name: 1 }).lean().exec();
+  async findAll(includeInactive = false): Promise<GroupCompanyDocument[]> {
+    const filter = includeInactive ? {} : { isActive: true };
+    return this.groupCompanyModel.find(filter).sort({ name: 1 }).lean().exec();
   }
 
   async findById(id: string): Promise<GroupCompanyDocument> {
@@ -50,6 +52,19 @@ export class CompaniesService implements OnModuleInit {
     return created.save();
   }
 
+  async update(id: string, dto: UpdateGroupCompanyDto): Promise<GroupCompanyDocument> {
+    const updated = await this.groupCompanyModel
+      .findOneAndUpdate({ id }, { $set: dto }, { new: true, runValidators: true })
+      .lean()
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException(`Firma bulunamadı: ${id}`);
+    }
+
+    return updated;
+  }
+
   private async seed(): Promise<void> {
     const count = await this.groupCompanyModel.countDocuments().exec();
     if (count > 0) {
@@ -69,6 +84,7 @@ export class CompaniesService implements OnModuleInit {
         noVat: false,
         exemptionReason: "",
         description: "",
+        isActive: true,
       },
       {
         id: "CLOUD",
@@ -81,6 +97,7 @@ export class CompaniesService implements OnModuleInit {
         noVat: false,
         exemptionReason: "",
         description: "",
+        isActive: true,
       },
       {
         id: "ETYA",
@@ -94,6 +111,7 @@ export class CompaniesService implements OnModuleInit {
         exemptionReason: "223",
         description:
           "<br>STB Proje Kodu 097920 nolu proje kapsamında KDV ve Gelir Vergisinden istisna olarak düzenlenmiştir",
+        isActive: true,
       },
       {
         id: "BTT",
@@ -106,6 +124,7 @@ export class CompaniesService implements OnModuleInit {
         noVat: false,
         exemptionReason: "",
         description: "",
+        isActive: true,
       },
       {
         id: "MARKAMUTFAGI",
@@ -118,6 +137,7 @@ export class CompaniesService implements OnModuleInit {
         noVat: false,
         exemptionReason: "",
         description: "",
+        isActive: true,
       },
       {
         id: "KERZZBV",
@@ -130,6 +150,7 @@ export class CompaniesService implements OnModuleInit {
         noVat: false,
         exemptionReason: "",
         description: "",
+        isActive: true,
       },
     ];
 

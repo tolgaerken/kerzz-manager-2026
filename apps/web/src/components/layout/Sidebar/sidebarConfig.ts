@@ -111,6 +111,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     subItems: [
       { label: "Sistem Logları", path: "/system/logs" },
       { label: "Kullanıcı Yönetimi", path: "/system/users" },
+      { label: "Firma Yönetimi", path: "/system/companies" },
     ],
   },
   {

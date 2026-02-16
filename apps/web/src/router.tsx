@@ -35,6 +35,7 @@ import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
 import { UsersPage } from "./pages/UsersPage";
+import { CompanyManagementPage } from "./pages/CompanyManagementPage";
 import { WelcomePage } from "./pages/WelcomePage";
 import {
   SsoManagementPage,
@@ -422,6 +423,14 @@ const usersRoute = createRoute({
   component: UsersPage,
 });
 
+// Company Management page
+const companyManagementRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/system/companies",
+  beforeLoad: () => checkPermission(PERMISSIONS.SYSTEM_MENU),
+  component: CompanyManagementPage,
+});
+
 // Notification Settings page
 const notificationSettingsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -577,6 +586,7 @@ const routeTree = rootRoute.addChildren([
     systemLogsRoute,
     notificationSettingsRoute,
     usersRoute,
+    companyManagementRoute,
     ssoManagementRoute,
     ssoApplicationsRoute,
     ssoRolesRoute,

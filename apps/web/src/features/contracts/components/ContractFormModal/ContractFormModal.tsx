@@ -29,6 +29,25 @@ const BILLING_TYPES = [
   { id: "past", name: "Ay Sonu (Vadeli)" }
 ];
 
+const formatDateForInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDefaultContractDates = (): { startDate: string; endDate: string } => {
+  const today = new Date();
+  const oneYearLaterEndOfMonth = new Date(today);
+  oneYearLaterEndOfMonth.setFullYear(oneYearLaterEndOfMonth.getFullYear() + 1);
+  oneYearLaterEndOfMonth.setMonth(oneYearLaterEndOfMonth.getMonth() + 1, 0);
+
+  return {
+    startDate: formatDateForInput(today),
+    endDate: formatDateForInput(oneYearLaterEndOfMonth)
+  };
+};
+
 export function ContractFormModal({
   isOpen,
   onClose,
@@ -44,16 +63,17 @@ export function ContractFormModal({
   });
 
   const { data: companiesData } = useCompanies();
+  const defaultDates = getDefaultContractDates();
 
   const [formData, setFormData] = useState<CreateContractInput>({
     customerId: "",
     description: "",
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: "",
-    noEndDate: true,
+    startDate: defaultDates.startDate,
+    endDate: defaultDates.endDate,
+    noEndDate: false,
     internalFirm: "",
     yearly: false,
-    maturity: 0,
+    maturity: 15,
     lateFeeType: "yi-ufe",
     incraseRateType: "yi-ufe",
     incrasePeriod: "3-month",
@@ -68,16 +88,17 @@ export function ContractFormModal({
 
   useEffect(() => {
     if (isOpen) {
+      const modalDefaultDates = getDefaultContractDates();
       // Reset form when modal opens
       setFormData({
         customerId: "",
         description: "",
-        startDate: new Date().toISOString().split("T")[0],
-        endDate: "",
-        noEndDate: true,
-        internalFirm: companiesData?.[0]?.idc || "",
+        startDate: modalDefaultDates.startDate,
+        endDate: modalDefaultDates.endDate,
+        noEndDate: false,
+        internalFirm: "",
         yearly: false,
-        maturity: 0,
+        maturity: 15,
         lateFeeType: "yi-ufe",
         incraseRateType: "yi-ufe",
         incrasePeriod: "3-month",
