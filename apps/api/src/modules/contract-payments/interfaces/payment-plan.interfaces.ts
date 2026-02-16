@@ -16,7 +16,7 @@ export interface InvoiceRow {
   unitPrice: number;
   total: number;
   /** Satir kategorisi - kist hesaplamada kullanilir */
-  category?: InvoiceRowCategory;
+  category: InvoiceRowCategory;
 }
 
 /** Aylik fatura hesaplama sonucu */

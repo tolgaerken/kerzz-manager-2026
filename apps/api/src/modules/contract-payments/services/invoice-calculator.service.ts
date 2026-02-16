@@ -11,6 +11,9 @@ import {
   SubTotals,
   CalculateAllResult,
 } from "../interfaces/payment-plan.interfaces";
+
+/** Doviz kuru haritasi - hesaplama basinda bir kez olusturulur */
+type RateMap = Record<CurrencyType, number>;
 import {
   ContractCashRegister,
   ContractCashRegisterDocument,
@@ -41,6 +44,7 @@ import {
 } from "../../contracts/schemas/contract.schema";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import { generateShortId } from "../utils/id-generator";
+import { safeRound } from "../utils/math.utils";
 import {
   EFTPOS_DESCRIPTION,
   EFTPOS_NO_VAT_DESCRIPTION,
@@ -86,6 +90,9 @@ export class InvoiceCalculatorService {
         this.versionModel.find({ contractId }).lean().exec(),
       ]);
 
+    // Doviz kurlarini tek seferde al (tum hesaplamalarda kullanilacak)
+    const rateMap = await this.buildRateMap();
+
     const invoiceSummary = await this.buildInvoiceSummary(
       contract,
       cashRegisters,
@@ -93,17 +100,120 @@ export class InvoiceCalculatorService {
       items,
       saasItems,
       versions,
+      rateMap,
     );
 
-    const subTotals = await this.buildSubTotals(
+    // Guncel toplamlari invoice rows'tan turet (ayni hesaplamayi tekrarlama)
+    const currentTotals = this.deriveCurrentTotals(invoiceSummary.rows);
+
+    // Eski fiyat toplamlarini ayri hesapla (invoice rows'ta yok)
+    const oldTotals = this.buildOldTotals(
       cashRegisters,
       supports,
       items,
       saasItems,
       versions,
+      rateMap,
     );
 
+    const subTotals: SubTotals = { ...currentTotals, ...oldTotals };
+
     return { invoiceSummary, subTotals };
+  }
+
+  /**
+   * Doviz kurlarini tek seferde alir ve RateMap olarak dondurur.
+   */
+  private async buildRateMap(): Promise<RateMap> {
+    const { usd, eur } = await this.exchangeRateService.getRates();
+    return { tl: 1, usd, eur };
+  }
+
+  /**
+   * Invoice rows'tan guncel kategori toplamlarini turetir.
+   * buildInvoiceSummary zaten hesapladigi icin tekrar hesaplama yapmaz.
+   */
+  private deriveCurrentTotals(rows: InvoiceRow[]): {
+    saasTotal: number;
+    supportTotal: number;
+    cashRegisterTotal: number;
+    itemsTotal: number;
+    versionTotal: number;
+  } {
+    let saasTotal = 0;
+    let supportTotal = 0;
+    let cashRegisterTotal = 0;
+    let itemsTotal = 0;
+    let versionTotal = 0;
+
+    for (const row of rows) {
+      switch (row.category) {
+        case "saas":
+          saasTotal += row.total;
+          break;
+        case "support":
+          supportTotal += row.total;
+          break;
+        case "eftpos":
+          cashRegisterTotal += row.total;
+          break;
+        case "item":
+          itemsTotal += row.total;
+          break;
+        case "version":
+          versionTotal += row.total;
+          break;
+      }
+    }
+
+    return {
+      saasTotal: safeRound(saasTotal),
+      supportTotal: safeRound(supportTotal),
+      cashRegisterTotal: safeRound(cashRegisterTotal),
+      itemsTotal: safeRound(itemsTotal),
+      versionTotal: safeRound(versionTotal),
+    };
+  }
+
+  /**
+   * Eski fiyat toplamlarini hesaplar (old_price kullanir).
+   * Guncel toplamlar invoice rows'tan turetildigi icin sadece eski fiyatlar hesaplanir.
+   */
+  private buildOldTotals(
+    cashRegisters: ContractCashRegister[],
+    supports: ContractSupport[],
+    items: ContractItem[],
+    saasItems: ContractSaas[],
+    versions: ContractVersion[],
+    rateMap: RateMap,
+  ): {
+    oldSaasTotal: number;
+    oldSupportTotal: number;
+    oldCashRegisterTotal: number;
+    oldItemsTotal: number;
+    oldVersionTotal: number;
+    oldTotal: number;
+  } {
+    const oldSaasTotal = this.calculateOldTotal(saasItems, rateMap);
+    const oldSupportTotal = this.calculateOldTotal(supports, rateMap);
+    const oldCashRegisterTotal = this.calculateOldTotal(cashRegisters, rateMap);
+    const oldItemsTotal = this.calculateOldTotal(items, rateMap);
+    const oldVersionTotal = this.calculateOldTotal(versions, rateMap);
+    const oldTotal =
+      oldSaasTotal +
+      oldSupportTotal +
+      oldCashRegisterTotal +
+      oldItemsTotal +
+      oldVersionTotal;
+
+    return {
+      oldSaasTotal,
+      oldSupportTotal,
+      oldCashRegisterTotal,
+      oldItemsTotal,
+      oldVersionTotal,
+      oldTotal,
+    };
   }
 
   /**
@@ -134,6 +244,7 @@ export class InvoiceCalculatorService {
     items: ContractItem[],
     saasItems: ContractSaas[],
     versions: ContractVersion[],
+    rateMap: RateMap,
   ): Promise<InvoiceSummary> {
     const rows: InvoiceRow[] = [];
 
@@ -144,46 +255,49 @@ export class InvoiceCalculatorService {
       ? EFTPOS_NO_VAT_DESCRIPTION
       : EFTPOS_DESCRIPTION;
 
-    const eftPosRows = await this.groupAndProcess(
+    const eftPosRows = this.groupAndProcess(
       cashRegisters.filter((o) => this.isBillable(o)),
       eftPosDescription,
       eftPosErpId,
       "eftpos",
+      rateMap,
     );
     rows.push(...eftPosRows);
 
     // Destek satirlari
     const supportErpId = this.erpSettingsService.getErpId("support");
-    const supportRows = await this.groupAndProcess(
+    const supportRows = this.groupAndProcess(
       supports.filter((o) => this.isBillable(o)),
       SUPPORT_DESCRIPTION,
       supportErpId,
       "support",
+      rateMap,
     );
     rows.push(...supportRows);
 
     // Surum satirlari
     const versionErpId = this.erpSettingsService.getErpId("version");
-    const versionRows = await this.groupAndProcess(
+    const versionRows = this.groupAndProcess(
       versions.filter((o) => this.isBillable(o)),
       VERSION_DESCRIPTION,
       versionErpId,
       "version",
+      rateMap,
     );
     rows.push(...versionRows);
 
     // Kalem satirlari (items - her birini ayri isle)
-    const itemRows = await this.processItems(items.filter((o) => this.isBillable(o)));
+    const itemRows = this.processItems(items.filter((o) => this.isBillable(o)), rateMap);
     rows.push(...itemRows);
 
     // SaaS satirlari (batch product lookup ile)
-    const saasRows = await this.processSaas(saasItems.filter((o) => this.isBillable(o)));
+    const saasRows = await this.processSaas(saasItems.filter((o) => this.isBillable(o)), rateMap);
     rows.push(...saasRows);
 
     // Toplami 0 olan satirlari filtrele
     const filteredRows = rows.filter((r) => r.total !== 0);
 
-    const total = this.safeRound(
+    const total = safeRound(
       filteredRows.reduce((sum, r) => sum + r.total, 0),
     );
 
@@ -200,74 +314,22 @@ export class InvoiceCalculatorService {
   }
 
   /**
-   * Yuklu veriden alt toplamlari hesaplar (DB sorgusu yapmaz).
-   */
-  private async buildSubTotals(
-    cashRegisters: ContractCashRegister[],
-    supports: ContractSupport[],
-    items: ContractItem[],
-    saasItems: ContractSaas[],
-    versions: ContractVersion[],
-  ): Promise<SubTotals> {
-    const saasTotal = await this.calculateTotal(
-      saasItems.filter((o) => this.isBillable(o)),
-    );
-    const supportTotal = await this.calculateTotal(
-      supports.filter((o) => this.isBillable(o)),
-    );
-    const cashRegisterTotal = await this.calculateTotal(
-      cashRegisters.filter((o) => this.isBillable(o)),
-    );
-    const itemsTotal = await this.calculateTotal(
-      items.filter((o) => this.isBillable(o)),
-      true,
-    );
-    const versionTotal = await this.calculateTotal(
-      versions.filter((o) => this.isBillable(o)),
-    );
-
-    const oldSaasTotal = await this.calculateOldTotal(saasItems);
-    const oldSupportTotal = await this.calculateOldTotal(supports);
-    const oldCashRegisterTotal = await this.calculateOldTotal(cashRegisters);
-    const oldItemsTotal = await this.calculateOldTotal(items);
-    const oldVersionTotal = await this.calculateOldTotal(versions);
-    const oldTotal =
-      oldSaasTotal +
-      oldSupportTotal +
-      oldCashRegisterTotal +
-      oldItemsTotal +
-      oldVersionTotal;
-
-    return {
-      saasTotal,
-      supportTotal,
-      cashRegisterTotal,
-      itemsTotal,
-      versionTotal,
-      oldSaasTotal,
-      oldSupportTotal,
-      oldCashRegisterTotal,
-      oldItemsTotal,
-      oldVersionTotal,
-      oldTotal,
-    };
-  }
-
-  /**
    * Fiyata gore gruplayip fatura satirlari olusturur.
    * Ayni fiyattaki kalemleri birlestirir.
    */
-  private async groupAndProcess(
+  private groupAndProcess(
     data: Array<{ price: number; currency: string }>,
     description: string,
     itemId: string,
     category: InvoiceRowCategory,
-  ): Promise<InvoiceRow[]> {
+    rateMap: RateMap,
+  ): InvoiceRow[] {
     const result: InvoiceRow[] = [];
 
     const grouped = data.reduce(
       (acc, item) => {
-        const key = item.price.toString();
+        // Fiyat + para birimi ile grupla (farkli dovizlerin karismasini onle)
+        const key = `${item.price}-${item.currency}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
         return acc;
@@ -278,13 +340,11 @@ export class InvoiceCalculatorService {
     for (const priceKey of Object.keys(grouped)) {
       const group = grouped[priceKey];
       const firstItem = group[0];
-      const rate = await this.exchangeRateService.getRate(
-        firstItem.currency as CurrencyType,
-      );
+      const rate = rateMap[firstItem.currency as CurrencyType] ?? 1;
       const rawPrice = Number(firstItem.price) || 0;
-      const price = this.safeRound(rawPrice * rate);
+      const price = safeRound(rawPrice * rate);
       const count = group.length;
-      const total = this.safeRound(price * count);
+      const total = safeRound(price * count);
 
       result.push({
         id: generateShortId(),
@@ -303,16 +363,14 @@ export class InvoiceCalculatorService {
   /**
    * Kontrat kalemlerini (items) fatura satirlarina donusturur.
    */
-  private async processItems(items: ContractItem[]): Promise<InvoiceRow[]> {
+  private processItems(items: ContractItem[], rateMap: RateMap): InvoiceRow[] {
     const result: InvoiceRow[] = [];
 
     for (const item of items) {
-      const rate = await this.exchangeRateService.getRate(
-        item.currency as CurrencyType,
-      );
+      const rate = rateMap[item.currency as CurrencyType] ?? 1;
       const rawPrice = Number(item.price) || 0;
-      const price = this.safeRound(rawPrice * rate);
-      const total = this.safeRound(price * (item.qty || 1));
+      const price = safeRound(rawPrice * rate);
+      const total = safeRound(price * (item.qty || 1));
 
       result.push({
         id: generateShortId(),
@@ -332,7 +390,7 @@ export class InvoiceCalculatorService {
    * SaaS kalemlerini fatura satirlarina donusturur.
    * Tum product ID'lerini tek seferde batch olarak sorgular.
    */
-  private async processSaas(saasItems: ContractSaas[]): Promise<InvoiceRow[]> {
+  private async processSaas(saasItems: ContractSaas[], rateMap: RateMap): Promise<InvoiceRow[]> {
     if (saasItems.length === 0) return [];
 
     // Tum product ID'lerini tek sorguda cek
@@ -353,12 +411,10 @@ export class InvoiceCalculatorService {
     const result: InvoiceRow[] = [];
 
     for (const saasItem of saasItems) {
-      const rate = await this.exchangeRateService.getRate(
-        saasItem.currency as CurrencyType,
-      );
+      const rate = rateMap[saasItem.currency as CurrencyType] ?? 1;
       const rawPrice = Number(saasItem.price) || 0;
-      const price = this.safeRound(rawPrice * rate);
-      const total = this.safeRound(price * (saasItem.qty || 1));
+      const price = safeRound(rawPrice * rate);
+      const total = safeRound(price * (saasItem.qty || 1));
 
       const erpId = saasItem.productId
         ? productMap.get(saasItem.productId) || ""
@@ -379,48 +435,27 @@ export class InvoiceCalculatorService {
   }
 
   /**
-   * Fiyatlari TL'ye cevirip toplam hesaplar.
-   * useQty true ise qty ile carpar (items icin).
-   */
-  private async calculateTotal(
-    data: Array<{ price: number; currency: string; qty?: number }>,
-    useQty = false,
-  ): Promise<number> {
-    let sum = 0;
-    for (const item of data) {
-      const price = Number(item.price) || 0;
-      const rate = await this.exchangeRateService.getRate(
-        item.currency as CurrencyType,
-      );
-      const multiplier = useQty ? item.qty || 1 : 1;
-      sum += price * rate * multiplier;
-    }
-    return this.safeRound(sum);
-  }
-
-  /**
    * Eski fiyat toplamlarini hesaplar (old_price kullanir)
    */
-  private async calculateOldTotal(
+  private calculateOldTotal(
     data: Array<{
       old_price: number;
       currency: string;
       qty?: number;
       enabled: boolean;
     }>,
-  ): Promise<number> {
+    rateMap: RateMap,
+  ): number {
     const enabledItems = data.filter((d) => d.enabled);
     if (enabledItems.length === 0) return 0;
 
     let sum = 0;
     for (const item of enabledItems) {
       const oldPrice = Number(item.old_price) || 0;
-      const rate = await this.exchangeRateService.getRate(
-        item.currency as CurrencyType,
-      );
+      const rate = rateMap[item.currency as CurrencyType] ?? 1;
       sum += oldPrice * rate * (item.qty || 1);
     }
-    return this.safeRound(sum);
+    return safeRound(sum);
   }
 
   /**
@@ -433,8 +468,4 @@ export class InvoiceCalculatorService {
     return item.enabled && !(item.expired ?? false);
   }
 
-  private safeRound(value: number): number {
-    if (isNaN(value) || !isFinite(value)) return 0;
-    return parseFloat(value.toFixed(2));
-  }
 }

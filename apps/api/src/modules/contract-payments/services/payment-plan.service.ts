@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, isValidObjectId } from "mongoose";
+import { Model } from "mongoose";
 import {
   utcStartOfMonth,
   utcEndOfMonth,
@@ -27,6 +27,7 @@ import {
 } from "../interfaces/payment-plan.interfaces";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import { DEFAULT_CONCURRENCY_LIMIT } from "../constants/invoice.constants";
+import { findCustomerByAnyId } from "../utils/customer-lookup.utils";
 
 @Injectable()
 export class PaymentPlanService {
@@ -173,7 +174,7 @@ export class PaymentPlanService {
     plans: ContractPayment[];
   }> {
     // Musteri bilgisini bul (tek $or sorgusu ile)
-    const customer = await this.findCustomer(contract.customerId);
+    const customer = await findCustomerByAnyId(this.customerModel, contract.customerId);
     if (!customer) {
       this.logger.warn(`Musteri bulunamadi: ${contract.customerId}`);
       return {
@@ -268,27 +269,6 @@ export class PaymentPlanService {
       },
       plans,
     };
-  }
-
-  /**
-   * Musteri arar: customerId ile tek $or sorgusu kullanir.
-   * ObjectId gecerliyse _id, degilse id ve erpId uzerinden arar.
-   */
-  private async findCustomer(customerId: string): Promise<Customer | null> {
-    const orConditions: Array<Record<string, string>> = [
-      { id: customerId },
-      { erpId: customerId },
-    ];
-
-    // Gecerli ObjectId ise _id ile de ara
-    if (isValidObjectId(customerId)) {
-      orConditions.unshift({ _id: customerId });
-    }
-
-    return this.customerModel
-      .findOne({ $or: orConditions })
-      .lean()
-      .exec();
   }
 
   /**

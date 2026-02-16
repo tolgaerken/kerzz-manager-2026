@@ -277,6 +277,8 @@ export interface ContractDetailListResponse<T> {
 
 // ─── Check Contract (Odeme Plani Hesaplama) Tipleri ─────────────
 
+export type InvoiceRowCategory = "eftpos" | "support" | "version" | "item" | "saas";
+
 export interface InvoiceRow {
   id: string;
   itemId: string;
@@ -284,6 +286,7 @@ export interface InvoiceRow {
   qty: number;
   unitPrice: number;
   total: number;
+  category: InvoiceRowCategory;
 }
 
 export interface InvoiceSummary {

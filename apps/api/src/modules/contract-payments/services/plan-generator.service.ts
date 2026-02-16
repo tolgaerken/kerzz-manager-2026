@@ -21,6 +21,7 @@ import { Contract } from "../../contracts/schemas/contract.schema";
 import { Customer } from "../../customers/schemas/customer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import { generatePaymentId, generateShortId } from "../utils/id-generator";
+import { safeRound } from "../utils/math.utils";
 import {
   getAuditFieldsForUpdate,
   getAuditFieldsForSetOnInsert,
@@ -130,7 +131,7 @@ export class PlanGeneratorService {
           return {
             id: 0,
             description: `${row.description} (${remainingDays}/${daysInMonth} gün kıst)`,
-            total: this.safeRound(row.total * ratio),
+            total: safeRound(row.total * ratio),
             company: "",
             totalUsd: 0,
             totalEur: 0,
@@ -138,7 +139,7 @@ export class PlanGeneratorService {
         });
 
         // Toplami yeniden hesapla: EFT-POS tam + diger kist
-        total = this.safeRound(
+        total = safeRound(
           invoiceSummary.rows.reduce((sum, row) => {
             if (row.category === "eftpos") {
               return sum + row.total;
@@ -179,14 +180,6 @@ export class PlanGeneratorService {
     }
 
     return plans;
-  }
-
-  /**
-   * Sayiyi 2 ondalik basamaga yuvarlar (NaN/Infinity kontrolu ile).
-   */
-  private safeRound(value: number): number {
-    if (isNaN(value) || !isFinite(value)) return 0;
-    return parseFloat(value.toFixed(2));
   }
 
   /**

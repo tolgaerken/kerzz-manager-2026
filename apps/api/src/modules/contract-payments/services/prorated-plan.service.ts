@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, isValidObjectId } from "mongoose";
+import { Model } from "mongoose";
 import {
   utcEndOfMonth,
   utcDifferenceInCalendarDays,
@@ -22,6 +22,8 @@ import { ExchangeRateService } from "../../exchange-rate";
 import { CurrencyType } from "../interfaces/payment-plan.interfaces";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import { generatePaymentId, generateShortId } from "../utils/id-generator";
+import { safeRound } from "../utils/math.utils";
+import { findCustomerByAnyId } from "../utils/customer-lookup.utils";
 
 /** Kist plan olusturmak icin gereken kalem bilgisi */
 export interface ProratedItemInput {
@@ -91,7 +93,7 @@ export class ProratedPlanService {
       throw new NotFoundException(`Kontrat bulunamadi: ${contractId}`);
     }
 
-    const customer = await this.findCustomer(contract.customerId);
+    const customer = await findCustomerByAnyId(this.customerModel, contract.customerId);
     if (!customer) {
       throw new NotFoundException(
         `Musteri bulunamadi: ${contract.customerId}`,
@@ -109,7 +111,7 @@ export class ProratedPlanService {
       item.currency as CurrencyType,
     );
     const rawPrice = (Number(item.price) || 0) * (item.qty || 1);
-    const monthlyPrice = this.safeRound(rawPrice * rate);
+    const monthlyPrice = safeRound(rawPrice * rate);
 
     // Tutar hesapla: skipDayCalculation true ise tam aylik, degilse kist
     const skipDayCalc = options?.skipDayCalculation ?? false;
@@ -125,7 +127,7 @@ export class ProratedPlanService {
     } else {
       // Normal kist hesabi
       const dailyRate = monthlyPrice / daysInMonth;
-      proratedAmount = this.safeRound(dailyRate * remainingDays);
+      proratedAmount = safeRound(dailyRate * remainingDays);
       const startStr = this.formatDateShort(startDate);
       const endStr = this.formatDateShort(monthEnd);
       descriptionText = `${description} (${startStr}-${endStr}, ${remainingDays} gün kıst)`;
@@ -268,11 +270,6 @@ export class ProratedPlanService {
     return `${day}.${month}`;
   }
 
-  private safeRound(value: number): number {
-    if (isNaN(value) || !isFinite(value)) return 0;
-    return parseFloat(value.toFixed(2));
-  }
-
   /**
    * Ilgili ayin regular plani faturalanmis mi kontrol eder.
    * Faturalanmissa true, faturalanmamissa false dondurur.
@@ -301,22 +298,4 @@ export class ProratedPlanService {
     return !!invoicedPlan;
   }
 
-  /**
-   * Musteri arar: customerId ile tek $or sorgusu kullanir.
-   */
-  private async findCustomer(customerId: string): Promise<Customer | null> {
-    const orConditions: Array<Record<string, string>> = [
-      { id: customerId },
-      { erpId: customerId },
-    ];
-
-    if (isValidObjectId(customerId)) {
-      orConditions.unshift({ _id: customerId });
-    }
-
-    return this.customerModel
-      .findOne({ $or: orConditions })
-      .lean()
-      .exec();
-  }
 }
