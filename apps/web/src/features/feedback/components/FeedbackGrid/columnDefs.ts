@@ -1,5 +1,7 @@
 import type { GridColumnDef } from "@kerzz/grid";
+import { createElement } from "react";
 import type { Feedback } from "../../types/feedback.types";
+import { stripHtmlToText } from "../../utils/feedbackHtml";
 
 const STATUS_LABEL_MAP: Record<string, string> = {
   open: "Açık",
@@ -59,9 +61,31 @@ export const feedbackColumnDefs: GridColumnDef<Feedback>[] = [
     sortable: true,
     filter: { type: "input" },
     cell: (value: unknown) => {
-      const desc = value as string;
-      if (!desc) return "-";
-      return desc.length > 100 ? `${desc.substring(0, 100)}...` : desc;
+      const desc = typeof value === "string" ? value : "";
+      const plainText = stripHtmlToText(desc);
+      if (!plainText) return "-";
+      return plainText.length > 100 ? `${plainText.substring(0, 100)}...` : plainText;
+    },
+  },
+  {
+    id: "screenshots",
+    header: "Görsel",
+    accessorKey: "screenshots",
+    width: 90,
+    sortable: false,
+    cell: (value: unknown) => {
+      if (!Array.isArray(value) || value.length === 0) {
+        return "-";
+      }
+      const count = value.length;
+      return createElement(
+        "span",
+        {
+          className:
+            "inline-flex items-center rounded-full bg-[var(--color-primary)]/15 px-2.5 py-0.5 text-xs font-medium text-[var(--color-primary)]",
+        },
+        `${count} görsel`,
+      );
     },
   },
   {
@@ -72,12 +96,17 @@ export const feedbackColumnDefs: GridColumnDef<Feedback>[] = [
     sortable: true,
     filter: { type: "dropdown", showCounts: true },
     cell: (value: unknown) => {
-      const status = value as string;
+      const status = typeof value === "string" ? value : "";
       const label = STATUS_LABEL_MAP[status] || status;
       const classes = STATUS_CLASS_MAP[status] || STATUS_CLASS_MAP.open;
-      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes}">${label}</span>`;
+      return createElement(
+        "span",
+        {
+          className: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes}`,
+        },
+        label,
+      );
     },
-    enableHtml: true,
   },
   {
     id: "priority",
@@ -87,12 +116,17 @@ export const feedbackColumnDefs: GridColumnDef<Feedback>[] = [
     sortable: true,
     filter: { type: "dropdown", showCounts: true },
     cell: (value: unknown) => {
-      const priority = value as string;
+      const priority = typeof value === "string" ? value : "";
       const label = PRIORITY_LABEL_MAP[priority] || priority;
       const classes = PRIORITY_CLASS_MAP[priority] || PRIORITY_CLASS_MAP.medium;
-      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes}">${label}</span>`;
+      return createElement(
+        "span",
+        {
+          className: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes}`,
+        },
+        label,
+      );
     },
-    enableHtml: true,
   },
   {
     id: "createdByName",
@@ -108,7 +142,7 @@ export const feedbackColumnDefs: GridColumnDef<Feedback>[] = [
     accessorKey: "createdAt",
     width: 160,
     sortable: true,
-    cell: (value: unknown) => formatDate(value as string),
+    cell: (value: unknown) => formatDate(typeof value === "string" ? value : undefined),
   },
   {
     id: "updatedAt",
@@ -116,6 +150,6 @@ export const feedbackColumnDefs: GridColumnDef<Feedback>[] = [
     accessorKey: "updatedAt",
     width: 160,
     sortable: true,
-    cell: (value: unknown) => formatDate(value as string),
+    cell: (value: unknown) => formatDate(typeof value === "string" ? value : undefined),
   },
 ];

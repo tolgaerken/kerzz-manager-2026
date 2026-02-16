@@ -6,6 +6,7 @@ export interface Feedback {
   id: string;
   title: string;
   description: string;
+  screenshots: string[];
   priority: FeedbackPriority;
   status: FeedbackStatus;
   createdBy: string;
@@ -41,12 +42,14 @@ export interface FeedbacksResponse {
 export interface CreateFeedbackInput {
   title: string;
   description: string;
+  screenshots?: string[];
   priority?: FeedbackPriority;
 }
 
 export interface UpdateFeedbackInput {
   title?: string;
   description?: string;
+  screenshots?: string[];
   priority?: FeedbackPriority;
   status?: FeedbackStatus;
 }

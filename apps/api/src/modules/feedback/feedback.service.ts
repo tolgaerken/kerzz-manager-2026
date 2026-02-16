@@ -81,10 +81,13 @@ export class FeedbackService {
     userName: string,
   ): Promise<FeedbackResponseDto> {
     const id = this.generateId();
+    const description = this.sanitizeDescription(dto.description);
 
     const record = new this.model({
       ...dto,
       id,
+      description,
+      screenshots: dto.screenshots || [],
       priority: dto.priority || "medium",
       status: "open",
       createdBy: userId,
@@ -99,8 +102,15 @@ export class FeedbackService {
     id: string,
     dto: UpdateFeedbackDto,
   ): Promise<FeedbackResponseDto> {
+    const updatePayload: UpdateFeedbackDto = {
+      ...dto,
+      ...(dto.description !== undefined
+        ? { description: this.sanitizeDescription(dto.description) }
+        : {}),
+    };
+
     const updated = await this.model
-      .findOneAndUpdate({ id }, dto, { new: true })
+      .findOneAndUpdate({ id }, updatePayload, { new: true })
       .lean()
       .exec();
 
@@ -125,6 +135,7 @@ export class FeedbackService {
       id: d.id ?? "",
       title: d.title ?? "",
       description: d.description ?? "",
+      screenshots: Array.isArray(d.screenshots) ? d.screenshots : [],
       priority: d.priority ?? "medium",
       status: d.status ?? "open",
       createdBy: d.createdBy ?? "",
@@ -138,5 +149,14 @@ export class FeedbackService {
     const uuid = crypto.randomUUID();
     const suffix = Math.random().toString(16).substring(2, 6);
     return `${uuid}-${suffix}`;
+  }
+
+  private sanitizeDescription(description: string): string {
+    return description
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+      .replace(/\son\w+="[^"]*"/gi, "")
+      .replace(/javascript:/gi, "")
+      .trim();
   }
 }

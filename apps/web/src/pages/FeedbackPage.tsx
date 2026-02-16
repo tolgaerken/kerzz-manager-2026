@@ -13,8 +13,6 @@ import { FeedbackFormModal } from "../features/feedback/components/FeedbackFormM
 import type {
   Feedback,
   FeedbackQueryParams,
-  CreateFeedbackInput,
-  UpdateFeedbackInput,
   FeedbackStatus,
   FeedbackPriority,
 } from "../features/feedback/types/feedback.types";
@@ -66,15 +64,21 @@ export function FeedbackPage() {
   }, []);
 
   const handleSubmit = useCallback(
-    async (input: CreateFeedbackInput | UpdateFeedbackInput) => {
+    async (input: {
+      title: string;
+      description: string;
+      screenshots?: string[];
+      priority: FeedbackPriority;
+      status?: FeedbackStatus;
+    }) => {
       if (editingFeedback) {
         await updateMutation.mutateAsync({
           id: editingFeedback.id,
-          data: input as UpdateFeedbackInput,
+          data: input,
         });
         setEditingFeedback(null);
       } else {
-        await createMutation.mutateAsync(input as CreateFeedbackInput);
+        await createMutation.mutateAsync(input);
       }
       setIsFormOpen(false);
     },

@@ -20,6 +20,9 @@ export class Feedback {
   @Prop({ required: true })
   description: string;
 
+  @Prop({ type: [String], default: [] })
+  screenshots: string[];
+
   @Prop({ default: "medium", index: true })
   priority: FeedbackPriority;
 

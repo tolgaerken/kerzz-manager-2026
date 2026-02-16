@@ -1,5 +1,7 @@
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
+  IsArray,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -55,6 +57,12 @@ export class CreateFeedbackDto {
   description: string;
 
   @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsString({ each: true })
+  screenshots?: string[];
+
+  @IsOptional()
   @IsEnum(["low", "medium", "high", "urgent"])
   priority?: FeedbackPriority;
 }
@@ -72,6 +80,12 @@ export class UpdateFeedbackDto {
   description?: string;
 
   @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsString({ each: true })
+  screenshots?: string[];
+
+  @IsOptional()
   @IsEnum(["low", "medium", "high", "urgent"])
   priority?: FeedbackPriority;
 
@@ -86,6 +100,7 @@ export class FeedbackResponseDto {
   id: string;
   title: string;
   description: string;
+  screenshots: string[];
   priority: FeedbackPriority;
   status: FeedbackStatus;
   createdBy: string;
