@@ -29,6 +29,7 @@ export interface ProratedItemInput {
   currency: string;
   startDate: Date;
   qty?: number;
+  sourceItemId: string; // Kalemi olusturan kalemin id'si (silme icin gerekli)
 }
 
 /** Kist plan olusturma opsiyonlari */
@@ -164,6 +165,7 @@ export class ProratedPlanService {
       type: "prorated",
       proratedDays: effectiveDays,
       proratedStartDate: startDate,
+      sourceItemId: item.sourceItemId,
     };
 
     const created = await this.paymentModel.create(plan);
@@ -189,6 +191,32 @@ export class ProratedPlanService {
       .sort({ payDate: 1 })
       .lean()
       .exec();
+  }
+
+  /**
+   * Belirli bir kaynak kaleme ait faturasi kesilmemis kist planlari siler.
+   * Kalem silindiginde cagrilir.
+   */
+  async deleteUninvoicedBySourceItem(
+    contractId: string,
+    sourceItemId: string,
+  ): Promise<number> {
+    const result = await this.paymentModel
+      .deleteMany({
+        contractId,
+        sourceItemId,
+        type: "prorated",
+        $or: [{ invoiceNo: "" }, { invoiceNo: { $exists: false } }],
+      })
+      .exec();
+
+    if (result.deletedCount > 0) {
+      this.logger.log(
+        `Kist plan silindi: contractId=${contractId}, sourceItemId=${sourceItemId}, silinen=${result.deletedCount}`,
+      );
+    }
+
+    return result.deletedCount;
   }
 
   /**

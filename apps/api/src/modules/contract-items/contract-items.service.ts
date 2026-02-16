@@ -95,10 +95,17 @@ export class ContractItemsService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.contractItemModel.deleteOne({ id }).exec();
-    if (result.deletedCount === 0) {
+    // Silmeden once kalemi bul (contractId icin)
+    const item = await this.contractItemModel.findOne({ id }).lean().exec();
+    if (!item) {
       throw new NotFoundException(`Contract item with id ${id} not found`);
     }
+
+    // Faturalanmamis kist plani sil
+    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, id);
+
+    // Kalemi sil
+    await this.contractItemModel.deleteOne({ id }).exec();
   }
 
   /**
@@ -142,6 +149,7 @@ export class ContractItemsService {
           currency: item.currency,
           startDate: new Date(startDate),
           qty: item.qty,
+          sourceItemId: item.id,
         },
         item.description || "Kontrat Kalemi",
       );

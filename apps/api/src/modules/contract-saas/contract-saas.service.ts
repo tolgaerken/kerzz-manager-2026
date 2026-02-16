@@ -104,10 +104,17 @@ export class ContractSaasService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.contractSaasModel.deleteOne({ id }).exec();
-    if (result.deletedCount === 0) {
+    // Silmeden once kalemi bul (contractId icin)
+    const item = await this.contractSaasModel.findOne({ id }).lean().exec();
+    if (!item) {
       throw new NotFoundException(`Contract saas with id ${id} not found`);
     }
+
+    // Faturalanmamis kist plani sil
+    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, id);
+
+    // Kalemi sil
+    await this.contractSaasModel.deleteOne({ id }).exec();
   }
 
   /**
@@ -151,6 +158,7 @@ export class ContractSaasService {
           currency: item.currency,
           startDate: new Date(startDate),
           qty: item.qty,
+          sourceItemId: item.id,
         },
         item.description || "SaaS Hizmeti",
       );

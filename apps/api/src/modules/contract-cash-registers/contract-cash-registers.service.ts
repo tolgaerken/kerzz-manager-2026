@@ -108,10 +108,17 @@ export class ContractCashRegistersService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.contractCashRegisterModel.deleteOne({ id }).exec();
-    if (result.deletedCount === 0) {
+    // Silmeden once kalemi bul (contractId icin)
+    const item = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+    if (!item) {
       throw new NotFoundException(`Contract cash register with id ${id} not found`);
     }
+
+    // Faturalanmamis kist plani sil
+    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, id);
+
+    // Kalemi sil
+    await this.contractCashRegisterModel.deleteOne({ id }).exec();
   }
 
   /**
@@ -155,7 +162,12 @@ export class ContractCashRegistersService {
     if (new Date(startDate).getUTCDate() !== 1) {
       await this.proratedPlanService.createProratedPlan(
         item.contractId,
-        { price: item.price, currency: item.currency, startDate: new Date(startDate) },
+        {
+          price: item.price,
+          currency: item.currency,
+          startDate: new Date(startDate),
+          sourceItemId: item.id,
+        },
         EFTPOS_DESCRIPTION,
         { skipDayCalculation: true },
       );

@@ -99,6 +99,9 @@ export class ContractPayment {
   proratedStartDate: Date;
 
   @Prop()
+  sourceItemId: string; // Prorated plani olusturan kalemin id'si
+
+  @Prop()
   editDate: Date;
 
   @Prop()
@@ -131,3 +134,4 @@ ContractPaymentSchema.index({ payDate: -1, contractId: 1 });
 ContractPaymentSchema.index({ payDate: -1, paid: 1 });
 ContractPaymentSchema.index({ contractId: 1, payDate: -1 });
 ContractPaymentSchema.index({ type: 1, invoiceNo: 1 }); // Kıst fatura cron sorgusu için
+ContractPaymentSchema.index({ sourceItemId: 1, type: 1, invoiceNo: 1 }); // Kaynak kalem silme sorgusu için
