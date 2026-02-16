@@ -45,47 +45,102 @@ export class SsoRolesService {
   }
 
   /**
+   * isActive filtresi: alan yoksa veya true ise dahil et, sadece false ise hariç tut
+   */
+  private getActiveFilter(): Record<string, unknown> {
+    return {
+      $or: [
+        { isActive: { $exists: false } },
+        { isActive: true },
+        { isActive: null }
+      ]
+    };
+  }
+
+  /**
+   * .lean() Mongoose default'larını uygulamaz; isActive alanı olmayan eski kayıtlarda
+   * undefined döner. Bu metod isActive'i boolean'a normalize eder (undefined/null → true).
+   */
+  private normalizeIsActive(doc: SsoRole): SsoRole {
+    return { ...doc, isActive: doc.isActive !== false };
+  }
+
+  private normalizeIsActiveList(docs: SsoRole[]): SsoRole[] {
+    return docs.map((doc) => this.normalizeIsActive(doc));
+  }
+
+  /**
    * Get all roles for this application
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getRoles(): Promise<SsoRole[]> {
-    return this.ssoRoleModel
-      .find({ app_id: this.appId, isActive: true })
+    const docs = await this.ssoRoleModel
+      .find({ app_id: this.appId, ...this.getActiveFilter() })
       .sort({ name: 1 })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get all roles from all applications
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAllRoles(includeInactive = false): Promise<SsoRole[]> {
-    const filter = includeInactive ? {} : { isActive: true };
-    return this.ssoRoleModel.find(filter).sort({ app_id: 1, name: 1 }).lean().exec();
+    const filter = includeInactive ? {} : this.getActiveFilter();
+    const docs = await this.ssoRoleModel.find(filter).sort({ app_id: 1, name: 1 }).lean().exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get roles by application ID
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getRolesByAppId(appId: string, includeInactive = false): Promise<SsoRole[]> {
+    this.logger.log(`=== getRolesByAppId START ===`);
+    this.logger.log(`Input appId: "${appId}" (type: ${typeof appId}, length: ${appId?.length})`);
+    
+    // Önce tüm unique app_id'leri listele
+    const uniqueAppIds = await this.ssoRoleModel.distinct("app_id").exec();
+    this.logger.log(`All unique app_ids in DB: ${JSON.stringify(uniqueAppIds)}`);
+    
+    // appId içeren kayıtları regex ile ara
+    const regexMatches = await this.ssoRoleModel.find({ app_id: { $regex: appId, $options: "i" } }).limit(5).lean().exec();
+    this.logger.log(`Regex matches for "${appId}": ${regexMatches.length} found`);
+    if (regexMatches.length > 0) {
+      this.logger.log(`Sample regex matches: ${JSON.stringify(regexMatches.map(r => ({ name: r.name, app_id: r.app_id })))}`);
+    }
+    
+    // Tam eşleşme sorgusu
     const filter: Record<string, unknown> = { app_id: appId };
     if (!includeInactive) {
-      filter.isActive = true;
+      Object.assign(filter, this.getActiveFilter());
     }
-    return this.ssoRoleModel.find(filter).sort({ name: 1 }).lean().exec();
+    
+    this.logger.log(`Exact match filter: ${JSON.stringify(filter)}`);
+    
+    const roles = await this.ssoRoleModel.find(filter).sort({ name: 1 }).lean().exec();
+    
+    this.logger.log(`Exact match result: ${roles.length} roles found`);
+    this.logger.log(`=== getRolesByAppId END ===`);
+    
+    return this.normalizeIsActiveList(roles);
   }
 
   /**
    * Get a role by ID
    */
   async getRoleById(roleId: string): Promise<SsoRole | null> {
-    return this.ssoRoleModel.findOne({ id: roleId }).lean().exec();
+    const doc = await this.ssoRoleModel.findOne({ id: roleId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**
    * Get a role by ID for current app only
    */
   async getRoleByIdForApp(roleId: string): Promise<SsoRole | null> {
-    return this.ssoRoleModel.findOne({ id: roleId, app_id: this.appId }).lean().exec();
+    const doc = await this.ssoRoleModel.findOne({ id: roleId, app_id: this.appId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**

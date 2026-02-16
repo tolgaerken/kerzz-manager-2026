@@ -2,6 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, SortOrder } from "mongoose";
 import { Contract, ContractDocument } from "./schemas/contract.schema";
+import {
+  Customer,
+  CustomerDocument
+} from "../customers/schemas/customer.schema";
 import { ContractQueryDto } from "./dto/contract-query.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
 import { UpdateContractDto } from "./dto/update-contract.dto";
@@ -21,7 +25,9 @@ import {
 export class ContractsService {
   constructor(
     @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
-    private contractModel: Model<ContractDocument>
+    private contractModel: Model<ContractDocument>,
+    @InjectModel(Customer.name, CONTRACT_DB_CONNECTION)
+    private customerModel: Model<CustomerDocument>
   ) {}
 
   // Tarih bazlı filtreleme için yardımcı metod
@@ -203,8 +209,15 @@ export class ContractsService {
    * Yeni kontrat oluşturur
    */
   async create(dto: CreateContractDto): Promise<ContractResponseDto> {
-    // Get next contract number
-    const maxNo = await this.getMaxContractNo();
+    // Get next contract number and customer info in parallel
+    const [maxNo, customer] = await Promise.all([
+      this.getMaxContractNo(),
+      this.customerModel
+        .findOne({ id: dto.customerId })
+        .select("name brand")
+        .lean()
+        .exec()
+    ]);
     const newNo = maxNo + 1;
 
     // Generate unique IDs
@@ -233,9 +246,9 @@ export class ContractsService {
       noNotification: dto.noNotification ?? false,
       contractFlow: dto.contractFlow || "future",
       isActive: dto.isActive ?? true,
-      // Default values
-      brand: "",
-      company: "",
+      // Populate from customer data
+      brand: customer?.brand || "",
+      company: customer?.name || "",
       total: 0,
       yearlyTotal: 0,
       supportTotal: 0,

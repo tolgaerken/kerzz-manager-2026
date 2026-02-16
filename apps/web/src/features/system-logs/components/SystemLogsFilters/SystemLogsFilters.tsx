@@ -71,13 +71,13 @@ export function SystemLogsFilters({
       <div className="flex flex-wrap items-center gap-3">
         {/* Arama */}
         <div className="relative flex-1 min-w-[200px] max-w-[320px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-foreground)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Kullanıcı, modül, hata ara..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
           />
         </div>
 
@@ -141,7 +141,7 @@ export function SystemLogsFilters({
       {/* İkinci satır: Tarih filtreleri */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-[var(--color-text-muted)]">Başlangıç:</label>
+          <label className="text-xs text-[var(--color-muted-foreground)]">Başlangıç:</label>
           <input
             type="datetime-local"
             value={startDate}
@@ -150,7 +150,7 @@ export function SystemLogsFilters({
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-[var(--color-text-muted)]">Bitiş:</label>
+          <label className="text-xs text-[var(--color-muted-foreground)]">Bitiş:</label>
           <input
             type="datetime-local"
             value={endDate}
@@ -163,7 +163,7 @@ export function SystemLogsFilters({
         {hasActiveFilters && (
           <button
             onClick={onClearFilters}
-            className="flex items-center gap-1 px-3 py-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] transition-colors"
+            className="flex items-center gap-1 px-3 py-2 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
           >
             <X className="w-3 h-3" />
             Filtreleri Temizle

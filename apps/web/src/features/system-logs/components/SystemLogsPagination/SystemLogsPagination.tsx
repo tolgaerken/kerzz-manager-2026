@@ -26,7 +26,7 @@ export function SystemLogsPagination({
   return (
     <div className="flex items-center justify-between px-6 py-3 border-t border-[var(--color-border)]">
       {/* Sol: Bilgi */}
-      <div className="text-sm text-[var(--color-text-muted)]">
+      <div className="text-sm text-[var(--color-muted-foreground)]">
         {total > 0
           ? `${startItem.toLocaleString("tr-TR")}-${endItem.toLocaleString("tr-TR")} / ${total.toLocaleString("tr-TR")} kayıt`
           : "Kayıt bulunamadı"}
@@ -34,7 +34,7 @@ export function SystemLogsPagination({
 
       {/* Orta: Sayfa boyutu */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-[var(--color-text-muted)]">Sayfa:</label>
+        <label className="text-sm text-[var(--color-muted-foreground)]">Sayfa:</label>
         <select
           value={limit}
           onChange={(e) => onLimitChange(Number(e.target.value))}

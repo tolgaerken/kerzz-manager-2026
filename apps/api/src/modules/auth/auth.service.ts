@@ -48,7 +48,7 @@ export class AuthService {
     @InjectModel(SsoAppLicence.name, SSO_DB_CONNECTION)
     private readonly ssoAppLicenceModel: Model<SsoAppLicenceDocument>
   ) {
-    this.appId = this.configService.get<string>("APP_ID") || "io-cloud-2025";
+    this.appId = this.configService.get<string>("APP_ID") || "kerzz-manager";
     this.logger.log(`AuthService initialized with APP_ID: "${this.appId}"`);
   }
 
@@ -160,8 +160,17 @@ export class AuthService {
     }
 
     // 439 nolu lisans kontrolü - app-licances tablosundan licance_id kontrol et
+    // is_active alanı olmayan eski kayıtları da aktif kabul et
     const appLicence = await this.ssoAppLicenceModel
-      .findOne({ app_id: currentAppId, user_id: userId })
+      .findOne({
+        app_id: currentAppId,
+        user_id: userId,
+        $or: [
+          { is_active: { $exists: false } },
+          { is_active: true },
+          { is_active: null }
+        ]
+      })
       .lean()
       .exec();
 
@@ -204,8 +213,17 @@ export class AuthService {
     appId = this.appId
   ): Promise<{ roles: SsoRoleType[]; permissions: SsoPermissionInfo[] }> {
     // Get user's licence for this app
+    // is_active alanı olmayan eski kayıtları da aktif kabul et
     const licence = await this.ssoAppLicenceModel
-      .findOne({ app_id: appId, user_id: userId })
+      .findOne({
+        app_id: appId,
+        user_id: userId,
+        $or: [
+          { is_active: { $exists: false } },
+          { is_active: true },
+          { is_active: null }
+        ]
+      })
       .lean()
       .exec();
 
@@ -320,7 +338,8 @@ export class AuthService {
           name: ua.user_name || user.name,
           email: user.email,
           phone: user.phone,
-          isActive: user.isActive
+          // isActive alanı olmayan eski kayıtları aktif kabul et
+          isActive: user.isActive !== false
         });
       }
     }

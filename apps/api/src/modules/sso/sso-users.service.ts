@@ -131,7 +131,8 @@ export class SsoUsersService {
           name: ua.user_name || user.name,
           email: user.email,
           phone: user.phone,
-          isActive: user.isActive,
+          // isActive alanı olmayan eski kayıtları aktif kabul et
+          isActive: user.isActive !== false,
           assignedDate: ua.assignedDate
         });
       }
@@ -174,7 +175,8 @@ export class SsoUsersService {
           name: ua.user_name || user.name,
           email: user.email,
           phone: user.phone,
-          isActive: user.isActive,
+          // isActive alanı olmayan eski kayıtları aktif kabul et
+          isActive: user.isActive !== false,
           assignedDate: ua.assignedDate
         });
       }

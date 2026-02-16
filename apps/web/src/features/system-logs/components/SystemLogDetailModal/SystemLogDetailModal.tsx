@@ -27,14 +27,14 @@ function formatDate(dateStr: string): string {
 
 function StatusDot({ status }: { status: string }) {
   const colorMap: Record<string, string> = {
-    SUCCESS: "bg-green-500",
-    FAILURE: "bg-yellow-500",
-    ERROR: "bg-red-500",
+    SUCCESS: "bg-[var(--color-success)]",
+    FAILURE: "bg-[var(--color-warning)]",
+    ERROR: "bg-[var(--color-error)]",
   };
 
   return (
     <span
-      className={`inline-block w-2.5 h-2.5 rounded-full ${colorMap[status] || "bg-gray-400"}`}
+      className={`inline-block w-2.5 h-2.5 rounded-full ${colorMap[status] || "bg-[var(--color-muted-foreground)]"}`}
     />
   );
 }
@@ -50,9 +50,9 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-3 py-2">
-      <Icon className="w-4 h-4 text-[var(--color-text-muted)] mt-0.5 shrink-0" />
+      <Icon className="w-4 h-4 text-[var(--color-muted-foreground)] mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
-        <dt className="text-xs text-[var(--color-text-muted)]">{label}</dt>
+        <dt className="text-xs text-[var(--color-muted-foreground)]">{label}</dt>
         <dd className="text-sm text-[var(--color-foreground)] break-all">
           {value ?? "-"}
         </dd>
@@ -90,7 +90,7 @@ export function SystemLogDetailModal({
             onClick={onClose}
             className="p-1.5 rounded-md hover:bg-[var(--color-surface-elevated)] transition-colors"
           >
-            <X className="w-5 h-5 text-[var(--color-text-muted)]" />
+            <X className="w-5 h-5 text-[var(--color-muted-foreground)]" />
           </button>
         </div>
 
@@ -99,25 +99,25 @@ export function SystemLogDetailModal({
           {/* Özet Kartları */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div className="px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)]">
-              <p className="text-xs text-[var(--color-text-muted)]">Kategori</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Kategori</p>
               <p className="text-sm font-medium text-[var(--color-foreground)]">
                 {CATEGORY_LABELS[log.category] || log.category}
               </p>
             </div>
             <div className="px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)]">
-              <p className="text-xs text-[var(--color-text-muted)]">Aksiyon</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Aksiyon</p>
               <p className="text-sm font-medium text-[var(--color-foreground)]">
                 {ACTION_LABELS[log.action] || log.action}
               </p>
             </div>
             <div className="px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)]">
-              <p className="text-xs text-[var(--color-text-muted)]">Durum</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Durum</p>
               <p className="text-sm font-medium text-[var(--color-foreground)]">
                 {STATUS_LABELS[log.status] || log.status}
               </p>
             </div>
             <div className="px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)]">
-              <p className="text-xs text-[var(--color-text-muted)]">Modül</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Modül</p>
               <p className="text-sm font-medium text-[var(--color-foreground)]">
                 {MODULE_LABELS[log.module] || log.module}
               </p>
@@ -155,11 +155,11 @@ export function SystemLogDetailModal({
           {/* Hata Mesajı */}
           {log.errorMessage && (
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-red-500 mb-2">
+              <h3 className="text-sm font-medium text-[var(--color-error)] mb-2">
                 Hata Mesajı
               </h3>
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
-                <p className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
+              <div className="p-3 rounded-lg bg-[var(--color-error)]/10 border border-[var(--color-error)]/30">
+                <p className="text-sm text-[var(--color-error)] whitespace-pre-wrap">
                   {log.errorMessage}
                 </p>
               </div>

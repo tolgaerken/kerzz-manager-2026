@@ -14,6 +14,7 @@ import {
   Shield,
   UserCircle,
   Building2,
+  MessageSquarePlus,
 } from "lucide-react";
 import type { MenuItemProps } from "./SidebarMenuItem";
 import { PERMISSIONS } from "../../../features/auth/constants/permissions";
@@ -149,5 +150,11 @@ export const sidebarMenuItems: MenuItemProps[] = [
       { label: "Ünvanlar", path: "/org-lookups/titles" },
       { label: "Lokasyonlar", path: "/org-lookups/locations" },
     ],
+  },
+  {
+    icon: MessageSquarePlus,
+    label: "Geribildirim",
+    path: "/feedbacks",
+    requiredPermission: PERMISSIONS.FEEDBACK_MENU,
   },
 ];

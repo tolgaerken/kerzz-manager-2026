@@ -1,6 +1,9 @@
-import { useMemo } from "react";
-import { AgGridReact } from "ag-grid-react";
-import type { ColDef, GridReadyEvent } from "ag-grid-community";
+import { useMemo, type ReactNode } from "react";
+import {
+  Grid,
+  type GridColumnDef,
+  type ToolbarConfig,
+} from "@kerzz/grid";
 import type { SystemLog } from "../../types";
 import {
   CATEGORY_LABELS,
@@ -28,58 +31,58 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function CategoryBadge({ value }: { value: string }) {
+function CategoryBadge({ value }: { value: string }): JSX.Element {
   const colorMap: Record<string, string> = {
-    AUTH: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    CRUD: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    CRON: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-    SYSTEM: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+    AUTH: "bg-[var(--color-info)]/10 text-[var(--color-info)]",
+    CRUD: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
+    CRON: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+    SYSTEM: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || "bg-gray-100 text-gray-800"}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || "bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"}`}
     >
       {CATEGORY_LABELS[value] || value}
     </span>
   );
 }
 
-function ActionBadge({ value }: { value: string }) {
+function ActionBadge({ value }: { value: string }): JSX.Element {
   const colorMap: Record<string, string> = {
-    LOGIN: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
-    LOGOUT: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    LOGIN_FAILED: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300",
-    CREATE: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
-    UPDATE: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300",
-    DELETE: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300",
-    CRON_START: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300",
-    CRON_END: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300",
-    CRON_FAILED: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300",
-    ERROR: "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300",
-    WARNING: "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300",
-    INFO: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
+    LOGIN: "bg-[var(--color-info)]/10 text-[var(--color-info)]",
+    LOGOUT: "bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]",
+    LOGIN_FAILED: "bg-[var(--color-error)]/10 text-[var(--color-error)]",
+    CREATE: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
+    UPDATE: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
+    DELETE: "bg-[var(--color-error)]/10 text-[var(--color-error)]",
+    CRON_START: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+    CRON_END: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+    CRON_FAILED: "bg-[var(--color-error)]/10 text-[var(--color-error)]",
+    ERROR: "bg-[var(--color-error)]/10 text-[var(--color-error)]",
+    WARNING: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
+    INFO: "bg-[var(--color-info)]/10 text-[var(--color-info)]",
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorMap[value] || "bg-gray-100 text-gray-700"}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorMap[value] || "bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"}`}
     >
       {ACTION_LABELS[value] || value}
     </span>
   );
 }
 
-function StatusBadge({ value }: { value: string }) {
+function StatusBadge({ value }: { value: string }): JSX.Element {
   const colorMap: Record<string, string> = {
-    SUCCESS: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    FAILURE: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-    ERROR: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    SUCCESS: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
+    FAILURE: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
+    ERROR: "bg-[var(--color-error)]/10 text-[var(--color-error)]",
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || "bg-gray-100 text-gray-800"}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colorMap[value] || "bg-[var(--color-surface-hover)] text-[var(--color-muted-foreground)]"}`}
     >
       {STATUS_LABELS[value] || value}
     </span>
@@ -87,129 +90,192 @@ function StatusBadge({ value }: { value: string }) {
 }
 
 export function SystemLogsGrid({ data, loading, onRowClick }: SystemLogsGridProps) {
-  const columnDefs = useMemo<ColDef<SystemLog>[]>(
+  const columns = useMemo<GridColumnDef<SystemLog>[]>(
     () => [
       {
-        headerName: "Tarih",
-        field: "createdAt",
+        id: "createdAt",
+        header: "Tarih",
+        accessorKey: "createdAt",
         width: 170,
-        valueFormatter: (params) => formatDate(params.value),
         sortable: true,
+        cell: (value): string => formatDate(value as string),
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains"],
+        },
       },
       {
-        headerName: "Kategori",
-        field: "category",
+        id: "category",
+        header: "Kategori",
+        accessorKey: "category",
         width: 140,
-        cellRenderer: (params: { value: string }) => {
-          if (!params.value) return null;
-          return CategoryBadge({ value: params.value });
+        sortable: true,
+        cell: (value): ReactNode => {
+          if (!value) return null;
+          return <CategoryBadge value={value as string} />;
+        },
+        filter: {
+          type: "dropdown",
+          showCounts: true,
         },
       },
       {
-        headerName: "Aksiyon",
-        field: "action",
+        id: "action",
+        header: "Aksiyon",
+        accessorKey: "action",
         width: 130,
-        cellRenderer: (params: { value: string }) => {
-          if (!params.value) return null;
-          return ActionBadge({ value: params.value });
+        sortable: true,
+        cell: (value): ReactNode => {
+          if (!value) return null;
+          return <ActionBadge value={value as string} />;
+        },
+        filter: {
+          type: "dropdown",
+          showCounts: true,
         },
       },
       {
-        headerName: "Durum",
-        field: "status",
+        id: "status",
+        header: "Durum",
+        accessorKey: "status",
         width: 110,
-        cellRenderer: (params: { value: string }) => {
-          if (!params.value) return null;
-          return StatusBadge({ value: params.value });
+        sortable: true,
+        cell: (value): ReactNode => {
+          if (!value) return null;
+          return <StatusBadge value={value as string} />;
+        },
+        filter: {
+          type: "dropdown",
+          showCounts: true,
         },
       },
       {
-        headerName: "Modül",
-        field: "module",
+        id: "module",
+        header: "Modül",
+        accessorKey: "module",
         width: 150,
-        valueFormatter: (params) =>
-          MODULE_LABELS[params.value] || params.value,
+        sortable: true,
+        cell: (value): string => MODULE_LABELS[value as string] || (value as string) || "-",
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains"],
+        },
       },
       {
-        headerName: "Kullanıcı",
-        field: "userName",
+        id: "userName",
+        header: "Kullanıcı",
+        accessorKey: "userName",
         width: 150,
-        valueFormatter: (params) => params.value || "-",
+        sortable: true,
+        cell: (value): string => (value as string) || "-",
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains", "startsWith"],
+        },
       },
       {
-        headerName: "Entity",
-        field: "entityType",
+        id: "entityType",
+        header: "Entity",
+        accessorKey: "entityType",
         width: 120,
-        valueFormatter: (params) => params.value || "-",
+        sortable: true,
+        cell: (value): string => (value as string) || "-",
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains"],
+        },
       },
       {
-        headerName: "Method",
-        field: "method",
+        id: "method",
+        header: "Method",
+        accessorKey: "method",
         width: 80,
-        valueFormatter: (params) => params.value || "-",
+        sortable: true,
+        cell: (value): string => (value as string) || "-",
+        filter: {
+          type: "dropdown",
+          showCounts: true,
+        },
       },
       {
-        headerName: "Path",
-        field: "path",
+        id: "path",
+        header: "Path",
+        accessorKey: "path",
         width: 200,
-        valueFormatter: (params) => params.value || "-",
+        sortable: true,
+        cell: (value): string => (value as string) || "-",
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains", "startsWith"],
+        },
       },
       {
-        headerName: "Durum Kodu",
-        field: "statusCode",
+        id: "statusCode",
+        header: "Durum Kodu",
+        accessorKey: "statusCode",
         width: 100,
-        valueFormatter: (params) =>
-          params.value != null ? params.value.toString() : "-",
+        sortable: true,
+        align: "right",
+        cell: (value): string => (value != null ? String(value) : "-"),
+        filter: {
+          type: "numeric",
+          conditions: ["equals", "greaterThan", "lessThan"],
+        },
       },
       {
-        headerName: "Süre (ms)",
-        field: "duration",
+        id: "duration",
+        header: "Süre (ms)",
+        accessorKey: "duration",
         width: 100,
-        valueFormatter: (params) =>
-          params.value != null ? `${params.value}ms` : "-",
+        sortable: true,
+        align: "right",
+        cell: (value): string => (value != null ? `${value}ms` : "-"),
+        filter: {
+          type: "numeric",
+          conditions: ["equals", "greaterThan", "lessThan"],
+        },
       },
       {
-        headerName: "Hata",
-        field: "errorMessage",
+        id: "errorMessage",
+        header: "Hata",
+        accessorKey: "errorMessage",
         width: 200,
-        valueFormatter: (params) => params.value || "-",
-        cellClass: "text-red-500",
+        sortable: true,
+        cell: (value): ReactNode => {
+          if (!value) return "-";
+          return (
+            <span className="text-[var(--color-error)]">
+              {String(value)}
+            </span>
+          );
+        },
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains"],
+        },
       },
     ],
     []
   );
 
-  const defaultColDef = useMemo<ColDef>(
+  const toolbarConfig: ToolbarConfig<SystemLog> = useMemo(
     () => ({
-      resizable: true,
-      sortable: false,
-      filter: false,
-      suppressMovable: true,
+      exportFileName: "sistem-loglari",
     }),
     []
   );
 
-  const onGridReady = (params: GridReadyEvent) => {
-    params.api.sizeColumnsToFit();
-  };
-
   return (
-    <div className="ag-theme-custom w-full h-full">
-      <AgGridReact<SystemLog>
-        rowData={data}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onRowClicked={(event) => {
-          if (event.data) onRowClick(event.data);
-        }}
-        rowSelection="single"
-        animateRows
-        loading={loading}
-        overlayNoRowsTemplate="<span class='text-[var(--color-text-muted)]'>Henüz sistem logu bulunmuyor</span>"
-        overlayLoadingTemplate="<span class='text-[var(--color-text-muted)]'>Yükleniyor...</span>"
-        getRowClass={() => "cursor-pointer hover:bg-[var(--color-surface-elevated)]"}
-      />
-    </div>
+    <Grid<SystemLog>
+      data={data}
+      columns={columns}
+      loading={loading}
+      height="100%"
+      locale="tr"
+      stateKey="system-logs-grid"
+      getRowId={(row) => row._id}
+      onRowClick={onRowClick}
+      toolbar={toolbarConfig}
+    />
   );
 }

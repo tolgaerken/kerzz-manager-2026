@@ -106,7 +106,7 @@ export function ContractFormModal({
   };
 
   const handleCustomerSelect = (customer: Customer) => {
-    setFormData((prev) => ({ ...prev, customerId: customer._id }));
+    setFormData((prev) => ({ ...prev, customerId: customer.id }));
     setSelectedCustomerName(customer.name || customer.brand);
     setCustomerSearch("");
     setShowCustomerDropdown(false);

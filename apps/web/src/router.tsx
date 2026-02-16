@@ -46,6 +46,7 @@ import {
 } from "./features/sso-management";
 import { BossUsersPage } from "./features/boss-users";
 import { EmployeeProfilesPage } from "./pages/EmployeeProfilesPage";
+import { FeedbackPage } from "./pages/FeedbackPage";
 import { MyProfilePage } from "./pages/MyProfilePage";
 import {
   OrgDepartmentsPage,
@@ -56,27 +57,42 @@ import { DashboardLayout } from "./components/layout";
 import { useAuthStore } from "./features/auth";
 import { AUTH_CONSTANTS } from "./features/auth/constants/auth.constants";
 import { PERMISSIONS } from "./features/auth/constants/permissions";
+import { performAutoLogin } from "./features/auth/services/authInitService";
 
-// Auth kontrolü
-const checkAuth = () => {
-  const { authStatus, setUserInfo } = useAuthStore.getState();
-  
-  if (!authStatus) {
-    const stored = localStorage.getItem(AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO);
-    if (!stored) {
+/**
+ * Auth kontrolü — ilk yüklemede SSO autoLogin ile token doğrular,
+ * yeni token ve güncel yetkileri alır. Sonraki navigasyonlarda
+ * sadece store'daki authStatus kontrolü yapar.
+ */
+const checkAuth = async () => {
+  const { authStatus, authInitialized } = useAuthStore.getState();
+
+  // Oturum zaten doğrulanmış — geçiş yap
+  if (authInitialized && authStatus) {
+    return;
+  }
+
+  // İlk yükleme — autoLogin ile token'ı SSO'dan doğrula
+  if (!authInitialized) {
+    const hasStoredData = localStorage.getItem(AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO);
+    if (!hasStoredData) {
+      useAuthStore.getState().setAuthInitialized(true);
       throw redirect({ to: "/login" });
     }
-    
-    // localStorage'dan userInfo'yu store'a yükle
+
     try {
-      const parsed = JSON.parse(stored);
-      if (parsed?.token) {
-        setUserInfo(parsed.token);
-      }
+      await performAutoLogin();
+      // performAutoLogin → setUserInfo → authInitialized=true, authStatus=true
+      return;
     } catch {
+      useAuthStore.getState().setAuthInitialized(true);
+      localStorage.removeItem(AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO);
       throw redirect({ to: "/login" });
     }
   }
+
+  // authInitialized=true ama authStatus=false (logout sonrası)
+  throw redirect({ to: "/login" });
 };
 
 /**
@@ -502,6 +518,14 @@ const orgLocationsRoute = createRoute({
   component: OrgLocationsPage,
 });
 
+// Feedback page
+const feedbackRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/feedbacks",
+  beforeLoad: () => checkPermission(PERMISSIONS.FEEDBACK_MENU),
+  component: FeedbackPage,
+});
+
 // Index redirect — dashboard yetkisi varsa oraya, yoksa welcome'a
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -565,6 +589,7 @@ const routeTree = rootRoute.addChildren([
     orgDepartmentsRoute,
     orgTitlesRoute,
     orgLocationsRoute,
+    feedbackRoute,
   ]),
 ]);
 

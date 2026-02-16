@@ -28,8 +28,10 @@ import {
   useDeleteAppLicense
 } from "../../hooks";
 import { useSsoManagementStore } from "../../store";
-import type { TAppLicense } from "../../types";
+import type { TAppLicense, TRole } from "../../types";
 import { useLicenses, type License } from "../../../licenses";
+
+const normalizeRoleKey = (value: string): string => value.trim().toLowerCase();
 
 export function UserLicenseModal() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -61,10 +63,10 @@ export function UserLicenseModal() {
 
   const { data: applications = [] } = useApplications(true);
   
-  // Sadece aktif uygulamanın rollerini çek
-  const { data: roles = [] } = useRoles(
+  // Seçili uygulamanın rollerini çek (includeInactive: true ile eski veriler de gelir)
+  const { data: roles = [], isLoading: rolesLoading } = useRoles(
     selectedAppIdForLicense 
-      ? { appId: selectedAppIdForLicense } 
+      ? { appId: selectedAppIdForLicense, includeInactive: true } 
       : { appId: "__disabled__" }
   );
 
@@ -88,12 +90,26 @@ export function UserLicenseModal() {
     [applications]
   );
 
-  // Get role names by ids
+  // Rol ID -> Name map'i oluştur (geriye doğru uyumluluk: hem UUID hem isim bazlı)
+  const roleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    roles.forEach((role: TRole) => {
+      map.set(role.id, role.name);
+      map.set(role.name, role.name);
+      map.set(normalizeRoleKey(role.id), role.name);
+      map.set(normalizeRoleKey(role.name), role.name);
+    });
+    return map;
+  }, [roles]);
+
+  // Get role names by ids (geriye doğru uyumlu)
   const getRoleNames = useCallback(
     (roleIds: string[]) => {
-      return roleIds.map((id) => roles.find((r) => r.id === id)?.name || id);
+      return roleIds.map(
+        (id) => roleMap.get(id) || roleMap.get(normalizeRoleKey(id)) || id
+      );
     },
-    [roles]
+    [roleMap]
   );
 
   // Get license/brand display text
@@ -522,9 +538,13 @@ export function UserLicenseModal() {
         </DialogTitle>
         <DialogContent sx={{ borderColor: "var(--color-border)" }}>
           <Stack spacing={1} sx={{ mt: 1 }}>
-            {roles.length === 0 ? (
+            {rolesLoading ? (
+              <Box display="flex" justifyContent="center" p={2}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : roles.length === 0 ? (
               <Typography sx={{ color: "var(--color-muted-foreground)" }}>
-                Bu uygulama için tanımlı rol bulunamadı
+                Tanımlı rol bulunamadı
               </Typography>
             ) : (
               roles.map((role) => (

@@ -53,6 +53,9 @@ export const PERMISSIONS = {
 
   /** Çalışan Profili - hassas alanları görüntüleme yetkisi (TCKN, maaş vb.) */
   EMPLOYEE_PROFILE_VIEW_SENSITIVE: "KERZZ_MANAGER_EMPLOYEE_PROFILE_VIEW_SENSITIVE",
+
+  /** Geribildirim menüsüne erişim yetkisi */
+  FEEDBACK_MENU: "KERZZ_MANAGER_FEEDBACK_MENU",
 } as const;
 
 /** İzin tipi - type-safe kullanım için */

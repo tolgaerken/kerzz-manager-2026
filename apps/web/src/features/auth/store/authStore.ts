@@ -19,6 +19,7 @@ interface AuthActions {
   setPermissions: (permissions: string[]) => void;
   setAppUsers: (appUsers: AppUser[]) => void;
   setRoleFlags: (flags: { isAdmin: boolean; isFinance: boolean; isManager: boolean }) => void;
+  setAuthInitialized: (initialized: boolean) => void;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (...permissions: string[]) => boolean;
   hasAllPermissions: (...permissions: string[]) => boolean;
@@ -31,6 +32,7 @@ type AuthStore = AuthState & AuthActions;
 const initialState: AuthState = {
   userInfo: null,
   authStatus: false,
+  authInitialized: false,
   activeLicance: null,
   isAdmin: false,
   isFinance: false,
@@ -93,6 +95,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({
       userInfo,
       authStatus: true,
+      authInitialized: true,
       activeLicance,
       permissions,
       ...roles,
@@ -122,6 +125,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAppUsers: (appUsers: AppUser[]) => set({ appUsers }),
 
   setRoleFlags: (flags: { isAdmin: boolean; isFinance: boolean; isManager: boolean }) => set(flags),
+
+  setAuthInitialized: (authInitialized: boolean) => set({ authInitialized }),
 
   /**
    * Check if user has a specific permission

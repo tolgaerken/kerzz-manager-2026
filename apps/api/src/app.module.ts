@@ -68,6 +68,8 @@ import { EmployeeProfileModule } from "./modules/employee-profile";
 import { EmployeeOrgLookupModule } from "./modules/employee-org-lookup";
 // Boss Users Module
 import { BossUsersModule } from "./modules/boss-users";
+// Feedback Module
+import { FeedbackModule } from "./modules/feedback";
 
 @Module({
   imports: [
@@ -149,6 +151,8 @@ import { BossUsersModule } from "./modules/boss-users";
     PipelineGatewayModule,
     // Document Generation
     OfferDocumentModule,
+    // Feedback Module
+    FeedbackModule,
   ],
   providers: [
     // Global JWT Auth Guard

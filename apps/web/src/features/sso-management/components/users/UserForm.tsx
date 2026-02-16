@@ -27,7 +27,12 @@ export function UserForm() {
 
   useEffect(() => {
     if (userFormData) {
-      setFormData(userFormData);
+      setFormData({
+        ...initialFormData,
+        ...userFormData,
+        name: userFormData.name ?? "",
+        email: userFormData.email ?? ""
+      });
     } else {
       setFormData(initialFormData);
     }
@@ -46,12 +51,14 @@ export function UserForm() {
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
+    const name = (formData.name ?? "").trim();
+    const email = (formData.email ?? "").trim();
 
-    if (!formData.name.trim()) {
+    if (!name) {
       newErrors.name = "Ad Soyad zorunludur";
     }
 
-    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "Geçerli bir e-posta adresi giriniz";
     }
 
@@ -66,8 +73,8 @@ export function UserForm() {
       await updateUserMutation.mutateAsync({
         userId: selectedUser.id,
         data: {
-          name: formData.name.trim(),
-          email: formData.email.trim(),
+          name: (formData.name ?? "").trim(),
+          email: (formData.email ?? "").trim(),
           phone: formData.phone?.trim() || "",
           isActive: formData.isActive
         }

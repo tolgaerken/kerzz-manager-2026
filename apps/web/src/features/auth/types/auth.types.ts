@@ -79,6 +79,7 @@ export interface AuthMeResponse {
 export interface AuthState {
   userInfo: UserInfo | null;
   authStatus: boolean;
+  authInitialized: boolean;
   activeLicance: UserLicance | null;
   isAdmin: boolean;
   isFinance: boolean;

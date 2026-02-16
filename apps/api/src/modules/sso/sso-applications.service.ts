@@ -27,24 +27,50 @@ export class SsoApplicationsService {
   ) {}
 
   /**
+   * .lean() Mongoose default'larını uygulamaz; isActive alanı olmayan eski kayıtlarda
+   * undefined döner. Bu metod isActive'i boolean'a normalize eder (undefined/null → true).
+   */
+  private normalizeIsActive(doc: SsoApplication): SsoApplication {
+    return { ...doc, isActive: doc.isActive !== false };
+  }
+
+  private normalizeIsActiveList(docs: SsoApplication[]): SsoApplication[] {
+    return docs.map((doc) => this.normalizeIsActive(doc));
+  }
+
+  /**
    * Get all applications
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getApplications(): Promise<SsoApplication[]> {
-    return this.ssoApplicationModel.find({ isActive: true }).sort({ name: 1 }).lean().exec();
+    const docs = await this.ssoApplicationModel
+      .find({
+        $or: [
+          { isActive: { $exists: false } },
+          { isActive: true },
+          { isActive: null }
+        ]
+      })
+      .sort({ name: 1 })
+      .lean()
+      .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get all applications including inactive
    */
   async getAllApplications(): Promise<SsoApplication[]> {
-    return this.ssoApplicationModel.find().sort({ name: 1 }).lean().exec();
+    const docs = await this.ssoApplicationModel.find().sort({ name: 1 }).lean().exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get an application by ID
    */
   async getApplicationById(applicationId: string): Promise<SsoApplication | null> {
-    return this.ssoApplicationModel.findOne({ id: applicationId }).lean().exec();
+    const doc = await this.ssoApplicationModel.findOne({ id: applicationId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**

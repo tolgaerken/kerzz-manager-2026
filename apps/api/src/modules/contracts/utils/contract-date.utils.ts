@@ -23,7 +23,11 @@ const getActiveContractFilter = (
   const { monthStart, monthEnd } = getMonthBoundaries(date);
   return {
     startDate: { $lte: monthEnd },
-    endDate: { $gte: monthStart },
+    $or: [
+      { endDate: { $gte: monthStart } },
+      { noEndDate: true },
+      { endDate: null },
+    ],
   };
 };
 
@@ -38,7 +42,8 @@ const getContractDateFilter = (
       return getActiveContractFilter(date);
     case "archive":
       return {
-        endDate: { $lt: monthStart },
+        noEndDate: { $ne: true },
+        endDate: { $lt: monthStart, $ne: null },
       };
     case "future":
       return {

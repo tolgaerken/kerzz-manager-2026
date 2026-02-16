@@ -43,41 +43,72 @@ export class SsoPermissionsService {
   }
 
   /**
+   * isActive filtresi: alan yoksa veya true ise dahil et, sadece false ise hariç tut
+   */
+  private getActiveFilter(): Record<string, unknown> {
+    return {
+      $or: [
+        { isActive: { $exists: false } },
+        { isActive: true },
+        { isActive: null }
+      ]
+    };
+  }
+
+  /**
+   * .lean() Mongoose default'larını uygulamaz; isActive alanı olmayan eski kayıtlarda
+   * undefined döner. Bu metod isActive'i boolean'a normalize eder (undefined/null → true).
+   */
+  private normalizeIsActive(doc: SsoPermission): SsoPermission {
+    return { ...doc, isActive: doc.isActive !== false };
+  }
+
+  private normalizeIsActiveList(docs: SsoPermission[]): SsoPermission[] {
+    return docs.map((doc) => this.normalizeIsActive(doc));
+  }
+
+  /**
    * Get all permissions for this application
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getPermissions(): Promise<SsoPermission[]> {
-    return this.ssoPermissionModel
-      .find({ app_id: this.appId, isActive: true })
+    const docs = await this.ssoPermissionModel
+      .find({ app_id: this.appId, ...this.getActiveFilter() })
       .sort({ group: 1, permission: 1 })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get all permissions from all applications
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAllPermissions(includeInactive = false): Promise<SsoPermission[]> {
-    const filter = includeInactive ? {} : { isActive: true };
-    return this.ssoPermissionModel
+    const filter = includeInactive ? {} : this.getActiveFilter();
+    const docs = await this.ssoPermissionModel
       .find(filter)
       .sort({ app_id: 1, group: 1, permission: 1 })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get permissions by application ID
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getPermissionsByAppId(appId: string, includeInactive = false): Promise<SsoPermission[]> {
     const filter: Record<string, unknown> = { app_id: appId };
     if (!includeInactive) {
-      filter.isActive = true;
+      Object.assign(filter, this.getActiveFilter());
     }
-    return this.ssoPermissionModel
+    const docs = await this.ssoPermissionModel
       .find(filter)
       .sort({ group: 1, permission: 1 })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
@@ -130,28 +161,32 @@ export class SsoPermissionsService {
    * Get a permission by ID
    */
   async getPermissionById(permissionId: string): Promise<SsoPermission | null> {
-    return this.ssoPermissionModel.findOne({ id: permissionId }).lean().exec();
+    const doc = await this.ssoPermissionModel.findOne({ id: permissionId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**
    * Get a permission by ID for current app only
    */
   async getPermissionByIdForApp(permissionId: string): Promise<SsoPermission | null> {
-    return this.ssoPermissionModel
+    const doc = await this.ssoPermissionModel
       .findOne({ id: permissionId, app_id: this.appId })
       .lean()
       .exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**
    * Get permissions by group
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getPermissionsByGroup(group: string): Promise<SsoPermission[]> {
-    return this.ssoPermissionModel
-      .find({ app_id: this.appId, group, isActive: true })
+    const docs = await this.ssoPermissionModel
+      .find({ app_id: this.appId, group, ...this.getActiveFilter() })
       .sort({ permission: 1 })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
@@ -244,10 +279,11 @@ export class SsoPermissionsService {
 
   /**
    * Get all unique permission groups for current app
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getGroups(): Promise<string[]> {
     const permissions = await this.ssoPermissionModel
-      .find({ app_id: this.appId, isActive: true })
+      .find({ app_id: this.appId, ...this.getActiveFilter() })
       .distinct("group")
       .exec();
 
@@ -256,9 +292,10 @@ export class SsoPermissionsService {
 
   /**
    * Get all unique permission groups from all apps
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAllGroups(includeInactive = false): Promise<string[]> {
-    const filter = includeInactive ? {} : { isActive: true };
+    const filter = includeInactive ? {} : this.getActiveFilter();
     const groups = await this.ssoPermissionModel.find(filter).distinct("group").exec();
 
     return groups.sort();

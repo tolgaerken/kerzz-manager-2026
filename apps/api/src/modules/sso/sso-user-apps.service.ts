@@ -26,38 +26,67 @@ export class SsoUserAppsService {
   ) {}
 
   /**
+   * .lean() Mongoose default'larını uygulamaz; isActive alanı olmayan eski kayıtlarda
+   * undefined döner. Bu metod isActive'i boolean'a normalize eder (undefined/null → true).
+   */
+  private normalizeIsActive(doc: SsoUserApp): SsoUserApp {
+    return { ...doc, isActive: doc.isActive !== false };
+  }
+
+  private normalizeIsActiveList(docs: SsoUserApp[]): SsoUserApp[] {
+    return docs.map((doc) => this.normalizeIsActive(doc));
+  }
+
+  /**
    * Get all user-app assignments
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getUserApps(): Promise<SsoUserApp[]> {
-    return this.ssoUserAppModel.find({ isActive: { $ne: false } }).lean().exec();
+    const docs = await this.ssoUserAppModel.find({ isActive: { $ne: false } }).lean().exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get user-app assignments by user ID
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getUserAppsByUser(userId: string): Promise<SsoUserApp[]> {
-    return this.ssoUserAppModel.find({ user_id: userId, isActive: { $ne: false } }).lean().exec();
+    const docs = await this.ssoUserAppModel
+      .find({ user_id: userId, isActive: { $ne: false } })
+      .lean()
+      .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get user-app assignments by app ID
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getUserAppsByApp(appId: string): Promise<SsoUserApp[]> {
-    return this.ssoUserAppModel.find({ app_id: appId, isActive: { $ne: false } }).lean().exec();
+    const docs = await this.ssoUserAppModel
+      .find({ app_id: appId, isActive: { $ne: false } })
+      .lean()
+      .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get user-app assignment by ID
    */
   async getUserAppById(userAppId: string): Promise<SsoUserApp | null> {
-    return this.ssoUserAppModel.findOne({ id: userAppId }).lean().exec();
+    const doc = await this.ssoUserAppModel.findOne({ id: userAppId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**
    * Get user-app assignment by app and user
    */
   async getUserAppByAppAndUser(appId: string, userId: string): Promise<SsoUserApp | null> {
-    return this.ssoUserAppModel.findOne({ app_id: appId, user_id: userId }).lean().exec();
+    const doc = await this.ssoUserAppModel
+      .findOne({ app_id: appId, user_id: userId })
+      .lean()
+      .exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**

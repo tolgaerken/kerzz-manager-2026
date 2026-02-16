@@ -41,35 +41,60 @@ export class SsoApiKeysService {
   }
 
   /**
+   * .lean() Mongoose default'larını uygulamaz; isActive alanı olmayan eski kayıtlarda
+   * undefined döner. Bu metod isActive'i boolean'a normalize eder (undefined/null → true).
+   */
+  private normalizeIsActive(doc: SsoApiKey): SsoApiKey {
+    return { ...doc, isActive: doc.isActive !== false };
+  }
+
+  private normalizeIsActiveList(docs: SsoApiKey[]): SsoApiKey[] {
+    return docs.map((doc) => this.normalizeIsActive(doc));
+  }
+
+  /**
    * Get all API keys
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getApiKeys(): Promise<SsoApiKey[]> {
-    return this.ssoApiKeyModel.find({ isActive: { $ne: false } }).sort({ name: 1 }).lean().exec();
+    const docs = await this.ssoApiKeyModel
+      .find({ isActive: { $ne: false } })
+      .sort({ name: 1 })
+      .lean()
+      .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get API keys by application ID
+   * isActive alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getApiKeysByApp(appId: string): Promise<SsoApiKey[]> {
-    return this.ssoApiKeyModel
+    const docs = await this.ssoApiKeyModel
       .find({ app_id: appId, isActive: { $ne: false } })
       .sort({ name: 1 })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get an API key by ID
    */
   async getApiKeyById(apiKeyId: string): Promise<SsoApiKey | null> {
-    return this.ssoApiKeyModel.findOne({ id: apiKeyId }).lean().exec();
+    const doc = await this.ssoApiKeyModel.findOne({ id: apiKeyId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**
    * Get an API key by key value
    */
   async getApiKeyByKey(apiKey: string): Promise<SsoApiKey | null> {
-    return this.ssoApiKeyModel.findOne({ api_key: apiKey, isActive: { $ne: false } }).lean().exec();
+    const doc = await this.ssoApiKeyModel
+      .findOne({ api_key: apiKey, isActive: { $ne: false } })
+      .lean()
+      .exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**

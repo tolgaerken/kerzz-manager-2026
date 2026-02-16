@@ -1,10 +1,11 @@
 import { useCallback } from "react";
 import { useAuthStore } from "../store/authStore";
 import * as authApi from "../api/authApi";
-import { AUTH_CONSTANTS } from "../constants/auth.constants";
-import type { UserInfo } from "../types/auth.types";
-
-const { STORAGE_KEYS } = AUTH_CONSTANTS;
+import {
+  performAutoLogin,
+  validateLicances,
+  syncPermissionsFromBackend
+} from "../services/authInitService";
 
 export function useAuth() {
   const {
@@ -22,74 +23,18 @@ export function useAuth() {
     setActiveLicance,
     setLoading,
     setError,
-    setPermissions,
-    setAppUsers,
-    setRoleFlags,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
     logout
   } = useAuthStore();
 
-  const getStoredToken = useCallback((): string | null => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
-      if (!stored) return null;
-      const parsed = JSON.parse(stored);
-      return parsed?.token?.accessToken ?? null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  /**
-   * Fetch user permissions and app users from backend
-   * This syncs permissions from sso-db via our backend
-   * Note: This is optional - if it fails, we still have permissions from SSO token
-   * @param accessToken - Token to use for the request (for immediate post-login calls)
-   */
-  const syncPermissionsFromBackend = useCallback(async (accessToken?: string): Promise<void> => {
-    try {
-      const response = await authApi.getMe(accessToken);
-
-      // Update permissions from backend (permission = kod)
-      const permissionCodes = response.user.permissions.map((p) => p.permission);
-      setPermissions(permissionCodes);
-
-      // Update app users
-      setAppUsers(response.appUsers);
-
-      // Update role flags from backend
-      setRoleFlags({
-        isAdmin: response.user.isAdmin,
-        isFinance: response.user.isFinance,
-        isManager: response.user.isManager
-      });
-      
-      console.log("[useAuth] Backend permission sync successful");
-    } catch (err) {
-      // If backend sync fails, we still have permissions from SSO token
-      // Don't let this break the login flow
-      console.warn("[useAuth] Backend permission sync failed (non-critical):", err);
-    }
-  }, [setPermissions, setAppUsers, setRoleFlags]);
-
   const autoLogin = useCallback(async (): Promise<boolean> => {
-    const token = getStoredToken();
-    if (!token) return false;
-
     setLoading(true);
     setError(null);
 
     try {
-      const userInfo = await authApi.autoLoginWithToken(token);
-      validateLicances(userInfo);
-      setUserInfo(userInfo);
-
-      // Sync permissions from backend after successful login
-      // Pass the token directly since localStorage might not be updated yet
-      await syncPermissionsFromBackend(userInfo.accessToken);
-
+      await performAutoLogin();
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Auto login failed");
@@ -97,7 +42,7 @@ export function useAuth() {
     } finally {
       setLoading(false);
     }
-  }, [getStoredToken, setLoading, setError, setUserInfo, syncPermissionsFromBackend]);
+  }, [setLoading, setError]);
 
   const requestOtp = useCallback(
     async (gsm: string): Promise<"ok" | "new"> => {
@@ -128,8 +73,6 @@ export function useAuth() {
         validateLicances(userInfo);
         setUserInfo(userInfo);
 
-        // Sync permissions from backend after successful login
-        // Pass the token directly since localStorage might not be updated yet
         await syncPermissionsFromBackend(userInfo.accessToken);
       } catch (err) {
         const message = err instanceof Error ? err.message : "OTP verification failed";
@@ -139,7 +82,7 @@ export function useAuth() {
         setLoading(false);
       }
     },
-    [setLoading, setError, setUserInfo, syncPermissionsFromBackend]
+    [setLoading, setError, setUserInfo]
   );
 
   const handleLogout = useCallback(() => {
@@ -168,24 +111,4 @@ export function useAuth() {
     hasAllPermissions,
     syncPermissionsFromBackend
   };
-}
-
-/**
- * Bu uygulama için gerekli lisans ID'si
- * Kullanıcının bu lisansa sahip olması zorunludur
- */
-const REQUIRED_LICENCE_ID = "439";
-
-function validateLicances(userInfo: UserInfo): void {
-  if (!userInfo.licances || userInfo.licances.length === 0) {
-    throw new Error("Bu uygulama için lisansınız bulunmamaktadır.");
-  }
-
-  // 439 nolu lisans kontrolü
-  const hasRequiredLicence = userInfo.licances.some(
-    (l) => l.licanceId === REQUIRED_LICENCE_ID
-  );
-  if (!hasRequiredLicence) {
-    throw new Error("Bu uygulamayı kullanma yetkiniz yok.");
-  }
 }

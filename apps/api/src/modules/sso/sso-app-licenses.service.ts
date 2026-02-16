@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
@@ -44,55 +44,108 @@ export class SsoAppLicensesService {
   ) {}
 
   /**
+   * is_active filtresi: alan yoksa veya true ise dahil et, sadece false ise hariç tut
+   */
+  private getActiveFilter(): Record<string, unknown> {
+    return {
+      $or: [
+        { is_active: { $exists: false } },
+        { is_active: true },
+        { is_active: null }
+      ]
+    };
+  }
+
+  /**
+   * .lean() Mongoose default'larını uygulamaz; is_active alanı olmayan eski kayıtlarda
+   * undefined döner. Bu metod is_active'i boolean'a normalize eder (undefined/null → true).
+   */
+  private normalizeIsActive(doc: SsoAppLicence): SsoAppLicence {
+    return { ...doc, is_active: doc.is_active !== false };
+  }
+
+  private normalizeIsActiveList(docs: SsoAppLicence[]): SsoAppLicence[] {
+    return docs.map((doc) => this.normalizeIsActive(doc));
+  }
+
+  /**
    * Get all app licenses
+   * is_active alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAppLicenses(): Promise<SsoAppLicence[]> {
-    return this.ssoAppLicenceModel.find({ is_active: { $ne: false } }).lean().exec();
+    const docs = await this.ssoAppLicenceModel.find(this.getActiveFilter()).lean().exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get app licenses by user ID
+   * is_active alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAppLicensesByUser(userId: string): Promise<SsoAppLicence[]> {
-    return this.ssoAppLicenceModel
-      .find({ user_id: userId, is_active: { $ne: false } })
+    const docs = await this.ssoAppLicenceModel
+      .find({ user_id: userId, ...this.getActiveFilter() })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get app licenses by app ID
+   * is_active alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAppLicensesByApp(appId: string): Promise<SsoAppLicence[]> {
-    return this.ssoAppLicenceModel
-      .find({ app_id: appId, is_active: { $ne: false } })
+    const docs = await this.ssoAppLicenceModel
+      .find({ app_id: appId, ...this.getActiveFilter() })
       .lean()
       .exec();
+    return this.normalizeIsActiveList(docs);
   }
 
   /**
    * Get app license by ID
    */
   async getAppLicenseById(licenseId: string): Promise<SsoAppLicence | null> {
-    return this.ssoAppLicenceModel.findOne({ id: licenseId }).lean().exec();
+    const doc = await this.ssoAppLicenceModel.findOne({ id: licenseId }).lean().exec();
+    return doc ? this.normalizeIsActive(doc) : null;
   }
 
   /**
    * Get app license by app and user
+   * is_active alanı yoksa veya true ise dahil eder, sadece false ise hariç tutar
    */
   async getAppLicenseByAppAndUser(appId: string, userId: string): Promise<SsoAppLicence | null> {
-    return this.ssoAppLicenceModel
-      .findOne({ app_id: appId, user_id: userId, is_active: { $ne: false } })
+    const doc = await this.ssoAppLicenceModel
+      .findOne({ app_id: appId, user_id: userId, ...this.getActiveFilter() })
       .lean()
       .exec();
+    return doc ? this.normalizeIsActive(doc) : null;
+  }
+
+  /**
+   * Find existing license matching the unique compound index (user_id + licance_id + app_id)
+   */
+  private async findExistingLicense(
+    appId: string,
+    userId: string,
+    licanceId?: string
+  ): Promise<SsoAppLicence | null> {
+    if (licanceId) {
+      // Exact match on all three unique index fields
+      return this.ssoAppLicenceModel
+        .findOne({ app_id: appId, user_id: userId, licance_id: licanceId })
+        .lean()
+        .exec();
+    }
+    // Fallback: match by app_id + user_id only (when licance_id not provided)
+    return this.getAppLicenseByAppAndUser(appId, userId);
   }
 
   /**
    * Create a new app license
    */
   async createAppLicense(dto: CreateAppLicenseDto): Promise<SsoAppLicence> {
-    // Check if license already exists for this app-user combination
-    const existing = await this.getAppLicenseByAppAndUser(dto.app_id, dto.user_id);
+    // Check with all unique index fields to avoid E11000 duplicate key errors
+    const existing = await this.findExistingLicense(dto.app_id, dto.user_id, dto.licance_id);
 
     if (existing) {
       // Reactivate and update existing license
@@ -148,7 +201,16 @@ export class SsoAppLicensesService {
     if (dto.is_active !== undefined) license.is_active = dto.is_active;
     license.updatedAt = new Date();
 
-    await license.save();
+    try {
+      await license.save();
+    } catch (error: unknown) {
+      if (error instanceof Error && "code" in error && (error as { code: number }).code === 11000) {
+        throw new ConflictException(
+          "Bu kullanıcı-lisans-uygulama kombinasyonu zaten mevcut"
+        );
+      }
+      throw error;
+    }
     return license.toObject();
   }
 
