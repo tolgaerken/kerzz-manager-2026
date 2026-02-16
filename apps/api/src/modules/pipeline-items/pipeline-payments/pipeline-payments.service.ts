@@ -8,6 +8,7 @@ import {
 import { CreatePipelinePaymentDto } from "./dto/create-pipeline-payment.dto";
 import { UpdatePipelinePaymentDto } from "./dto/update-pipeline-payment.dto";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
+import { getAuditFieldsForCreate } from "../../../common/audit";
 
 @Injectable()
 export class PipelinePaymentsService {
@@ -63,6 +64,9 @@ export class PipelinePaymentsService {
     await this.model.deleteMany({ parentId, parentType }).exec();
     if (!items || items.length === 0) return [];
 
+    // Audit alanlarini al (insertMany middleware calistirmaz)
+    const auditCreate = getAuditFieldsForCreate();
+
     // _id temizlenerek — frontend geçici ID gönderebilir
     const docs = items.map((item) => {
       const { _id, ...rest } = item as any;
@@ -71,6 +75,7 @@ export class PipelinePaymentsService {
         parentId,
         parentType,
         pipelineRef,
+        ...auditCreate,
       };
     });
 
@@ -88,6 +93,9 @@ export class PipelinePaymentsService {
     const sources = await this.findByParent(sourceParentId, sourceType);
     if (sources.length === 0) return [];
 
+    // Audit alanlarini al (insertMany middleware calistirmaz)
+    const auditCreate = getAuditFieldsForCreate();
+
     const clones = sources.map((src) => {
       const { _id, createdAt, updatedAt, ...rest } = src as any;
       return {
@@ -96,6 +104,7 @@ export class PipelinePaymentsService {
         parentType: targetType,
         isPaid: false,
         ...(pipelineRef ? { pipelineRef } : {}),
+        ...auditCreate,
       };
     });
 

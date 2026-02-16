@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type SaleDocument = Sale & Document;
+export type SaleDocument = Sale & Document & AuditFields;
 
 @Schema({ _id: false })
 export class SaleStageHistory {

@@ -55,7 +55,9 @@ export class LeadStageHistory {
   durationInStage: number;
 }
 
-export type LeadDocument = Lead & Document;
+import type { AuditFields } from "../../../common/audit";
+
+export type LeadDocument = Lead & Document & AuditFields;
 
 @Schema({ collection: "leads", timestamps: true })
 export class Lead {

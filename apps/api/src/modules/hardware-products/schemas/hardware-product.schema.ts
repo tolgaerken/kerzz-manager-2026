@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type HardwareProductDocument = HardwareProduct & Document;
+export type HardwareProductDocument = HardwareProduct & Document & AuditFields;
 
 @Schema({ collection: "hardware-product", timestamps: true })
 export class HardwareProduct {

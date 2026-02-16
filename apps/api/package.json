@@ -31,6 +31,7 @@
     "jwt-decode": "^4.0.0",
     "mongodb": "7.0.0",
     "mongoose": "latest",
+    "nestjs-cls": "^6.2.0",
     "nodemailer": "^8.0.0",
     "passport": "latest",
     "passport-jwt": "latest",

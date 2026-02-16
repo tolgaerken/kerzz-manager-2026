@@ -21,6 +21,10 @@ import { Contract } from "../../contracts/schemas/contract.schema";
 import { Customer } from "../../customers/schemas/customer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import { generatePaymentId, generateShortId } from "../utils/id-generator";
+import {
+  getAuditFieldsForUpdate,
+  getAuditFieldsForSetOnInsert,
+} from "../../../common/audit";
 
 @Injectable()
 export class PlanGeneratorService {
@@ -198,6 +202,10 @@ export class PlanGeneratorService {
     const bulkOps: AnyBulkWriteOperation<ContractPaymentDocument>[] = [];
     const finalPlans: ContractPayment[] = [];
 
+    // Audit + timestamp alanlarini al (bulkWrite middleware calistirmaz)
+    const auditUpdate = getAuditFieldsForUpdate();
+    const auditSetOnInsert = getAuditFieldsForSetOnInsert();
+
     // Kist planlari senkronizasyondan haric tut (bagimsiz akis)
     const regularExistingPlans = existingPlans.filter(
       (p) => (p.type || "regular") === "regular",
@@ -217,7 +225,12 @@ export class PlanGeneratorService {
       bulkOps.push({
         updateOne: {
           filter: { id: invoicedPlan.id },
-          update: { $set: { customerId: customer.id || "" } },
+          update: {
+            $set: {
+              customerId: customer.id || "",
+              ...auditUpdate,
+            },
+          },
         },
       });
 
@@ -247,7 +260,10 @@ export class PlanGeneratorService {
       bulkOps.push({
         updateOne: {
           filter: { id: plan.id },
-          update: { $set: plan },
+          update: {
+            $set: { ...plan, ...auditUpdate },
+            $setOnInsert: auditSetOnInsert,
+          },
           upsert: true,
         },
       });

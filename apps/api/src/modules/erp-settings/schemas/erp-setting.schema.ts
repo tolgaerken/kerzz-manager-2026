@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type ErpSettingDocument = ErpSetting & Document;
+export type ErpSettingDocument = ErpSetting & Document & AuditFields;
 
-@Schema({ collection: "erp-settings", timestamps: false })
+@Schema({ collection: "erp-settings", timestamps: true })
 export class ErpSetting {
   _id: Types.ObjectId;
 

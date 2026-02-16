@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Schema as MongooseSchema, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type PaymentLinkDocument = PaymentLink & Document;
+export type PaymentLinkDocument = PaymentLink & Document & AuditFields;
 
-@Schema({ collection: "online-payments", timestamps: false })
+@Schema({ collection: "online-payments", timestamps: true })
 export class PaymentLink {
   _id: Types.ObjectId;
 

@@ -1,0 +1,117 @@
+---
+description: Yeni Mongoose şemalarında audit alanları zorunluluğu
+globs: apps/api/src/modules/**/*.schema.ts, apps/api/src/modules/**/*.service.ts
+alwaysApply: false
+---
+
+# Audit Alanları - Şema ve Servis Kuralları
+
+Tüm yeni şemalarda `AuditFields` type tanımı eklenmeli ve audit sistemi otomatik olarak çalışır.
+
+## Şema Kuralları
+
+### Zorunlu Adımlar
+
+1. `AuditFields` type'ını import et
+2. Document type'ına `AuditFields` ekle
+
+### Doğru Kullanım
+
+```typescript
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
+
+// ✅ DOĞRU - AuditFields eklendi
+export type MyEntityDocument = MyEntity & Document & AuditFields;
+
+@Schema({ collection: "my-entities", timestamps: true })
+export class MyEntity {
+  _id: Types.ObjectId;
+  // ... diğer alanlar
+}
+
+export const MyEntitySchema = SchemaFactory.createForClass(MyEntity);
+```
+
+### Yanlış Kullanım
+
+```typescript
+// ❌ YANLIŞ - AuditFields eksik
+export type MyEntityDocument = MyEntity & Document;
+```
+
+## Servis Kuralları - bulkWrite / insertMany
+
+**ÖNEMLİ:** Mongoose'da `bulkWrite`, `insertMany` gibi bulk işlemler middleware hook'larını **tetiklemez**. Bu nedenle audit alanlarını manuel olarak eklemek gerekir.
+
+### bulkWrite için Doğru Kullanım
+
+```typescript
+import {
+  getAuditFieldsForUpdate,
+  getAuditFieldsForSetOnInsert,
+} from "../../../common/audit";
+
+// bulkWrite upsert işlemi
+const auditUpdate = getAuditFieldsForUpdate();
+const auditSetOnInsert = getAuditFieldsForSetOnInsert();
+
+const ops = items.map((item) => ({
+  updateOne: {
+    filter: { id: item.id },
+    update: {
+      $set: { ...item, ...auditUpdate },
+      $setOnInsert: auditSetOnInsert,
+    },
+    upsert: true,
+  },
+}));
+
+await this.model.bulkWrite(ops);
+```
+
+### insertMany için Doğru Kullanım
+
+```typescript
+import { getAuditFieldsForCreate } from "../../../common/audit";
+
+// insertMany işlemi
+const auditCreate = getAuditFieldsForCreate();
+
+const docs = items.map((item) => ({
+  ...item,
+  ...auditCreate,
+}));
+
+await this.model.insertMany(docs);
+```
+
+### Mevcut Helper Fonksiyonlar
+
+| Fonksiyon | Kullanım | Döndürdüğü Alanlar |
+|-----------|----------|-------------------|
+| `getAuditFieldsForCreate()` | insertMany, yeni kayıt | createdBy + updatedBy + createdAt + updatedAt |
+| `getAuditFieldsForUpdate()` | bulkWrite $set | updatedBy + updatedAt |
+| `getAuditFieldsForSetOnInsert()` | bulkWrite $setOnInsert | createdBy + createdAt |
+| `getCurrentAuditUser()` | Özel durumlar | AuditUser \| null |
+
+**NOT:** Helper fonksiyonlar artık `createdAt` ve `updatedAt` timestamp'larını da otomatik ekliyor. Manuel timestamp eklemeye gerek yok.
+
+## Otomatik Çalışan Sistem
+
+Global Mongoose plugin (`auditPlugin`) aşağıdaki metodlarda otomatik çalışır:
+- `save()` / `create()` (tek kayıt)
+- `findOneAndUpdate()` / `updateOne()` / `updateMany()`
+
+Aşağıdaki alanlar otomatik doldurulur:
+- `audit.createdBy.userId` - Oluşturan kullanıcı ID
+- `audit.createdBy.userName` - Oluşturan kullanıcı adı
+- `audit.updatedBy.userId` - Güncelleyen kullanıcı ID
+- `audit.updatedBy.userName` - Güncelleyen kullanıcı adı
+
+## İstisnalar
+
+Aşağıdaki DB'lerdeki şemalara audit eklenmez:
+- **SSO DB** (`sso/schemas/*`) - Harici sistem
+- **Helpers DB** (`locations/`, `employee-org-lookup/`, `inflation-rates/`) - Referans veri

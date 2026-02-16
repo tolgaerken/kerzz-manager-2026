@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 import type { LegacyLogType } from "./legacy-log.types";
+import type { AuditFields } from "../../../common/audit";
 
-export type LegacyLogDocument = LegacyLog & Document;
+export type LegacyLogDocument = LegacyLog & Document & AuditFields;
 const LEGACY_LOG_TYPE_VALUES: LegacyLogType[] = [
   "contract",
   "licence",
@@ -15,7 +16,7 @@ const LEGACY_LOG_TYPE_VALUES: LegacyLogType[] = [
   "e-invoice",
 ];
 
-@Schema({ collection: "logs", timestamps: false, strict: false })
+@Schema({ collection: "logs", timestamps: true, strict: false })
 export class LegacyLog {
   _id: Types.ObjectId;
 

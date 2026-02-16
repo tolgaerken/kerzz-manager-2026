@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type VirtualPosConfigDocument = VirtualPosConfig & Document;
+export type VirtualPosConfigDocument = VirtualPosConfig & Document & AuditFields;
 
-@Schema({ collection: "master-pass-vpos", timestamps: false })
+@Schema({ collection: "master-pass-vpos", timestamps: true })
 export class VirtualPosConfig {
   _id: Types.ObjectId;
 

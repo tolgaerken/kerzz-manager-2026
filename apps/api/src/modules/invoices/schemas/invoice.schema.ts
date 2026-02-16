@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type InvoiceDocument = Invoice & Document;
+export type InvoiceDocument = Invoice & Document & AuditFields;
 
 // Alt şemalar
 @Schema({ _id: false })

@@ -64,7 +64,9 @@ export class OfferMailRecipient {
   name: string;
 }
 
-export type OfferDocument = Offer & Document;
+import type { AuditFields } from "../../../common/audit";
+
+export type OfferDocument = Offer & Document & AuditFields;
 
 @Schema({ collection: "sale-offers", timestamps: true })
 export class Offer {

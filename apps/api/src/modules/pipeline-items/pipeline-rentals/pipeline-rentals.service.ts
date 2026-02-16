@@ -8,6 +8,7 @@ import {
 import { CreatePipelineRentalDto } from "./dto/create-pipeline-rental.dto";
 import { UpdatePipelineRentalDto } from "./dto/update-pipeline-rental.dto";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
+import { getAuditFieldsForCreate } from "../../../common/audit";
 
 @Injectable()
 export class PipelineRentalsService {
@@ -64,6 +65,9 @@ export class PipelineRentalsService {
     await this.model.deleteMany({ parentId, parentType }).exec();
     if (!items || items.length === 0) return [];
 
+    // Audit alanlarini al (insertMany middleware calistirmaz)
+    const auditCreate = getAuditFieldsForCreate();
+
     // _id temizlenerek — frontend geçici ID gönderebilir
     const docs = items.map((item) => {
       const { _id, ...rest } = item as any;
@@ -72,6 +76,7 @@ export class PipelineRentalsService {
         parentId,
         parentType,
         pipelineRef,
+        ...auditCreate,
       };
     });
 
@@ -89,6 +94,9 @@ export class PipelineRentalsService {
     const sources = await this.findByParent(sourceParentId, sourceType);
     if (sources.length === 0) return [];
 
+    // Audit alanlarini al (insertMany middleware calistirmaz)
+    const auditCreate = getAuditFieldsForCreate();
+
     const clones = sources.map((src) => {
       const { _id, createdAt, updatedAt, ...rest } = src as any;
       return {
@@ -96,6 +104,7 @@ export class PipelineRentalsService {
         parentId: targetParentId,
         parentType: targetType,
         ...(pipelineRef ? { pipelineRef } : {}),
+        ...auditCreate,
       };
     });
 

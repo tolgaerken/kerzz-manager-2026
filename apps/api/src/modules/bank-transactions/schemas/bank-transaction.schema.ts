@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type BankTransactionDocument = BankTransaction & Document;
+export type BankTransactionDocument = BankTransaction & Document & AuditFields;
 
-@Schema({ collection: "bank-transactions", timestamps: false })
+@Schema({ collection: "bank-transactions", timestamps: true })
 export class BankTransaction {
   _id: Types.ObjectId;
 

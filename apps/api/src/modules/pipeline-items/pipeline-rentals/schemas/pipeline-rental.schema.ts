@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../../common/audit";
 
-export type PipelineRentalDocument = PipelineRental & Document;
+export type PipelineRentalDocument = PipelineRental & Document & AuditFields;
 
 @Schema({ collection: "pipeline-rentals", timestamps: true })
 export class PipelineRental {

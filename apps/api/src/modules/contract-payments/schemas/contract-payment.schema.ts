@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
 export interface PaymentListItem {
   id: number;
@@ -10,9 +11,9 @@ export interface PaymentListItem {
   totalEur: number;
 }
 
-export type ContractPaymentDocument = ContractPayment & Document;
+export type ContractPaymentDocument = ContractPayment & Document & AuditFields;
 
-@Schema({ collection: "contract-payments", timestamps: false })
+@Schema({ collection: "contract-payments", timestamps: true })
 export class ContractPayment {
   _id: Types.ObjectId;
 

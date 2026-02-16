@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type ErpBalanceDocument = ErpBalance & Document;
+export type ErpBalanceDocument = ErpBalance & Document & AuditFields;
 
 @Schema({ collection: "erp-balances", timestamps: true })
 export class ErpBalance {

@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type NotificationLogDocument = NotificationLog & Document;
+export type NotificationLogDocument = NotificationLog & Document & AuditFields;
 
 export type NotificationLogStatus = "sent" | "failed";
 export type NotificationLogChannel = "email" | "sms";

@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type FeedbackDocument = Feedback & Document;
+export type FeedbackDocument = Feedback & Document & AuditFields;
 
 export type FeedbackStatus = "open" | "in_progress" | "completed" | "rejected";
 export type FeedbackPriority = "low" | "medium" | "high" | "urgent";

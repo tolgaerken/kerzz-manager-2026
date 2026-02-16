@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type EInvoicePriceDocument = EInvoicePrice & Document;
+export type EInvoicePriceDocument = EInvoicePrice & Document & AuditFields;
 
 @Schema({ collection: "price-list-e-invoice", timestamps: true })
 export class EInvoicePrice {

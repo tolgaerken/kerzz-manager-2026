@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type EftPosModelDocument = EftPosModel & Document;
+export type EftPosModelDocument = EftPosModel & Document & AuditFields;
 
 @Schema({ collection: "eft-pos-models", timestamps: true })
 export class EftPosModel {

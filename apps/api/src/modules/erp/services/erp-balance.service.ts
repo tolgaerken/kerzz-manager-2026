@@ -6,6 +6,10 @@ import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.modu
 import { CompaniesService } from "../../companies/companies.service";
 import { NetsisProxyService } from "./netsis-proxy.service";
 import { ErpBalanceQueryDto } from "../dto/erp-balance-query.dto";
+import {
+  getAuditFieldsForUpdate,
+  getAuditFieldsForSetOnInsert,
+} from "../../../common/audit";
 
 interface NetsisBalanceRow {
   CariKodu: string;
@@ -103,6 +107,10 @@ export class ErpBalanceService {
     balances: (NetsisBalanceRow & { internalFirm: string })[],
     fetchedAt: Date
   ): Promise<void> {
+    // Audit alanlarini al (bulkWrite middleware calistirmaz)
+    const auditUpdate = getAuditFieldsForUpdate();
+    const auditSetOnInsert = getAuditFieldsForSetOnInsert();
+
     const bulkOps = balances.map((balance) => ({
       updateOne: {
         filter: {
@@ -113,7 +121,9 @@ export class ErpBalanceService {
           $set: {
             ...balance,
             fetchedAt,
+            ...auditUpdate,
           },
+          $setOnInsert: auditSetOnInsert,
         },
         upsert: true,
       },

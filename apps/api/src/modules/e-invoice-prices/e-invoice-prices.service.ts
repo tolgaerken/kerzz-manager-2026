@@ -14,6 +14,10 @@ import {
   EInvoicePricesListResponseDto,
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import {
+  getAuditFieldsForUpdate,
+  getAuditFieldsForSetOnInsert,
+} from "../../common/audit";
 
 @Injectable()
 export class EInvoicePricesService {
@@ -151,6 +155,10 @@ export class EInvoicePricesService {
   async bulkUpsert(
     items: BulkUpsertItemDto[],
   ): Promise<EInvoicePricesListResponseDto> {
+    // Audit + timestamp alanlarini al (bulkWrite middleware calistirmaz)
+    const auditUpdate = getAuditFieldsForUpdate();
+    const auditSetOnInsert = getAuditFieldsForSetOnInsert();
+
     const ops = items.map((item) => {
       const id = item.id || this.generateId();
       const totalPrice = this.calculateTotal(
@@ -172,9 +180,9 @@ export class EInvoicePricesService {
               isCredit: item.isCredit ?? false,
               customerErpId: item.customerErpId ?? "",
               sequence: item.sequence ?? 0,
-              updatedAt: new Date(),
+              ...auditUpdate,
             },
-            $setOnInsert: { createdAt: new Date() },
+            $setOnInsert: auditSetOnInsert,
           },
           upsert: true,
         },

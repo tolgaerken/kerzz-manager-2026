@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type ContractSaasDocument = ContractSaas & Document;
+export type ContractSaasDocument = ContractSaas & Document & AuditFields;
 
-@Schema({ collection: "contract-saas", timestamps: false })
+@Schema({ collection: "contract-saas", timestamps: true })
 export class ContractSaas {
   _id: Types.ObjectId;
 

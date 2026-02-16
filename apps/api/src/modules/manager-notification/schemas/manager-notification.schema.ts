@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type ManagerNotificationDocument = ManagerNotification & Document;
+export type ManagerNotificationDocument = ManagerNotification & Document & AuditFields;
 
 export type ManagerNotificationType = "mention" | "reminder" | "stale";
 

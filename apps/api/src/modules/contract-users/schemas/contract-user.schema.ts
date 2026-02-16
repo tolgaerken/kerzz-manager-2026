@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import type { AuditFields } from "../../../common/audit";
 
-export type ContractUserDocument = ContractUser & Document;
+export type ContractUserDocument = ContractUser & Document & AuditFields;
 
-@Schema({ collection: "contract-users", timestamps: false })
+@Schema({ collection: "contract-users", timestamps: true })
 export class ContractUser {
   _id: Types.ObjectId;
 

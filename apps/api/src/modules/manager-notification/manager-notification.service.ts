@@ -12,6 +12,7 @@ import {
   PaginatedManagerNotificationsResponseDto,
   CreateManagerNotificationDto,
 } from "./dto";
+import { getAuditFieldsForCreate } from "../../common/audit";
 
 @Injectable()
 export class ManagerNotificationService {
@@ -36,10 +37,14 @@ export class ManagerNotificationService {
   async createMany(
     notifications: CreateManagerNotificationDto[]
   ): Promise<ManagerNotificationResponseDto[]> {
+    // Audit alanlarini al (insertMany middleware calistirmaz)
+    const auditCreate = getAuditFieldsForCreate();
+
     const docs = notifications.map((dto) => ({
       ...dto,
       id: uuidv4(),
       read: false,
+      ...auditCreate,
     }));
     const saved = await this.managerNotificationModel.insertMany(docs);
     return saved.map((doc) => this.mapToResponseDto(doc as ManagerNotificationDocument));

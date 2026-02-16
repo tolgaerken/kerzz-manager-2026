@@ -70,10 +70,14 @@ import { EmployeeOrgLookupModule } from "./modules/employee-org-lookup";
 import { BossUsersModule } from "./modules/boss-users";
 // Feedback Module
 import { FeedbackModule } from "./modules/feedback";
+// Audit Module (CLS + Global Interceptor)
+import { AuditModule } from "./common/audit";
 
 @Module({
   imports: [
     ConfigModule,
+    // Audit Module - CLS context ve audit interceptor (DB module'lerden ÖNCE yüklenmeli)
+    AuditModule,
     DatabaseModule,
     ContractDatabaseModule,
     HelpersDatabaseModule,
