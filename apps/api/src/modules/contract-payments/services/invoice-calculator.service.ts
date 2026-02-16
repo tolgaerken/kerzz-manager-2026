@@ -417,10 +417,12 @@ export class InvoiceCalculatorService {
 
   /**
    * Bir kalemin faturalanabilir olup olmadigini kontrol eder.
-   * Faturalama kosulu: enabled VE activated VE expired degil.
+   * Faturalama kosulu: enabled VE expired degil.
+   * Not: activated alani deploy/aktivasyon takibi icindir,
+   * odeme plani hesaplamasini etkilemez.
    */
-  private isBillable(item: { enabled: boolean; activated?: boolean; expired?: boolean }): boolean {
-    return item.enabled && (item.activated ?? true) && !(item.expired ?? false);
+  private isBillable(item: { enabled: boolean; expired?: boolean }): boolean {
+    return item.enabled && !(item.expired ?? false);
   }
 
   private safeRound(value: number): number {

@@ -67,6 +67,8 @@ export class ContractCashRegistersService {
     const cashRegister = new this.contractCashRegisterModel({
       ...dto,
       id,
+      enabled: true,
+      expired: false,
       startDate: dto.startDate ? new Date(dto.startDate) : now,
       activated: false,
       editDate: now,

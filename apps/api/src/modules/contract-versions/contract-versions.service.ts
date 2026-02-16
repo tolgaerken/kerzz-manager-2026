@@ -58,6 +58,8 @@ export class ContractVersionsService {
     const version = new this.contractVersionModel({
       ...dto,
       id,
+      enabled: true,
+      expired: false,
       startDate: dto.startDate ? new Date(dto.startDate) : now,
       activated: false,
       editDate: now,

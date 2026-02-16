@@ -72,6 +72,14 @@ export class CreateContractSaasDto {
   yearly?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  expired?: boolean;
+
+  @IsOptional()
   @IsString()
   productId?: string;
 

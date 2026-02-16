@@ -64,6 +64,8 @@ export class ContractSupportsService {
     const support = new this.contractSupportModel({
       ...dto,
       id,
+      enabled: true,
+      expired: false,
       startDate: dto.startDate ? new Date(dto.startDate) : now,
       activated: false,
       editDate: now,

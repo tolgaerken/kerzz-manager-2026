@@ -69,6 +69,14 @@ export class CreateContractItemDto {
   yearly?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  expired?: boolean;
+
+  @IsOptional()
   @IsString()
   erpId?: string;
 

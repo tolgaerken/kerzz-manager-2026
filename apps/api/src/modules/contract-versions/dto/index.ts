@@ -59,6 +59,14 @@ export class CreateContractVersionDto {
   type?: string;
 
   @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  expired?: boolean;
+
+  @IsOptional()
   @IsDateString()
   startDate?: string;
 }

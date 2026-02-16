@@ -197,11 +197,17 @@ export class Contract {
 export const ContractSchema = SchemaFactory.createForClass(Contract);
 
 // Indexes for better query performance
+ContractSchema.index({ no: -1 }); // Sort by no desc (en sık kullanılan sort)
 ContractSchema.index({ contractFlow: 1 });
 ContractSchema.index({ yearly: 1 });
-ContractSchema.index({ startDate: 1 });
-ContractSchema.index({ endDate: 1 });
+ContractSchema.index({ isFree: 1 });
 ContractSchema.index({ brand: "text", company: "text" });
+
+// Active filter compound index: startDate + endDate + noEndDate + no (sort)
+ContractSchema.index({ startDate: 1, endDate: 1, noEndDate: 1, no: -1 });
+
+// Archive filter: noEndDate + endDate + no (sort)
+ContractSchema.index({ noEndDate: 1, endDate: 1, no: -1 });
 
 // contractId + tarih aralığı sorguları için compound index
 // (getActiveLicenseIds, hasActiveContract gibi sorgularda kullanılır)

@@ -80,6 +80,22 @@ export class CreateContractCashRegisterDto {
   yearly?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  expired?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  eftPosActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  folioClose?: boolean;
+
+  @IsOptional()
   @IsDateString()
   startDate?: string;
 }

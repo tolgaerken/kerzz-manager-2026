@@ -22,6 +22,32 @@ import {
   getMonthBoundaries
 } from "./utils/contract-date.utils";
 
+/** mapToResponseDto'da kullanılan alanlar (monthlyPayments vb. hariç) */
+const RESPONSE_PROJECTION = {
+  _id: 1,
+  id: 1,
+  brand: 1,
+  company: 1,
+  contractFlow: 1,
+  contractId: 1,
+  description: 1,
+  startDate: 1,
+  endDate: 1,
+  yearly: 1,
+  yearlyTotal: 1,
+  saasTotal: 1,
+  total: 1,
+  enabled: 1,
+  blockedLicance: 1,
+  isFree: 1,
+  isActive: 1,
+  no: 1,
+  customerId: 1,
+  internalFirm: 1,
+  createdAt: 1,
+  updatedAt: 1
+} as const;
+
 @Injectable()
 export class ContractsService {
   constructor(
@@ -99,7 +125,10 @@ export class ContractsService {
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
     // Build query - limit varsa pagination uygula, yoksa tüm verileri getir
-    let dataQuery = this.contractModel.find(filter).sort(sort);
+    let dataQuery = this.contractModel
+      .find(filter)
+      .select(RESPONSE_PROJECTION)
+      .sort(sort);
 
     if (limit) {
       const skip = (page - 1) * limit;
@@ -110,7 +139,7 @@ export class ContractsService {
     const [data, total, counts] = await Promise.all([
       dataQuery.lean().exec(),
       this.contractModel.countDocuments(filter).exec(),
-      this.getCounts()
+      this.getCountsAggregated()
     ]);
 
     const effectiveLimit = limit || total;
@@ -135,33 +164,83 @@ export class ContractsService {
     return contract ? this.mapToResponseDto(contract) : null;
   }
 
-  private async getCounts(): Promise<PaginatedContractsResponseDto["counts"]> {
+  /**
+   * Tüm tab count'larını tek bir aggregation ($facet) ile hesaplar.
+   * 6 ayrı countDocuments yerine tek DB round-trip.
+   */
+  private async getCountsAggregated(): Promise<
+    PaginatedContractsResponseDto["counts"]
+  > {
     const now = new Date();
     const { monthStart, monthEnd } = getMonthBoundaries(now);
 
-    // Tarih bazlı count'lar
-    const [active, archive, future, free, yearly, monthly] = await Promise.all([
-      // Aktif: startDate <= now && endDate >= now
-      this.contractModel
-        .countDocuments(getActiveContractFilter(now))
-        .exec(),
-      // Arşiv: endDate < ay baslangici
-      this.contractModel
-        .countDocuments({
-          endDate: { $lt: monthStart }
-        })
-        .exec(),
-      // Gelecek: startDate > ay bitisi
-      this.contractModel.countDocuments({ startDate: { $gt: monthEnd } }).exec(),
-      // Ücretsiz
-      this.contractModel.countDocuments({ isFree: true }).exec(),
-      // Yıllık
-      this.contractModel.countDocuments({ yearly: true }).exec(),
-      // Aylık
-      this.contractModel.countDocuments({ yearly: false }).exec()
-    ]);
+    const [result] = await this.contractModel
+      .aggregate<PaginatedContractsResponseDto["counts"]>([
+        {
+          $facet: {
+            active: [
+              {
+                $match: {
+                  startDate: { $lte: monthEnd },
+                  $or: [
+                    { endDate: { $gte: monthStart } },
+                    { noEndDate: true },
+                    { endDate: null }
+                  ]
+                }
+              },
+              { $count: "n" }
+            ],
+            archive: [
+              {
+                $match: {
+                  noEndDate: { $ne: true },
+                  endDate: { $lt: monthStart, $ne: null }
+                }
+              },
+              { $count: "n" }
+            ],
+            future: [
+              { $match: { startDate: { $gt: monthEnd } } },
+              { $count: "n" }
+            ],
+            free: [
+              { $match: { isFree: true } },
+              { $count: "n" }
+            ],
+            yearly: [
+              { $match: { yearly: true } },
+              { $count: "n" }
+            ],
+            monthly: [
+              { $match: { yearly: false } },
+              { $count: "n" }
+            ]
+          }
+        },
+        {
+          $project: {
+            active: { $ifNull: [{ $arrayElemAt: ["$active.n", 0] }, 0] },
+            archive: { $ifNull: [{ $arrayElemAt: ["$archive.n", 0] }, 0] },
+            future: { $ifNull: [{ $arrayElemAt: ["$future.n", 0] }, 0] },
+            free: { $ifNull: [{ $arrayElemAt: ["$free.n", 0] }, 0] },
+            yearly: { $ifNull: [{ $arrayElemAt: ["$yearly.n", 0] }, 0] },
+            monthly: { $ifNull: [{ $arrayElemAt: ["$monthly.n", 0] }, 0] }
+          }
+        }
+      ])
+      .exec();
 
-    return { active, archive, future, free, yearly, monthly };
+    return (
+      result ?? {
+        active: 0,
+        archive: 0,
+        future: 0,
+        free: 0,
+        yearly: 0,
+        monthly: 0
+      }
+    );
   }
 
   /**

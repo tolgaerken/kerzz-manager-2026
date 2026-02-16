@@ -67,6 +67,14 @@ export class CreateContractSupportDto {
   yearly?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  expired?: boolean;
+
+  @IsOptional()
   @IsDateString()
   startDate?: string;
 }

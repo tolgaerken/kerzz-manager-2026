@@ -54,6 +54,8 @@ export class ContractItemsService {
     const item = new this.contractItemModel({
       ...dto,
       id,
+      enabled: true,
+      expired: false,
       startDate: dto.startDate ? new Date(dto.startDate) : now,
       activated: false,
       editDate: now,
