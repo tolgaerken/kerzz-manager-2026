@@ -31,6 +31,15 @@ export interface ProratedItemInput {
   qty?: number;
 }
 
+/** Kist plan olusturma opsiyonlari */
+export interface ProratedPlanOptions {
+  /**
+   * true ise gun hesabi yapilmaz, tam aylik ucret alinir.
+   * Yazarkasa (EFT-POS) icin kullanilir - 1 gunde olsa 28 gunde olsa tam ucret.
+   */
+  skipDayCalculation?: boolean;
+}
+
 @Injectable()
 export class ProratedPlanService {
   private readonly logger = new Logger(ProratedPlanService.name);
@@ -51,11 +60,14 @@ export class ProratedPlanService {
    *
    * Eger ilgili ayin regular plani henuz faturalanmamissa, kist plan olusturmaz
    * ve null dondurur. Bu durumda regular plan kist tutarla olusturulacaktir.
+   *
+   * @param options.skipDayCalculation - true ise gun hesabi yapilmaz (yazarkasa icin)
    */
   async createProratedPlan(
     contractId: string,
     item: ProratedItemInput,
     description: string,
+    options?: ProratedPlanOptions,
   ): Promise<ContractPayment | null> {
     // Ay faturasi henuz kesilmemisse kist plan olusturma
     const alreadyInvoiced = await this.isMonthAlreadyInvoiced(
@@ -98,16 +110,30 @@ export class ProratedPlanService {
     const rawPrice = (Number(item.price) || 0) * (item.qty || 1);
     const monthlyPrice = this.safeRound(rawPrice * rate);
 
-    // Kist tutar hesapla
-    const dailyRate = monthlyPrice / daysInMonth;
-    const proratedAmount = this.safeRound(dailyRate * remainingDays);
+    // Tutar hesapla: skipDayCalculation true ise tam aylik, degilse kist
+    const skipDayCalc = options?.skipDayCalculation ?? false;
+    let proratedAmount: number;
+    let descriptionText: string;
+    let effectiveDays: number;
 
-    const startStr = this.formatDateShort(startDate);
-    const endStr = this.formatDateShort(monthEnd);
+    if (skipDayCalc) {
+      // Gun hesabi yapilmaz - tam aylik ucret (yazarkasa icin)
+      proratedAmount = monthlyPrice;
+      descriptionText = `${description} (tam ay)`;
+      effectiveDays = daysInMonth;
+    } else {
+      // Normal kist hesabi
+      const dailyRate = monthlyPrice / daysInMonth;
+      proratedAmount = this.safeRound(dailyRate * remainingDays);
+      const startStr = this.formatDateShort(startDate);
+      const endStr = this.formatDateShort(monthEnd);
+      descriptionText = `${description} (${startStr}-${endStr}, ${remainingDays} gün kıst)`;
+      effectiveDays = remainingDays;
+    }
 
     const listItem: PaymentListItem = {
       id: 0,
-      description: `${description} (${startStr}-${endStr}, ${remainingDays} gün kıst)`,
+      description: descriptionText,
       total: proratedAmount,
       company: "",
       totalUsd: 0,
@@ -136,14 +162,15 @@ export class ProratedPlanService {
       contractNumber: contract.no || 0,
       internalFirm: contract.internalFirm || "",
       type: "prorated",
-      proratedDays: remainingDays,
+      proratedDays: effectiveDays,
       proratedStartDate: startDate,
     };
 
     const created = await this.paymentModel.create(plan);
 
+    const logSuffix = skipDayCalc ? "(gun hesabi atlanildi)" : "";
     this.logger.log(
-      `Kist plan olusturuldu: ${contract.company}, ${remainingDays} gun, ${proratedAmount} TL`,
+      `Kist plan olusturuldu: ${contract.company}, ${effectiveDays} gun, ${proratedAmount} TL ${logSuffix}`,
     );
 
     return created.toObject() as ContractPayment;

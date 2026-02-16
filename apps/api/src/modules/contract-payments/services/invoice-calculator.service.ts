@@ -5,6 +5,7 @@ import { ExchangeRateService } from "../../exchange-rate";
 import { ErpSettingsService } from "../../erp-settings";
 import {
   InvoiceRow,
+  InvoiceRowCategory,
   InvoiceSummary,
   CurrencyType,
   SubTotals,
@@ -147,6 +148,7 @@ export class InvoiceCalculatorService {
       cashRegisters.filter((o) => this.isBillable(o)),
       eftPosDescription,
       eftPosErpId,
+      "eftpos",
     );
     rows.push(...eftPosRows);
 
@@ -156,6 +158,7 @@ export class InvoiceCalculatorService {
       supports.filter((o) => this.isBillable(o)),
       SUPPORT_DESCRIPTION,
       supportErpId,
+      "support",
     );
     rows.push(...supportRows);
 
@@ -165,6 +168,7 @@ export class InvoiceCalculatorService {
       versions.filter((o) => this.isBillable(o)),
       VERSION_DESCRIPTION,
       versionErpId,
+      "version",
     );
     rows.push(...versionRows);
 
@@ -257,6 +261,7 @@ export class InvoiceCalculatorService {
     data: Array<{ price: number; currency: string }>,
     description: string,
     itemId: string,
+    category: InvoiceRowCategory,
   ): Promise<InvoiceRow[]> {
     const result: InvoiceRow[] = [];
 
@@ -288,6 +293,7 @@ export class InvoiceCalculatorService {
         qty: count,
         unitPrice: price,
         total,
+        category,
       });
     }
 
@@ -315,6 +321,7 @@ export class InvoiceCalculatorService {
         qty: item.qty || 1,
         unitPrice: price,
         total,
+        category: "item",
       });
     }
 
@@ -364,6 +371,7 @@ export class InvoiceCalculatorService {
         qty: saasItem.qty || 1,
         unitPrice: price,
         total,
+        category: "saas",
       });
     }
 

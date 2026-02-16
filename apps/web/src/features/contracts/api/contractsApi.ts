@@ -32,7 +32,7 @@ export async function fetchContracts(params: ContractQueryParams = {}): Promise<
 }
 
 export async function fetchContractById(id: string): Promise<Contract> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${id}`;
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${encodeURIComponent(id)}`;
   return apiGet<Contract>(url);
 }
 
@@ -42,7 +42,7 @@ export async function createContract(data: CreateContractInput): Promise<Contrac
 }
 
 export async function updateContract(id: string, data: UpdateContractInput): Promise<Contract> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${id}`;
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${encodeURIComponent(id)}`;
   const { id: _ignoredId, ...payload } = data;
   return apiPut<Contract>(url, payload);
 }
@@ -57,6 +57,6 @@ export interface DeleteContractResult {
 }
 
 export async function deleteContract(id: string): Promise<DeleteContractResult> {
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${id}`;
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${encodeURIComponent(id)}`;
   return apiDelete<DeleteContractResult>(url);
 }

@@ -160,7 +160,7 @@ export class ContractsService {
   }
 
   async findOne(id: string): Promise<ContractResponseDto | null> {
-    const contract = await this.contractModel.findById(id).lean().exec();
+    const contract = await this.contractModel.findOne({ id }).lean().exec();
     return contract ? this.mapToResponseDto(contract) : null;
   }
 
@@ -399,7 +399,7 @@ export class ContractsService {
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
     const updated = await this.contractModel
-      .findByIdAndUpdate(id, { $set: updateData }, { new: true })
+      .findOneAndUpdate({ id }, { $set: updateData }, { new: true })
       .lean()
       .exec();
 
@@ -413,7 +413,7 @@ export class ContractsService {
   async delete(
     id: string
   ): Promise<{ deletedPaymentPlans: number }> {
-    const contract = await this.contractModel.findById(id).lean().exec();
+    const contract = await this.contractModel.findOne({ id }).lean().exec();
     if (!contract) {
       throw new NotFoundException(`Contract with id ${id} not found`);
     }
@@ -423,7 +423,7 @@ export class ContractsService {
       await this.contractPaymentsService.deleteByContractId(contract.id);
 
     // Sonra kontratı sil
-    await this.contractModel.findByIdAndDelete(id).exec();
+    await this.contractModel.findOneAndDelete({ id }).exec();
 
     return { deletedPaymentPlans };
   }

@@ -150,12 +150,14 @@ export class ContractCashRegistersService {
     }
 
     // Kist plan olustur (ayin 1'i degilse)
+    // NOT: Yazarkasa icin gun hesabi yapilmaz - her zaman tam aylik ucret
     const startDate = (updateData.startDate as Date) || item.startDate;
     if (new Date(startDate).getUTCDate() !== 1) {
       await this.proratedPlanService.createProratedPlan(
         item.contractId,
         { price: item.price, currency: item.currency, startDate: new Date(startDate) },
         EFTPOS_DESCRIPTION,
+        { skipDayCalculation: true },
       );
     }
 

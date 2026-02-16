@@ -13,6 +13,7 @@ import {
 } from "../schemas/contract-payment.schema";
 import {
   InvoiceSummary,
+  InvoiceRow,
   MonthlyPaymentStatus,
   YearlyPaymentStatus,
 } from "../interfaces/payment-plan.interfaces";
@@ -96,6 +97,7 @@ export class PlanGeneratorService {
       }));
 
       // Ilk ay icin kist hesaplamasi (actualStartDate ayin 1'i degilse)
+      // NOT: EFT-POS (yazarkasa) satirlarina kist uygulanmaz - her zaman tam fiyat
       if (ix === 0 && actualStartDate && actualStartDate.getUTCDate() !== 1) {
         const daysInMonth = new Date(
           Date.UTC(
@@ -107,18 +109,42 @@ export class PlanGeneratorService {
         const remainingDays = daysInMonth - actualStartDate.getUTCDate() + 1;
         const ratio = remainingDays / daysInMonth;
 
-        total = this.safeRound(invoiceSummary.total * ratio);
-        listItems = invoiceSummary.rows.map((row) => ({
-          id: 0,
-          description: `${row.description} (${remainingDays}/${daysInMonth} gün kıst)`,
-          total: this.safeRound(row.total * ratio),
-          company: "",
-          totalUsd: 0,
-          totalEur: 0,
-        }));
+        // Satirlari kategoriye gore isle
+        listItems = invoiceSummary.rows.map((row) => {
+          // EFT-POS satirlarina kist uygulanmaz
+          if (row.category === "eftpos") {
+            return {
+              id: 0,
+              description: row.description,
+              total: row.total,
+              company: "",
+              totalUsd: 0,
+              totalEur: 0,
+            };
+          }
+          // Diger satirlara kist uygula
+          return {
+            id: 0,
+            description: `${row.description} (${remainingDays}/${daysInMonth} gün kıst)`,
+            total: this.safeRound(row.total * ratio),
+            company: "",
+            totalUsd: 0,
+            totalEur: 0,
+          };
+        });
+
+        // Toplami yeniden hesapla: EFT-POS tam + diger kist
+        total = this.safeRound(
+          invoiceSummary.rows.reduce((sum, row) => {
+            if (row.category === "eftpos") {
+              return sum + row.total;
+            }
+            return sum + row.total * ratio;
+          }, 0),
+        );
 
         this.logger.log(
-          `Ilk ay kist hesaplandi: ${contract.company}, ${remainingDays}/${daysInMonth} gun, oran: ${ratio.toFixed(2)}`,
+          `Ilk ay kist hesaplandi: ${contract.company}, ${remainingDays}/${daysInMonth} gun, oran: ${ratio.toFixed(2)} (EFT-POS haric)`,
         );
       }
 

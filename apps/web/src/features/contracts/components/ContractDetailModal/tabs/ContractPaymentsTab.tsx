@@ -176,7 +176,7 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
         </div>
         <div className="flex items-center gap-1 text-[var(--color-muted-foreground)]">
           <Calendar className="h-3 w-3" />
-          <span>Ödeme: {formatDate(payment.payDate)}</span>
+          <span>Dönem: {new Date(payment.payDate).toLocaleDateString("tr-TR", { month: "short", year: "numeric" })}</span>
         </div>
       </div>
 

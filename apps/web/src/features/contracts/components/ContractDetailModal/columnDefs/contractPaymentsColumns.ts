@@ -3,6 +3,22 @@ import type { ContractPayment } from "../../../types";
 
 export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
   {
+    id: "payDate",
+    accessorKey: "payDate",
+    header: "Dönem",
+    width: 110,
+    minWidth: 90,
+    filter: { type: "dropdown" },
+    editable: false,
+    valueFormatter: (value) => {
+      if (!value) return "";
+      return new Date(value as string).toLocaleDateString("tr-TR", {
+        month: "short",
+        year: "numeric"
+      });
+    }
+  },
+  {
     id: "invoiceNo",
     accessorKey: "invoiceNo",
     header: "Fatura No",
@@ -57,7 +73,7 @@ export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
   {
     id: "total",
     accessorKey: "total",
-    header: "Ödenen",
+    header: "Tutar",
     width: 120,
     minWidth: 100,
     align: "right",

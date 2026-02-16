@@ -4,6 +4,9 @@ import { ContractSaas } from "../../contract-saas/schemas/contract-saas.schema";
 import { ContractSupport } from "../../contract-supports/schemas/contract-support.schema";
 import { ContractVersion } from "../../contract-versions/schemas/contract-version.schema";
 
+/** Fatura satir kategorisi */
+export type InvoiceRowCategory = "eftpos" | "support" | "version" | "item" | "saas";
+
 /** Fatura satir kalemi */
 export interface InvoiceRow {
   id: string;
@@ -12,6 +15,8 @@ export interface InvoiceRow {
   qty: number;
   unitPrice: number;
   total: number;
+  /** Satir kategorisi - kist hesaplamada kullanilir */
+  category?: InvoiceRowCategory;
 }
 
 /** Aylik fatura hesaplama sonucu */
