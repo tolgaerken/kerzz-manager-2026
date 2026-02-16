@@ -33,6 +33,8 @@ export class PlanGeneratorService {
   /**
    * Kontrat icin odeme planlari olusturur ve senkronize eder.
    * Senkronizasyon sonrasi guncel plan listesini dondurur (ekstra sorgu yapmaz).
+   *
+   * @param actualStartDate - Kontratin gercek baslangic tarihi (ilk ay kist hesaplamasi icin)
    */
   async generateAndSyncPlans(
     contract: Contract,
@@ -40,6 +42,7 @@ export class PlanGeneratorService {
     startDate: Date,
     monthCount: number,
     customer: Customer,
+    actualStartDate?: Date,
   ): Promise<ContractPayment[]> {
     // Mevcut planlari cek
     const existingPlans = await this.paymentModel
@@ -55,6 +58,7 @@ export class PlanGeneratorService {
       startDate,
       monthCount,
       customer,
+      actualStartDate,
     );
 
     // Senkronize et ve nihai plan listesini dondur
@@ -63,6 +67,9 @@ export class PlanGeneratorService {
 
   /**
    * Ay ay odeme plani kayitlari olusturur.
+   * Ilk ay icin actualStartDate ayin 1'i degilse kist hesaplaması yapar.
+   *
+   * @param actualStartDate - Kontratin gercek baslangic tarihi (ilk ay kist hesaplamasi icin)
    */
   private buildPlans(
     contract: Contract,
@@ -70,17 +77,56 @@ export class PlanGeneratorService {
     start: Date,
     monthCount: number,
     customer: Customer,
+    actualStartDate?: Date,
   ): Partial<ContractPayment>[] {
     const plans: Partial<ContractPayment>[] = [];
 
     for (let ix = 0; ix < monthCount; ix++) {
       const date = utcAddMonths(start, ix);
 
+      // Varsayilan olarak tam aylik tutar
+      let total = invoiceSummary.total;
+      let listItems = invoiceSummary.rows.map((row) => ({
+        id: 0,
+        description: row.description,
+        total: row.total,
+        company: "",
+        totalUsd: 0,
+        totalEur: 0,
+      }));
+
+      // Ilk ay icin kist hesaplamasi (actualStartDate ayin 1'i degilse)
+      if (ix === 0 && actualStartDate && actualStartDate.getUTCDate() !== 1) {
+        const daysInMonth = new Date(
+          Date.UTC(
+            actualStartDate.getUTCFullYear(),
+            actualStartDate.getUTCMonth() + 1,
+            0,
+          ),
+        ).getUTCDate();
+        const remainingDays = daysInMonth - actualStartDate.getUTCDate() + 1;
+        const ratio = remainingDays / daysInMonth;
+
+        total = this.safeRound(invoiceSummary.total * ratio);
+        listItems = invoiceSummary.rows.map((row) => ({
+          id: 0,
+          description: `${row.description} (${remainingDays}/${daysInMonth} gün kıst)`,
+          total: this.safeRound(row.total * ratio),
+          company: "",
+          totalUsd: 0,
+          totalEur: 0,
+        }));
+
+        this.logger.log(
+          `Ilk ay kist hesaplandi: ${contract.company}, ${remainingDays}/${daysInMonth} gun, oran: ${ratio.toFixed(2)}`,
+        );
+      }
+
       const plan: Partial<ContractPayment> = {
         id: generatePaymentId(),
         contractId: contract.id,
         payDate: utcStartOfMonth(date),
-        total: invoiceSummary.total,
+        total,
         paid: false,
         invoiceNo: "",
         company: contract.company || "",
@@ -88,14 +134,7 @@ export class PlanGeneratorService {
         taxNo: customer.taxNo || "",
         eInvoice: false,
         yearly: contract.yearly || false,
-        list: invoiceSummary.rows.map((row) => ({
-          id: 0,
-          description: row.description,
-          total: row.total,
-          company: "",
-          totalUsd: 0,
-          totalEur: 0,
-        })),
+        list: listItems,
         ref: `${customer.id}-${generateShortId()}`,
         customerId: customer.id || "",
         companyId: customer.erpId || "",
@@ -110,6 +149,14 @@ export class PlanGeneratorService {
     }
 
     return plans;
+  }
+
+  /**
+   * Sayiyi 2 ondalik basamaga yuvarlar (NaN/Infinity kontrolu ile).
+   */
+  private safeRound(value: number): number {
+    if (isNaN(value) || !isFinite(value)) return 0;
+    return parseFloat(value.toFixed(2));
   }
 
   /**

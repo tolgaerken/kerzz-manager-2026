@@ -48,12 +48,27 @@ export class ProratedPlanService {
   /**
    * Kontrata eklenen yeni kalem icin kist odeme plani olusturur.
    * Fatura kesmez — sadece plan kaydeder. Fatura kesimi cron tarafindan yapilir.
+   *
+   * Eger ilgili ayin regular plani henuz faturalanmamissa, kist plan olusturmaz
+   * ve null dondurur. Bu durumda regular plan kist tutarla olusturulacaktir.
    */
   async createProratedPlan(
     contractId: string,
     item: ProratedItemInput,
     description: string,
-  ): Promise<ContractPayment> {
+  ): Promise<ContractPayment | null> {
+    // Ay faturasi henuz kesilmemisse kist plan olusturma
+    const alreadyInvoiced = await this.isMonthAlreadyInvoiced(
+      contractId,
+      new Date(item.startDate),
+    );
+    if (!alreadyInvoiced) {
+      this.logger.log(
+        `Kist plan atlaniyor: ${contractId} - ay henuz faturalanmamis, regular plan kist hesaplanacak`,
+      );
+      return null;
+    }
+
     const contract = await this.contractModel
       .findOne({ id: contractId })
       .lean()
@@ -201,6 +216,34 @@ export class ProratedPlanService {
   private safeRound(value: number): number {
     if (isNaN(value) || !isFinite(value)) return 0;
     return parseFloat(value.toFixed(2));
+  }
+
+  /**
+   * Ilgili ayin regular plani faturalanmis mi kontrol eder.
+   * Faturalanmissa true, faturalanmamissa false dondurur.
+   */
+  private async isMonthAlreadyInvoiced(
+    contractId: string,
+    date: Date,
+  ): Promise<boolean> {
+    const monthStart = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1),
+    );
+    const monthEnd = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1),
+    );
+
+    const invoicedPlan = await this.paymentModel
+      .findOne({
+        contractId,
+        payDate: { $gte: monthStart, $lt: monthEnd },
+        $or: [{ type: "regular" }, { type: { $exists: false } }],
+        invoiceNo: { $nin: ["", null] },
+      })
+      .lean()
+      .exec();
+
+    return !!invoicedPlan;
   }
 
   /**

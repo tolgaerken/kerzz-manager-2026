@@ -192,18 +192,21 @@ export class PaymentPlanService {
 
     // Ay sayisini hesapla (UTC bazli — timezone bagimsiz)
     const start = utcStartOfMonth(contract.startDate);
+    const actualStartDate = new Date(contract.startDate);
     const end = utcEndOfMonth(contract.endDate);
     const monthCount = contract.yearly
       ? 1
       : utcDifferenceInCalendarMonths(end, start) + 1;
 
     // Plan olustur ve senkronize et - donen planlar memory'de tutulur
+    // actualStartDate: ilk ay kist hesaplamasi icin gercek baslangic tarihi
     const plans = await this.planGenerator.generateAndSyncPlans(
       contract,
       invoiceSummary,
       start,
       monthCount,
       customer,
+      actualStartDate,
     );
 
     // Kontrat toplamlarini guncelle - NaN degerlerini 0 ile degistir
