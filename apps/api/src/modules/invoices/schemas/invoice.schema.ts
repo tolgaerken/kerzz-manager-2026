@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
+import { Document, Types, Connection } from "mongoose";
 import type { AuditFields } from "../../../common/audit";
+import { invoiceSyncPlugin } from "../../../common/plugins";
 
 export type InvoiceDocument = Invoice & Document & AuditFields;
 
@@ -193,3 +194,30 @@ InvoiceSchema.index({ isPaid: 1, dueDate: 1 });
 
 // Text index (arama için - partial match)
 InvoiceSchema.index({ name: "text", invoiceNumber: "text", description: "text" });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invoice-ContractPayment Senkronizasyon Plugin
+// isPaid değiştiğinde ContractPayment.paid otomatik güncellenir
+// ─────────────────────────────────────────────────────────────────────────────
+let invoiceConnection: Connection | null = null;
+
+/**
+ * Invoice schema için connection'ı set eder.
+ * Module initialization sırasında çağrılmalı.
+ */
+export function setInvoiceConnection(connection: Connection): void {
+  invoiceConnection = connection;
+}
+
+// Plugin'i uygula (connection lazy loading ile)
+InvoiceSchema.plugin(invoiceSyncPlugin, {
+  isInvoiceSchema: true,
+  getConnection: () => {
+    if (!invoiceConnection) {
+      throw new Error(
+        "[InvoiceSyncPlugin] Connection not initialized. Call setInvoiceConnection() first."
+      );
+    }
+    return invoiceConnection;
+  },
+});

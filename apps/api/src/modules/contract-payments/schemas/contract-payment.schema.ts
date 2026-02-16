@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
+import { Document, Types, Connection } from "mongoose";
 import type { AuditFields } from "../../../common/audit";
+import { invoiceSyncPlugin } from "../../../common/plugins";
 
 export interface PaymentListItem {
   id: number;
@@ -135,3 +136,30 @@ ContractPaymentSchema.index({ payDate: -1, paid: 1 });
 ContractPaymentSchema.index({ contractId: 1, payDate: -1 });
 ContractPaymentSchema.index({ type: 1, invoiceNo: 1 }); // Kıst fatura cron sorgusu için
 ContractPaymentSchema.index({ sourceItemId: 1, type: 1, invoiceNo: 1 }); // Kaynak kalem silme sorgusu için
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invoice-ContractPayment Senkronizasyon Plugin
+// paid değiştiğinde Invoice.isPaid otomatik güncellenir
+// ─────────────────────────────────────────────────────────────────────────────
+let contractPaymentConnection: Connection | null = null;
+
+/**
+ * ContractPayment schema için connection'ı set eder.
+ * Module initialization sırasında çağrılmalı.
+ */
+export function setContractPaymentConnection(connection: Connection): void {
+  contractPaymentConnection = connection;
+}
+
+// Plugin'i uygula (connection lazy loading ile)
+ContractPaymentSchema.plugin(invoiceSyncPlugin, {
+  isInvoiceSchema: false,
+  getConnection: () => {
+    if (!contractPaymentConnection) {
+      throw new Error(
+        "[InvoiceSyncPlugin] Connection not initialized. Call setContractPaymentConnection() first."
+      );
+    }
+    return contractPaymentConnection;
+  },
+});

@@ -1,8 +1,13 @@
-import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
+import { Module, OnModuleInit } from "@nestjs/common";
+import { InjectConnection, MongooseModule } from "@nestjs/mongoose";
+import { Connection } from "mongoose";
 import { ContractPaymentsController } from "./contract-payments.controller";
 import { ContractPaymentsService } from "./contract-payments.service";
-import { ContractPayment, ContractPaymentSchema } from "./schemas/contract-payment.schema";
+import {
+  ContractPayment,
+  ContractPaymentSchema,
+  setContractPaymentConnection,
+} from "./schemas/contract-payment.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 // Yeni servisler
 import { PaymentPlanService } from "./services/payment-plan.service";
@@ -51,4 +56,14 @@ import { ErpSettingsModule } from "../erp-settings";
   ],
   exports: [ContractPaymentsService, PaymentPlanService, ProratedPlanService],
 })
-export class ContractPaymentsModule {}
+export class ContractPaymentsModule implements OnModuleInit {
+  constructor(
+    @InjectConnection(CONTRACT_DB_CONNECTION)
+    private readonly connection: Connection
+  ) {}
+
+  onModuleInit(): void {
+    // Invoice-ContractPayment sync plugin için connection'ı set et
+    setContractPaymentConnection(this.connection);
+  }
+}
