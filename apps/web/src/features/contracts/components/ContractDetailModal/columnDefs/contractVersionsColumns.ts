@@ -20,16 +20,6 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     cellEditor: { type: "text" }
   },
   {
-    id: "type",
-    accessorKey: "type",
-    header: "Tip",
-    width: 130,
-    minWidth: 100,
-    filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: { type: "text" }
-  },
-  {
     id: "price",
     accessorKey: "price",
     header: "Fiyat",
@@ -81,26 +71,6 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "Evet" : "Hayır")
-  },
-  {
-    id: "expired",
-    accessorKey: "expired",
-    header: "Süresi Doldu",
-    width: 110,
-    minWidth: 100,
-    filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: { type: "boolean" },
-    cell: (value) => (value ? "Evet" : "Hayır")
-  },
-  {
-    id: "editUser",
-    accessorKey: "editUser",
-    header: "Düzenleyen",
-    width: 120,
-    minWidth: 100,
-    filter: { type: "dropdown" },
-    editable: false
   },
   {
     id: "startDate",

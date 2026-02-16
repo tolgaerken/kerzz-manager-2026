@@ -20,14 +20,10 @@ const getMonthBoundaries = (date: Date): MonthBoundaries => {
 const getActiveContractFilter = (
   date: Date = new Date(),
 ): Record<string, unknown> => {
-  const { monthStart, monthEnd } = getMonthBoundaries(date);
+  const today = utcStartOfDay(date);
   return {
-    startDate: { $lte: monthEnd },
-    $or: [
-      { endDate: { $gte: monthStart } },
-      { noEndDate: true },
-      { endDate: null },
-    ],
+    startDate: { $lte: today },
+    endDate: { $gte: today, $ne: null },
   };
 };
 
@@ -35,7 +31,7 @@ const getContractDateFilter = (
   flow: string,
   date: Date = new Date(),
 ): Record<string, unknown> | null => {
-  const { monthStart, monthEnd } = getMonthBoundaries(date);
+  const today = utcStartOfDay(date);
 
   switch (flow) {
     case "active":
@@ -43,11 +39,11 @@ const getContractDateFilter = (
     case "archive":
       return {
         noEndDate: { $ne: true },
-        endDate: { $lt: monthStart, $ne: null },
+        endDate: { $lt: today, $ne: null },
       };
     case "future":
       return {
-        startDate: { $gt: monthEnd },
+        startDate: { $gt: today },
       };
     default:
       return null;

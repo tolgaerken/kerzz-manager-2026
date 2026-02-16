@@ -138,15 +138,6 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     }
   },
   {
-    id: "yearly",
-    accessorKey: "yearly",
-    header: "Yıllık",
-    width: 70,
-    filter: { type: "dropdown" },
-    editable: false,
-    cell: (value) => (value ? "Evet" : "Hayır")
-  },
-  {
     id: "currency",
     accessorKey: "currency",
     header: "Döviz",
@@ -197,16 +188,4 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
       return new Date(value as string).toLocaleDateString("tr-TR");
     }
   },
-  {
-    id: "editDate",
-    accessorKey: "editDate",
-    header: "Düzenleme",
-    width: 100,
-    filter: { type: "dropdown" },
-    editable: false,
-    valueFormatter: (value) => {
-      if (!value) return "";
-      return new Date(value as string).toLocaleDateString("tr-TR");
-    }
-  }
 ];

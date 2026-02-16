@@ -1,6 +1,6 @@
 import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractSupport } from "../../../types";
-import { CURRENCY_OPTIONS, SUPPORT_TYPES } from "../../../constants";
+import { CURRENCY_OPTIONS } from "../../../constants";
 import { LicenseAutocompleteEditor } from "../shared/cellEditors/LicenseAutocompleteEditor";
 import { DateCellEditor } from "../shared/cellEditors/DateCellEditor";
 
@@ -20,22 +20,6 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     editable: true,
     cellEditor: { type: "boolean" },
     cell: (value) => (value ? "✓" : "✗")
-  },
-  {
-    id: "type",
-    accessorKey: "type",
-    header: "Segment",
-    width: 120,
-    filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: {
-      type: "select",
-      options: [...SUPPORT_TYPES]
-    },
-    valueFormatter: (value) => {
-      const found = SUPPORT_TYPES.find((t) => t.id === value);
-      return found?.name || String(value ?? "");
-    }
   },
   {
     id: "licanceId",
@@ -84,32 +68,6 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
     }
   },
   {
-    id: "calulatedPrice",
-    accessorKey: "calulatedPrice",
-    header: "H.Fiyat",
-    width: 100,
-    align: "right",
-    filter: { type: "dropdown" },
-    editable: false,
-    footer: {
-      aggregate: "sum",
-      format: (value) => {
-        if (value == null) return "";
-        return new Intl.NumberFormat("tr-TR", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(value);
-      }
-    },
-    valueFormatter: (value) => {
-      if (value == null) return "";
-      return new Intl.NumberFormat("tr-TR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value as number);
-    }
-  },
-  {
     id: "currency",
     accessorKey: "currency",
     header: "Döviz",
@@ -124,33 +82,6 @@ export const contractSupportsColumns: GridColumnDef<ContractSupport>[] = [
       const found = CURRENCY_OPTIONS.find((c) => c.id === value);
       return found?.name || String(value ?? "").toUpperCase();
     }
-  },
-  {
-    id: "yearly",
-    accessorKey: "yearly",
-    header: "Yıllık",
-    width: 70,
-    filter: { type: "dropdown" },
-    editable: false,
-    cell: (value) => (value ? "Evet" : "Hayır")
-  },
-  {
-    id: "lastOnlineDay",
-    accessorKey: "lastOnlineDay",
-    header: "Gün?",
-    width: 70,
-    align: "right",
-    filter: { type: "dropdown" },
-    editable: false
-  },
-  {
-    id: "blocked",
-    accessorKey: "blocked",
-    header: "Blok?",
-    width: 70,
-    filter: { type: "dropdown" },
-    editable: false,
-    cell: (value) => (value ? "✓" : "✗")
   },
   {
     id: "startDate",

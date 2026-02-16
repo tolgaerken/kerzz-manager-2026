@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, Receipt, Calendar, CheckCircle2, XCircle, CircleDollarSign, FileText } from "lucide-react";
+import { Trash2, Receipt, Calendar, CheckCircle2, XCircle, CircleDollarSign, FileText, List } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractPayments } from "../../../hooks/useContractDetail";
@@ -11,6 +11,7 @@ import {
 import type { ContractPayment } from "../../../types";
 import { contractPaymentsColumns } from "../columnDefs";
 import { MobileCardList } from "./shared";
+import { PaymentItemsModal } from "./PaymentItemsModal";
 
 interface ContractPaymentsTabProps {
   contractId: string;
@@ -31,6 +32,7 @@ const formatDate = (dateStr: string) => {
 export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
   const isMobile = useIsMobile();
   const [selectedRow, setSelectedRow] = useState<ContractPayment | null>(null);
+  const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
 
   const { data, isLoading } = useContractPayments(contractId);
   const createMutation = useCreateContractPayment(contractId);
@@ -110,8 +112,22 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
     []
   );
 
+  const handleShowItems = useCallback(() => {
+    if (selectedRow) {
+      setIsItemsModalOpen(true);
+    }
+  }, [selectedRow]);
+
   const toolbarConfig = useMemo<ToolbarConfig<ContractPayment>>(() => {
     const customButtons: ToolbarButtonConfig[] = [
+      {
+        id: "product-list",
+        label: "Ürün Listesi",
+        icon: <List className="w-3.5 h-3.5" />,
+        onClick: handleShowItems,
+        disabled: !selectedRow || isProcessing,
+        variant: "default"
+      },
       {
         id: "delete",
         label: "Sil",
@@ -130,7 +146,7 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
       showAddRow: true,
       customButtons
     };
-  }, [handleDelete, selectedRow, isProcessing]);
+  }, [handleDelete, handleShowItems, selectedRow, isProcessing]);
 
   const payments = data?.data || [];
 
@@ -234,6 +250,13 @@ export function ContractPaymentsTab({ contractId }: ContractPaymentsTabProps) {
           selectionMode="single"
         />
       </div>
+
+      <PaymentItemsModal
+        isOpen={isItemsModalOpen}
+        onClose={() => setIsItemsModalOpen(false)}
+        items={selectedRow?.list || []}
+        payDate={selectedRow?.payDate || ""}
+      />
     </div>
   );
 }

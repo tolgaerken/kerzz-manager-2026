@@ -18,8 +18,7 @@ import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module"
 import { randomBytes } from "crypto";
 import {
   getActiveContractFilter,
-  getContractDateFilter,
-  getMonthBoundaries
+  getContractDateFilter
 } from "./utils/contract-date.utils";
 
 /** mapToResponseDto'da kullanılan alanlar (monthlyPayments vb. hariç) */
@@ -172,36 +171,24 @@ export class ContractsService {
     PaginatedContractsResponseDto["counts"]
   > {
     const now = new Date();
-    const { monthStart, monthEnd } = getMonthBoundaries(now);
+    const activeFilter = getContractDateFilter("active", now) ?? {};
+    const archiveFilter = getContractDateFilter("archive", now) ?? {};
+    const futureFilter = getContractDateFilter("future", now) ?? {};
 
     const [result] = await this.contractModel
       .aggregate<PaginatedContractsResponseDto["counts"]>([
         {
           $facet: {
             active: [
-              {
-                $match: {
-                  startDate: { $lte: monthEnd },
-                  $or: [
-                    { endDate: { $gte: monthStart } },
-                    { noEndDate: true },
-                    { endDate: null }
-                  ]
-                }
-              },
+              { $match: activeFilter },
               { $count: "n" }
             ],
             archive: [
-              {
-                $match: {
-                  noEndDate: { $ne: true },
-                  endDate: { $lt: monthStart, $ne: null }
-                }
-              },
+              { $match: archiveFilter },
               { $count: "n" }
             ],
             future: [
-              { $match: { startDate: { $gt: monthEnd } } },
+              { $match: futureFilter },
               { $count: "n" }
             ],
             free: [

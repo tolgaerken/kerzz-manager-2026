@@ -133,29 +133,10 @@ export const contractCashRegistersColumns: GridColumnDef<ContractCashRegister>[]
     }
   },
   {
-    id: "yearly",
-    accessorKey: "yearly",
-    header: "Yıllık",
-    width: 70,
-    filter: { type: "dropdown" },
-    editable: false,
-    cell: (value) => (value ? "Evet" : "Hayır")
-  },
-  {
     id: "eftPosActive",
     accessorKey: "eftPosActive",
     header: "EPA",
     width: 70,
-    filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: { type: "boolean" },
-    cell: (value) => (value ? "✓" : "✗")
-  },
-  {
-    id: "expired",
-    accessorKey: "expired",
-    header: "Expired",
-    width: 80,
     filter: { type: "dropdown" },
     editable: true,
     cellEditor: { type: "boolean" },
@@ -206,16 +187,4 @@ export const contractCashRegistersColumns: GridColumnDef<ContractCashRegister>[]
       return new Date(value as string).toLocaleDateString("tr-TR");
     }
   },
-  {
-    id: "editDate",
-    accessorKey: "editDate",
-    header: "Düzenleme",
-    width: 100,
-    filter: { type: "dropdown" },
-    editable: false,
-    valueFormatter: (value) => {
-      if (!value) return "";
-      return new Date(value as string).toLocaleDateString("tr-TR");
-    }
-  }
 ];
