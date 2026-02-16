@@ -4,5 +4,6 @@ export * from "./useContractDetailMutations";
 export * from "./useEftPosModels";
 export * from "./useCreateContract";
 export * from "./useUpdateContract";
+export * from "./useDeleteContract";
 export * from "./useCheckContract";
 export * from "./useBatchCheckContracts";

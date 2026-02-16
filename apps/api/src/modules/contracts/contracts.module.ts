@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ContractsController } from "./contracts.controller";
 import { ContractsService } from "./contracts.service";
@@ -8,6 +8,7 @@ import {
   CustomerSchema
 } from "../customers/schemas/customer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
+import { ContractPaymentsModule } from "../contract-payments/contract-payments.module";
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module"
         { name: Customer.name, schema: CustomerSchema }
       ],
       CONTRACT_DB_CONNECTION
-    )
+    ),
+    forwardRef(() => ContractPaymentsModule)
   ],
   controllers: [ContractsController],
   providers: [ContractsService],

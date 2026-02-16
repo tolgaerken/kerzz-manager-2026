@@ -1,10 +1,11 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt, X } from "lucide-react";
+import { FileText, Plus, RefreshCw, AlertCircle, Eye, Calculator, Loader2, MessageSquare, Receipt, X, Trash2 } from "lucide-react";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import {
   useContracts,
   useCreateContract,
+  useDeleteContract,
   useCheckContract,
   useBatchCheckContracts,
   ContractsGrid,
@@ -14,6 +15,7 @@ import {
   CheckContractResultModal,
   BatchProgressModal,
   FloatingProgressBar,
+  DeleteContractModal,
   type ContractFlow,
   type ContractQueryParams,
   type Contract,
@@ -95,8 +97,14 @@ export function ContractsPage() {
     };
   }, [rawData, filteredData]);
 
+  // Delete contract modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   // Create contract mutation
   const createMutation = useCreateContract();
+
+  // Delete contract mutation
+  const deleteMutation = useDeleteContract();
 
   // Check contract mutation
   const checkMutation = useCheckContract();
@@ -411,6 +419,27 @@ export function ContractsPage() {
     openAccountTransactionsModal(customer.erpId, selectedContract.internalFirm || "VERI");
   }, [selectedContract, customerMap, openAccountTransactionsModal]);
 
+  // Kontrat silme
+  const handleDeleteContract = useCallback(() => {
+    if (!selectedContract) return;
+    setIsDeleteModalOpen(true);
+  }, [selectedContract]);
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!selectedContract) return;
+    deleteMutation.mutate(selectedContract._id, {
+      onSuccess: () => {
+        setIsDeleteModalOpen(false);
+        setSelectedContract(null);
+        setSelectedIds([]);
+      }
+    });
+  }, [selectedContract, deleteMutation]);
+
+  const handleDeleteModalClose = useCallback(() => {
+    setIsDeleteModalOpen(false);
+  }, []);
+
   // Toolbar buttons for kerzz-grid
   const toolbarButtons: ToolbarButtonConfig[] = useMemo(() => {
     const hasSelection = selectedIds.length > 0 || selectedContract;
@@ -464,6 +493,14 @@ export function ContractsPage() {
         icon: isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />,
         onClick: handleCheckClick,
         disabled: isLoading || !hasSelection || isProcessing
+      },
+      {
+        id: "delete",
+        label: "Sil",
+        icon: <Trash2 className="h-4 w-4" />,
+        onClick: handleDeleteContract,
+        disabled: isLoading || !hasSelection || isMultipleSelected || deleteMutation.isPending,
+        variant: "danger"
       }
     ];
   }, [
@@ -473,11 +510,13 @@ export function ContractsPage() {
     batchCheck.progress?.status,
     isLoading,
     customerMap,
+    deleteMutation.isPending,
     handleInspect,
     handleOpenLogs,
     handleOpenAccountTransactions,
     handleCheckContract,
-    handleCheckMultipleContracts
+    handleCheckMultipleContracts,
+    handleDeleteContract
   ]);
 
   return (
@@ -600,6 +639,17 @@ export function ContractsPage() {
           onResume={handleBatchResume}
           onCancel={handleBatchCancel}
           onClose={handleBatchClose}
+        />
+      )}
+
+      {/* Delete Contract Confirm Modal */}
+      {selectedContract && (
+        <DeleteContractModal
+          isOpen={isDeleteModalOpen}
+          onClose={handleDeleteModalClose}
+          onConfirm={handleDeleteConfirm}
+          contract={selectedContract}
+          isLoading={deleteMutation.isPending}
         />
       )}
 

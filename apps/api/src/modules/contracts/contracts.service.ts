@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, SortOrder } from "mongoose";
 import { Contract, ContractDocument } from "./schemas/contract.schema";
@@ -6,6 +6,7 @@ import {
   Customer,
   CustomerDocument
 } from "../customers/schemas/customer.schema";
+import { ContractPaymentsService } from "../contract-payments/contract-payments.service";
 import { ContractQueryDto } from "./dto/contract-query.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
 import { UpdateContractDto } from "./dto/update-contract.dto";
@@ -27,7 +28,8 @@ export class ContractsService {
     @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
     private contractModel: Model<ContractDocument>,
     @InjectModel(Customer.name, CONTRACT_DB_CONNECTION)
-    private customerModel: Model<CustomerDocument>
+    private customerModel: Model<CustomerDocument>,
+    private readonly contractPaymentsService: ContractPaymentsService
   ) {}
 
   // Tarih bazlı filtreleme için yardımcı metod
@@ -323,6 +325,28 @@ export class ContractsService {
       .exec();
 
     return updated ? this.mapToResponseDto(updated) : null;
+  }
+
+  /**
+   * Kontratı ve ilişkili ödeme planlarını siler
+   * @returns Silinen kontrat ve ödeme planı bilgisi
+   */
+  async delete(
+    id: string
+  ): Promise<{ deletedPaymentPlans: number }> {
+    const contract = await this.contractModel.findById(id).lean().exec();
+    if (!contract) {
+      throw new NotFoundException(`Contract with id ${id} not found`);
+    }
+
+    // Önce ilişkili ödeme planlarını sil (contract.id string field)
+    const deletedPaymentPlans =
+      await this.contractPaymentsService.deleteByContractId(contract.id);
+
+    // Sonra kontratı sil
+    await this.contractModel.findByIdAndDelete(id).exec();
+
+    return { deletedPaymentPlans };
   }
 
   /**

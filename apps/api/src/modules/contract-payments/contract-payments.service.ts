@@ -98,6 +98,17 @@ export class ContractPaymentsService {
     }
   }
 
+  /**
+   * Bir kontrata ait tüm ödeme planlarını siler
+   * @returns Silinen kayıt sayısı
+   */
+  async deleteByContractId(contractId: string): Promise<number> {
+    const result = await this.contractPaymentModel
+      .deleteMany({ contractId })
+      .exec();
+    return result.deletedCount;
+  }
+
   private mapToResponseDto(payment: ContractPayment): ContractPaymentResponseDto {
     return {
       _id: payment._id.toString(),

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from "@nestjs/common";
 import { ContractsService } from "./contracts.service";
 import { ContractQueryDto } from "./dto/contract-query.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
@@ -32,5 +32,11 @@ export class ContractsController {
   @Put(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateContractDto) {
     return this.contractsService.update(id, dto);
+  }
+
+  @AuditLog({ module: "contracts", entityType: "Contract" })
+  @Delete(":id")
+  async delete(@Param("id") id: string) {
+    return this.contractsService.delete(id);
   }
 }

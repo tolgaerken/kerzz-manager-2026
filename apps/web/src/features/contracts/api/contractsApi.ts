@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from "../../../lib/apiClient";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../../lib/apiClient";
 import { CONTRACTS_CONSTANTS } from "../constants/contracts.constants";
 import type {
   ContractQueryParams,
@@ -50,4 +50,13 @@ export async function updateContract(id: string, data: UpdateContractInput): Pro
 export async function checkContract(contractId: string): Promise<CheckContractResult> {
   const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/check/${encodeURIComponent(contractId)}`;
   return apiPost<CheckContractResult>(url);
+}
+
+export interface DeleteContractResult {
+  deletedPaymentPlans: number;
+}
+
+export async function deleteContract(id: string): Promise<DeleteContractResult> {
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACTS}/${id}`;
+  return apiDelete<DeleteContractResult>(url);
 }

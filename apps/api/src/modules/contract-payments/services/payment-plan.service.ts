@@ -186,14 +186,26 @@ export class PaymentPlanService {
     // Brand bilgisini musteriden al
     contract.brand = customer.name || contract.brand;
 
+    // startDate veya endDate yoksa isleme devam edemeyiz
+    if (!contract.startDate || !contract.endDate) {
+      this.logger.warn(
+        `Kontrat ${contract.id} icin startDate veya endDate eksik, atlaniyor`,
+      );
+      return {
+        invoiceSummary: this.emptyInvoiceSummary(),
+        planResult: { total: 0, length: 0 },
+        plans: [],
+      };
+    }
+
     // Fatura ozeti ve alt toplamlari tek seferde hesapla
     const { invoiceSummary, subTotals } =
       await this.invoiceCalculator.calculateAll(contract.id);
 
     // Ay sayisini hesapla (UTC bazli — timezone bagimsiz)
-    const start = utcStartOfMonth(contract.startDate);
+    const start = utcStartOfMonth(new Date(contract.startDate));
     const actualStartDate = new Date(contract.startDate);
-    const end = utcEndOfMonth(contract.endDate);
+    const end = utcEndOfMonth(new Date(contract.endDate));
     const monthCount = contract.yearly
       ? 1
       : utcDifferenceInCalendarMonths(end, start) + 1;
