@@ -93,8 +93,9 @@ export class PaytrService {
    * Sirket bazli config bulunamazsa default config doner.
    */
   async getVirtualPOSConfig(companyId: CompanyType): Promise<VirtualPosConfig> {
+    // Case-insensitive arama yap
     let config = await this.vposModel
-      .findOne({ id: companyId })
+      .findOne({ id: { $regex: new RegExp(`^${companyId}$`, 'i') } })
       .lean()
       .exec();
 

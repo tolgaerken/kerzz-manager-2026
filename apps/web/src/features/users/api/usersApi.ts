@@ -12,13 +12,28 @@ import type {
 
 const { API_BASE_URL, ENDPOINTS } = USERS_CONSTANTS;
 
+function normalizeArrayResponse<T>(response: T[] | { data?: T[] }): T[] {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (response && Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  return [];
+}
+
 // ==================== USERS ====================
 
 /**
  * Get all users assigned to this application
  */
 export async function fetchAppUsers(): Promise<AppUser[]> {
-  return apiGet<AppUser[]>(`${API_BASE_URL}${ENDPOINTS.APP_USERS}`);
+  const response = await apiGet<AppUser[] | { data?: AppUser[] }>(
+    `${API_BASE_URL}${ENDPOINTS.APP_USERS}`
+  );
+  return normalizeArrayResponse(response);
 }
 
 /**
@@ -26,7 +41,8 @@ export async function fetchAppUsers(): Promise<AppUser[]> {
  */
 export async function searchUsers(query: string, limit = 20): Promise<SsoUser[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.SEARCH_USERS}?q=${encodeURIComponent(query)}&limit=${limit}`;
-  return apiGet<SsoUser[]>(url);
+  const response = await apiGet<SsoUser[] | { data?: SsoUser[] }>(url);
+  return normalizeArrayResponse(response);
 }
 
 /**
@@ -54,7 +70,10 @@ export async function removeUser(userId: string): Promise<void> {
  * Get user's roles
  */
 export async function fetchUserRoles(userId: string): Promise<string[]> {
-  return apiGet<string[]>(`${API_BASE_URL}${ENDPOINTS.USER_ROLES(userId)}`);
+  const response = await apiGet<string[] | { data?: string[] }>(
+    `${API_BASE_URL}${ENDPOINTS.USER_ROLES(userId)}`
+  );
+  return normalizeArrayResponse(response);
 }
 
 /**
@@ -70,7 +89,8 @@ export async function updateUserRoles(userId: string, roles: string[]): Promise<
  * Get all roles for this application
  */
 export async function fetchRoles(): Promise<Role[]> {
-  return apiGet<Role[]>(`${API_BASE_URL}${ENDPOINTS.ROLES}`);
+  const response = await apiGet<Role[] | { data?: Role[] }>(`${API_BASE_URL}${ENDPOINTS.ROLES}`);
+  return normalizeArrayResponse(response);
 }
 
 /**
@@ -121,21 +141,30 @@ export async function setRolePermissions(roleId: string, permissions: string[]):
  * Get all permissions for this application
  */
 export async function fetchPermissions(): Promise<Permission[]> {
-  return apiGet<Permission[]>(`${API_BASE_URL}${ENDPOINTS.PERMISSIONS}`);
+  const response = await apiGet<Permission[] | { data?: Permission[] }>(
+    `${API_BASE_URL}${ENDPOINTS.PERMISSIONS}`
+  );
+  return normalizeArrayResponse(response);
 }
 
 /**
  * Get permissions grouped by group name
  */
 export async function fetchPermissionsGrouped(): Promise<PermissionGroup[]> {
-  return apiGet<PermissionGroup[]>(`${API_BASE_URL}${ENDPOINTS.PERMISSIONS_GROUPED}`);
+  const response = await apiGet<PermissionGroup[] | { data?: PermissionGroup[] }>(
+    `${API_BASE_URL}${ENDPOINTS.PERMISSIONS_GROUPED}`
+  );
+  return normalizeArrayResponse(response);
 }
 
 /**
  * Get all permission groups
  */
 export async function fetchPermissionGroups(): Promise<string[]> {
-  return apiGet<string[]>(`${API_BASE_URL}${ENDPOINTS.PERMISSION_GROUPS}`);
+  const response = await apiGet<string[] | { data?: string[] }>(
+    `${API_BASE_URL}${ENDPOINTS.PERMISSION_GROUPS}`
+  );
+  return normalizeArrayResponse(response);
 }
 
 /**

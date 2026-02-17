@@ -3,6 +3,7 @@ import { Calendar, Building2, CheckCircle2, XCircle, ChevronRight, Lock, AlertTr
 import type { EnrichedPaymentPlan } from "../types";
 import { SEGMENT_COLORS } from "../types";
 import { LogBadge } from "../../../components/ui";
+import { hasProratedFee } from "../utils/proratedPlan";
 
 interface InvoicePlanCardProps {
   plan: EnrichedPaymentPlan;
@@ -58,6 +59,8 @@ export const InvoicePlanCard = memo(function InvoicePlanCard({
   lastLogAt,
   onOpenLogs
 }: InvoicePlanCardProps) {
+  const isProratedPlan = hasProratedFee(plan);
+
   const handleClick = () => {
     onClick(plan);
   };
@@ -89,6 +92,8 @@ export const InvoicePlanCard = memo(function InvoicePlanCard({
       className={`relative rounded-lg border bg-[var(--color-surface)] p-2.5 transition-all hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-hover)] active:scale-[0.98] ${
         selected
           ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]"
+          : isProratedPlan
+            ? "border-[var(--color-info)]/40 bg-[var(--color-info)]/5"
           : "border-[var(--color-border)]"
       }`}
     >
@@ -99,6 +104,11 @@ export const InvoicePlanCard = memo(function InvoicePlanCard({
             <span className="text-xs font-medium text-[var(--color-muted-foreground)]">
               #{plan.contractNumber}
             </span>
+            {isProratedPlan && (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-[var(--color-info)]/10 text-[var(--color-info)]">
+                Kıst
+              </span>
+            )}
             <SegmentBadge segment={plan.segment} />
             {plan.block && (
               <span className="flex items-center gap-0.5 text-[10px] text-[var(--color-warning)]">

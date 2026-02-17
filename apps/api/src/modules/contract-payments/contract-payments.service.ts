@@ -111,6 +111,22 @@ export class ContractPaymentsService {
     return result.deletedCount;
   }
 
+  /**
+   * Faturası kesilmiş (invoiceNo dolu) sourceItemId'leri döndürür
+   * Kurulum bekleyen ürünler listesinde fatura kesilmiş olanları filtrelemek için kullanılır
+   */
+  async getInvoicedSourceItemIds(): Promise<string[]> {
+    const results = await this.contractPaymentModel
+      .find({
+        sourceItemId: { $exists: true, $ne: "" },
+        invoiceNo: { $exists: true, $ne: "" }
+      })
+      .distinct("sourceItemId")
+      .exec();
+    
+    return results as string[];
+  }
+
   private async findByIdentifier(identifier: string) {
     const byId = await this.contractPaymentModel.findOne({ id: identifier }).lean().exec();
     if (byId) return byId;

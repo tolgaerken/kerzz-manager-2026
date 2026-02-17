@@ -14,6 +14,7 @@ import { PaymentPlanService } from "./services/payment-plan.service";
 import { InvoiceCalculatorService } from "./services/invoice-calculator.service";
 import { PlanGeneratorService } from "./services/plan-generator.service";
 import { ProratedPlanService } from "./services/prorated-plan.service";
+import { UninvoicedItemsService } from "./services/uninvoiced-items.service";
 // Bagimliliklardaki schema'lar (dogrudan model erisimi icin)
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
@@ -53,8 +54,9 @@ import { ErpSettingsModule } from "../erp-settings";
     InvoiceCalculatorService,
     PlanGeneratorService,
     ProratedPlanService,
+    UninvoicedItemsService,
   ],
-  exports: [ContractPaymentsService, PaymentPlanService, ProratedPlanService],
+  exports: [ContractPaymentsService, PaymentPlanService, ProratedPlanService, UninvoicedItemsService],
 })
 export class ContractPaymentsModule implements OnModuleInit {
   constructor(

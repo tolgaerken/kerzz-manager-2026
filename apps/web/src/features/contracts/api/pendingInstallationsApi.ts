@@ -1,7 +1,8 @@
 import {
   fetchContractCashRegisters,
   fetchContractSaas,
-  fetchContractSupports
+  fetchContractSupports,
+  fetchInvoicedSourceItemIds
 } from "./contractDetailApi";
 import { fetchContracts } from "./contractsApi";
 import type {
@@ -18,25 +19,33 @@ import type {
 
 /**
  * Tüm kurulum bekleyen ürünleri çeker ve birleştirir
+ * Faturası kesilmiş olanları hariç tutar
  */
 export async function fetchPendingInstallations(): Promise<PendingInstallationsResponse> {
   // Paralel olarak tüm verileri çek
-  const [cashRegistersRes, saasRes, supportsRes, contractsRes] = await Promise.all([
+  // activated: false → kurulum bekleyen
+  const [cashRegistersRes, saasRes, supportsRes, contractsRes, invoicedRes] = await Promise.all([
     fetchContractCashRegisters({ activated: false }),
     fetchContractSaas({ activated: false }),
     fetchContractSupports({ activated: false }),
-    fetchContracts({ flow: "all", limit: 99999 })
+    fetchContracts({ flow: "all", limit: 99999 }),
+    fetchInvoicedSourceItemIds()
   ]);
 
+  // Faturası kesilmiş sourceItemId'leri set olarak tut (hızlı lookup için)
+  const invoicedSourceItemIds = new Set(invoicedRes.data);
+
   // Contract map oluştur (hızlı erişim için)
+  // Alt öğelerdeki contractId, contracts koleksiyonundaki id alanına karşılık gelir
   const contractMap = new Map<string, Contract>();
   contractsRes.data.forEach((contract) => {
-    contractMap.set(contract.contractId, contract);
+    contractMap.set(contract.id, contract);
   });
 
-  // Cash registers'ı normalize et
-  const cashRegisterItems: PendingInstallationItem[] = cashRegistersRes.data.map(
-    (item: ContractCashRegister) => {
+  // Cash registers'ı normalize et ve fatura kesilmiş olanları filtrele
+  const cashRegisterItems: PendingInstallationItem[] = cashRegistersRes.data
+    .filter((item: ContractCashRegister) => !invoicedSourceItemIds.has(item.id))
+    .map((item: ContractCashRegister) => {
       const contract = contractMap.get(item.contractId);
       return {
         id: `cash-register_${item.id}`,
@@ -54,12 +63,12 @@ export async function fetchPendingInstallations(): Promise<PendingInstallationsR
         startDate: item.startDate,
         editDate: item.editDate
       };
-    }
-  );
+    });
 
-  // SaaS'ı normalize et
-  const saasItems: PendingInstallationItem[] = saasRes.data.map(
-    (item: ContractSaas) => {
+  // SaaS'ı normalize et ve fatura kesilmiş olanları filtrele
+  const saasItems: PendingInstallationItem[] = saasRes.data
+    .filter((item: ContractSaas) => !invoicedSourceItemIds.has(item.id))
+    .map((item: ContractSaas) => {
       const contract = contractMap.get(item.contractId);
       return {
         id: `saas_${item.id}`,
@@ -77,12 +86,12 @@ export async function fetchPendingInstallations(): Promise<PendingInstallationsR
         startDate: item.startDate,
         editDate: item.editDate
       };
-    }
-  );
+    });
 
-  // Support'ları normalize et
-  const supportItems: PendingInstallationItem[] = supportsRes.data.map(
-    (item: ContractSupport) => {
+  // Support'ları normalize et ve fatura kesilmiş olanları filtrele
+  const supportItems: PendingInstallationItem[] = supportsRes.data
+    .filter((item: ContractSupport) => !invoicedSourceItemIds.has(item.id))
+    .map((item: ContractSupport) => {
       const contract = contractMap.get(item.contractId);
       return {
         id: `support_${item.id}`,
@@ -99,8 +108,7 @@ export async function fetchPendingInstallations(): Promise<PendingInstallationsR
         startDate: item.startDate,
         editDate: item.editDate
       };
-    }
-  );
+    });
 
   // Tüm verileri birleştir
   const allItems = [...cashRegisterItems, ...saasItems, ...supportItems];

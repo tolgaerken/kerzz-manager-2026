@@ -11,6 +11,7 @@ import {
 import { ContractPaymentsService } from "./contract-payments.service";
 import { PaymentPlanService } from "./services/payment-plan.service";
 import { ProratedPlanService } from "./services/prorated-plan.service";
+import { UninvoicedItemsService } from "./services/uninvoiced-items.service";
 import {
   ContractPaymentQueryDto,
   CreateContractPaymentDto,
@@ -24,6 +25,7 @@ export class ContractPaymentsController {
     private readonly contractPaymentsService: ContractPaymentsService,
     private readonly paymentPlanService: PaymentPlanService,
     private readonly proratedPlanService: ProratedPlanService,
+    private readonly uninvoicedItemsService: UninvoicedItemsService,
   ) {}
 
   // ─── Payment Plan Endpoint'leri (spesifik route'lar once tanimlanmali) ───
@@ -60,6 +62,36 @@ export class ContractPaymentsController {
   @Get("monthly-fee/:contractId")
   async calculateMonthlyFee(@Param("contractId") contractId: string) {
     return this.paymentPlanService.calculateMonthlyFee(contractId);
+  }
+
+  // ─── Fatura Kesilmiş Kaynak Kalem ID'leri ────────────────────────
+
+  /**
+   * Faturası kesilmiş (invoiceNo dolu) sourceItemId'leri döndürür.
+   * Kurulum bekleyen ürünler listesinde fatura kesilmiş olanları filtrelemek için kullanılır.
+   */
+  @Get("invoiced-source-items")
+  async getInvoicedSourceItems() {
+    const sourceItemIds = await this.contractPaymentsService.getInvoicedSourceItemIds();
+    return { data: sourceItemIds, total: sourceItemIds.length };
+  }
+
+  // ─── Faturaya Dahil Edilmemiş Kalemler ───────────────────────────
+
+  /**
+   * Tüm kontratlardaki faturaya dahil edilmemiş kalemleri listeler.
+   */
+  @Get("uninvoiced-items")
+  async getAllUninvoicedItems() {
+    return this.uninvoicedItemsService.getAllUninvoicedItems();
+  }
+
+  /**
+   * Belirli bir kontrat için faturaya dahil edilmemiş kalemleri listeler.
+   */
+  @Get("uninvoiced-items/:contractId")
+  async getUninvoicedItemsByContract(@Param("contractId") contractId: string) {
+    return this.uninvoicedItemsService.getUninvoicedItemsByContract(contractId);
   }
 
   // ─── Kist Raporu ─────────────────────────────────────────────────

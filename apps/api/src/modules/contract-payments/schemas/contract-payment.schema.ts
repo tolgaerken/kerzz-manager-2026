@@ -3,6 +3,9 @@ import { Document, Types, Connection } from "mongoose";
 import type { AuditFields } from "../../../common/audit";
 import { invoiceSyncPlugin } from "../../../common/plugins";
 
+/** Fatura satır kategorisi */
+export type PaymentListItemCategory = "eftpos" | "support" | "version" | "item" | "saas";
+
 export interface PaymentListItem {
   id: number;
   description: string;
@@ -10,6 +13,10 @@ export interface PaymentListItem {
   company: string;
   totalUsd: number;
   totalEur: number;
+  /** Kaynak kalem ID'si (contract-saas, contract-cash-registers vb. id alanı) */
+  sourceItemId?: string;
+  /** Kalem kategorisi */
+  category?: PaymentListItemCategory;
 }
 
 export type ContractPaymentDocument = ContractPayment & Document & AuditFields;

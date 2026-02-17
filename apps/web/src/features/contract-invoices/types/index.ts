@@ -12,6 +12,7 @@ export interface PaymentListItem {
 export interface EnrichedPaymentPlan {
   _id: string;
   id: string;
+  type: "regular" | "prorated";
   contractId: string;
   company: string;
   brand: string;

@@ -5,6 +5,7 @@ import { InvoicePlanCard } from "./InvoicePlanCard";
 import { LogBadge } from "../../../components/ui";
 import type { EnrichedPaymentPlan } from "../types";
 import { SEGMENT_COLORS } from "../types";
+import { hasProratedFee } from "../utils/proratedPlan";
 
 // Para formati
 const formatCurrency = (value: number | null | undefined): string => {
@@ -41,6 +42,16 @@ function SegmentBadge({ segment }: { segment: string }) {
   );
 }
 
+function ProratedBadge({ isProrated }: { isProrated: boolean }) {
+  if (!isProrated) return null;
+
+  return (
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-info)]/15 text-[var(--color-info)]">
+      Kıst
+    </span>
+  );
+}
+
 function createColumnDefs(
   lastLogDatesByPlanId?: Record<string, string>,
   onOpenLogs?: (plan: EnrichedPaymentPlan) => void
@@ -54,6 +65,17 @@ function createColumnDefs(
       sortable: true,
       filter: { type: "input" },
       cellClassName: "font-mono",
+    },
+    {
+      id: "type",
+      header: "Tip",
+      accessorKey: "type",
+      width: 72,
+      align: "center",
+      sortable: true,
+      filter: { type: "dropdown", showCounts: true },
+      cell: (value) => <ProratedBadge isProrated={value === "prorated"} />,
+      cellClassName: "text-center",
     },
     {
       id: "internalFirm",
@@ -212,6 +234,7 @@ function createColumnDefs(
 // Mobil filtre konfigürasyonu
 const mobileFilterColumns: MobileFilterColumnConfig[] = [
   { id: "contractNumber", header: "Sözleşme No", type: "text", accessorKey: "contractNumber" },
+  { id: "type", header: "Tip", type: "select", accessorKey: "type" },
   { id: "internalFirm", header: "Firma", type: "select", accessorKey: "internalFirm" },
   { id: "company", header: "Müşteri", type: "text", accessorKey: "company" },
   { id: "brand", header: "Marka", type: "text", accessorKey: "brand" },
@@ -230,6 +253,7 @@ const mobileFilterColumns: MobileFilterColumnConfig[] = [
 // Mobil sıralama konfigürasyonu
 const mobileSortColumns: MobileSortColumnConfig[] = [
   { id: "contractNumber", header: "Sözleşme No", accessorKey: "contractNumber" },
+  { id: "type", header: "Tip", accessorKey: "type" },
   { id: "internalFirm", header: "Firma", accessorKey: "internalFirm" },
   { id: "company", header: "Müşteri", accessorKey: "company" },
   { id: "brand", header: "Marka", accessorKey: "brand" },
@@ -307,6 +331,9 @@ export function ContractInvoicesGrid({
         selectionMode="multiple"
         selectedIds={selectedIds}
         onSelectionChange={onSelectionChange}
+        rowClassName={(row) =>
+          hasProratedFee(row) ? "bg-[var(--color-info)]/12" : ""
+        }
         stateKey="contract-invoices-grid"
         toolbar={{
           exportFileName: "sozlesme_faturalari",

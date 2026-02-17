@@ -17,6 +17,8 @@ export interface InvoiceRow {
   total: number;
   /** Satir kategorisi - kist hesaplamada kullanilir */
   category: InvoiceRowCategory;
+  /** Kaynak kalem ID'leri (contract-saas, contract-cash-registers vb. id alanlari) */
+  sourceItemIds?: string[];
 }
 
 /** Aylik fatura hesaplama sonucu */

@@ -84,7 +84,7 @@ export class PaymentsService {
       provisionPassword: vpos.provisionPassword,
     });
 
-    // DB'ye kaydet
+    // DB'ye kaydet – token hash'inde kullanilan tum parametreler saklanmali
     await this.paymentLinkModel.create({
       linkId,
       id: orderId,
@@ -94,6 +94,8 @@ export class PaymentsService {
       customerId: dto.customerId || "",
       erpId: dto.erpId || "",
       amount: dto.amount,
+      paymentAmount: paymentAmount,
+      installmentCount,
       canRecurring: dto.canRecurring ?? false,
       companyId: dto.companyId,
       email: dto.email,
@@ -107,6 +109,9 @@ export class PaymentsService {
       status: "waiting",
       paytrToken,
       merchantId: vpos.merchantId,
+      userIp,
+      paymentType: "card",
+      currency: "TL",
       createDate: new Date(),
     });
 
@@ -359,7 +364,10 @@ export class PaymentsService {
         (filter.createDate as Record<string, Date>).$gte = new Date(dateFrom);
       }
       if (dateTo) {
-        (filter.createDate as Record<string, Date>).$lte = new Date(dateTo);
+        // dateTo'yu günün sonuna ayarla (23:59:59.999)
+        const endOfDay = new Date(dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        (filter.createDate as Record<string, Date>).$lte = endOfDay;
       }
     } else {
       const thirtyDaysAgo = new Date();
@@ -504,11 +512,12 @@ export class PaymentsService {
       paytrToken: doc.paytrToken ?? "",
       merchantId: doc.merchantId ?? "",
       paymentAmount: doc.paymentAmount || (doc.amount ?? 0),
+      paymentType: doc.paymentType ?? "card",
       currency: doc.currency ?? "TL",
       installmentCount: doc.installmentCount ?? String(doc.installment ?? 1),
       non3d: typeof doc.non3d === "string" ? doc.non3d : (doc.non3d ? "1" : "0"),
       storeCard: doc.storeCard ?? "0",
-      userIp: doc.userIp ?? "",
+      userIp: doc.userIp ?? "127.0.0.1",
       postUrl: doc.postUrl ?? "",
       status: doc.status ?? "",
       statusMessage: doc.statusMessage ?? "",

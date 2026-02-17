@@ -11,6 +11,8 @@ import {
 import {
   ContractPayment,
   ContractPaymentDocument,
+  PaymentListItem,
+  PaymentListItemCategory,
 } from "../schemas/contract-payment.schema";
 import {
   InvoiceSummary,
@@ -93,14 +95,9 @@ export class PlanGeneratorService {
 
       // Varsayilan olarak tam aylik tutar
       let total = invoiceSummary.total;
-      let listItems = invoiceSummary.rows.map((row) => ({
-        id: 0,
-        description: row.description,
-        total: row.total,
-        company: "",
-        totalUsd: 0,
-        totalEur: 0,
-      }));
+      let listItems: PaymentListItem[] = invoiceSummary.rows.map((row) =>
+        this.buildPaymentListItem(row),
+      );
 
       // Ilk ay icin kist hesaplamasi (actualStartDate ayin 1'i degilse)
       // NOT: EFT-POS (yazarkasa) satirlarina kist uygulanmaz - her zaman tam fiyat
@@ -119,24 +116,13 @@ export class PlanGeneratorService {
         listItems = invoiceSummary.rows.map((row) => {
           // EFT-POS satirlarina kist uygulanmaz
           if (row.category === "eftpos") {
-            return {
-              id: 0,
-              description: row.description,
-              total: row.total,
-              company: "",
-              totalUsd: 0,
-              totalEur: 0,
-            };
+            return this.buildPaymentListItem(row);
           }
           // Diger satirlara kist uygula
-          return {
-            id: 0,
+          return this.buildPaymentListItem(row, {
             description: `${row.description} (${remainingDays}/${daysInMonth} gün kıst)`,
             total: safeRound(row.total * ratio),
-            company: "",
-            totalUsd: 0,
-            totalEur: 0,
-          };
+          });
         });
 
         // Toplami yeniden hesapla: EFT-POS tam + diger kist
@@ -387,5 +373,25 @@ export class PlanGeneratorService {
       .sort({ payDate: 1 })
       .lean()
       .exec();
+  }
+
+  /**
+   * InvoiceRow'dan PaymentListItem olusturur.
+   * sourceItemIds ve category bilgilerini tasir.
+   */
+  private buildPaymentListItem(
+    row: InvoiceRow,
+    overrides?: { description?: string; total?: number },
+  ): PaymentListItem {
+    return {
+      id: 0,
+      description: overrides?.description ?? row.description,
+      total: overrides?.total ?? row.total,
+      company: "",
+      totalUsd: 0,
+      totalEur: 0,
+      sourceItemId: row.sourceItemIds?.join(","),
+      category: row.category as PaymentListItemCategory,
+    };
   }
 }

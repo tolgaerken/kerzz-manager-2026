@@ -69,8 +69,9 @@ export function PublicPaymentFormPage() {
 
   const merchantOkUrl = `${PAYMENT_BASE_URL}/payment_ok/${paymentInfo.id}`;
   const merchantFailUrl = `${PAYMENT_BASE_URL}/payment_error/${paymentInfo.id}`;
+  // paymentAmount zaten string format ("100.00"), /100 yapmaya gerek yok
   const userBasket = btoa(
-    unescape(encodeURIComponent(JSON.stringify([["Odeme", (paymentInfo.paymentAmount / 100).toFixed(2), 1]])))
+    unescape(encodeURIComponent(JSON.stringify([["Odeme", paymentInfo.paymentAmount, 1]])))
   );
 
   return (

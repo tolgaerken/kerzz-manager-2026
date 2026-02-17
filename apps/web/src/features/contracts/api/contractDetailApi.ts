@@ -290,3 +290,12 @@ export async function updateContractPayment(
 export async function deleteContractPayment(id: string): Promise<void> {
   return apiDelete(`${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/${encodeURIComponent(id)}`);
 }
+
+/**
+ * Faturası kesilmiş (invoiceNo dolu) sourceItemId'leri döndürür.
+ * Kurulum bekleyen ürünler listesinde fatura kesilmiş olanları filtrelemek için kullanılır.
+ */
+export async function fetchInvoicedSourceItemIds(): Promise<{ data: string[]; total: number }> {
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_PAYMENTS}/invoiced-source-items`;
+  return apiGet(url);
+}

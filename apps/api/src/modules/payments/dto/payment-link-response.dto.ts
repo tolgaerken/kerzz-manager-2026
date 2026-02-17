@@ -33,6 +33,7 @@ export interface PaymentInfoDto {
   paytrToken: string;
   merchantId: string;
   paymentAmount: number;
+  paymentType: string;
   currency: string;
   installmentCount: string;
   non3d: string;

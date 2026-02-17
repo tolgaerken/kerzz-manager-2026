@@ -318,7 +318,7 @@ export class InvoiceCalculatorService {
    * Ayni fiyattaki kalemleri birlestirir.
    */
   private groupAndProcess(
-    data: Array<{ price: number; currency: string }>,
+    data: Array<{ id: string; price: number; currency: string }>,
     description: string,
     itemId: string,
     category: InvoiceRowCategory,
@@ -346,6 +346,9 @@ export class InvoiceCalculatorService {
       const count = group.length;
       const total = safeRound(price * count);
 
+      // Gruptaki tum kaynak kalem ID'lerini topla
+      const sourceItemIds = group.map((item) => item.id).filter(Boolean);
+
       result.push({
         id: generateShortId(),
         itemId,
@@ -354,6 +357,7 @@ export class InvoiceCalculatorService {
         unitPrice: price,
         total,
         category,
+        sourceItemIds,
       });
     }
 
@@ -380,6 +384,7 @@ export class InvoiceCalculatorService {
         unitPrice: price,
         total,
         category: "item",
+        sourceItemIds: [item.id],
       });
     }
 
@@ -428,6 +433,7 @@ export class InvoiceCalculatorService {
         unitPrice: price,
         total,
         category: "saas",
+        sourceItemIds: [saasItem.id],
       });
     }
 

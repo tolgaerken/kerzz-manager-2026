@@ -87,6 +87,7 @@ export class ContractInvoiceOrchestratorService {
           $project: {
             _id: { $toString: "$_id" },
             id: 1,
+            type: { $ifNull: ["$type", "regular"] },
             contractId: 1,
             company: { $ifNull: ["$company", ""] },
             brand: {
