@@ -123,6 +123,33 @@ export function utcStartOfDay(date: Date): Date {
 }
 
 /**
+ * Tarihten "YYYY-M" formatinda ay anahtari uretir.
+ *
+ * Eski Angular sistemi payDate degerlerini TR saatine (UTC+3) gore
+ * kaydediyordu. Ornegin "1 Subat 00:00 TR" → "2026-01-31T21:00:00.000Z".
+ * Bu degerler UTC ile parse edildiginde bir onceki aya dusuyor.
+ *
+ * Bu fonksiyon eski formati (ayin son gunu 21:00 UTC) tespit edip
+ * dogru aya normalize eder.
+ */
+export function toMonthKey(date: Date): string {
+  const d = new Date(date);
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth();
+  const day = d.getUTCDate();
+  const hours = d.getUTCHours();
+
+  // Eski format: ayin son gunu (28-31) saat 21:00 UTC = TR 00:00 sonraki ay
+  const lastDayOfMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  if (day >= 28 && day === lastDayOfMonth && hours === 21) {
+    const next = new Date(Date.UTC(year, month + 1, 1));
+    return `${next.getUTCFullYear()}-${next.getUTCMonth()}`;
+  }
+
+  return `${year}-${month}`;
+}
+
+/**
  * İki UTC tarih arası takvim günü farkını hesaplar.
  *
  * date-fns differenceInCalendarDays yerine kullanılır.
