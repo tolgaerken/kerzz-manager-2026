@@ -10,6 +10,10 @@ import {
   approveSale,
   revertSale,
   fetchSaleStats,
+  requestSaleApproval,
+  fetchPendingApprovals,
+  rejectSale,
+  bulkApproveSales,
 } from "../api/salesApi";
 import type {
   SaleQueryParams,
@@ -18,6 +22,8 @@ import type {
   SaleStats,
   CreateSaleInput,
   UpdateSaleInput,
+  ApprovalRequestResult,
+  ApprovalActionResult,
 } from "../types/sale.types";
 
 const { QUERY_KEYS } = SALES_CONSTANTS;
@@ -90,19 +96,13 @@ export function useApproveSale() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      userId,
-      userName,
-    }: {
-      id: string;
-      userId: string;
-      userName: string;
-    }) => approveSale(id, userId, userName),
+    mutationFn: ({ id, note }: { id: string; note?: string }) =>
+      approveSale(id, note),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALES] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE, variables.id] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE_STATS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PENDING_APPROVALS] });
     },
   });
 }
@@ -128,6 +128,80 @@ export function useRevertSale() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALES] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE, id] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE_STATS] });
+    },
+  });
+}
+
+// ==================== ONAY AKIŞI HOOK'LARI ====================
+
+/**
+ * Toplu onay isteği gönderme hook'u
+ */
+export function useRequestSaleApproval() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ApprovalRequestResult,
+    Error,
+    { saleIds: string[]; note?: string }
+  >({
+    mutationFn: ({ saleIds, note }) => requestSaleApproval(saleIds, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE_STATS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PENDING_APPROVALS] });
+    },
+  });
+}
+
+/**
+ * Bekleyen onayları listeleme hook'u
+ */
+export function usePendingApprovals() {
+  return useQuery<Sale[], Error>({
+    queryKey: [QUERY_KEYS.PENDING_APPROVALS],
+    queryFn: () => fetchPendingApprovals(),
+    staleTime: 1000 * 60 * 1,
+  });
+}
+
+/**
+ * Satış reddetme hook'u
+ */
+export function useRejectSale() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ApprovalActionResult,
+    Error,
+    { id: string; reason: string }
+  >({
+    mutationFn: ({ id, reason }) => rejectSale(id, reason),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE, variables.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE_STATS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PENDING_APPROVALS] });
+    },
+  });
+}
+
+/**
+ * Toplu onay işlemi hook'u
+ */
+export function useBulkApproveSales() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ApprovalRequestResult,
+    Error,
+    { saleIds: string[]; note?: string }
+  >({
+    mutationFn: ({ saleIds, note }) => bulkApproveSales(saleIds, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SALE_STATS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PENDING_APPROVALS] });
     },
   });
 }

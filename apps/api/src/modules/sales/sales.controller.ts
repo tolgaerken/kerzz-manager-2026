@@ -9,17 +9,28 @@ import {
   Query,
 } from "@nestjs/common";
 import { SalesService } from "./sales.service";
+import { SaleApprovalService } from "./services/sale-approval.service";
 import { CreateSaleDto } from "./dto/create-sale.dto";
 import { UpdateSaleDto } from "./dto/update-sale.dto";
 import { SaleQueryDto } from "./dto/sale-query.dto";
+import {
+  RequestApprovalDto,
+  ApproveSaleDto,
+  RejectSaleDto,
+  BulkApproveDto,
+} from "./dto/sale-approval.dto";
 import { AuditLog } from "../system-logs";
-import { RequirePermission } from "../auth/decorators";
+import { RequirePermission, CurrentUser } from "../auth/decorators";
 import { PERMISSIONS } from "../auth/constants/permissions";
+import type { AuthenticatedUser } from "../auth/auth.types";
 
 @Controller("sales")
 @RequirePermission(PERMISSIONS.SALES_MENU)
 export class SalesController {
-  constructor(private readonly salesService: SalesService) {}
+  constructor(
+    private readonly salesService: SalesService,
+    private readonly approvalService: SaleApprovalService
+  ) {}
 
   @Get()
   async findAll(@Query() query: SaleQueryDto) {
@@ -63,14 +74,62 @@ export class SalesController {
   @Patch(":id/approve")
   async approve(
     @Param("id") id: string,
-    @Body() body: { userId: string; userName: string }
+    @Body() body: ApproveSaleDto,
+    @CurrentUser() user: AuthenticatedUser
   ) {
-    return this.salesService.approve(id, body.userId, body.userName);
+    return this.approvalService.approveSale(id, user, body.note);
   }
 
   @AuditLog({ module: "sales", entityType: "Sale" })
   @Post(":id/revert")
   async revert(@Param("id") id: string) {
     return this.salesService.revertFromOffer(id);
+  }
+
+  // ==================== ONAY AKIŞI ENDPOINT'LERİ ====================
+
+  /**
+   * Toplu onay isteği gönderir
+   */
+  @AuditLog({ module: "sales", entityType: "Sale" })
+  @Post("approval-requests")
+  async requestApproval(
+    @Body() dto: RequestApprovalDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.approvalService.requestApproval(dto.saleIds, user, dto.note);
+  }
+
+  /**
+   * Bekleyen onayları listeler
+   */
+  @Get("pending-approvals")
+  async getPendingApprovals() {
+    return this.approvalService.getPendingApprovals();
+  }
+
+  /**
+   * Tekil satışı reddeder
+   */
+  @AuditLog({ module: "sales", entityType: "Sale" })
+  @Patch(":id/reject")
+  async reject(
+    @Param("id") id: string,
+    @Body() dto: RejectSaleDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.approvalService.rejectSale(id, user, dto.reason);
+  }
+
+  /**
+   * Toplu onay işlemi
+   */
+  @AuditLog({ module: "sales", entityType: "Sale" })
+  @Post("bulk-approve")
+  async bulkApprove(
+    @Body() dto: BulkApproveDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.approvalService.bulkApprove(dto.saleIds, user, dto.note);
   }
 }

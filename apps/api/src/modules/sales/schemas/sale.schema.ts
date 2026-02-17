@@ -111,6 +111,30 @@ export class Sale {
   @Prop({ type: Date })
   approvedAt: Date;
 
+  // Onay akışı alanları
+  @Prop({
+    type: String,
+    default: "none",
+    enum: ["none", "pending", "approved", "rejected"],
+    index: true,
+  })
+  approvalStatus: string;
+
+  @Prop({ type: String, default: "" })
+  approvalRequestedBy: string;
+
+  @Prop({ type: String, default: "" })
+  approvalRequestedByName: string;
+
+  @Prop({ type: Date })
+  approvalRequestedAt: Date;
+
+  @Prop({ type: String, default: "" })
+  approvalNote: string;
+
+  @Prop({ type: String, default: "" })
+  rejectionReason: string;
+
   @Prop({ type: [String], default: [] })
   labels: string[];
 

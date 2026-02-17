@@ -8,7 +8,12 @@ export interface SalesGridProps {
   data: Sale[];
   loading: boolean;
   onRowDoubleClick?: (item: Sale) => void;
+  /** Tekil seçim callback'i (geriye uyumluluk) */
   onSelectionChanged?: (item: Sale | null) => void;
+  /** Çoklu seçim için seçili ID'ler */
+  selectedIds?: string[];
+  /** Çoklu seçim callback'i */
+  onSelectionChange?: (ids: string[]) => void;
   onSortChange?: (field: string, order: "asc" | "desc") => void;
   toolbarButtons?: ToolbarButtonConfig[];
   onScrollDirectionChange?: (direction: "up" | "down" | null, isAtTop: boolean) => void;
@@ -42,6 +47,8 @@ export function SalesGrid({
   loading,
   onRowDoubleClick,
   onSelectionChanged,
+  selectedIds,
+  onSelectionChange,
   onSortChange,
   toolbarButtons,
   onScrollDirectionChange,
@@ -51,6 +58,13 @@ export function SalesGrid({
       onSelectionChanged?.(row);
     },
     [onSelectionChanged]
+  );
+
+  const handleSelectionChange = useCallback(
+    (ids: string[]) => {
+      onSelectionChange?.(ids);
+    },
+    [onSelectionChange]
   );
 
   const handleRowDoubleClick = useCallback(
@@ -89,6 +103,9 @@ export function SalesGrid({
         onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
         onSortChange={handleSortChange}
+        selectionMode="multiple"
+        selectedIds={selectedIds}
+        onSelectionChange={handleSelectionChange}
         stripedRows
         toolbar={toolbarConfig}
         stateKey="sales"

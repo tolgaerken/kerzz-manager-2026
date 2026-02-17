@@ -1,15 +1,22 @@
 import { useState, useCallback, useMemo } from "react";
-import { CalendarDays, MessageSquare, Plus, RefreshCw, ShoppingCart } from "lucide-react";
+import { CalendarDays, MessageSquare, Plus, RefreshCw, ShoppingCart, Send, CheckCircle } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
+import toast from "react-hot-toast";
 import {
   useSales,
   useCreateSale,
   useUpdateSale,
+  useRequestSaleApproval,
+  useApproveSale,
+  useRejectSale,
 } from "../features/sales/hooks/useSales";
+import { useSalesSocket } from "../features/sales/hooks/useSalesSocket";
 import { SalesGrid } from "../features/sales/components/SalesGrid/SalesGrid";
 import { SalesFilters } from "../features/sales/components/SalesFilters/SalesFilters";
 import { SaleFormModal } from "../features/sales/components/SaleFormModal/SaleFormModal";
+import { ApprovalRequestDialog } from "../features/sales/components/ApprovalRequestDialog";
+import { ApprovalActionDialog } from "../features/sales/components/ApprovalActionDialog";
 import {
   getMonthRange,
   getCurrentMonth,
@@ -22,6 +29,7 @@ import type {
 } from "../features/sales/types/sale.types";
 import { useCustomerLookup } from "../features/lookup";
 import { useLogPanelStore } from "../features/manager-log";
+import { useAuth } from "../features/auth";
 
 export function SalesPage() {
   const defaultRange = useMemo(() => getMonthRange(), []);
@@ -57,13 +65,32 @@ export function SalesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  
+  // Çoklu seçim state'i
+  const [selectedSaleIds, setSelectedSaleIds] = useState<string[]>([]);
+  
+  // Onay dialog state'leri
+  const [isApprovalRequestOpen, setIsApprovalRequestOpen] = useState(false);
+  const [isApprovalActionOpen, setIsApprovalActionOpen] = useState(false);
+  const [saleForApproval, setSaleForApproval] = useState<Sale | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useSales(queryParams);
+  
+  // Auth bilgisi
+  const { isManager, isAdmin } = useAuth();
+  const isApprover = isManager || isAdmin;
 
   const createMutation = useCreateSale();
   const updateMutation = useUpdateSale();
+  const requestApprovalMutation = useRequestSaleApproval();
+  const approveMutation = useApproveSale();
+  const rejectMutation = useRejectSale();
+  
   const { getCustomerName } = useCustomerLookup();
   const { openPipelinePanel } = useLogPanelStore();
+  
+  // WebSocket ile gerçek zamanlı güncellemeler
+  useSalesSocket();
 
   const enrichedSales = useMemo(() => {
     if (!data?.data) return [];
@@ -133,6 +160,73 @@ export function SalesPage() {
     [editingSale, updateMutation]
   );
 
+  // Seçili satışları al
+  const selectedSales = useMemo(() => {
+    return enrichedSales.filter((s) => selectedSaleIds.includes(s._id));
+  }, [enrichedSales, selectedSaleIds]);
+
+  // Onay isteği gönder
+  const handleRequestApproval = useCallback(
+    async (note?: string) => {
+      try {
+        const result = await requestApprovalMutation.mutateAsync({
+          saleIds: selectedSaleIds,
+          note,
+        });
+        toast.success(result.message);
+        setIsApprovalRequestOpen(false);
+        setSelectedSaleIds([]);
+      } catch (error: any) {
+        toast.error(error?.message || "Onay isteği gönderilemedi");
+      }
+    },
+    [selectedSaleIds, requestApprovalMutation]
+  );
+
+  // Satış onayla
+  const handleApprove = useCallback(
+    async (note?: string) => {
+      if (!saleForApproval) return;
+      try {
+        const result = await approveMutation.mutateAsync({
+          id: saleForApproval._id,
+          note,
+        });
+        toast.success(result.message);
+        setIsApprovalActionOpen(false);
+        setSaleForApproval(null);
+      } catch (error: any) {
+        toast.error(error?.message || "Satış onaylanamadı");
+      }
+    },
+    [saleForApproval, approveMutation]
+  );
+
+  // Satış reddet
+  const handleReject = useCallback(
+    async (reason: string) => {
+      if (!saleForApproval) return;
+      try {
+        const result = await rejectMutation.mutateAsync({
+          id: saleForApproval._id,
+          reason,
+        });
+        toast.success(result.message);
+        setIsApprovalActionOpen(false);
+        setSaleForApproval(null);
+      } catch (error: any) {
+        toast.error(error?.message || "Satış reddedilemedi");
+      }
+    },
+    [saleForApproval, rejectMutation]
+  );
+
+  // Onay işlemi için satış seç
+  const handleOpenApprovalAction = useCallback((sale: Sale) => {
+    setSaleForApproval(sale);
+    setIsApprovalActionOpen(true);
+  }, []);
+
   const toolbarButtons: ToolbarButtonConfig[] = [
     {
       id: "add",
@@ -143,6 +237,23 @@ export function SalesPage() {
         setIsFormOpen(true);
       },
     },
+    {
+      id: "request-approval",
+      label: "Onaya Gönder",
+      icon: <Send size={14} />,
+      onClick: () => setIsApprovalRequestOpen(true),
+      disabled: selectedSaleIds.length === 0,
+    },
+    ...(isApprover && selectedSale?.approvalStatus === "pending"
+      ? [
+          {
+            id: "approve",
+            label: "Onayla/Reddet",
+            icon: <CheckCircle size={14} />,
+            onClick: () => handleOpenApprovalAction(selectedSale),
+          },
+        ]
+      : []),
     {
       id: "logs",
       label: "Loglar",
@@ -251,6 +362,8 @@ export function SalesPage() {
             onSortChange={handleSortChange}
             onRowDoubleClick={handleRowDoubleClick}
             onSelectionChanged={setSelectedSale}
+            selectedIds={selectedSaleIds}
+            onSelectionChange={setSelectedSaleIds}
             toolbarButtons={toolbarButtons}
             onScrollDirectionChange={collapsible.handleScrollDirectionChange}
           />
@@ -283,6 +396,25 @@ export function SalesPage() {
         editItem={editingSale}
         onSubmit={editingSale ? handleUpdate : handleCreate}
         loading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Onay İsteği Dialog */}
+      <ApprovalRequestDialog
+        open={isApprovalRequestOpen}
+        onOpenChange={setIsApprovalRequestOpen}
+        selectedSales={selectedSales}
+        onSubmit={handleRequestApproval}
+        isLoading={requestApprovalMutation.isPending}
+      />
+
+      {/* Onay/Red Dialog */}
+      <ApprovalActionDialog
+        open={isApprovalActionOpen}
+        onOpenChange={setIsApprovalActionOpen}
+        sale={saleForApproval}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        isLoading={approveMutation.isPending || rejectMutation.isPending}
       />
     </div>
   );

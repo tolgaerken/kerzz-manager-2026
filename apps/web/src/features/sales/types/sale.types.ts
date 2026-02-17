@@ -7,6 +7,8 @@ export type SaleStatus =
   | "completed"
   | "cancelled";
 
+export type ApprovalStatus = "none" | "pending" | "approved" | "rejected";
+
 export interface Sale {
   _id: string;
   no: number;
@@ -32,6 +34,13 @@ export interface Sale {
   approvedBy: string;
   approvedByName: string;
   approvedAt: string;
+  // Onay akışı alanları
+  approvalStatus: ApprovalStatus;
+  approvalRequestedBy: string;
+  approvalRequestedByName: string;
+  approvalRequestedAt: string;
+  approvalNote: string;
+  rejectionReason: string;
   labels: string[];
   notes: string;
   internalFirm: string;
@@ -117,3 +126,18 @@ export interface CreateSaleInput {
 }
 
 export interface UpdateSaleInput extends Partial<CreateSaleInput> {}
+
+// Onay akışı tipleri
+export interface ApprovalRequestResult {
+  success: boolean;
+  updatedCount: number;
+  saleIds: string[];
+  message: string;
+}
+
+export interface ApprovalActionResult {
+  success: boolean;
+  saleId: string;
+  action: "approved" | "rejected";
+  message: string;
+}

@@ -7,6 +7,8 @@ import type {
   SaleStats,
   CreateSaleInput,
   UpdateSaleInput,
+  ApprovalRequestResult,
+  ApprovalActionResult,
 } from "../types/sale.types";
 
 const { API_BASE_URL, ENDPOINTS } = SALES_CONSTANTS;
@@ -73,12 +75,11 @@ export async function calculateSaleTotals(id: string): Promise<Sale> {
 
 export async function approveSale(
   id: string,
-  userId: string,
-  userName: string
-): Promise<Sale> {
+  note?: string
+): Promise<ApprovalActionResult> {
   const url = `${API_BASE_URL}${ENDPOINTS.SALES}/${encodeURIComponent(id)}/approve`;
 
-  return apiPatch<Sale>(url, { userId, userName });
+  return apiPatch<ApprovalActionResult>(url, { note });
 }
 
 export async function revertSale(id: string): Promise<Sale> {
@@ -94,4 +95,51 @@ export async function fetchSaleStats(
   const url = `${API_BASE_URL}${ENDPOINTS.SALES}/stats${queryString ? `?${queryString}` : ""}`;
 
   return apiGet<SaleStats>(url);
+}
+
+// ==================== ONAY AKIŞI API FONKSİYONLARI ====================
+
+/**
+ * Toplu onay isteği gönderir
+ */
+export async function requestSaleApproval(
+  saleIds: string[],
+  note?: string
+): Promise<ApprovalRequestResult> {
+  const url = `${API_BASE_URL}${ENDPOINTS.SALES}/approval-requests`;
+
+  return apiPost<ApprovalRequestResult>(url, { saleIds, note });
+}
+
+/**
+ * Bekleyen onayları listeler
+ */
+export async function fetchPendingApprovals(): Promise<Sale[]> {
+  const url = `${API_BASE_URL}${ENDPOINTS.SALES}/pending-approvals`;
+
+  return apiGet<Sale[]>(url);
+}
+
+/**
+ * Satışı reddeder
+ */
+export async function rejectSale(
+  id: string,
+  reason: string
+): Promise<ApprovalActionResult> {
+  const url = `${API_BASE_URL}${ENDPOINTS.SALES}/${encodeURIComponent(id)}/reject`;
+
+  return apiPatch<ApprovalActionResult>(url, { reason });
+}
+
+/**
+ * Toplu onay işlemi
+ */
+export async function bulkApproveSales(
+  saleIds: string[],
+  note?: string
+): Promise<ApprovalRequestResult> {
+  const url = `${API_BASE_URL}${ENDPOINTS.SALES}/bulk-approve`;
+
+  return apiPost<ApprovalRequestResult>(url, { saleIds, note });
 }

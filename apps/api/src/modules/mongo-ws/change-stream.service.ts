@@ -61,6 +61,7 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
     this.registerCollection("licenses", {
       ignoredFields: ["lastOnline", "lastIp", "lastVersion"],
     });
+    this.registerCollection("sales");
     // Default DB collection'lari
     this.registerCollection("manager-notifications", {
       connectionName: "default",

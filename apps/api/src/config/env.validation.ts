@@ -51,6 +51,11 @@ class EnvironmentVariables {
 
   @IsString()
   INVOICE_SERVICE_API_KEY: string;
+
+  // Payment Base URL - Odeme linkleri icin
+  @IsOptional()
+  @IsString()
+  PAYMENT_BASE_URL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

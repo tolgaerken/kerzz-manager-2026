@@ -23,7 +23,7 @@ export class NotificationLogQueryDto {
   status?: NotificationLogStatus;
 
   @IsOptional()
-  @IsEnum(["invoice", "contract"])
+  @IsEnum(["invoice", "contract", "sale-approval"])
   contextType?: NotificationLogContextType;
 
   @IsOptional()

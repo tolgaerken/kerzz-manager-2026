@@ -6,7 +6,7 @@ export type NotificationLogDocument = NotificationLog & Document & AuditFields;
 
 export type NotificationLogStatus = "sent" | "failed";
 export type NotificationLogChannel = "email" | "sms";
-export type NotificationLogContextType = "invoice" | "contract";
+export type NotificationLogContextType = "invoice" | "contract" | "sale-approval";
 
 @Schema({ collection: "notification-logs", timestamps: true })
 export class NotificationLog {
@@ -30,7 +30,7 @@ export class NotificationLog {
   @Prop({ default: "" })
   recipientName: string;
 
-  @Prop({ required: true, enum: ["invoice", "contract"] })
+  @Prop({ required: true, enum: ["invoice", "contract", "sale-approval"] })
   contextType: NotificationLogContextType;
 
   @Prop({ required: true })

@@ -25,6 +25,18 @@ export function OtpRequestScreen({ navigation }: Props) {
 
   const { requestOtp, isLoading, error, clearError } = useAuthStore();
 
+  const formatPhoneNumber = (raw: string): string => {
+    const digits = raw.replace(/\D/g, "");
+    // Remove leading zeros
+    const withoutLeadingZeros = digits.replace(/^0+/, "");
+    // If already starts with country code (e.g. 905323530566)
+    if (withoutLeadingZeros.startsWith("90") && withoutLeadingZeros.length >= 12) {
+      return `+${withoutLeadingZeros}`;
+    }
+    // Default: prepend +90
+    return `+90${withoutLeadingZeros}`;
+  };
+
   const handleRequestOtp = async () => {
     const cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.length < 10) {
@@ -32,9 +44,11 @@ export function OtpRequestScreen({ navigation }: Props) {
       return;
     }
 
+    const fullPhone = formatPhoneNumber(phone);
+
     try {
-      await requestOtp({ gsm: cleanPhone });
-      navigation.navigate("OtpVerify", { phone: cleanPhone });
+      await requestOtp({ gsm: fullPhone });
+      navigation.navigate("OtpVerify", { phone: fullPhone });
     } catch {
       // Error is handled by store
     }

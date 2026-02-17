@@ -25,7 +25,7 @@ async function ssoRequest<T>(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "x-api-key": config.ssoApiKey,
+    apiKey: config.ssoApiKey,
   };
 
   const response = await fetch(url, {

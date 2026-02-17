@@ -24,6 +24,13 @@ export class SaleResponseDto {
   approvedBy: string;
   approvedByName: string;
   approvedAt: Date;
+  // Onay akışı alanları
+  approvalStatus: string;
+  approvalRequestedBy: string;
+  approvalRequestedByName: string;
+  approvalRequestedAt: Date;
+  approvalNote: string;
+  rejectionReason: string;
   labels: string[];
   notes: string;
   internalFirm: string;

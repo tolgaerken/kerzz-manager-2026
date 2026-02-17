@@ -319,4 +319,208 @@ export const defaultTemplates: TemplateSeed[] = [
     ],
     description: "Kontrat bitiş tarihi yaklaştığında gönderilen SMS bildirimi",
   },
+
+  // ==================== SATIŞ ONAY BİLDİRİMLERİ ====================
+  {
+    name: "Satış Onay İsteği (E-posta)",
+    code: "sale-approval-request-email",
+    channel: "email",
+    subject: "Kerzz Manager - Satış Onay İsteği",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2563eb; }
+    .amount { font-size: 20px; color: #2563eb; font-weight: bold; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📋 Satış Onay İsteği</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{approverName}},</p>
+      <p><strong>{{requesterName}}</strong> tarafından {{saleCount}} adet satış onayınıza sunulmuştur.</p>
+      
+      <div class="info-box">
+        <p><strong>Satış No:</strong> {{saleNumbers}}</p>
+        <p><strong>Toplam Tutar:</strong> <span class="amount">{{totalAmount}}</span></p>
+        <p><strong>İstek Sahibi:</strong> {{requesterName}}</p>
+      </div>
+      
+      <p>Satışları incelemek ve onaylamak için Kerzz Manager uygulamasına giriş yapınız.</p>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "approverName",
+      "requesterName",
+      "saleCount",
+      "totalAmount",
+      "saleNumbers",
+    ],
+    description: "Satış onay isteği geldiğinde yetkililere gönderilen e-posta bildirimi",
+  },
+  {
+    name: "Satış Onay İsteği (SMS)",
+    code: "sale-approval-request-sms",
+    channel: "sms",
+    body: `{{requesterName}} tarafindan {{saleCount}} adet satis onayiniza sunuldu. Toplam: {{totalAmount}}. Kerzz Manager'dan inceleyin.`,
+    isActive: true,
+    variables: [
+      "requesterName",
+      "saleCount",
+      "totalAmount",
+    ],
+    description: "Satış onay isteği geldiğinde yetkililere gönderilen SMS bildirimi",
+  },
+  {
+    name: "Satış Onaylandı (E-posta)",
+    code: "sale-approved-email",
+    channel: "email",
+    subject: "Kerzz Manager - Satışınız Onaylandı",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f0fdf4; padding: 20px; border: 1px solid #bbf7d0; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #16a34a; }
+    .amount { font-size: 20px; color: #16a34a; font-weight: bold; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✓ Satışınız Onaylandı</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{requesterName}},</p>
+      <p>Aşağıdaki satışınız <strong>{{approverName}}</strong> tarafından onaylanmıştır.</p>
+      
+      <div class="info-box">
+        <p><strong>Satış No:</strong> {{saleNo}}</p>
+        <p><strong>Müşteri:</strong> {{customerName}}</p>
+        <p><strong>Tutar:</strong> <span class="amount">{{totalAmount}}</span></p>
+        <p><strong>Onaylayan:</strong> {{approverName}}</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "requesterName",
+      "approverName",
+      "saleNo",
+      "customerName",
+      "totalAmount",
+    ],
+    description: "Satış onaylandığında istek sahibine gönderilen e-posta bildirimi",
+  },
+  {
+    name: "Satış Onaylandı (SMS)",
+    code: "sale-approved-sms",
+    channel: "sms",
+    body: `Satis No {{saleNo}} ({{customerName}}) {{approverName}} tarafindan onaylandi. Tutar: {{totalAmount}}`,
+    isActive: true,
+    variables: [
+      "saleNo",
+      "customerName",
+      "approverName",
+      "totalAmount",
+    ],
+    description: "Satış onaylandığında istek sahibine gönderilen SMS bildirimi",
+  },
+  {
+    name: "Satış Reddedildi (E-posta)",
+    code: "sale-rejected-email",
+    channel: "email",
+    subject: "Kerzz Manager - Satışınız Reddedildi",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #fef2f2; padding: 20px; border: 1px solid #fecaca; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #dc2626; }
+    .amount { font-size: 20px; color: #dc2626; font-weight: bold; }
+    .reason { background: #fee2e2; padding: 10px; border-radius: 4px; margin-top: 10px; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✗ Satışınız Reddedildi</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{requesterName}},</p>
+      <p>Aşağıdaki satışınız <strong>{{approverName}}</strong> tarafından reddedilmiştir.</p>
+      
+      <div class="info-box">
+        <p><strong>Satış No:</strong> {{saleNo}}</p>
+        <p><strong>Müşteri:</strong> {{customerName}}</p>
+        <p><strong>Tutar:</strong> <span class="amount">{{totalAmount}}</span></p>
+        <p><strong>Reddeden:</strong> {{approverName}}</p>
+        <div class="reason">
+          <strong>Red Nedeni:</strong> {{rejectionReason}}
+        </div>
+      </div>
+      
+      <p>Gerekli düzeltmeleri yaparak satışı tekrar onaya gönderebilirsiniz.</p>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "requesterName",
+      "approverName",
+      "saleNo",
+      "customerName",
+      "totalAmount",
+      "rejectionReason",
+    ],
+    description: "Satış reddedildiğinde istek sahibine gönderilen e-posta bildirimi",
+  },
+  {
+    name: "Satış Reddedildi (SMS)",
+    code: "sale-rejected-sms",
+    channel: "sms",
+    body: `Satis No {{saleNo}} ({{customerName}}) {{approverName}} tarafindan reddedildi. Neden: {{rejectionReason}}`,
+    isActive: true,
+    variables: [
+      "saleNo",
+      "customerName",
+      "approverName",
+      "rejectionReason",
+    ],
+    description: "Satış reddedildiğinde istek sahibine gönderilen SMS bildirimi",
+  },
 ];

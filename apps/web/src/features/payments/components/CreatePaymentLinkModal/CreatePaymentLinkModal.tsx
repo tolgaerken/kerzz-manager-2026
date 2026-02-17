@@ -3,6 +3,8 @@ import { Modal, PhoneInput, parsePhoneNumber, formatFullPhoneNumber } from "../.
 import type { PhoneInputValue } from "../../../../components/ui";
 import { useCompanies } from "../../../companies";
 import type { CreatePaymentLinkInput } from "../../types/payment.types";
+import { CustomerAutocomplete } from "./CustomerAutocomplete";
+import type { CustomerSelection } from "./CustomerAutocomplete";
 
 interface CreatePaymentLinkModalProps {
   isOpen: boolean;
@@ -57,7 +59,20 @@ export function CreatePaymentLinkModal({
     [errors]
   );
 
-  // Telefon değişiklik handler'ı
+  const handleCustomerChange = useCallback(
+    (selection: CustomerSelection) => {
+      setFormData((prev) => ({
+        ...prev,
+        customerId: selection.customerId,
+        customerName: selection.customerName,
+      }));
+      if (errors.customerName) {
+        setErrors((prev) => ({ ...prev, customerName: "" }));
+      }
+    },
+    [errors],
+  );
+
   const handlePhoneChange = useCallback((value: PhoneInputValue) => {
     setPhoneValue(value);
   }, []);
@@ -165,22 +180,13 @@ export function CreatePaymentLinkModal({
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
-                Firma adı
-              </label>
-              <input
-                type="text"
-                name="customerName"
-                value={formData.customerName}
-                onChange={handleChange}
-                placeholder="Müşteri firma adı"
-                className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              />
-              {errors.customerName && (
-                <p className="mt-1 text-sm text-red-500">{errors.customerName}</p>
-              )}
-            </div>
+            <CustomerAutocomplete
+              value={formData.customerId ?? ""}
+              displayName={formData.customerName}
+              onChange={handleCustomerChange}
+              error={errors.customerName}
+              disabled={!!createdUrl}
+            />
 
             <div>
               <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
