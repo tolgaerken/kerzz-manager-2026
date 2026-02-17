@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsBoolean, IsDateString } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class ContractCashRegisterQueryDto {
   @IsOptional()
@@ -7,11 +8,17 @@ export class ContractCashRegisterQueryDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => value === "true" || value === true)
   enabled?: boolean;
 
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === "true" || value === true)
+  activated?: boolean;
 }
 
 export class ContractCashRegisterResponseDto {

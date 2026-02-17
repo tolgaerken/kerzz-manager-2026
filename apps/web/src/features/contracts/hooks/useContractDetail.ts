@@ -24,7 +24,7 @@ export function useContractUsers(contractId: string | undefined) {
 export function useContractSupports(contractId?: string, fetchAll = false) {
   return useQuery({
     queryKey: ["contract-supports", contractId ?? "all"],
-    queryFn: () => fetchContractSupports(contractId),
+    queryFn: () => fetchContractSupports({ contractId }),
     enabled: !!contractId || fetchAll
   });
 }
@@ -40,7 +40,7 @@ export function useContractSupportStats(contractId?: string) {
 export function useContractSaas(contractId?: string, fetchAll = false) {
   return useQuery({
     queryKey: ["contract-saas", contractId ?? "all"],
-    queryFn: () => fetchContractSaas(contractId),
+    queryFn: () => fetchContractSaas({ contractId }),
     enabled: !!contractId || fetchAll
   });
 }
@@ -56,7 +56,7 @@ export function useContractSaasStats(contractId?: string) {
 export function useContractCashRegisters(contractId?: string, fetchAll = false) {
   return useQuery({
     queryKey: ["contract-cash-registers", contractId ?? "all"],
-    queryFn: () => fetchContractCashRegisters(contractId),
+    queryFn: () => fetchContractCashRegisters({ contractId }),
     enabled: !!contractId || fetchAll
   });
 }

@@ -27,7 +27,7 @@ export class ContractSaasService {
   ) {}
 
   async findAll(query: ContractSaasQueryDto): Promise<ContractSaasListResponseDto> {
-    const { contractId, enabled } = query;
+    const { contractId, enabled, activated } = query;
 
     const filter: Record<string, unknown> = {};
     if (contractId) {
@@ -35,6 +35,9 @@ export class ContractSaasService {
     }
     if (enabled !== undefined) {
       filter.enabled = enabled;
+    }
+    if (activated !== undefined) {
+      filter.activated = activated;
     }
 
     const [data, total] = await Promise.all([

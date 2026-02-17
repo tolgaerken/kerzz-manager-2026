@@ -115,9 +115,14 @@ export function SalesGrid({
               sale={props.item}
               onClick={() => {
                 onSelectionChanged?.(props.item);
-                props.onDoubleTap();
+                props.onSelect();
               }}
               selected={props.isSelected}
+              onSelect={() => props.onSelect()}
+              onPreview={() => {
+                onSelectionChanged?.(props.item);
+                props.onDoubleTap();
+              }}
             />
           ),
           filterColumns: mobileFilterColumns,

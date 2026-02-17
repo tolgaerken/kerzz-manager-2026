@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   X,
   LayoutDashboard,
@@ -41,6 +41,8 @@ interface ContractDetailModalProps {
   onClose: () => void;
   contract: Contract;
   onContractUpdated?: (contract: Contract) => void;
+  /** Modal açıldığında başlangıçta gösterilecek tab */
+  initialTab?: string;
 }
 
 type TabId =
@@ -76,11 +78,21 @@ export function ContractDetailModal({
   isOpen,
   onClose,
   contract,
-  onContractUpdated
+  onContractUpdated,
+  initialTab
 }: ContractDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("summary");
+  const [activeTab, setActiveTab] = useState<TabId>((initialTab as TabId) || "summary");
   const [loadedTabs, setLoadedTabs] = useState<Record<TabId, boolean>>({ summary: true } as Record<TabId, boolean>);
   const { openPanel } = useLogPanelStore();
+
+  // initialTab değiştiğinde tab'ı güncelle
+  useEffect(() => {
+    if (initialTab && isOpen) {
+      const tabId = initialTab as TabId;
+      setActiveTab(tabId);
+      setLoadedTabs((prev) => ({ ...prev, [tabId]: true }));
+    }
+  }, [initialTab, isOpen]);
   const { data: usersData } = useContractUsers(contract.id);
   const { data: supportsData } = useContractSupports(contract.id);
   const { data: versionsData } = useContractVersions(contract.id);

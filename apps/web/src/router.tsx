@@ -31,6 +31,7 @@ import { ContractVersionsPage } from "./pages/ContractVersionsPage";
 import { ContractSaasPage } from "./pages/ContractSaasPage";
 import { ContractDocumentsPage } from "./pages/ContractDocumentsPage";
 import { ProratedReportPage } from "./pages/ProratedReportPage";
+import { PendingInstallationsPage } from "./pages/PendingInstallationsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
@@ -354,6 +355,14 @@ const proratedReportRoute = createRoute({
   component: ProratedReportPage,
 });
 
+// Pending Installations (Kurulum Bekleyen Ürünler) page
+const pendingInstallationsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/pending-installations",
+  beforeLoad: () => checkPermission(PERMISSIONS.CONTRACT_MENU),
+  component: PendingInstallationsPage,
+});
+
 // E-Document Credits page
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -562,6 +571,7 @@ const routeTree = rootRoute.addChildren([
     contractSaasRoute,
     contractDocumentsRoute,
     proratedReportRoute,
+    pendingInstallationsRoute,
     customersRoute,
     licensesRoute,
     hardwareProductsRoute,

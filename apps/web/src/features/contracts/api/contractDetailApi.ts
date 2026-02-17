@@ -43,11 +43,19 @@ export async function deleteContractUser(id: string): Promise<void> {
 }
 
 // Contract Supports API
+export interface ContractSupportsQueryParams {
+  contractId?: string;
+  activated?: boolean;
+}
+
 export async function fetchContractSupports(
-  contractId?: string
+  params?: ContractSupportsQueryParams
 ): Promise<ContractDetailListResponse<ContractSupport>> {
-  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}${params}`;
+  const searchParams = new URLSearchParams();
+  if (params?.contractId) searchParams.append("contractId", params.contractId);
+  if (params?.activated !== undefined) searchParams.append("activated", String(params.activated));
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SUPPORTS}${query}`;
   return apiGet(url);
 }
 
@@ -77,11 +85,19 @@ export async function fetchContractSupportStats(
 }
 
 // Contract Saas API
+export interface ContractSaasQueryParams {
+  contractId?: string;
+  activated?: boolean;
+}
+
 export async function fetchContractSaas(
-  contractId?: string
+  params?: ContractSaasQueryParams
 ): Promise<ContractDetailListResponse<ContractSaas>> {
-  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}${params}`;
+  const searchParams = new URLSearchParams();
+  if (params?.contractId) searchParams.append("contractId", params.contractId);
+  if (params?.activated !== undefined) searchParams.append("activated", String(params.activated));
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_SAAS}${query}`;
   return apiGet(url);
 }
 
@@ -111,11 +127,19 @@ export async function fetchContractSaasStats(
 }
 
 // Contract Cash Registers API
+export interface ContractCashRegistersQueryParams {
+  contractId?: string;
+  activated?: boolean;
+}
+
 export async function fetchContractCashRegisters(
-  contractId?: string
+  params?: ContractCashRegistersQueryParams
 ): Promise<ContractDetailListResponse<ContractCashRegister>> {
-  const params = contractId ? `?contractId=${encodeURIComponent(contractId)}` : "";
-  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}${params}`;
+  const searchParams = new URLSearchParams();
+  if (params?.contractId) searchParams.append("contractId", params.contractId);
+  if (params?.activated !== undefined) searchParams.append("activated", String(params.activated));
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const url = `${API_BASE_URL}${ENDPOINTS.CONTRACT_CASH_REGISTERS}${query}`;
   return apiGet(url);
 }
 

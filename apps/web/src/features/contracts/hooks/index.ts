@@ -7,3 +7,4 @@ export * from "./useUpdateContract";
 export * from "./useDeleteContract";
 export * from "./useCheckContract";
 export * from "./useBatchCheckContracts";
+export * from "./usePendingInstallations";

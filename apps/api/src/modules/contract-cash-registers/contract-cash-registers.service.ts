@@ -30,7 +30,7 @@ export class ContractCashRegistersService {
   ) {}
 
   async findAll(query: ContractCashRegisterQueryDto): Promise<ContractCashRegistersListResponseDto> {
-    const { contractId, enabled, type } = query;
+    const { contractId, enabled, type, activated } = query;
 
     const filter: Record<string, unknown> = {};
     if (contractId) {
@@ -41,6 +41,9 @@ export class ContractCashRegistersService {
     }
     if (type) {
       filter.type = type;
+    }
+    if (activated !== undefined) {
+      filter.activated = activated;
     }
 
     const [data, total] = await Promise.all([

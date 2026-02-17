@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { ShoppingCart, User, Calendar, Building2, ChevronRight } from "lucide-react";
+import { ShoppingCart, User, Calendar, Building2, Eye, CheckCircle2 } from "lucide-react";
 import type { Sale } from "../../types/sale.types";
 
 interface SaleCardProps {
@@ -7,6 +7,7 @@ interface SaleCardProps {
   onClick: (sale: Sale) => void;
   selected?: boolean;
   onSelect?: (sale: Sale) => void;
+  onPreview?: (sale: Sale) => void;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -70,13 +71,23 @@ function formatDate(dateStr: string | undefined): string {
   return new Date(dateStr).toLocaleDateString("tr-TR");
 }
 
-export const SaleCard = memo(function SaleCard({ sale, onClick, selected, onSelect }: SaleCardProps) {
+export const SaleCard = memo(function SaleCard({ sale, onClick, selected, onSelect, onPreview }: SaleCardProps) {
   const statusKey = Array.isArray(sale.status) ? sale.status[0] : sale.status;
   const statusLabel = STATUS_LABELS[statusKey || "draft"] || statusKey || "-";
   const statusColor = STATUS_COLORS[statusKey || "draft"] || STATUS_COLORS.draft;
 
   const handleClick = () => {
     onClick(sale);
+  };
+
+  const handleSelect = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect?.(sale);
+  };
+
+  const handlePreview = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPreview?.(sale);
   };
 
   return (
@@ -118,7 +129,29 @@ export const SaleCard = memo(function SaleCard({ sale, onClick, selected, onSele
             </span>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-[var(--color-muted-foreground)] flex-shrink-0" />
+        <div className="flex items-center gap-2">
+          {onSelect && (
+            <button
+              onClick={handleSelect}
+              className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+                selected
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)]"
+              }`}
+            >
+              {selected && <CheckCircle2 className="h-3 w-3" />}
+            </button>
+          )}
+          {onPreview && (
+            <button
+              onClick={handlePreview}
+              className="flex h-5 w-5 items-center justify-center rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted-foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              title="Önizle"
+            >
+              <Eye className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Info Grid */}

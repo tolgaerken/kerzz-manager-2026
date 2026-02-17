@@ -10,6 +10,7 @@ import {
   useRequestSaleApproval,
   useApproveSale,
   useRejectSale,
+  useBulkApproveSales,
 } from "../features/sales/hooks/useSales";
 import { useSalesSocket } from "../features/sales/hooks/useSalesSocket";
 import { SalesGrid } from "../features/sales/components/SalesGrid/SalesGrid";
@@ -29,7 +30,7 @@ import type {
 } from "../features/sales/types/sale.types";
 import { useCustomerLookup } from "../features/lookup";
 import { useLogPanelStore } from "../features/manager-log";
-import { useAuth } from "../features/auth";
+import { useAuth, usePermissions, PERMISSIONS } from "../features/auth";
 
 export function SalesPage() {
   const defaultRange = useMemo(() => getMonthRange(), []);
@@ -95,15 +96,18 @@ export function SalesPage() {
 
   const { data, isLoading, isFetching, refetch } = useSales(queryParams);
   
-  // Auth bilgisi
+  // Auth & permission bilgisi
   const { isManager, isAdmin } = useAuth();
+  const { hasPermission } = usePermissions();
   const isApprover = isManager || isAdmin;
+  const canApproveSales = hasPermission(PERMISSIONS.SALES_APPROVE);
 
   const createMutation = useCreateSale();
   const updateMutation = useUpdateSale();
   const requestApprovalMutation = useRequestSaleApproval();
   const approveMutation = useApproveSale();
   const rejectMutation = useRejectSale();
+  const bulkApproveMutation = useBulkApproveSales();
   
   const { getCustomerName } = useCustomerLookup();
   const { openPipelinePanel } = useLogPanelStore();
@@ -265,6 +269,20 @@ export function SalesPage() {
     setIsApprovalActionOpen(true);
   }, []);
 
+  // Seçili satışları toplu onayla
+  const handleBulkApprove = useCallback(async () => {
+    if (selectedSaleIds.length === 0) return;
+    try {
+      const result = await bulkApproveMutation.mutateAsync({
+        saleIds: selectedSaleIds,
+      });
+      toast.success(result.message);
+      setSelectedSaleIds([]);
+    } catch (error: any) {
+      toast.error(error?.message || "Toplu onaylama başarısız");
+    }
+  }, [selectedSaleIds, bulkApproveMutation]);
+
   const toolbarButtons: ToolbarButtonConfig[] = [
     {
       id: "add",
@@ -281,6 +299,14 @@ export function SalesPage() {
       icon: <Send size={14} />,
       onClick: () => setIsApprovalRequestOpen(true),
       disabled: selectedSaleIds.length === 0,
+    },
+    {
+      id: "bulk-approve",
+      label: `Onayla (${selectedSaleIds.length})`,
+      icon: <CheckCircle size={14} />,
+      onClick: handleBulkApprove,
+      disabled: !canApproveSales || selectedSaleIds.length === 0 || bulkApproveMutation.isPending,
+      title: !canApproveSales ? "Bu işlem için KERZZ_MANAGER_SALES_APPROVE yetkisi gereklidir" : undefined,
     },
     ...(isApprover && selectedSale?.approvalStatus === "pending"
       ? [

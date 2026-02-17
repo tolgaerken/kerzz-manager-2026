@@ -171,7 +171,7 @@ export class SaleApprovalNotificationService {
       return [];
     }
 
-    const roleIds = ownerRoles.map((r) => r.id).filter(Boolean);
+    const roleIds = ownerRoles.map((r) => r.id).filter((id): id is string => Boolean(id));
     this.logger.log(
       `Bulunan owner/admin roller: ${ownerRoles.map((r) => `${r.name} (${r.id})`).join(", ")}`
     );

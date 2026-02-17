@@ -56,6 +56,9 @@ export const PERMISSIONS = {
 
   /** Geribildirim menüsüne erişim yetkisi */
   FEEDBACK_MENU: "KERZZ_MANAGER_FEEDBACK_MENU",
+
+  /** Satış onaylama yetkisi */
+  SALES_APPROVE: "KERZZ_MANAGER_SALES_APPROVE",
 } as const;
 
 /** İzin tipi - type-safe kullanım için */
