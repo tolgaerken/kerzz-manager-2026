@@ -36,11 +36,11 @@ export function EntityLogTab({
     {
       customerId,
       contextType,
-      // contextId kaldırıldı - müşterinin o türdeki TÜM log'ları getirilecek
+      contextId,
       limit: 100,
     },
-    // placeholder değilse sorgu yap
-    !isPlaceholder
+    // placeholder değilse ve contextId varsa sorgu yap
+    !isPlaceholder && !!contextId
   );
 
   const createLogMutation = useCreateManagerLog();

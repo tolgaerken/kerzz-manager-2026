@@ -501,6 +501,17 @@ export class NotificationQueueService {
       }));
     }
 
+    // Kontrat bildirimi kapalıysa gönderme
+    if (contract.noNotification === true) {
+      return channels.map((ch) => ({
+        type: "contract" as const,
+        id: contractId,
+        channel: ch,
+        success: false,
+        error: "Bu kontrat için bildirimler devre dışı",
+      }));
+    }
+
     const customer = await this.customerModel.findOne({ id: contract.customerId }).lean().exec();
     if (!customer) {
       return channels.map((ch) => ({

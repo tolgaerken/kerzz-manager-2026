@@ -37,6 +37,12 @@ export class ManagerNotification {
   @Prop({ type: String })
   pipelineRef?: string;
 
+  @Prop({ type: String })
+  customerName?: string;
+
+  @Prop({ type: String })
+  contextLabel?: string;
+
   @Prop({ default: false, index: true })
   read: boolean;
 

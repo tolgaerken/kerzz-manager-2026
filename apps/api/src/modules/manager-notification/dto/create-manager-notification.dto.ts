@@ -32,4 +32,12 @@ export class CreateManagerNotificationDto {
   @IsString()
   @IsOptional()
   pipelineRef?: string;
+
+  @IsString()
+  @IsOptional()
+  customerName?: string;
+
+  @IsString()
+  @IsOptional()
+  contextLabel?: string;
 }

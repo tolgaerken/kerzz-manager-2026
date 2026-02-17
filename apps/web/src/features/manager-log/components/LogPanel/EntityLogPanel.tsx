@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   FileText,
   Key,
@@ -10,8 +10,11 @@ import {
   Wrench,
 } from "lucide-react";
 import { LogPanelHeader } from "./LogPanelHeader";
+import { LogPanelContextBanner } from "./LogPanelContextBanner";
 import { EntityLogTab } from "./EntityLogTab";
 import { useLogPanelStore } from "../../store/logPanelStore";
+import { useCustomer } from "../../../customers/hooks/useCustomers";
+import { useManagerLog } from "../../hooks";
 import type { EntityTabType, EntityTabConfig } from "../../types";
 
 /** Tab konfigürasyonları */
@@ -71,6 +74,34 @@ export function EntityLogPanel() {
   // Aktif tab state - context'ten gelen activeTab ile başla
   const [activeTab, setActiveTab] = useState<EntityTabType>("contract");
 
+  // customerName yoksa API'den çek
+  const shouldFetchCustomer = isOpen && isEntityMode && entityContext && !entityContext.customerName;
+  const { data: customerData } = useCustomer(shouldFetchCustomer ? entityContext?.customerId ?? null : null);
+
+  // contextLabel yoksa ve highlightLogId varsa log'dan çek
+  const shouldFetchLog = isOpen && isEntityMode && entityContext && !entityContext.contextLabel && highlightLogId;
+  const { data: logData } = useManagerLog(shouldFetchLog ? highlightLogId : null);
+
+  // Müşteri adını belirle (context'ten veya API'den)
+  const resolvedCustomerName = useMemo(() => {
+    if (entityContext?.customerName) return entityContext.customerName;
+    if (customerData) return customerData.name || customerData.brand;
+    return undefined;
+  }, [entityContext?.customerName, customerData]);
+
+  // Context label'ı belirle (context'ten veya log references'tan)
+  const resolvedContextLabel = useMemo(() => {
+    if (entityContext?.contextLabel) return entityContext.contextLabel;
+    if (logData?.references && logData.references.length > 0) {
+      // Aktif tab'a göre ilgili reference'ı bul
+      const matchingRef = logData.references.find((ref) => ref.type === entityContext?.activeTab);
+      if (matchingRef?.label) return matchingRef.label;
+      // Yoksa ilk reference'ın label'ını kullan
+      return logData.references[0]?.label;
+    }
+    return undefined;
+  }, [entityContext?.contextLabel, entityContext?.activeTab, logData?.references]);
+
   // ESC tuşu ile kapat
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -120,6 +151,13 @@ export function EntityLogPanel() {
       {/* Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-[var(--color-surface)] z-50 shadow-xl flex flex-col animate-slide-in-right">
         <LogPanelHeader title={panelTitle} onClose={closePanel} />
+
+        {/* Context Banner - Müşteri adı ve kaynak bilgisi */}
+        <LogPanelContextBanner
+          customerName={resolvedCustomerName}
+          contextLabel={resolvedContextLabel}
+          activeTab={activeTab}
+        />
 
         {/* Tab Bar */}
         <div className="flex items-center gap-1 px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)] overflow-x-auto">

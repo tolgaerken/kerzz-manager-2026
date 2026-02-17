@@ -11,6 +11,8 @@ export interface ManagerNotification {
   contextId: string;
   message: string;
   pipelineRef?: string;
+  customerName?: string;
+  contextLabel?: string;
   read: boolean;
   createdAt: string;
   updatedAt: string;

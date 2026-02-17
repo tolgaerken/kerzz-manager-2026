@@ -16,6 +16,7 @@ import { ManagerNotificationService } from "../manager-notification/manager-noti
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
 import { LegacyLogRepository } from "./legacy/legacy-log.repository";
 import { mapLegacyLogToManagerLogResponse } from "./legacy/legacy-log.mapper";
+import { CustomersService } from "../customers/customers.service";
 
 @Injectable()
 export class ManagerLogService {
@@ -24,7 +25,8 @@ export class ManagerLogService {
     private managerLogModel: Model<ManagerLogDocument>,
     @Inject(forwardRef(() => ManagerNotificationService))
     private managerNotificationService: ManagerNotificationService,
-    private legacyLogRepository: LegacyLogRepository
+    private legacyLogRepository: LegacyLogRepository,
+    private customersService: CustomersService
   ) {}
 
   async create(createManagerLogDto: CreateManagerLogDto): Promise<ManagerLogResponseDto> {
@@ -53,6 +55,18 @@ export class ManagerLogService {
     log: ManagerLogDocument,
     createManagerLogDto: CreateManagerLogDto
   ): Promise<void> {
+    // Müşteri adını çek
+    let customerName: string | undefined;
+    try {
+      const customer = await this.customersService.findByAnyId(createManagerLogDto.customerId);
+      customerName = customer.name || customer.brand;
+    } catch {
+      // Müşteri bulunamazsa sessizce devam et
+    }
+
+    // Context label'ı oluştur (references'tan veya contextType'a göre)
+    const contextLabel = this.buildContextLabel(createManagerLogDto);
+
     const notifications: CreateManagerNotificationDto[] = createManagerLogDto.mentions!.map(
       (mention) => ({
         userId: mention.userId,
@@ -63,10 +77,49 @@ export class ManagerLogService {
         contextId: createManagerLogDto.contextId,
         message: this.truncateMessage(createManagerLogDto.message, 100),
         pipelineRef: createManagerLogDto.pipelineRef,
+        customerName,
+        contextLabel,
       })
     );
 
     await this.managerNotificationService.createMany(notifications);
+  }
+
+  /**
+   * Context label'ı oluşturur.
+   * Öncelik: references[].label > contextType + contextId
+   */
+  private buildContextLabel(dto: CreateManagerLogDto): string | undefined {
+    // References'tan ilgili label'ı bul
+    if (dto.references && dto.references.length > 0) {
+      const matchingRef = dto.references.find((ref) => ref.type === dto.contextType);
+      if (matchingRef?.label) {
+        return matchingRef.label;
+      }
+      // İlk reference'ın label'ını kullan
+      if (dto.references[0]?.label) {
+        return dto.references[0].label;
+      }
+    }
+
+    // Fallback: contextType'a göre label oluştur
+    const typeLabels: Record<string, string> = {
+      contract: "Kontrat",
+      license: "Lisans",
+      invoice: "Fatura",
+      "payment-plan": "Ödeme Planı",
+      "e-transform": "E-Dönüşüm",
+      lead: "Lead",
+      offer: "Teklif",
+      sale: "Satış",
+    };
+
+    const typeLabel = typeLabels[dto.contextType];
+    if (typeLabel && dto.contextId) {
+      return `${typeLabel} #${dto.contextId.slice(-6)}`;
+    }
+
+    return undefined;
   }
 
   private truncateMessage(message: string, maxLength: number): string {

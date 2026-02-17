@@ -49,13 +49,6 @@ export class ContractNotificationCron {
     const startTime = Date.now();
 
     try {
-      // Cron başlangıcını logla
-      await this.systemLogsService.logCron(
-        SystemLogAction.CRON_START,
-        "contract-notification",
-        { details: { message: "Kontrat bildirim cron'u başladı" } }
-      );
-
       // Ayarları al
       const settings = await this.settingsService.getSettings();
 
@@ -70,6 +63,13 @@ export class ContractNotificationCron {
         console.log("⚠️ Hiçbir bildirim kanalı aktif değil");
         return;
       }
+
+      // Cron başlangıcını logla (ayar kontrolleri geçtikten sonra)
+      await this.systemLogsService.logCron(
+        SystemLogAction.CRON_START,
+        "contract-notification",
+        { details: { message: "Kontrat bildirim cron'u başladı" } }
+      );
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);

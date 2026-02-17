@@ -71,7 +71,7 @@ export function NotificationBell() {
         });
       }
 
-      const { contextType, contextId, customerId, logId, pipelineRef } = notification;
+      const { contextType, contextId, customerId, logId, pipelineRef, customerName, contextLabel } = notification;
 
       // Entity türleri için EntityLogPanel aç
       if (ENTITY_TYPES.includes(contextType as typeof ENTITY_TYPES[number])) {
@@ -87,6 +87,8 @@ export function NotificationBell() {
         openEntityPanel(
           {
             customerId,
+            customerName,
+            contextLabel,
             activeTab: contextType as EntityTabType,
             [idField]: contextId,
             title: ENTITY_TITLES[contextType] || "Loglar",

@@ -11,6 +11,8 @@ export class ManagerNotificationResponseDto {
   contextId: string;
   message: string;
   pipelineRef?: string;
+  customerName?: string;
+  contextLabel?: string;
   read: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -6,6 +6,7 @@ import { ManagerLog, ManagerLogSchema } from "./schemas/manager-log.schema";
 import { ManagerNotificationModule } from "../manager-notification/manager-notification.module";
 import { LegacyLog, LegacyLogSchema } from "./legacy/legacy-log.schema";
 import { LegacyLogRepository } from "./legacy/legacy-log.repository";
+import { CustomersModule } from "../customers/customers.module";
 import { CONTRACT_DB_CONNECTION } from "../../database";
 
 @Module({
@@ -16,6 +17,7 @@ import { CONTRACT_DB_CONNECTION } from "../../database";
       CONTRACT_DB_CONNECTION
     ),
     forwardRef(() => ManagerNotificationModule),
+    CustomersModule,
   ],
   controllers: [ManagerLogController],
   providers: [ManagerLogService, LegacyLogRepository],

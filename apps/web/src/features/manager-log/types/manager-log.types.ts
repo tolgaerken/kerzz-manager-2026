@@ -113,6 +113,8 @@ export interface EntityTabConfig {
 /** Entity Log Panel context - tab'lar için gerekli ID'ler */
 export interface EntityLogPanelContext {
   customerId: string;
+  customerName?: string;
+  contextLabel?: string;
   title?: string;
   // Aktif tab'ı belirleyen entity
   activeTab: EntityTabType;
