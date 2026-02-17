@@ -8,6 +8,7 @@ import {
   ContractInvoicesGrid,
   ContractInvoicesToolbar,
   InvoiceDetailModal,
+  MergeConfirmDialog,
   usePaymentPlans,
   useCreateInvoices,
   useCheckContracts,
@@ -39,6 +40,9 @@ export function ContractInvoicesPage() {
   // Detail modal state
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<PaymentListItem[]>([]);
+
+  // Merge confirm dialog state
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
 
   // Notification state
   const [notification, setNotification] = useState<{
@@ -188,14 +192,69 @@ export function ContractInvoicesPage() {
     setDetailModalOpen(true);
   }, []);
 
-  // Fatura olustur
+  // Secili planlar
+  const selectedPlans = useMemo(() => {
+    if (!data?.data || selectedIds.length === 0) return [];
+    return data.data.filter((p) => selectedIds.includes(p.id));
+  }, [data?.data, selectedIds]);
+
+  // Birden fazla plani olan cariler var mi?
+  const hasMultiPlanCustomers = useMemo(() => {
+    const customerPlanCount = new Map<string, number>();
+    for (const plan of selectedPlans) {
+      const count = customerPlanCount.get(plan.customerId) || 0;
+      customerPlanCount.set(plan.customerId, count + 1);
+    }
+    return Array.from(customerPlanCount.values()).some((count) => count > 1);
+  }, [selectedPlans]);
+
+  // Fatura olustur (merge parametresi ile)
+  const executeCreateInvoices = useCallback(
+    (merge: boolean) => {
+      setMergeDialogOpen(false);
+
+      createInvoicesMutation.mutate(
+        { planIds: selectedIds, merge },
+        {
+          onSuccess: (results) => {
+            const successCount = results.filter((r) => r.success).length;
+            const failCount = results.filter((r) => !r.success).length;
+            const mergedCount = results.filter(
+              (r) => r.mergedPlanIds && r.mergedPlanIds.length > 1
+            ).length;
+
+            if (failCount === 0) {
+              const mergeInfo =
+                mergedCount > 0 ? ` (${mergedCount} birleştirilmiş)` : "";
+              setNotification({
+                type: "success",
+                message: `${successCount} fatura başarıyla oluşturuldu${mergeInfo}.`,
+              });
+            } else {
+              setNotification({
+                type: "error",
+                message: `${successCount} başarılı, ${failCount} başarısız fatura.`,
+              });
+            }
+            setSelectedIds([]);
+          },
+          onError: (error) => {
+            setNotification({
+              type: "error",
+              message: error.message || "Fatura oluşturulurken hata oluştu.",
+            });
+          },
+        }
+      );
+    },
+    [selectedIds, createInvoicesMutation]
+  );
+
+  // Fatura olustur butonu tiklandi
   const handleCreateInvoices = useCallback(() => {
     if (selectedIds.length === 0) return;
 
     // Negatif tutar kontrolu
-    const selectedPlans = (data?.data || []).filter((p) =>
-      selectedIds.includes(p.id),
-    );
     const hasNegative = selectedPlans.some((p) => p.total < 0);
 
     if (hasNegative) {
@@ -207,32 +266,15 @@ export function ContractInvoicesPage() {
       return;
     }
 
-    createInvoicesMutation.mutate(selectedIds, {
-      onSuccess: (results) => {
-        const successCount = results.filter((r) => r.success).length;
-        const failCount = results.filter((r) => !r.success).length;
+    // Birden fazla plani olan cari varsa onay dialogu goster
+    if (hasMultiPlanCustomers) {
+      setMergeDialogOpen(true);
+      return;
+    }
 
-        if (failCount === 0) {
-          setNotification({
-            type: "success",
-            message: `${successCount} fatura başarıyla oluşturuldu.`,
-          });
-        } else {
-          setNotification({
-            type: "error",
-            message: `${successCount} başarılı, ${failCount} başarısız fatura.`,
-          });
-        }
-        setSelectedIds([]);
-      },
-      onError: (error) => {
-        setNotification({
-          type: "error",
-          message: error.message || "Fatura oluşturulurken hata oluştu.",
-        });
-      },
-    });
-  }, [selectedIds, data, createInvoicesMutation]);
+    // Tek planli cariler - direkt olustur (merge=false)
+    executeCreateInvoices(false);
+  }, [selectedIds, selectedPlans, hasMultiPlanCustomers, executeCreateInvoices]);
 
   // Kontrat kontrol
   const handleCheckContracts = useCallback(() => {
@@ -471,6 +513,16 @@ export function ContractInvoicesPage() {
         isOpen={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
         items={detailItems}
+      />
+
+      {/* Merge Confirm Dialog */}
+      <MergeConfirmDialog
+        isOpen={mergeDialogOpen}
+        onClose={() => setMergeDialogOpen(false)}
+        selectedPlans={selectedPlans}
+        onMerge={() => executeCreateInvoices(true)}
+        onSeparate={() => executeCreateInvoices(false)}
+        isLoading={createInvoicesMutation.isPending}
       />
 
       {/* Account Transactions Modal */}

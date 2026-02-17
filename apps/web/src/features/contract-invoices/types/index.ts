@@ -62,6 +62,15 @@ export interface CreateInvoiceResult {
   invoiceNo?: string;
   uuid?: string;
   error?: string;
+  /** Birlestirilmis faturalarda dahil edilen plan ID'leri */
+  mergedPlanIds?: string[];
+}
+
+/** Fatura olusturma parametreleri */
+export interface CreateInvoicesParams {
+  planIds: string[];
+  /** Ayni cariye ait planlari tek faturada birlestir */
+  merge?: boolean;
 }
 
 /** Kontrat kontrol sonucu */

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { ContractUser, ContractUserDocument } from "./schemas/contract-user.schema";
 import { ContractUserQueryDto } from "./dto/contract-user-query.dto";
 import { CreateContractUserDto } from "./dto/create-contract-user.dto";
@@ -38,7 +38,7 @@ export class ContractUsersService {
   }
 
   async findOne(id: string): Promise<ContractUserResponseDto> {
-    const user = await this.contractUserModel.findOne({ id }).lean().exec();
+    const user = await this.findByIdentifier(id);
     if (!user) {
       throw new NotFoundException(`Contract user with id ${id} not found`);
     }
@@ -61,9 +61,10 @@ export class ContractUsersService {
   }
 
   async update(id: string, dto: UpdateContractUserDto): Promise<ContractUserResponseDto> {
+    const filter = await this.resolveFilter(id);
     const updated = await this.contractUserModel
       .findOneAndUpdate(
-        { id },
+        filter,
         { ...dto, editDate: new Date() },
         { new: true }
       )
@@ -78,7 +79,8 @@ export class ContractUsersService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.contractUserModel.deleteOne({ id }).exec();
+    const filter = await this.resolveFilter(id);
+    const result = await this.contractUserModel.deleteOne(filter).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException(`Contract user with id ${id} not found`);
     }
@@ -96,6 +98,29 @@ export class ContractUsersService {
       editDate: user.editDate,
       editUser: user.editUser || ""
     };
+  }
+
+  private async findByIdentifier(identifier: string) {
+    const byId = await this.contractUserModel.findOne({ id: identifier }).lean().exec();
+    if (byId) return byId;
+
+    if (Types.ObjectId.isValid(identifier)) {
+      return this.contractUserModel.findOne({ _id: identifier }).lean().exec();
+    }
+
+    return null;
+  }
+
+  private async resolveFilter(identifier: string): Promise<Record<string, unknown>> {
+    const byId = await this.contractUserModel.exists({ id: identifier });
+    if (byId) return { id: identifier };
+
+    if (Types.ObjectId.isValid(identifier)) {
+      const byObjectId = await this.contractUserModel.exists({ _id: identifier });
+      if (byObjectId) return { _id: identifier };
+    }
+
+    return { id: identifier };
   }
 
   private generateId(): string {

@@ -122,11 +122,11 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     editUser: ""
   }), [contractId]);
 
-  const handleNewRowSave = useCallback((rows: ContractSaas[]) => {
-    rows.forEach((row) => {
+  const handleNewRowSave = useCallback(async (rows: ContractSaas[]) => {
+    for (const row of rows) {
       const { id, _id, ...data } = row;
-      createMutation.mutate(data);
-    });
+      await createMutation.mutateAsync(data);
+    }
   }, [createMutation]);
 
   const handlePendingCellChange = useCallback(

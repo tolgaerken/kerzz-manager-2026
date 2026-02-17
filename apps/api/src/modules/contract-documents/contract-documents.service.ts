@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { ContractDocument as ContractDoc, ContractDocumentDocument } from "./schemas/contract-document.schema";
 import {
   ContractDocumentQueryDto,
@@ -41,7 +41,7 @@ export class ContractDocumentsService {
   }
 
   async findOne(id: string): Promise<ContractDocumentResponseDto> {
-    const document = await this.contractDocumentModel.findOne({ id }).lean().exec();
+    const document = await this.findByIdentifier(id);
     if (!document) {
       throw new NotFoundException(`Contract document with id ${id} not found`);
     }
@@ -65,6 +65,7 @@ export class ContractDocumentsService {
   }
 
   async update(id: string, dto: UpdateContractDocumentDto): Promise<ContractDocumentResponseDto> {
+    const filter = await this.resolveFilter(id);
     const updateData: Record<string, unknown> = { ...dto, editDate: new Date() };
     if (dto.documentDate) {
       updateData.documentDate = new Date(dto.documentDate);
@@ -72,7 +73,7 @@ export class ContractDocumentsService {
 
     const updated = await this.contractDocumentModel
       .findOneAndUpdate(
-        { id },
+        filter,
         updateData,
         { new: true }
       )
@@ -87,7 +88,8 @@ export class ContractDocumentsService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.contractDocumentModel.deleteOne({ id }).exec();
+    const filter = await this.resolveFilter(id);
+    const result = await this.contractDocumentModel.deleteOne(filter).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException(`Contract document with id ${id} not found`);
     }
@@ -111,6 +113,29 @@ export class ContractDocumentsService {
       editDate: doc.editDate,
       editUser: doc.editUser || ""
     };
+  }
+
+  private async findByIdentifier(identifier: string) {
+    const byId = await this.contractDocumentModel.findOne({ id: identifier }).lean().exec();
+    if (byId) return byId;
+
+    if (Types.ObjectId.isValid(identifier)) {
+      return this.contractDocumentModel.findOne({ _id: identifier }).lean().exec();
+    }
+
+    return null;
+  }
+
+  private async resolveFilter(identifier: string): Promise<Record<string, unknown>> {
+    const byId = await this.contractDocumentModel.exists({ id: identifier });
+    if (byId) return { id: identifier };
+
+    if (Types.ObjectId.isValid(identifier)) {
+      const byObjectId = await this.contractDocumentModel.exists({ _id: identifier });
+      if (byObjectId) return { _id: identifier };
+    }
+
+    return { id: identifier };
   }
 
   private generateId(): string {

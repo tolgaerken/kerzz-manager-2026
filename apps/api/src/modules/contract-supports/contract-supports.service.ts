@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { ContractSupport, ContractSupportDocument } from "./schemas/contract-support.schema";
 import {
   ContractSupportQueryDto,
@@ -50,7 +50,7 @@ export class ContractSupportsService {
   }
 
   async findOne(id: string): Promise<ContractSupportResponseDto> {
-    const support = await this.contractSupportModel.findOne({ id }).lean().exec();
+    const support = await this.findByIdentifier(id);
     if (!support) {
       throw new NotFoundException(`Contract support with id ${id} not found`);
     }
@@ -77,9 +77,11 @@ export class ContractSupportsService {
   }
 
   async update(id: string, dto: UpdateContractSupportDto): Promise<ContractSupportResponseDto> {
+    const filter = await this.resolveFilter(id);
+
     // activated true geldiyse aktivasyon mantığını çalıştır
     if (dto.activated === true) {
-      const existing = await this.contractSupportModel.findOne({ id }).lean().exec();
+      const existing = await this.contractSupportModel.findOne(filter).lean().exec();
       if (!existing) {
         throw new NotFoundException(`Contract support with id ${id} not found`);
       }
@@ -90,15 +92,15 @@ export class ContractSupportsService {
 
     // activated false geldiyse: faturalanmamis kist planini sil
     if (dto.activated === false) {
-      const existing = await this.contractSupportModel.findOne({ id }).lean().exec();
+      const existing = await this.contractSupportModel.findOne(filter).lean().exec();
       if (existing?.activated) {
-        await this.proratedPlanService.deleteUninvoicedBySourceItem(existing.contractId, id);
+        await this.proratedPlanService.deleteUninvoicedBySourceItem(existing.contractId, existing.id);
       }
     }
 
     const updated = await this.contractSupportModel
       .findOneAndUpdate(
-        { id },
+        filter,
         { ...dto, editDate: new Date() },
         { new: true }
       )
@@ -113,24 +115,27 @@ export class ContractSupportsService {
   }
 
   async delete(id: string): Promise<void> {
+    const filter = await this.resolveFilter(id);
+
     // Silmeden once kalemi bul (contractId icin)
-    const item = await this.contractSupportModel.findOne({ id }).lean().exec();
+    const item = await this.contractSupportModel.findOne(filter).lean().exec();
     if (!item) {
       throw new NotFoundException(`Contract support with id ${id} not found`);
     }
 
     // Faturalanmamis kist plani sil
-    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, id);
+    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, item.id);
 
     // Kalemi sil
-    await this.contractSupportModel.deleteOne({ id }).exec();
+    await this.contractSupportModel.deleteOne(filter).exec();
   }
 
   /**
    * Kalemi aktive eder (kuruldu/devreye alindi).
    */
   async activate(id: string): Promise<ContractSupportResponseDto> {
-    const item = await this.contractSupportModel.findOne({ id }).lean().exec();
+    const filter = await this.resolveFilter(id);
+    const item = await this.contractSupportModel.findOne(filter).lean().exec();
     if (!item) {
       throw new NotFoundException(`Contract support with id ${id} not found`);
     }
@@ -150,7 +155,7 @@ export class ContractSupportsService {
     }
 
     const updated = await this.contractSupportModel
-      .findOneAndUpdate({ id }, updateData, { new: true })
+      .findOneAndUpdate(filter, updateData, { new: true })
       .lean()
       .exec();
 
@@ -198,6 +203,29 @@ export class ContractSupportsService {
       editDate: support.editDate,
       editUser: support.editUser || ""
     };
+  }
+
+  private async findByIdentifier(identifier: string) {
+    const byId = await this.contractSupportModel.findOne({ id: identifier }).lean().exec();
+    if (byId) return byId;
+
+    if (Types.ObjectId.isValid(identifier)) {
+      return this.contractSupportModel.findOne({ _id: identifier }).lean().exec();
+    }
+
+    return null;
+  }
+
+  private async resolveFilter(identifier: string): Promise<Record<string, unknown>> {
+    const byId = await this.contractSupportModel.exists({ id: identifier });
+    if (byId) return { id: identifier };
+
+    if (Types.ObjectId.isValid(identifier)) {
+      const byObjectId = await this.contractSupportModel.exists({ _id: identifier });
+      if (byObjectId) return { _id: identifier };
+    }
+
+    return { id: identifier };
   }
 
   private generateId(): string {

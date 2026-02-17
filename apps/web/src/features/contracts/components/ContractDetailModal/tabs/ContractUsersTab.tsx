@@ -49,11 +49,11 @@ export function ContractUsersTab({ contractId }: ContractUsersTabProps) {
     editUser: ""
   }), [contractId]);
 
-  const handleNewRowSave = useCallback((rows: ContractUser[]) => {
-    rows.forEach((row) => {
+  const handleNewRowSave = useCallback(async (rows: ContractUser[]) => {
+    for (const row of rows) {
       const { id, _id, ...data } = row;
-      createMutation.mutate(data);
-    });
+      await createMutation.mutateAsync(data);
+    }
   }, [createMutation]);
 
   const handleDelete = useCallback(() => {

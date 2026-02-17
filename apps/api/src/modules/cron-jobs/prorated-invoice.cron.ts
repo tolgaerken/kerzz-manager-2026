@@ -9,6 +9,7 @@ import { NotificationSettingsService } from "../notification-settings";
  *
  * Her gun saat 09:00'da calisir.
  * Faturasi kesilmemis kist odeme planlarini bulur ve fatura keser.
+ * Ayni cariye ait planlar tek faturada birlestirilir.
  */
 @Injectable()
 export class ProratedInvoiceCron {
@@ -23,6 +24,7 @@ export class ProratedInvoiceCron {
   /**
    * Her gun saat 09:00'da calisir (Europe/Istanbul).
    * Faturasi kesilmemis kist planlari bulur ve toplu fatura keser.
+   * Ayni cariye ait planlar tek faturada birlestirilir.
    */
   @Cron("0 9 * * *", { timeZone: "Europe/Istanbul" })
   async processProratedInvoices(): Promise<void> {
@@ -45,14 +47,17 @@ export class ProratedInvoiceCron {
     this.logger.log(`${pendingPlans.length} adet kist plan bulundu.`);
 
     const planIds = pendingPlans.map((p) => p.id);
+
+    // Ayni cariye ait planlari tek faturada birlestir (merge=true)
     const results =
-      await this.invoiceOrchestratorService.createInvoices(planIds);
+      await this.invoiceOrchestratorService.createMergedInvoices(planIds);
 
     const successCount = results.filter((r) => r.success).length;
     const failCount = results.filter((r) => !r.success).length;
+    const mergedCount = results.filter((r) => r.mergedPlanIds && r.mergedPlanIds.length > 1).length;
 
     this.logger.log(
-      `Kist fatura islemi tamamlandi: ${successCount} basarili, ${failCount} hatali.`,
+      `Kist fatura islemi tamamlandi: ${successCount} basarili, ${failCount} hatali, ${mergedCount} birlestirilmis fatura.`,
     );
 
     // Hatali olanlari logla

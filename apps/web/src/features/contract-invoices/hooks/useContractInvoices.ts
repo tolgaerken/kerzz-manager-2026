@@ -9,6 +9,7 @@ import type {
   PaymentPlansResponse,
   CreateInvoiceResult,
   CheckContractResult,
+  CreateInvoicesParams,
 } from "../types";
 
 // Query keys
@@ -40,11 +41,12 @@ export function usePaymentPlans(
 /**
  * Secili planlardan fatura olusturur.
  * Basarili faturalar icin cache'i manuel gunceller, tum listeyi yenilemez.
+ * @param merge - true ise ayni cariye ait planlari tek faturada birlestirir
  */
 export function useCreateInvoices() {
   const queryClient = useQueryClient();
 
-  return useMutation<CreateInvoiceResult[], Error, string[]>({
+  return useMutation<CreateInvoiceResult[], Error, CreateInvoicesParams>({
     mutationFn: createInvoices,
     onSuccess: (results) => {
       // Basarili sonuclari filtrele
@@ -58,10 +60,17 @@ export function useCreateInvoices() {
         return;
       }
 
-      // planId -> result map olustur
-      const resultMap = new Map(
-        successResults.map((r) => [r.planId, r])
-      );
+      // planId -> result map olustur (birlestirilmis planlar icin de)
+      const resultMap = new Map<string, CreateInvoiceResult>();
+      for (const result of successResults) {
+        resultMap.set(result.planId, result);
+        // Birlestirilmis planlar icin de ayni sonucu ekle
+        if (result.mergedPlanIds) {
+          for (const mergedId of result.mergedPlanIds) {
+            resultMap.set(mergedId, result);
+          }
+        }
+      }
 
       // Bugunun tarihi (fatura tarihi ve vade tarihi icin)
       const today = new Date().toISOString();

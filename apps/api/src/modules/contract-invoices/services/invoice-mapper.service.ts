@@ -1,5 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { ContractPayment } from "../../contract-payments/schemas/contract-payment.schema";
+import {
+  ContractPayment,
+  PaymentListItem,
+} from "../../contract-payments/schemas/contract-payment.schema";
 import { Invoice } from "../../invoices/schemas/invoice.schema";
 import { v4 as uuidv4 } from "uuid";
 
@@ -49,6 +52,69 @@ export class InvoiceMapperService {
       isPaid: paymentPlan.paid || false,
       paymentSuccessDate: paymentPlan.payDate,
       reference: paymentPlan.ref || "",
+    } as unknown as Invoice;
+
+    this.validateInvoice(invoice);
+    return invoice;
+  }
+
+  /**
+   * Birden fazla ContractPayment'i tek Invoice'a donusturur.
+   * Birlestirilmis faturalar icin kullanilir.
+   */
+  mapMergedPlansToInvoice(
+    plans: ContractPayment[],
+    mergedList: PaymentListItem[],
+    totalAmount: number,
+    erpId: string,
+    internalFirm: string,
+    invoiceNumber: string,
+    invoiceUUID: string,
+    invoiceDate: Date,
+    dueDate: Date,
+  ): Invoice {
+    const invoiceRows = this.mapInvoiceRows(mergedList);
+    const taxTotal = this.safeRound(totalAmount * VAT_RATE_DECIMAL);
+    const grandTotal = this.safeRound(totalAmount + taxTotal);
+
+    // Ilk plan ana plan olarak kullanilir
+    const primaryPlan = plans[0];
+
+    // Tum plan ref'lerini birlestir
+    const mergedRef = plans
+      .map((p) => p.ref)
+      .filter(Boolean)
+      .join(", ");
+
+    // Tum plan id'lerini kaydet
+    const mergedPlanIds = plans.map((p) => p.id);
+
+    const invoice = {
+      id: primaryPlan.id,
+      contractId: primaryPlan.contractId,
+      customerId: primaryPlan.customerId || "",
+      erpId: erpId || "",
+      name: primaryPlan.company || "",
+      description: "",
+      invoiceType: "contract",
+      invoiceDate,
+      invoiceNumber,
+      total: totalAmount,
+      taxTotal,
+      grandTotal,
+      dueDate,
+      payDate: primaryPlan.paymentDate,
+      invoiceRows,
+      saleId: "",
+      eCreditId: "",
+      lateFeeTotal: 0,
+      lateFeeStatus: "",
+      internalFirm: internalFirm || "",
+      invoiceUUID,
+      isPaid: false,
+      paymentSuccessDate: primaryPlan.payDate,
+      reference: mergedRef,
+      mergedPlanIds,
     } as unknown as Invoice;
 
     this.validateInvoice(invoice);

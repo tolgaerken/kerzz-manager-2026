@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { ContractPayment, ContractPaymentDocument } from "./schemas/contract-payment.schema";
 import {
   ContractPaymentQueryDto,
@@ -39,7 +39,7 @@ export class ContractPaymentsService {
   }
 
   async findOne(id: string): Promise<ContractPaymentResponseDto> {
-    const payment = await this.contractPaymentModel.findOne({ id }).lean().exec();
+    const payment = await this.findByIdentifier(id);
     if (!payment) {
       throw new NotFoundException(`Contract payment with id ${id} not found`);
     }
@@ -63,6 +63,7 @@ export class ContractPaymentsService {
   }
 
   async update(id: string, dto: UpdateContractPaymentDto): Promise<ContractPaymentResponseDto> {
+    const filter = await this.resolveFilter(id);
     const updateData: Record<string, unknown> = { ...dto, editDate: new Date() };
     
     if (dto.payDate) {
@@ -77,7 +78,7 @@ export class ContractPaymentsService {
 
     const updated = await this.contractPaymentModel
       .findOneAndUpdate(
-        { id },
+        filter,
         updateData,
         { new: true }
       )
@@ -92,7 +93,8 @@ export class ContractPaymentsService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.contractPaymentModel.deleteOne({ id }).exec();
+    const filter = await this.resolveFilter(id);
+    const result = await this.contractPaymentModel.deleteOne(filter).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException(`Contract payment with id ${id} not found`);
     }
@@ -107,6 +109,29 @@ export class ContractPaymentsService {
       .deleteMany({ contractId })
       .exec();
     return result.deletedCount;
+  }
+
+  private async findByIdentifier(identifier: string) {
+    const byId = await this.contractPaymentModel.findOne({ id: identifier }).lean().exec();
+    if (byId) return byId;
+
+    if (Types.ObjectId.isValid(identifier)) {
+      return this.contractPaymentModel.findOne({ _id: identifier }).lean().exec();
+    }
+
+    return null;
+  }
+
+  private async resolveFilter(identifier: string): Promise<Record<string, unknown>> {
+    const byId = await this.contractPaymentModel.exists({ id: identifier });
+    if (byId) return { id: identifier };
+
+    if (Types.ObjectId.isValid(identifier)) {
+      const byObjectId = await this.contractPaymentModel.exists({ _id: identifier });
+      if (byObjectId) return { _id: identifier };
+    }
+
+    return { id: identifier };
   }
 
   private mapToResponseDto(payment: ContractPayment): ContractPaymentResponseDto {

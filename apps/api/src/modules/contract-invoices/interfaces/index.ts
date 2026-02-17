@@ -74,6 +74,8 @@ export interface CreateInvoiceResult {
   invoiceNo?: string;
   uuid?: string;
   error?: string;
+  /** Birlestirilmis faturalarda dahil edilen plan ID'leri */
+  mergedPlanIds?: string[];
 }
 
 /** Zenginlestirilmis odeme plani (balance, block bilgisiyle) */

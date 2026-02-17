@@ -8,6 +8,7 @@ import {
 } from "../../contract-payments/schemas/contract-payment.schema";
 import { PaymentPlanService } from "../../contract-payments/services/payment-plan.service";
 import { InvoiceCreatorService } from "./invoice-creator.service";
+import { InvoiceMergerService } from "./invoice-merger.service";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import type { EnrichedPaymentPlan, CreateInvoiceResult } from "../interfaces";
 
@@ -22,6 +23,7 @@ export class ContractInvoiceOrchestratorService {
     private paymentModel: Model<ContractPaymentDocument>,
     private readonly paymentPlanService: PaymentPlanService,
     private readonly invoiceCreatorService: InvoiceCreatorService,
+    private readonly invoiceMergerService: InvoiceMergerService,
   ) {}
 
   /**
@@ -167,9 +169,24 @@ export class ContractInvoiceOrchestratorService {
 
   /**
    * Secili odeme planlarindan fatura olusturur.
+   * @param merge - true ise ayni cariye ait planlari tek faturada birlestirir
    */
-  async createInvoices(planIds: string[]): Promise<CreateInvoiceResult[]> {
+  async createInvoices(
+    planIds: string[],
+    merge = false,
+  ): Promise<CreateInvoiceResult[]> {
+    if (merge) {
+      return this.invoiceMergerService.createMergedInvoices(planIds);
+    }
     return this.invoiceCreatorService.createFromPaymentPlans(planIds);
+  }
+
+  /**
+   * Secili odeme planlarindan birlestirilmis fatura olusturur.
+   * Ayni customerId + ayni ay icin olan planlari tek faturada birlestirir.
+   */
+  async createMergedInvoices(planIds: string[]): Promise<CreateInvoiceResult[]> {
+    return this.invoiceMergerService.createMergedInvoices(planIds);
   }
 
   /**

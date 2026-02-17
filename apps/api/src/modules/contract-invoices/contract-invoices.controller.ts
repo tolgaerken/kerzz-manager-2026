@@ -21,11 +21,12 @@ export class ContractInvoicesController {
 
   /**
    * Secili odeme planlarindan fatura olusturur.
+   * merge=true ise ayni cariye ait planlari tek faturada birlestirir.
    */
   @AuditLog({ module: "contract-invoices", entityType: "ContractInvoice" })
   @Post("create")
   async createInvoices(@Body() dto: CreateInvoicesDto) {
-    return this.orchestratorService.createInvoices(dto.planIds);
+    return this.orchestratorService.createInvoices(dto.planIds, dto.merge);
   }
 
   /**

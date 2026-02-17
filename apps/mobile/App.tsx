@@ -8,10 +8,9 @@ import { StatusBar } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RootNavigator, linking } from "./src/navigation";
+import { RootNavigator, navigationRef, linking } from "./src/navigation";
 import { usePushNotifications } from "./src/hooks";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -22,13 +21,12 @@ const queryClient = new QueryClient({
 });
 
 function AppContent(): React.JSX.Element {
-  // Initialize push notifications
   usePushNotifications();
 
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-      <NavigationContainer linking={linking}>
+      <NavigationContainer ref={navigationRef} linking={linking}>
         <RootNavigator />
       </NavigationContainer>
     </>

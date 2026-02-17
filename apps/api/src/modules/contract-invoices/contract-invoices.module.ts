@@ -5,6 +5,7 @@ import { ContractInvoicesController } from "./contract-invoices.controller";
 import { ContractInvoiceOrchestratorService } from "./services/contract-invoice-orchestrator.service";
 import { InvoiceCreatorService } from "./services/invoice-creator.service";
 import { InvoiceMapperService } from "./services/invoice-mapper.service";
+import { InvoiceMergerService } from "./services/invoice-merger.service";
 import {
   ContractPayment,
   ContractPaymentSchema,
@@ -47,6 +48,7 @@ import { CompaniesModule } from "../companies";
     ContractInvoiceOrchestratorService,
     InvoiceCreatorService,
     InvoiceMapperService,
+    InvoiceMergerService,
   ],
   exports: [ContractInvoiceOrchestratorService],
 })

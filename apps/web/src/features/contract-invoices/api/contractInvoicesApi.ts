@@ -5,6 +5,7 @@ import type {
   PaymentPlansResponse,
   CreateInvoiceResult,
   CheckContractResult,
+  CreateInvoicesParams,
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = CONTRACT_INVOICES_CONSTANTS;
@@ -27,13 +28,17 @@ export async function fetchPaymentPlans(
 
 /**
  * Secili odeme planlarindan fatura olusturur.
+ * @param params.merge - true ise ayni cariye ait planlari tek faturada birlestirir
  */
 export async function createInvoices(
-  planIds: string[],
+  params: CreateInvoicesParams,
 ): Promise<CreateInvoiceResult[]> {
   const url = `${API_BASE_URL}${ENDPOINTS.CREATE_INVOICES}`;
 
-  return apiPost<CreateInvoiceResult[]>(url, { planIds });
+  return apiPost<CreateInvoiceResult[]>(url, {
+    planIds: params.planIds,
+    merge: params.merge,
+  });
 }
 
 /**

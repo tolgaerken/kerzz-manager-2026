@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { ContractCashRegister, ContractCashRegisterDocument } from "./schemas/contract-cash-register.schema";
 import {
   ContractCashRegisterQueryDto,
@@ -55,7 +55,7 @@ export class ContractCashRegistersService {
   }
 
   async findOne(id: string): Promise<ContractCashRegisterResponseDto> {
-    const cashRegister = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+    const cashRegister = await this.findByIdentifier(id);
     if (!cashRegister) {
       throw new NotFoundException(`Contract cash register with id ${id} not found`);
     }
@@ -82,9 +82,10 @@ export class ContractCashRegistersService {
   }
 
   async update(id: string, dto: UpdateContractCashRegisterDto): Promise<ContractCashRegisterResponseDto> {
+    const filter = await this.resolveFilter(id);
     // activated true geldiyse: once diger alanlari kaydet, sonra aktivasyon mantığını calistir
     if (dto.activated === true) {
-      const existing = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+      const existing = await this.contractCashRegisterModel.findOne(filter).lean().exec();
       if (!existing) {
         throw new NotFoundException(`Contract cash register with id ${id} not found`);
       }
@@ -95,7 +96,7 @@ export class ContractCashRegistersService {
         if (Object.keys(otherFields).length > 0) {
           await this.contractCashRegisterModel
             .findOneAndUpdate(
-              { id },
+              filter,
               { ...otherFields, editDate: new Date() },
               { new: true },
             )
@@ -109,15 +110,15 @@ export class ContractCashRegistersService {
 
     // activated false geldiyse: faturalanmamis kist planini sil
     if (dto.activated === false) {
-      const existing = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+      const existing = await this.contractCashRegisterModel.findOne(filter).lean().exec();
       if (existing?.activated) {
-        await this.proratedPlanService.deleteUninvoicedBySourceItem(existing.contractId, id);
+        await this.proratedPlanService.deleteUninvoicedBySourceItem(existing.contractId, existing.id);
       }
     }
 
     const updated = await this.contractCashRegisterModel
       .findOneAndUpdate(
-        { id },
+        filter,
         { ...dto, editDate: new Date() },
         { new: true }
       )
@@ -132,17 +133,18 @@ export class ContractCashRegistersService {
   }
 
   async delete(id: string): Promise<void> {
+    const filter = await this.resolveFilter(id);
     // Silmeden once kalemi bul (contractId icin)
-    const item = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+    const item = await this.contractCashRegisterModel.findOne(filter).lean().exec();
     if (!item) {
       throw new NotFoundException(`Contract cash register with id ${id} not found`);
     }
 
     // Faturalanmamis kist plani sil
-    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, id);
+    await this.proratedPlanService.deleteUninvoicedBySourceItem(item.contractId, item.id);
 
     // Kalemi sil
-    await this.contractCashRegisterModel.deleteOne({ id }).exec();
+    await this.contractCashRegisterModel.deleteOne(filter).exec();
   }
 
   /**
@@ -150,7 +152,8 @@ export class ContractCashRegistersService {
    * startDate gunceller ve kist plan olusturur.
    */
   async activate(id: string): Promise<ContractCashRegisterResponseDto> {
-    const item = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
+    const filter = await this.resolveFilter(id);
+    const item = await this.contractCashRegisterModel.findOne(filter).lean().exec();
     if (!item) {
       throw new NotFoundException(`Contract cash register with id ${id} not found`);
     }
@@ -172,7 +175,7 @@ export class ContractCashRegistersService {
     }
 
     const updated = await this.contractCashRegisterModel
-      .findOneAndUpdate({ id }, updateData, { new: true })
+      .findOneAndUpdate(filter, updateData, { new: true })
       .lean()
       .exec();
 
@@ -200,6 +203,29 @@ export class ContractCashRegistersService {
     }
 
     return this.mapToResponseDto(updated);
+  }
+
+  private async findByIdentifier(identifier: string) {
+    const byId = await this.contractCashRegisterModel.findOne({ id: identifier }).lean().exec();
+    if (byId) return byId;
+
+    if (Types.ObjectId.isValid(identifier)) {
+      return this.contractCashRegisterModel.findOne({ _id: identifier }).lean().exec();
+    }
+
+    return null;
+  }
+
+  private async resolveFilter(identifier: string): Promise<Record<string, unknown>> {
+    const byId = await this.contractCashRegisterModel.exists({ id: identifier }).exec();
+    if (byId) return { id: identifier };
+
+    if (Types.ObjectId.isValid(identifier)) {
+      const byObjectId = await this.contractCashRegisterModel.exists({ _id: identifier }).exec();
+      if (byObjectId) return { _id: identifier };
+    }
+
+    return { id: identifier };
   }
 
   private mapToResponseDto(cr: ContractCashRegister): ContractCashRegisterResponseDto {

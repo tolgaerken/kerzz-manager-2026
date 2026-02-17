@@ -126,11 +126,11 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     editUser: ""
   }), [contractId]);
 
-  const handleNewRowSave = useCallback((rows: ContractCashRegister[]) => {
-    rows.forEach((row) => {
+  const handleNewRowSave = useCallback(async (rows: ContractCashRegister[]) => {
+    for (const row of rows) {
       const { id, _id, ...data } = row;
-      createMutation.mutate(data);
-    });
+      await createMutation.mutateAsync(data);
+    }
   }, [createMutation]);
 
   const handlePendingCellChange = useCallback(
