@@ -358,7 +358,7 @@ export const defaultTemplates: TemplateSeed[] = [
       </div>
       
       <div class="btn-wrap">
-        <a href="{{approvalLink}}" class="btn">Satışları İncele ve Onayla</a>
+        <a href="{{{approvalLink}}}" class="btn">Satışları İncele ve Onayla</a>
       </div>
 
       <p style="color: #64748b; font-size: 13px;">Butona tıklayarak ilgili satışları doğrudan görüntüleyebilirsiniz.</p>
@@ -384,7 +384,7 @@ export const defaultTemplates: TemplateSeed[] = [
     name: "Satış Onay İsteği (SMS)",
     code: "sale-approval-request-sms",
     channel: "sms",
-    body: `{{requesterName}} tarafindan {{saleCount}} adet satis onayiniza sunuldu. Toplam: {{totalAmount}}. Inceleyin: {{approvalLink}}`,
+    body: `{{requesterName}} tarafindan {{saleCount}} adet satis onayiniza sunuldu. Toplam: {{totalAmount}}. Inceleyin: {{{approvalLink}}}`,
     isActive: true,
     variables: [
       "requesterName",

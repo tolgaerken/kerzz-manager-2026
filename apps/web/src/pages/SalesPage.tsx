@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { CalendarDays, MessageSquare, Plus, RefreshCw, ShoppingCart, Send, CheckCircle, X } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
@@ -47,11 +47,21 @@ export function SalesPage() {
   const [selectedMonth, setSelectedMonth] = useState(() => getCurrentMonth());
 
   // No pagination - fetch all data for virtual scroll
-  const [queryParams, setQueryParams] = useState<SaleQueryParams>({
-    sortField: "createdAt",
-    sortOrder: "desc",
-    startDate: defaultRange.startDate,
-    endDate: defaultRange.endDate,
+  const [queryParams, setQueryParams] = useState<SaleQueryParams>(() => {
+    const base: SaleQueryParams = {
+      sortField: "createdAt",
+      sortOrder: "desc",
+    };
+    // Onay filtresi varsa tarih filtresi yerine saleIds gönder
+    const params = new URLSearchParams(window.location.search);
+    const ids = params.get("approvalSaleIds");
+    if (ids) {
+      base.saleIds = ids;
+    } else {
+      base.startDate = defaultRange.startDate;
+      base.endDate = defaultRange.endDate;
+    }
+    return base;
   });
 
   const handleMonthChange = useCallback(
@@ -101,28 +111,20 @@ export function SalesPage() {
   // WebSocket ile gerçek zamanlı güncellemeler
   useSalesSocket();
 
-  // Onay filtresi aktifken tarih filtresini kaldır (tüm satışları getir)
-  useEffect(() => {
-    if (approvalFilterIds && approvalFilterIds.length > 0) {
-      setQueryParams((prev) => ({
-        ...prev,
-        startDate: undefined,
-        endDate: undefined,
-      }));
-    }
-  }, [approvalFilterIds]);
-
   const clearApprovalFilter = useCallback(() => {
     setApprovalFilterIds(null);
     // URL'den query param'ı temizle
     window.history.replaceState({}, "", window.location.pathname);
-    // Tarih filtresini geri yükle
+    // saleIds kaldır, tarih filtresini geri yükle
     const range = getMonthRangeFromString(selectedMonth);
-    setQueryParams((prev) => ({
-      ...prev,
-      startDate: range.startDate,
-      endDate: range.endDate,
-    }));
+    setQueryParams((prev) => {
+      const { saleIds: _removed, ...rest } = prev;
+      return {
+        ...rest,
+        startDate: range.startDate,
+        endDate: range.endDate,
+      };
+    });
   }, [selectedMonth]);
 
   const enrichedSales = useMemo(() => {
@@ -135,13 +137,8 @@ export function SalesPage() {
     }));
   }, [data, getCustomerName]);
 
-  // Onay filtresi aktifse sadece ilgili satışları göster
-  const displayedSales = useMemo(() => {
-    if (!approvalFilterIds || approvalFilterIds.length === 0) {
-      return enrichedSales;
-    }
-    return enrichedSales.filter((s) => approvalFilterIds.includes(s._id));
-  }, [enrichedSales, approvalFilterIds]);
+  // API zaten saleIds filtresi ile sadece ilgili satışları döner
+  const displayedSales = enrichedSales;
 
   const totalAmount = useMemo(() => {
     return displayedSales.reduce((sum, sale) => sum + (sale.grandTotal || 0), 0);

@@ -71,6 +71,8 @@ export interface SaleQueryParams {
   startDate?: string;
   endDate?: string;
   period?: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+  /** Belirli satış ID'lerini filtrele (onay linki için) */
+  saleIds?: string;
 }
 
 export interface PaginationMeta {

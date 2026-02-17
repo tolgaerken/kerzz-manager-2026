@@ -54,4 +54,9 @@ export class SaleQueryDto {
   @IsString()
   @IsIn(["daily", "weekly", "monthly", "quarterly", "yearly"])
   period?: string;
+
+  /** Virgülle ayrılmış satış ID'leri (onay linki filtresi) */
+  @IsOptional()
+  @IsString()
+  saleIds?: string;
 }

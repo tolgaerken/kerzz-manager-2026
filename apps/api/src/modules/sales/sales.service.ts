@@ -46,16 +46,25 @@ export class SalesService {
       sortOrder = "desc",
       startDate,
       endDate,
+      saleIds,
     } = query;
 
     const filter: Record<string, any> = {};
+
+    // saleIds filtresi varsa sadece bu ID'leri getir (diğer filtreleri atla)
+    if (saleIds) {
+      const ids = saleIds.split(",").map((id) => id.trim()).filter(Boolean);
+      if (ids.length > 0) {
+        filter._id = { $in: ids };
+      }
+    }
 
     if (status && status !== "all") filter.status = status;
     if (customerId) filter.customerId = customerId;
     if (sellerId) filter.sellerId = sellerId;
 
-    // Tarih aralığı filtresi (saleDate üzerinden)
-    if (startDate || endDate) {
+    // saleIds filtresi varken tarih filtresi uygulanmaz
+    if (!saleIds && (startDate || endDate)) {
       filter.saleDate = {};
       if (startDate) filter.saleDate.$gte = new Date(startDate);
       if (endDate) {

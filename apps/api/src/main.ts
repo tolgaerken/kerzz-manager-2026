@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
 import { json, urlencoded } from "express";
+import { networkInterfaces } from "os";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -14,9 +15,27 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
 
   const port = configService.get<number>("PORT", 3000);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0'); // Local network üzerinden erişilebilir yapar
 
-  console.log(`🚀 API running on http://localhost:${port}/api`);
+  // Network adreslerini bul
+  const nets = networkInterfaces();
+  const networkAddresses: string[] = [];
+  
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      // IPv4 ve internal olmayan adresleri al
+      if (net.family === 'IPv4' && !net.internal) {
+        networkAddresses.push(net.address);
+      }
+    }
+  }
+
+  console.log(`\n🚀 API running on:`);
+  console.log(`   ➜ Local:   http://localhost:${port}/api`);
+  networkAddresses.forEach(address => {
+    console.log(`   ➜ Network: http://${address}:${port}/api`);
+  });
+  console.log();
 }
 
 void bootstrap();

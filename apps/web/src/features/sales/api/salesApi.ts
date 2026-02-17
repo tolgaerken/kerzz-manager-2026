@@ -27,6 +27,7 @@ function buildQueryString(params: SaleQueryParams): string {
   if (params.startDate) searchParams.set("startDate", params.startDate);
   if (params.endDate) searchParams.set("endDate", params.endDate);
   if (params.period) searchParams.set("period", params.period);
+  if (params.saleIds) searchParams.set("saleIds", params.saleIds);
 
   return searchParams.toString();
 }
