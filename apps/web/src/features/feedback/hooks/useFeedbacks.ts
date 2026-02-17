@@ -5,12 +5,15 @@ import {
   createFeedback,
   updateFeedback,
   deleteFeedback,
+  fetchFeedbackReplies,
+  createReply,
 } from "../api/feedbackApi";
 import { FEEDBACK_CONSTANTS } from "../constants/feedback.constants";
 import type {
   FeedbackQueryParams,
   CreateFeedbackInput,
   UpdateFeedbackInput,
+  CreateReplyInput,
 } from "../types/feedback.types";
 
 const { QUERY_KEYS } = FEEDBACK_CONSTANTS;
@@ -22,6 +25,9 @@ export const feedbackKeys = {
     [...feedbackKeys.lists(), params] as const,
   details: () => [...feedbackKeys.all, "detail"] as const,
   detail: (id: string) => [...feedbackKeys.details(), id] as const,
+  replies: () => [...feedbackKeys.all, "replies"] as const,
+  repliesOf: (feedbackId: string) =>
+    [...feedbackKeys.replies(), feedbackId] as const,
 };
 
 export function useFeedbacks(params: FeedbackQueryParams = {}) {
@@ -82,6 +88,40 @@ export function useDeleteFeedback() {
       queryClient.invalidateQueries({
         queryKey: feedbackKeys.lists(),
       });
+    },
+  });
+}
+
+export function useFeedbackReplies(feedbackId: string) {
+  return useQuery({
+    queryKey: feedbackKeys.repliesOf(feedbackId),
+    queryFn: () => fetchFeedbackReplies(feedbackId),
+    enabled: !!feedbackId,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
+  });
+}
+
+export function useCreateReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateReplyInput) => createReply(data),
+    onSuccess: (_data, variables) => {
+      // Yanıtlar listesini invalidate et
+      queryClient.invalidateQueries({
+        queryKey: feedbackKeys.replies(),
+      });
+      // Root feedback listesini de invalidate et (replyCount güncellenmesi için)
+      queryClient.invalidateQueries({
+        queryKey: feedbackKeys.lists(),
+      });
+      // Parent feedback detayını invalidate et
+      if (variables.parentId) {
+        queryClient.invalidateQueries({
+          queryKey: feedbackKeys.detail(variables.parentId),
+        });
+      }
     },
   });
 }

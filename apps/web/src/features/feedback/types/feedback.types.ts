@@ -11,6 +11,8 @@ export interface Feedback {
   status: FeedbackStatus;
   createdBy: string;
   createdByName: string;
+  parentId: string | null;
+  replyCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,10 +42,18 @@ export interface FeedbacksResponse {
 }
 
 export interface CreateFeedbackInput {
-  title: string;
+  title?: string;
   description: string;
   screenshots?: string[];
   priority?: FeedbackPriority;
+  parentId?: string;
+}
+
+export interface CreateReplyInput {
+  description: string;
+  screenshots?: string[];
+  priority?: FeedbackPriority;
+  parentId: string;
 }
 
 export interface UpdateFeedbackInput {

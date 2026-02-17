@@ -61,8 +61,8 @@ export class ProratedPlanService {
    * Kontrata eklenen yeni kalem icin kist odeme plani olusturur.
    * Fatura kesmez — sadece plan kaydeder. Fatura kesimi cron tarafindan yapilir.
    *
-   * Eger ilgili ayin regular plani henuz faturalanmamissa, kist plan olusturmaz
-   * ve null dondurur. Bu durumda regular plan kist tutarla olusturulacaktir.
+   * Eger ilgili ayin regular plani henuz olusturulmamissa, kist plan olusturmaz
+   * ve null dondurur. Bu durumda regular plan olusturulurken bu kalem de dahil edilecektir.
    *
    * @param options.skipDayCalculation - true ise gun hesabi yapilmaz (yazarkasa icin)
    */
@@ -272,23 +272,29 @@ export class ProratedPlanService {
 
   /**
    * Ilgili ayin regular plani faturalanmis mi kontrol eder.
-   * Faturalanmissa true, faturalanmamissa false dondurur.
+   *
+   * NOT: Eski sistemde payDate degerleri ayin son gunu 21:00 UTC olarak
+   * kaydedilmis (TR saatiyle bir sonraki ayin 1'i 00:00).
+   * Ornegin Subat faturasi payDate=2026-01-31T21:00:00.000Z seklinde.
+   * Bu nedenle aralik onceki ayin son gunu 21:00 UTC'den baslar.
    */
   private async isMonthAlreadyInvoiced(
     contractId: string,
     date: Date,
   ): Promise<boolean> {
-    const monthStart = new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1),
-    );
-    const monthEnd = new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1),
-    );
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+
+    // Eski format: payDate = onceki ayin son gunu 21:00 UTC (TR 00:00)
+    // Yeni format: payDate = ayin 1'i 00:00 UTC
+    // Her iki formati da yakalamak icin genis aralik kullan
+    const prevMonthLastDay21 = new Date(Date.UTC(year, month, 0, 21, 0, 0));
+    const monthEnd = new Date(Date.UTC(year, month + 1, 1));
 
     const invoicedPlan = await this.paymentModel
       .findOne({
         contractId,
-        payDate: { $gte: monthStart, $lt: monthEnd },
+        payDate: { $gte: prevMonthLastDay21, $lt: monthEnd },
         $or: [{ type: "regular" }, { type: { $exists: false } }],
         invoiceNo: { $nin: ["", null] },
       })

@@ -10,6 +10,7 @@ import {
 } from "../features/feedback/hooks/useFeedbacks";
 import { FeedbackGrid } from "../features/feedback/components/FeedbackGrid";
 import { FeedbackFormModal } from "../features/feedback/components/FeedbackFormModal";
+import { FeedbackDetailPanel } from "../features/feedback/components/FeedbackDetail";
 import type {
   Feedback,
   FeedbackQueryParams,
@@ -30,6 +31,7 @@ export function FeedbackPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingFeedback, setEditingFeedback] = useState<Feedback | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [detailFeedback, setDetailFeedback] = useState<Feedback | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useFeedbacks(queryParams);
   const createMutation = useCreateFeedback();
@@ -61,6 +63,21 @@ export function FeedbackPage() {
   const handleRowDoubleClick = useCallback((feedback: Feedback) => {
     setEditingFeedback(feedback);
     setIsFormOpen(true);
+  }, []);
+
+  const handleRowClick = useCallback(
+    (feedback: Feedback | null) => {
+      setSelectedFeedback(feedback);
+      // Satıra tıklandığında detay panelini aç
+      if (feedback) {
+        setDetailFeedback(feedback);
+      }
+    },
+    [],
+  );
+
+  const handleCloseDetail = useCallback(() => {
+    setDetailFeedback(null);
   }, []);
 
   const handleSubmit = useCallback(
@@ -245,49 +262,66 @@ export function FeedbackPage() {
         {collapsible.collapsibleContent}
       </div>
 
-      {/* Content Area */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        {/* Grid Container */}
-        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
-          <FeedbackGrid
-            data={data?.data || []}
-            loading={isLoading}
-            onSortChange={handleSortChange}
-            onRowDoubleClick={handleRowDoubleClick}
-            onSelectionChanged={setSelectedFeedback}
-            toolbarButtons={toolbarButtons}
-          />
+      {/* Content Area - Split View */}
+      <div className="flex min-h-0 flex-1 gap-3">
+        {/* Grid Section */}
+        <div
+          className={`flex min-h-0 flex-col gap-3 transition-all duration-300 ${
+            detailFeedback ? "w-1/2 lg:w-3/5" : "w-full"
+          }`}
+        >
+          {/* Grid Container */}
+          <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+            <FeedbackGrid
+              data={data?.data || []}
+              loading={isLoading}
+              onSortChange={handleSortChange}
+              onRowDoubleClick={handleRowDoubleClick}
+              onSelectionChanged={handleRowClick}
+              toolbarButtons={toolbarButtons}
+            />
+          </div>
+
+          {/* Pagination */}
+          {data?.meta && (
+            <div className="flex items-center justify-between px-1">
+              <span className="text-sm text-muted-foreground">
+                Toplam: {data.meta.total} kayıt
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-3 py-1 text-sm border border-border rounded disabled:opacity-50"
+                  disabled={!data.meta.hasPrevPage}
+                  onClick={() =>
+                    setQueryParams((p) => ({ ...p, page: (p.page || 1) - 1 }))
+                  }
+                >
+                  Önceki
+                </button>
+                <span className="text-sm">
+                  {data.meta.page} / {data.meta.totalPages}
+                </span>
+                <button
+                  className="px-3 py-1 text-sm border border-border rounded disabled:opacity-50"
+                  disabled={!data.meta.hasNextPage}
+                  onClick={() =>
+                    setQueryParams((p) => ({ ...p, page: (p.page || 1) + 1 }))
+                  }
+                >
+                  Sonraki
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Pagination */}
-        {data?.meta && (
-          <div className="flex items-center justify-between px-1">
-            <span className="text-sm text-muted-foreground">
-              Toplam: {data.meta.total} kayıt
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                className="px-3 py-1 text-sm border border-border rounded disabled:opacity-50"
-                disabled={!data.meta.hasPrevPage}
-                onClick={() =>
-                  setQueryParams((p) => ({ ...p, page: (p.page || 1) - 1 }))
-                }
-              >
-                Önceki
-              </button>
-              <span className="text-sm">
-                {data.meta.page} / {data.meta.totalPages}
-              </span>
-              <button
-                className="px-3 py-1 text-sm border border-border rounded disabled:opacity-50"
-                disabled={!data.meta.hasNextPage}
-                onClick={() =>
-                  setQueryParams((p) => ({ ...p, page: (p.page || 1) + 1 }))
-                }
-              >
-                Sonraki
-              </button>
-            </div>
+        {/* Detail Panel */}
+        {detailFeedback && (
+          <div className="w-1/2 lg:w-2/5 min-h-0 rounded-lg border border-border bg-surface overflow-hidden">
+            <FeedbackDetailPanel
+              feedback={detailFeedback}
+              onClose={handleCloseDetail}
+            />
           </div>
         )}
       </div>

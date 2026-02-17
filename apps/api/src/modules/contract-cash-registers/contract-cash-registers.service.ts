@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ContractCashRegister, ContractCashRegisterDocument } from "./schemas/contract-cash-register.schema";
@@ -21,6 +21,8 @@ import { EFTPOS_DESCRIPTION } from "../contract-payments/constants/invoice.const
 
 @Injectable()
 export class ContractCashRegistersService {
+  private readonly logger = new Logger(ContractCashRegistersService.name);
+
   constructor(
     @InjectModel(ContractCashRegister.name, CONTRACT_DB_CONNECTION)
     private contractCashRegisterModel: Model<ContractCashRegisterDocument>,
@@ -80,13 +82,27 @@ export class ContractCashRegistersService {
   }
 
   async update(id: string, dto: UpdateContractCashRegisterDto): Promise<ContractCashRegisterResponseDto> {
-    // activated true geldiyse aktivasyon mantığını çalıştır
+    // activated true geldiyse: once diger alanlari kaydet, sonra aktivasyon mantığını calistir
     if (dto.activated === true) {
       const existing = await this.contractCashRegisterModel.findOne({ id }).lean().exec();
       if (!existing) {
         throw new NotFoundException(`Contract cash register with id ${id} not found`);
       }
+
       if (!existing.activated) {
+        // Aktivasyon disindaki alanlari (startDate, price vb.) once kaydet
+        const { activated, ...otherFields } = dto;
+        if (Object.keys(otherFields).length > 0) {
+          await this.contractCashRegisterModel
+            .findOneAndUpdate(
+              { id },
+              { ...otherFields, editDate: new Date() },
+              { new: true },
+            )
+            .lean()
+            .exec();
+        }
+
         return this.activate(id);
       }
     }
@@ -159,13 +175,15 @@ export class ContractCashRegistersService {
     // Kist plan olustur (ayin 1'i degilse)
     // NOT: Yazarkasa icin gun hesabi yapilmaz - her zaman tam aylik ucret
     const startDate = (updateData.startDate as Date) || item.startDate;
-    if (new Date(startDate).getUTCDate() !== 1) {
+    const startDateObj = new Date(startDate);
+
+    if (startDateObj.getUTCDate() !== 1) {
       await this.proratedPlanService.createProratedPlan(
         item.contractId,
         {
           price: item.price,
           currency: item.currency,
-          startDate: new Date(startDate),
+          startDate: startDateObj,
           sourceItemId: item.id,
         },
         EFTPOS_DESCRIPTION,

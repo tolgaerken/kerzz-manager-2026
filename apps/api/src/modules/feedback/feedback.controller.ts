@@ -33,6 +33,11 @@ export class FeedbackController {
     return this.service.findOne(id);
   }
 
+  @Get(":id/replies")
+  async findReplies(@Param("id") id: string) {
+    return this.service.findReplies(id);
+  }
+
   @Post()
   async create(
     @Body() dto: CreateFeedbackDto,

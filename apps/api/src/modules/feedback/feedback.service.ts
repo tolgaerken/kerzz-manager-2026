@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Feedback, FeedbackDocument } from "./schemas/feedback.schema";
@@ -18,21 +22,28 @@ export class FeedbackService {
   ) {}
 
   async findAll(query: FeedbackQueryDto): Promise<FeedbackListResponseDto> {
-    const filter: Record<string, unknown> = {};
+    // Sadece root feedback'leri getir (parentId null veya yok)
+    const conditions: Record<string, unknown>[] = [
+      { $or: [{ parentId: null }, { parentId: { $exists: false } }] },
+    ];
 
     if (query.status && query.status !== "all") {
-      filter.status = query.status;
+      conditions.push({ status: query.status });
     }
     if (query.priority && query.priority !== "all") {
-      filter.priority = query.priority;
+      conditions.push({ priority: query.priority });
     }
     if (query.search) {
-      filter.$or = [
-        { title: { $regex: query.search, $options: "i" } },
-        { description: { $regex: query.search, $options: "i" } },
-        { createdByName: { $regex: query.search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { title: { $regex: query.search, $options: "i" } },
+          { description: { $regex: query.search, $options: "i" } },
+          { createdByName: { $regex: query.search, $options: "i" } },
+        ],
+      });
     }
+
+    const filter = { $and: conditions };
 
     const page = query.page || 1;
     const limit = query.limit || 50;
@@ -52,10 +63,17 @@ export class FeedbackService {
       this.model.countDocuments(filter).exec(),
     ]);
 
+    // Her root feedback için replyCount hesapla
+    const feedbackIds = data.map((d) => d.id);
+    const replyCounts = await this.getReplyCountsForFeedbacks(feedbackIds);
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: data.map((doc) => this.toResponse(doc)),
+      data: data.map((doc) => ({
+        ...this.toResponse(doc),
+        replyCount: replyCounts.get(doc.id) || 0,
+      })),
       meta: {
         total,
         page,
@@ -65,6 +83,83 @@ export class FeedbackService {
         hasPrevPage: page > 1,
       },
     };
+  }
+
+  /**
+   * Belirli bir feedback'in tüm yanıtlarını (flat list) getirir
+   */
+  async findReplies(feedbackId: string): Promise<FeedbackResponseDto[]> {
+    // Önce parent feedback'in var olduğunu doğrula
+    const parent = await this.model.findOne({ id: feedbackId }).lean().exec();
+    if (!parent) {
+      throw new NotFoundException(`Geribildirim bulunamadı: ${feedbackId}`);
+    }
+
+    // Tüm yanıtları recursive olarak getir
+    const allReplies = await this.getAllRepliesRecursive(feedbackId);
+    return allReplies.map((doc) => this.toResponse(doc));
+  }
+
+  /**
+   * Recursive olarak tüm yanıtları getirir (nested replies dahil)
+   */
+  private async getAllRepliesRecursive(
+    parentId: string,
+  ): Promise<FeedbackDocument[]> {
+    const directReplies = await this.model
+      .find({ parentId })
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec();
+
+    const allReplies: FeedbackDocument[] = [...directReplies];
+
+    for (const reply of directReplies) {
+      const nestedReplies = await this.getAllRepliesRecursive(reply.id);
+      allReplies.push(...nestedReplies);
+    }
+
+    return allReplies;
+  }
+
+  /**
+   * Birden fazla feedback için reply count hesaplar
+   */
+  private async getReplyCountsForFeedbacks(
+    feedbackIds: string[],
+  ): Promise<Map<string, number>> {
+    if (feedbackIds.length === 0) {
+      return new Map();
+    }
+
+    // Her feedback için recursive reply count hesapla
+    const counts = new Map<string, number>();
+
+    for (const feedbackId of feedbackIds) {
+      const count = await this.countAllReplies(feedbackId);
+      counts.set(feedbackId, count);
+    }
+
+    return counts;
+  }
+
+  /**
+   * Bir feedback'in tüm yanıtlarını (nested dahil) sayar
+   */
+  private async countAllReplies(feedbackId: string): Promise<number> {
+    const directReplies = await this.model
+      .find({ parentId: feedbackId })
+      .select("id")
+      .lean()
+      .exec();
+
+    let total = directReplies.length;
+
+    for (const reply of directReplies) {
+      total += await this.countAllReplies(reply.id);
+    }
+
+    return total;
   }
 
   async findOne(id: string): Promise<FeedbackResponseDto> {
@@ -83,13 +178,38 @@ export class FeedbackService {
     const id = this.generateId();
     const description = this.sanitizeDescription(dto.description);
 
+    let title = dto.title || "";
+    const isReply = !!dto.parentId;
+
+    // parentId varsa, parent'ın varlığını doğrula ve title'ını al
+    if (dto.parentId) {
+      const parent = await this.model
+        .findOne({ id: dto.parentId })
+        .lean()
+        .exec();
+      if (!parent) {
+        throw new BadRequestException(
+          `Üst geribildirim bulunamadı: ${dto.parentId}`,
+        );
+      }
+      // Reply için parent'ın title'ını kullan
+      title = parent.title;
+    }
+
+    // Root feedback ise title zorunlu
+    if (!isReply && !dto.title?.trim()) {
+      throw new BadRequestException("Başlık zorunludur");
+    }
+
     const record = new this.model({
       ...dto,
       id,
+      title,
       description,
       screenshots: dto.screenshots || [],
       priority: dto.priority || "medium",
       status: "open",
+      parentId: dto.parentId || null,
       createdBy: userId,
       createdByName: userName,
     });
@@ -122,9 +242,31 @@ export class FeedbackService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.model.deleteOne({ id }).exec();
-    if (result.deletedCount === 0) {
+    const doc = await this.model.findOne({ id }).lean().exec();
+    if (!doc) {
       throw new NotFoundException(`Geribildirim bulunamadı: ${id}`);
+    }
+
+    // Recursive olarak tüm yanıtları sil
+    await this.deleteRepliesRecursive(id);
+
+    // Kendisini sil
+    await this.model.deleteOne({ id }).exec();
+  }
+
+  /**
+   * Bir feedback'in tüm yanıtlarını recursive olarak siler
+   */
+  private async deleteRepliesRecursive(parentId: string): Promise<void> {
+    const replies = await this.model
+      .find({ parentId })
+      .select("id")
+      .lean()
+      .exec();
+
+    for (const reply of replies) {
+      await this.deleteRepliesRecursive(reply.id);
+      await this.model.deleteOne({ id: reply.id }).exec();
     }
   }
 
@@ -140,6 +282,7 @@ export class FeedbackService {
       status: d.status ?? "open",
       createdBy: d.createdBy ?? "",
       createdByName: d.createdByName ?? "",
+      parentId: d.parentId ?? null,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
     };

@@ -68,6 +68,27 @@ export const feedbackColumnDefs: GridColumnDef<Feedback>[] = [
     },
   },
   {
+    id: "replyCount",
+    header: "Yanıt",
+    accessorKey: "replyCount",
+    width: 80,
+    sortable: true,
+    cell: (value: unknown) => {
+      const count = typeof value === "number" ? value : 0;
+      if (count === 0) {
+        return "-";
+      }
+      return createElement(
+        "span",
+        {
+          className:
+            "inline-flex items-center rounded-full bg-[var(--color-info)]/15 px-2.5 py-0.5 text-xs font-medium text-[var(--color-info)]",
+        },
+        `${count}`,
+      );
+    },
+  },
+  {
     id: "screenshots",
     header: "Görsel",
     accessorKey: "screenshots",

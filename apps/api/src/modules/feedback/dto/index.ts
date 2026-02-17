@@ -48,9 +48,10 @@ export class FeedbackQueryDto {
 
 // ============ Create DTO ============
 export class CreateFeedbackDto {
+  @IsOptional()
   @IsString()
   @MinLength(1)
-  title: string;
+  title?: string;
 
   @IsString()
   @MinLength(1)
@@ -65,6 +66,10 @@ export class CreateFeedbackDto {
   @IsOptional()
   @IsEnum(["low", "medium", "high", "urgent"])
   priority?: FeedbackPriority;
+
+  @IsOptional()
+  @IsString()
+  parentId?: string;
 }
 
 // ============ Update DTO ============
@@ -105,6 +110,8 @@ export class FeedbackResponseDto {
   status: FeedbackStatus;
   createdBy: string;
   createdByName: string;
+  parentId: string | null;
+  replyCount?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

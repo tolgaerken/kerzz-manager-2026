@@ -14,7 +14,7 @@ export class Feedback {
   @Prop({ required: true, index: true })
   id: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false, default: "" })
   title: string;
 
   @Prop({ required: true })
@@ -35,6 +35,9 @@ export class Feedback {
   @Prop({ required: true })
   createdByName: string;
 
+  @Prop({ type: String, default: null, index: true })
+  parentId: string | null;
+
   @Prop()
   createdAt?: Date;
 
@@ -44,3 +47,4 @@ export class Feedback {
 
 export const FeedbackSchema = SchemaFactory.createForClass(Feedback);
 FeedbackSchema.index({ createdAt: -1 });
+FeedbackSchema.index({ parentId: 1, createdAt: 1 });

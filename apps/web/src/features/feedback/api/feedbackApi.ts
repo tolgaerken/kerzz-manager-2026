@@ -6,6 +6,7 @@ import type {
   Feedback,
   CreateFeedbackInput,
   UpdateFeedbackInput,
+  CreateReplyInput,
 } from "../types/feedback.types";
 
 const { API_BASE_URL, ENDPOINTS } = FEEDBACK_CONSTANTS;
@@ -74,4 +75,18 @@ export async function deleteFeedback(id: string): Promise<void> {
   const url = `${API_BASE_URL}${ENDPOINTS.FEEDBACKS}/${encodeURIComponent(id)}`;
 
   return apiDelete<void>(url);
+}
+
+export async function fetchFeedbackReplies(
+  feedbackId: string,
+): Promise<Feedback[]> {
+  const url = `${API_BASE_URL}${ENDPOINTS.FEEDBACKS}/${encodeURIComponent(feedbackId)}/replies`;
+
+  return apiGet<Feedback[]>(url);
+}
+
+export async function createReply(input: CreateReplyInput): Promise<Feedback> {
+  const url = `${API_BASE_URL}${ENDPOINTS.FEEDBACKS}`;
+
+  return apiPost<Feedback>(url, input);
 }
