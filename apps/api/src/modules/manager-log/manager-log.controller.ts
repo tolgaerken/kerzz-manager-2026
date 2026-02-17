@@ -18,6 +18,7 @@ import {
   LastByContextsDto,
   LastByContextsResponseDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("manager-logs")
 export class ManagerLogController {
@@ -42,11 +43,13 @@ export class ManagerLogController {
     return log;
   }
 
+  @AuditLog({ module: "manager-logs", entityType: "ManagerLog" })
   @Post()
   async create(@Body() createManagerLogDto: CreateManagerLogDto): Promise<ManagerLogResponseDto> {
     return this.managerLogService.create(createManagerLogDto);
   }
 
+  @AuditLog({ module: "manager-logs", entityType: "ManagerLog" })
   @Patch(":id/reminder/complete")
   async markReminderCompleted(@Param("id") id: string): Promise<ManagerLogResponseDto> {
     const log = await this.managerLogService.markReminderCompleted(id);

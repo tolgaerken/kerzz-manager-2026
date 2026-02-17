@@ -16,6 +16,7 @@ import {
   CreateContractPaymentDto,
   UpdateContractPaymentDto
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("contract-payments")
 export class ContractPaymentsController {
@@ -30,6 +31,7 @@ export class ContractPaymentsController {
   /**
    * Tum aktif kontratlari kontrol eder ve planlarini olusturur.
    */
+  @AuditLog({ module: "contract-payments", entityType: "ContractPayment" })
   @Post("check-all")
   async checkAllContracts() {
     return this.paymentPlanService.checkAllContracts();
@@ -38,6 +40,7 @@ export class ContractPaymentsController {
   /**
    * Tek kontrat icin odeme plani olusturur / gunceller.
    */
+  @AuditLog({ module: "contract-payments", entityType: "ContractPayment" })
   @Post("check/:contractId")
   async checkContract(@Param("contractId") contractId: string) {
     return this.paymentPlanService.checkContractById(contractId);
@@ -97,16 +100,19 @@ export class ContractPaymentsController {
     return this.contractPaymentsService.findOne(id);
   }
 
+  @AuditLog({ module: "contract-payments", entityType: "ContractPayment" })
   @Post()
   async create(@Body() dto: CreateContractPaymentDto) {
     return this.contractPaymentsService.create(dto);
   }
 
+  @AuditLog({ module: "contract-payments", entityType: "ContractPayment" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateContractPaymentDto) {
     return this.contractPaymentsService.update(id, dto);
   }
 
+  @AuditLog({ module: "contract-payments", entityType: "ContractPayment" })
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractPaymentsService.delete(id);

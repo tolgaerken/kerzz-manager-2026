@@ -17,6 +17,7 @@ import {
   UpdateFeedbackDto,
 } from "./dto";
 import { FeedbackService } from "./feedback.service";
+import { AuditLog } from "../system-logs";
 
 @Controller("feedbacks")
 @RequirePermission(PERMISSIONS.FEEDBACK_MENU)
@@ -38,6 +39,7 @@ export class FeedbackController {
     return this.service.findReplies(id);
   }
 
+  @AuditLog({ module: "feedbacks", entityType: "Feedback" })
   @Post()
   async create(
     @Body() dto: CreateFeedbackDto,
@@ -46,11 +48,13 @@ export class FeedbackController {
     return this.service.create(dto, user.id, user.name);
   }
 
+  @AuditLog({ module: "feedbacks", entityType: "Feedback" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateFeedbackDto) {
     return this.service.update(id, dto);
   }
 
+  @AuditLog({ module: "feedbacks", entityType: "Feedback" })
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.service.delete(id);

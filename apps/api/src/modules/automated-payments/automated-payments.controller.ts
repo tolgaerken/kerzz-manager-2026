@@ -12,6 +12,7 @@ import {
 import { AutomatedPaymentsService } from "./automated-payments.service";
 import { AutoPaymentQueryDto } from "./dto/auto-payment-query.dto";
 import { CollectPaymentDto } from "./dto/collect-payment.dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("automated-payments")
 export class AutomatedPaymentsController {
@@ -30,6 +31,7 @@ export class AutomatedPaymentsController {
   /**
    * Tahsilat baslat (item / balance / custom modlari).
    */
+  @AuditLog({ module: "automated-payments", entityType: "AutomatedPayment" })
   @Post("collect")
   @HttpCode(HttpStatus.OK)
   async collectPayment(@Body() dto: CollectPaymentDto) {
@@ -55,6 +57,7 @@ export class AutomatedPaymentsController {
   /**
    * Token sil.
    */
+  @AuditLog({ module: "automated-payments", entityType: "AutoPaymentToken" })
   @Delete("tokens/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteToken(@Param("id") id: string) {
@@ -64,6 +67,7 @@ export class AutomatedPaymentsController {
   /**
    * Kayitli kart sil.
    */
+  @AuditLog({ module: "automated-payments", entityType: "AutoPaymentCard" })
   @Delete("cards/:customerId/:ctoken")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteCard(

@@ -11,6 +11,7 @@ import {
 import { PipelineRentalsService } from "./pipeline-rentals.service";
 import { CreatePipelineRentalDto } from "./dto/create-pipeline-rental.dto";
 import { UpdatePipelineRentalDto } from "./dto/update-pipeline-rental.dto";
+import { AuditLog } from "../../system-logs";
 
 @Controller("pipeline-rentals")
 export class PipelineRentalsController {
@@ -29,11 +30,13 @@ export class PipelineRentalsController {
     return this.service.findOne(id);
   }
 
+  @AuditLog({ module: "pipeline-rentals", entityType: "PipelineRental" })
   @Post()
   async create(@Body() dto: CreatePipelineRentalDto) {
     return this.service.create(dto);
   }
 
+  @AuditLog({ module: "pipeline-rentals", entityType: "PipelineRental" })
   @Post("batch")
   async batchUpsert(
     @Body()
@@ -52,6 +55,7 @@ export class PipelineRentalsController {
     );
   }
 
+  @AuditLog({ module: "pipeline-rentals", entityType: "PipelineRental" })
   @Patch(":id")
   async update(
     @Param("id") id: string,
@@ -60,6 +64,7 @@ export class PipelineRentalsController {
     return this.service.update(id, dto);
   }
 
+  @AuditLog({ module: "pipeline-rentals", entityType: "PipelineRental" })
   @Delete(":id")
   async remove(@Param("id") id: string) {
     return this.service.remove(id);

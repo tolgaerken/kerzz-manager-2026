@@ -7,6 +7,7 @@ import {
   TransactionsQueryDto,
   DocumentDetailQueryDto,
 } from "./dto/account-transactions.dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("erp")
 export class ErpController {
@@ -30,6 +31,7 @@ export class ErpController {
     return this.erpBalanceService.findByCompany(companyId);
   }
 
+  @AuditLog({ module: "erp", entityType: "ErpBalance" })
   @Post("balances/refresh")
   async refreshBalances() {
     return this.erpBalanceService.fetchAndStoreAllBalances();

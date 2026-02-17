@@ -14,6 +14,7 @@ import {
   CreateContractDocumentDto,
   UpdateContractDocumentDto
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("contract-documents")
 export class ContractDocumentsController {
@@ -29,16 +30,19 @@ export class ContractDocumentsController {
     return this.contractDocumentsService.findOne(id);
   }
 
+  @AuditLog({ module: "contract-documents", entityType: "ContractDocument" })
   @Post()
   async create(@Body() dto: CreateContractDocumentDto) {
     return this.contractDocumentsService.create(dto);
   }
 
+  @AuditLog({ module: "contract-documents", entityType: "ContractDocument" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateContractDocumentDto) {
     return this.contractDocumentsService.update(id, dto);
   }
 
+  @AuditLog({ module: "contract-documents", entityType: "ContractDocument" })
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractDocumentsService.delete(id);

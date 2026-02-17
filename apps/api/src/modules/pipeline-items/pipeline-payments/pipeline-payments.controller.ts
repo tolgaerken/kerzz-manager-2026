@@ -11,6 +11,7 @@ import {
 import { PipelinePaymentsService } from "./pipeline-payments.service";
 import { CreatePipelinePaymentDto } from "./dto/create-pipeline-payment.dto";
 import { UpdatePipelinePaymentDto } from "./dto/update-pipeline-payment.dto";
+import { AuditLog } from "../../system-logs";
 
 @Controller("pipeline-payments")
 export class PipelinePaymentsController {
@@ -29,11 +30,13 @@ export class PipelinePaymentsController {
     return this.service.findOne(id);
   }
 
+  @AuditLog({ module: "pipeline-payments", entityType: "PipelinePayment" })
   @Post()
   async create(@Body() dto: CreatePipelinePaymentDto) {
     return this.service.create(dto);
   }
 
+  @AuditLog({ module: "pipeline-payments", entityType: "PipelinePayment" })
   @Post("batch")
   async batchUpsert(
     @Body()
@@ -52,6 +55,7 @@ export class PipelinePaymentsController {
     );
   }
 
+  @AuditLog({ module: "pipeline-payments", entityType: "PipelinePayment" })
   @Patch(":id")
   async update(
     @Param("id") id: string,
@@ -60,6 +64,7 @@ export class PipelinePaymentsController {
     return this.service.update(id, dto);
   }
 
+  @AuditLog({ module: "pipeline-payments", entityType: "PipelinePayment" })
   @Delete(":id")
   async remove(@Param("id") id: string) {
     return this.service.remove(id);

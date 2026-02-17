@@ -16,6 +16,7 @@ import {
 } from "./dto";
 import { RequirePermission } from "../auth/decorators";
 import { PERMISSIONS } from "../auth/constants/permissions";
+import { AuditLog } from "../system-logs";
 
 @Controller("e-doc-members")
 @RequirePermission(PERMISSIONS.EDOC_MENU)
@@ -32,16 +33,19 @@ export class EDocMembersController {
     return this.eDocMembersService.findOne(id);
   }
 
+  @AuditLog({ module: "e-doc-members", entityType: "EDocMember" })
   @Post()
   async create(@Body() dto: CreateEDocMemberDto) {
     return this.eDocMembersService.create(dto);
   }
 
+  @AuditLog({ module: "e-doc-members", entityType: "EDocMember" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateEDocMemberDto) {
     return this.eDocMembersService.update(id, dto);
   }
 
+  @AuditLog({ module: "e-doc-members", entityType: "EDocMember" })
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.eDocMembersService.delete(id);

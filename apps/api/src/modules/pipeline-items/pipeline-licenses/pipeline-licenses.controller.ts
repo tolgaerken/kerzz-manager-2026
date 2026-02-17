@@ -11,6 +11,7 @@ import {
 import { PipelineLicensesService } from "./pipeline-licenses.service";
 import { CreatePipelineLicenseDto } from "./dto/create-pipeline-license.dto";
 import { UpdatePipelineLicenseDto } from "./dto/update-pipeline-license.dto";
+import { AuditLog } from "../../system-logs";
 
 @Controller("pipeline-licenses")
 export class PipelineLicensesController {
@@ -29,11 +30,13 @@ export class PipelineLicensesController {
     return this.service.findOne(id);
   }
 
+  @AuditLog({ module: "pipeline-licenses", entityType: "PipelineLicense" })
   @Post()
   async create(@Body() dto: CreatePipelineLicenseDto) {
     return this.service.create(dto);
   }
 
+  @AuditLog({ module: "pipeline-licenses", entityType: "PipelineLicense" })
   @Post("batch")
   async batchUpsert(
     @Body()
@@ -52,6 +55,7 @@ export class PipelineLicensesController {
     );
   }
 
+  @AuditLog({ module: "pipeline-licenses", entityType: "PipelineLicense" })
   @Patch(":id")
   async update(
     @Param("id") id: string,
@@ -60,6 +64,7 @@ export class PipelineLicensesController {
     return this.service.update(id, dto);
   }
 
+  @AuditLog({ module: "pipeline-licenses", entityType: "PipelineLicense" })
   @Delete(":id")
   async remove(@Param("id") id: string) {
     return this.service.remove(id);

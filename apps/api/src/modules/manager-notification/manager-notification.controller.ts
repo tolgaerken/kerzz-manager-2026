@@ -13,6 +13,7 @@ import {
   PaginatedManagerNotificationsResponseDto,
   ManagerNotificationUnreadCountResponseDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("manager-notifications")
 export class ManagerNotificationController {
@@ -33,6 +34,7 @@ export class ManagerNotificationController {
     return { count };
   }
 
+  @AuditLog({ module: "manager-notifications", entityType: "ManagerNotification" })
   @Patch(":id/read")
   async markAsRead(
     @Param("id") id: string
@@ -44,6 +46,7 @@ export class ManagerNotificationController {
     return notification;
   }
 
+  @AuditLog({ module: "manager-notifications", entityType: "ManagerNotification" })
   @Patch("read-all")
   async markAllAsRead(
     @Query("userId") userId: string

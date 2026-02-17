@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Query } from "@nestjs/common";
 import { ContractInvoiceOrchestratorService } from "./services/contract-invoice-orchestrator.service";
 import { QueryPaymentPlansDto } from "./dto/query-payment-plans.dto";
 import { CreateInvoicesDto } from "./dto/create-invoices.dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("contract-invoices")
 export class ContractInvoicesController {
@@ -21,6 +22,7 @@ export class ContractInvoicesController {
   /**
    * Secili odeme planlarindan fatura olusturur.
    */
+  @AuditLog({ module: "contract-invoices", entityType: "ContractInvoice" })
   @Post("create")
   async createInvoices(@Body() dto: CreateInvoicesDto) {
     return this.orchestratorService.createInvoices(dto.planIds);
@@ -29,6 +31,7 @@ export class ContractInvoicesController {
   /**
    * Secili odeme planlarindaki kontratlari kontrol eder / yeniden hesaplar.
    */
+  @AuditLog({ module: "contract-invoices", entityType: "ContractInvoice" })
   @Post("check-contracts")
   async checkContracts(@Body() dto: CreateInvoicesDto) {
     return this.orchestratorService.checkContracts(dto.planIds);

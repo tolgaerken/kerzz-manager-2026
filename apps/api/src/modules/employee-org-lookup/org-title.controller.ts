@@ -16,6 +16,7 @@ import {
   UpdateOrgTitleDto,
   OrgTitleQueryDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 /**
  * Organizasyon Ünvan Controller
@@ -52,6 +53,7 @@ export class OrgTitleController {
   /**
    * Yeni ünvan oluştur
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgTitle" })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateOrgTitleDto) {
@@ -61,6 +63,7 @@ export class OrgTitleController {
   /**
    * Ünvan güncelle
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgTitle" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateOrgTitleDto) {
     return this.titleService.update(id, dto);
@@ -69,6 +72,7 @@ export class OrgTitleController {
   /**
    * Ünvan sil
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgTitle" })
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param("id") id: string) {

@@ -10,6 +10,7 @@ import { BankTransactionsService } from "./services/bank-transactions.service";
 import { BankSummaryService } from "./services/bank-summary.service";
 import { ErpBankProxyService } from "./services/erp-bank-proxy.service";
 import { BankTransactionQueryDto, UpdateBankTransactionDto } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("bank-transactions")
 export class BankTransactionsController {
@@ -77,6 +78,7 @@ export class BankTransactionsController {
   /**
    * Banka islemi guncelle (ERP kodlari, durum)
    */
+  @AuditLog({ module: "bank-transactions", entityType: "BankTransaction" })
   @Patch(":id")
   async update(
     @Param("id") id: string,

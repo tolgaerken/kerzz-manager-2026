@@ -16,6 +16,7 @@ import {
   UpdateOrgDepartmentDto,
   OrgDepartmentQueryDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 /**
  * Organizasyon Departman Controller
@@ -52,6 +53,7 @@ export class OrgDepartmentController {
   /**
    * Yeni departman oluştur
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgDepartment" })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateOrgDepartmentDto) {
@@ -61,6 +63,7 @@ export class OrgDepartmentController {
   /**
    * Departman güncelle
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgDepartment" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateOrgDepartmentDto) {
     return this.departmentService.update(id, dto);
@@ -69,6 +72,7 @@ export class OrgDepartmentController {
   /**
    * Departman sil
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgDepartment" })
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param("id") id: string) {

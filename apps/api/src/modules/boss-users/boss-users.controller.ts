@@ -26,6 +26,7 @@ import {
   UpsertUserDto
 } from "./dto";
 import { SsoUser } from "../sso/schemas";
+import { AuditLog } from "../system-logs";
 
 @Controller("boss-users")
 @RequirePermission(PERMISSIONS.SSO_MANAGEMENT_MENU)
@@ -56,6 +57,7 @@ export class BossUsersController {
   /**
    * Lisans oluştur veya güncelle
    */
+  @AuditLog({ module: "boss-users", entityType: "BossLicense" })
   @Post("licenses")
   @HttpCode(HttpStatus.OK)
   async upsertLicense(
@@ -67,6 +69,7 @@ export class BossUsersController {
   /**
    * Lisans güncelle
    */
+  @AuditLog({ module: "boss-users", entityType: "BossLicense" })
   @Put("licenses/:id")
   async updateLicense(
     @Param("id") id: string,
@@ -78,6 +81,7 @@ export class BossUsersController {
   /**
    * Lisans sil
    */
+  @AuditLog({ module: "boss-users", entityType: "BossLicense" })
   @Delete("licenses/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteLicense(@Param("id") id: string): Promise<void> {
@@ -87,6 +91,7 @@ export class BossUsersController {
   /**
    * Şube yetkilerini güncelle
    */
+  @AuditLog({ module: "boss-users", entityType: "BossLicense" })
   @Put("licenses/:id/branches")
   async updateBranches(
     @Param("id") id: string,
@@ -98,6 +103,7 @@ export class BossUsersController {
   /**
    * Kullanıcıyı engelle
    */
+  @AuditLog({ module: "boss-users", entityType: "BossLicense" })
   @Put("licenses/:id/block")
   async blockUser(
     @Param("id") id: string,
@@ -109,6 +115,7 @@ export class BossUsersController {
   /**
    * Engeli kaldır
    */
+  @AuditLog({ module: "boss-users", entityType: "BossLicense" })
   @Put("licenses/:id/unblock")
   async unblockUser(@Param("id") id: string): Promise<BossLicenseUserDto> {
     return this.bossUsersService.unblockUser(id);
@@ -137,6 +144,7 @@ export class BossUsersController {
   /**
    * Kullanıcı oluştur veya güncelle
    */
+  @AuditLog({ module: "boss-users", entityType: "BossUser" })
   @Post("users")
   @HttpCode(HttpStatus.OK)
   async upsertUser(@Body() dto: UpsertUserDto): Promise<SsoUser> {
@@ -170,6 +178,7 @@ export class BossUsersController {
   /**
    * Bildirim gönder (SMS/Email)
    */
+  @AuditLog({ module: "boss-users", entityType: "BossNotification" })
   @Post("notify")
   @HttpCode(HttpStatus.OK)
   async sendNotification(

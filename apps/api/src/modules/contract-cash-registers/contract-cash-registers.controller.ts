@@ -15,6 +15,7 @@ import {
   UpdateContractCashRegisterDto,
   CashRegisterStatsQueryDto
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("contract-cash-registers")
 export class ContractCashRegistersController {
@@ -35,21 +36,25 @@ export class ContractCashRegistersController {
     return this.contractCashRegistersService.findOne(id);
   }
 
+  @AuditLog({ module: "contract-cash-registers", entityType: "ContractCashRegister" })
   @Post()
   async create(@Body() dto: CreateContractCashRegisterDto) {
     return this.contractCashRegistersService.create(dto);
   }
 
+  @AuditLog({ module: "contract-cash-registers", entityType: "ContractCashRegister" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateContractCashRegisterDto) {
     return this.contractCashRegistersService.update(id, dto);
   }
 
+  @AuditLog({ module: "contract-cash-registers", entityType: "ContractCashRegister" })
   @Patch(":id/activate")
   async activate(@Param("id") id: string) {
     return this.contractCashRegistersService.activate(id);
   }
 
+  @AuditLog({ module: "contract-cash-registers", entityType: "ContractCashRegister" })
   @Delete(":id")
   async delete(@Param("id") id: string) {
     return this.contractCashRegistersService.delete(id);

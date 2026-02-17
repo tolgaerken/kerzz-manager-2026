@@ -5,6 +5,7 @@ import {
   ContractQueueQueryDto,
   ManualSendDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("notification-queue")
 export class NotificationQueueController {
@@ -34,6 +35,7 @@ export class NotificationQueueController {
     return this.queueService.previewNotification(type, id, channel);
   }
 
+  @AuditLog({ module: "notification-queue", entityType: "NotificationQueue" })
   @Post("send")
   send(@Body() dto: ManualSendDto) {
     return this.queueService.sendManualNotification(dto);

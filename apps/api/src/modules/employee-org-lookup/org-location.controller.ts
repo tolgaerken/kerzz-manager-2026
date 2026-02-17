@@ -16,6 +16,7 @@ import {
   UpdateOrgLocationDto,
   OrgLocationQueryDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 /**
  * Organizasyon Lokasyon Controller
@@ -52,6 +53,7 @@ export class OrgLocationController {
   /**
    * Yeni lokasyon oluştur
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgLocation" })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateOrgLocationDto) {
@@ -61,6 +63,7 @@ export class OrgLocationController {
   /**
    * Lokasyon güncelle
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgLocation" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateOrgLocationDto) {
     return this.locationService.update(id, dto);
@@ -69,6 +72,7 @@ export class OrgLocationController {
   /**
    * Lokasyon sil
    */
+  @AuditLog({ module: "org-lookups", entityType: "OrgLocation" })
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param("id") id: string) {

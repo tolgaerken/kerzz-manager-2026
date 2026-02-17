@@ -17,6 +17,7 @@ import {
   NotificationTemplateQueryDto,
   RenderTemplateDto,
 } from "./dto";
+import { AuditLog } from "../system-logs";
 
 @Controller("notification-templates")
 export class NotificationTemplatesController {
@@ -24,6 +25,7 @@ export class NotificationTemplatesController {
     private readonly templatesService: NotificationTemplatesService
   ) {}
 
+  @AuditLog({ module: "notification-templates", entityType: "NotificationTemplate" })
   @Post()
   async create(@Body() dto: CreateNotificationTemplateDto) {
     return this.templatesService.create(dto);
@@ -44,6 +46,7 @@ export class NotificationTemplatesController {
     return this.templatesService.findByCode(code);
   }
 
+  @AuditLog({ module: "notification-templates", entityType: "NotificationTemplate" })
   @Put(":id")
   async update(
     @Param("id") id: string,
@@ -52,6 +55,7 @@ export class NotificationTemplatesController {
     return this.templatesService.update(id, dto);
   }
 
+  @AuditLog({ module: "notification-templates", entityType: "NotificationTemplate" })
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param("id") id: string) {

@@ -35,6 +35,7 @@ import { SsoLicensesService, LicenseSearchParams } from "./sso-licenses.service"
 import { RequirePermission } from "../auth/decorators/require-permission.decorator";
 import type { AuthenticatedUser } from "../auth/auth.types";
 import { PERMISSIONS } from "../auth/constants/permissions";
+import { AuditLog } from "../system-logs";
 
 @Controller("sso")
 @RequirePermission(PERMISSIONS.SSO_MANAGEMENT_MENU)
@@ -94,6 +95,7 @@ export class SsoController {
   /**
    * Assign a user to this application
    */
+  @AuditLog({ module: "sso", entityType: "SsoUser" })
   @Post("users/assign")
   @HttpCode(HttpStatus.CREATED)
   async assignUser(@Body() dto: AssignUserDto) {
@@ -105,6 +107,7 @@ export class SsoController {
    * If user exists (by email or phone), use existing user
    * If user doesn't exist, create new user first
    */
+  @AuditLog({ module: "sso", entityType: "SsoUser" })
   @Post("users/add")
   @HttpCode(HttpStatus.CREATED)
   async addUser(@Body() dto: AddUserToAppDto) {
@@ -114,6 +117,7 @@ export class SsoController {
   /**
    * Update a user's details
    */
+  @AuditLog({ module: "sso", entityType: "SsoUser" })
   @Put("users/:userId")
   async updateUser(@Param("userId") userId: string, @Body() dto: UpdateUserDto) {
     return this.usersService.updateUser(userId, dto);
@@ -122,6 +126,7 @@ export class SsoController {
   /**
    * Remove a user from this application
    */
+  @AuditLog({ module: "sso", entityType: "SsoUser" })
   @Delete("users/:userId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeUser(@Param("userId") userId: string) {
@@ -131,6 +136,7 @@ export class SsoController {
   /**
    * Update user's roles
    */
+  @AuditLog({ module: "sso", entityType: "SsoUser" })
   @Put("users/:userId/roles")
   async updateUserRoles(@Param("userId") userId: string, @Body("roles") roles: string[]) {
     return this.usersService.updateUserRoles(userId, roles);
@@ -182,6 +188,7 @@ export class SsoController {
   /**
    * Create a new role
    */
+  @AuditLog({ module: "sso", entityType: "SsoRole" })
   @Post("roles")
   @HttpCode(HttpStatus.CREATED)
   async createRole(@Body() dto: CreateRoleDto) {
@@ -191,6 +198,7 @@ export class SsoController {
   /**
    * Update a role
    */
+  @AuditLog({ module: "sso", entityType: "SsoRole" })
   @Put("roles/:roleId")
   async updateRole(@Param("roleId") roleId: string, @Body() dto: UpdateRoleDto) {
     return this.rolesService.updateRole(roleId, dto);
@@ -199,6 +207,7 @@ export class SsoController {
   /**
    * Delete a role
    */
+  @AuditLog({ module: "sso", entityType: "SsoRole" })
   @Delete("roles/:roleId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteRole(@Param("roleId") roleId: string) {
@@ -208,6 +217,7 @@ export class SsoController {
   /**
    * Set permissions for a role
    */
+  @AuditLog({ module: "sso", entityType: "SsoRole" })
   @Put("roles/:roleId/permissions")
   async setRolePermissions(
     @Param("roleId") roleId: string,
@@ -283,6 +293,7 @@ export class SsoController {
   /**
    * Create a new permission
    */
+  @AuditLog({ module: "sso", entityType: "SsoPermission" })
   @Post("permissions")
   @HttpCode(HttpStatus.CREATED)
   async createPermission(@Body() dto: CreatePermissionDto) {
@@ -292,6 +303,7 @@ export class SsoController {
   /**
    * Update a permission
    */
+  @AuditLog({ module: "sso", entityType: "SsoPermission" })
   @Put("permissions/:permissionId")
   async updatePermission(
     @Param("permissionId") permissionId: string,
@@ -303,6 +315,7 @@ export class SsoController {
   /**
    * Delete a permission
    */
+  @AuditLog({ module: "sso", entityType: "SsoPermission" })
   @Delete("permissions/:permissionId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePermission(@Param("permissionId") permissionId: string) {
@@ -333,6 +346,7 @@ export class SsoController {
   /**
    * Create a new application
    */
+  @AuditLog({ module: "sso", entityType: "SsoApplication" })
   @Post("applications")
   @HttpCode(HttpStatus.CREATED)
   async createApplication(@Body() dto: CreateApplicationDto) {
@@ -342,6 +356,7 @@ export class SsoController {
   /**
    * Update an application
    */
+  @AuditLog({ module: "sso", entityType: "SsoApplication" })
   @Put("applications/:applicationId")
   async updateApplication(
     @Param("applicationId") applicationId: string,
@@ -353,6 +368,7 @@ export class SsoController {
   /**
    * Delete an application
    */
+  @AuditLog({ module: "sso", entityType: "SsoApplication" })
   @Delete("applications/:applicationId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteApplication(@Param("applicationId") applicationId: string) {
@@ -388,6 +404,7 @@ export class SsoController {
   /**
    * Create a new API key
    */
+  @AuditLog({ module: "sso", entityType: "SsoApiKey" })
   @Post("api-keys")
   @HttpCode(HttpStatus.CREATED)
   async createApiKey(@Body() dto: CreateApiKeyDto) {
@@ -397,6 +414,7 @@ export class SsoController {
   /**
    * Update an API key
    */
+  @AuditLog({ module: "sso", entityType: "SsoApiKey" })
   @Put("api-keys/:apiKeyId")
   async updateApiKey(@Param("apiKeyId") apiKeyId: string, @Body() dto: UpdateApiKeyDto) {
     return this.apiKeysService.updateApiKey(apiKeyId, dto);
@@ -405,6 +423,7 @@ export class SsoController {
   /**
    * Delete an API key
    */
+  @AuditLog({ module: "sso", entityType: "SsoApiKey" })
   @Delete("api-keys/:apiKeyId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteApiKey(@Param("apiKeyId") apiKeyId: string) {
@@ -414,6 +433,7 @@ export class SsoController {
   /**
    * Regenerate an API key
    */
+  @AuditLog({ module: "sso", entityType: "SsoApiKey" })
   @Post("api-keys/:apiKeyId/regenerate")
   async regenerateApiKey(@Param("apiKeyId") apiKeyId: string) {
     return this.apiKeysService.regenerateApiKey(apiKeyId);
@@ -456,6 +476,7 @@ export class SsoController {
   /**
    * Create a new app license
    */
+  @AuditLog({ module: "sso", entityType: "SsoAppLicense" })
   @Post("app-licenses")
   @HttpCode(HttpStatus.CREATED)
   async createAppLicense(@Body() dto: CreateAppLicenseDto) {
@@ -465,6 +486,7 @@ export class SsoController {
   /**
    * Update an app license
    */
+  @AuditLog({ module: "sso", entityType: "SsoAppLicense" })
   @Put("app-licenses/:licenseId")
   async updateAppLicense(
     @Param("licenseId") licenseId: string,
@@ -476,6 +498,7 @@ export class SsoController {
   /**
    * Delete an app license
    */
+  @AuditLog({ module: "sso", entityType: "SsoAppLicense" })
   @Delete("app-licenses/:licenseId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAppLicense(@Param("licenseId") licenseId: string) {
@@ -485,6 +508,7 @@ export class SsoController {
   /**
    * Update user roles in app license
    */
+  @AuditLog({ module: "sso", entityType: "SsoAppLicense" })
   @Put("app-licenses/user-roles/:appId/:userId")
   async updateUserRolesInLicense(
     @Param("appId") appId: string,
@@ -531,6 +555,7 @@ export class SsoController {
   /**
    * Create a new user-app assignment
    */
+  @AuditLog({ module: "sso", entityType: "SsoUserApp" })
   @Post("user-apps")
   @HttpCode(HttpStatus.CREATED)
   async createUserApp(@Body() dto: CreateUserAppDto) {
@@ -540,6 +565,7 @@ export class SsoController {
   /**
    * Update a user-app assignment
    */
+  @AuditLog({ module: "sso", entityType: "SsoUserApp" })
   @Put("user-apps/:userAppId")
   async updateUserApp(@Param("userAppId") userAppId: string, @Body() dto: UpdateUserAppDto) {
     return this.userAppsService.updateUserApp(userAppId, dto);
@@ -548,6 +574,7 @@ export class SsoController {
   /**
    * Delete a user-app assignment
    */
+  @AuditLog({ module: "sso", entityType: "SsoUserApp" })
   @Delete("user-apps/:userAppId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUserApp(@Param("userAppId") userAppId: string) {

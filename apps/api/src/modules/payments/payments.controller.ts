@@ -16,12 +16,14 @@ import { PaymentLinkQueryDto } from "./dto/payment-link-query.dto";
 import { Public } from "../auth/decorators/public.decorator";
 import { RequirePermission } from "../auth/decorators";
 import { PERMISSIONS } from "../auth/constants/permissions";
+import { AuditLog } from "../system-logs";
 
 @Controller("payments")
 @RequirePermission(PERMISSIONS.FINANCE_MENU)
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
+  @AuditLog({ module: "payments", entityType: "PaymentLink" })
   @Post("links")
   @HttpCode(HttpStatus.CREATED)
   async createLink(@Body() dto: CreatePaymentLinkDto) {
@@ -39,6 +41,7 @@ export class PaymentsController {
     return this.paymentsService.getPaymentInfo(linkId);
   }
 
+  @AuditLog({ module: "payments", entityType: "PaymentLink" })
   @Post("links/:linkId/notify")
   @HttpCode(HttpStatus.OK)
   async sendNotification(@Param("linkId") linkId: string) {
