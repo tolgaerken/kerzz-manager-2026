@@ -172,8 +172,7 @@ export const contractSaasColumns: GridColumnDef<ContractSaas>[] = [
     header: "Kuruldu",
     width: 80,
     filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: { type: "boolean" },
+    editable: false,
     cell: (value) => (value ? "✓" : "✗")
   },
   {

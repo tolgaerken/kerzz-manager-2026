@@ -93,8 +93,7 @@ export const contractVersionsColumns: GridColumnDef<ContractVersion>[] = [
     width: 90,
     minWidth: 80,
     filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: { type: "boolean" },
+    editable: false,
     cell: (value) => (value ? "Evet" : "Hayır")
   },
   {

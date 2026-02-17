@@ -128,8 +128,7 @@ export const contractItemsColumns: GridColumnDef<ContractItem>[] = [
     header: "Kuruldu",
     width: 80,
     filter: { type: "dropdown" },
-    editable: true,
-    cellEditor: { type: "boolean" },
+    editable: false,
     cell: (value) => (value ? "✓" : "✗")
   },
   {

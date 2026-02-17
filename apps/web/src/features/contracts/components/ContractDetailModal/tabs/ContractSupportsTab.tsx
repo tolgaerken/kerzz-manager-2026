@@ -1,12 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, Headphones, Store, CircleDollarSign, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Trash2, Headphones, Store, CircleDollarSign, CheckCircle2, XCircle, AlertCircle, CheckCheck } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractSupports } from "../../../hooks/useContractDetail";
 import {
   useCreateContractSupport,
   useUpdateContractSupport,
-  useDeleteContractSupport
+  useDeleteContractSupport,
+  useActivateContractSupport
 } from "../../../hooks/useContractDetailMutations";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import type { ContractSupport } from "../../../types";
@@ -37,11 +38,13 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
   const createMutation = useCreateContractSupport(contractId);
   const updateMutation = useUpdateContractSupport(contractId);
   const deleteMutation = useDeleteContractSupport(contractId);
+  const activateMutation = useActivateContractSupport(contractId);
 
   const isProcessing =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    activateMutation.isPending;
 
   // Lisansları grid için hazırla
   const licenses = useMemo(() => {
@@ -131,6 +134,25 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
+  const handleToggleActivation = useCallback(() => {
+    if (selectedRow?.id) {
+      if (selectedRow.activated) {
+        // Kuruldu -> Kurulmadı
+        updateMutation.mutate({
+          id: selectedRow.id,
+          data: {
+            activated: false,
+            activatedAt: undefined,
+            editDate: new Date().toISOString()
+          }
+        });
+      } else {
+        // Kurulmadı -> Kuruldu (activate endpoint kullan)
+        activateMutation.mutate(selectedRow.id);
+      }
+    }
+  }, [selectedRow, activateMutation, updateMutation]);
+
   const handleCellValueChange = useCallback(
     (row: ContractSupport, columnId: string, newValue: unknown) => {
       if (row?.id) {
@@ -166,6 +188,14 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
   const toolbarConfig = useMemo<ToolbarConfig<ContractSupport>>(() => {
     const customButtons: ToolbarButtonConfig[] = [
       {
+        id: "toggle-activation",
+        label: selectedRow?.activated ? "Kurulmadı Olarak İşaretle" : "Kuruldu Olarak İşaretle",
+        icon: <CheckCheck className="w-3.5 h-3.5" />,
+        onClick: handleToggleActivation,
+        disabled: !selectedRow || isProcessing,
+        variant: selectedRow?.activated ? "default" : "primary"
+      },
+      {
         id: "delete",
         label: "Sil",
         icon: <Trash2 className="w-3.5 h-3.5" />,
@@ -183,7 +213,7 @@ export function ContractSupportsTab({ contractId }: ContractSupportsTabProps) {
       showAddRow: true,
       customButtons
     };
-  }, [handleDelete, selectedRow, isProcessing]);
+  }, [handleToggleActivation, handleDelete, selectedRow, isProcessing]);
 
   const supports = data?.data || [];
 

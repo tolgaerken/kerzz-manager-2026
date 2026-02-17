@@ -1,12 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, Monitor, Store, CircleDollarSign, CheckCircle2, XCircle, CreditCard, Hash } from "lucide-react";
+import { Trash2, Monitor, Store, CircleDollarSign, CheckCircle2, XCircle, CreditCard, Hash, CheckCheck } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractCashRegisters } from "../../../hooks/useContractDetail";
 import {
   useCreateContractCashRegister,
   useUpdateContractCashRegister,
-  useDeleteContractCashRegister
+  useDeleteContractCashRegister,
+  useActivateContractCashRegister
 } from "../../../hooks/useContractDetailMutations";
 import { useActiveEftPosModels } from "../../../hooks/useEftPosModels";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
@@ -45,11 +46,13 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
   const createMutation = useCreateContractCashRegister(contractId);
   const updateMutation = useUpdateContractCashRegister(contractId);
   const deleteMutation = useDeleteContractCashRegister(contractId);
+  const activateMutation = useActivateContractCashRegister(contractId);
 
   const isProcessing =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    activateMutation.isPending;
 
   // Lisansları grid için hazırla
   const licenses = useMemo(() => {
@@ -151,6 +154,25 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     }
   }, [selectedRow, deleteMutation]);
 
+  const handleToggleActivation = useCallback(() => {
+    if (selectedRow?.id) {
+      if (selectedRow.activated) {
+        // Kuruldu -> Kurulmadı
+        updateMutation.mutate({
+          id: selectedRow.id,
+          data: {
+            activated: false,
+            activatedAt: undefined,
+            editDate: new Date().toISOString()
+          }
+        });
+      } else {
+        // Kurulmadı -> Kuruldu (activate endpoint kullan)
+        activateMutation.mutate(selectedRow.id);
+      }
+    }
+  }, [selectedRow, activateMutation, updateMutation]);
+
   const handleCellValueChange = useCallback(
     (row: ContractCashRegister, columnId: string, newValue: unknown) => {
       if (row?.id) {
@@ -186,6 +208,14 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
   const toolbarConfig = useMemo<ToolbarConfig<ContractCashRegister>>(() => {
     const customButtons: ToolbarButtonConfig[] = [
       {
+        id: "toggle-activation",
+        label: selectedRow?.activated ? "Kurulmadı Olarak İşaretle" : "Kuruldu Olarak İşaretle",
+        icon: <CheckCheck className="w-3.5 h-3.5" />,
+        onClick: handleToggleActivation,
+        disabled: !selectedRow || isProcessing,
+        variant: selectedRow?.activated ? "default" : "primary"
+      },
+      {
         id: "delete",
         label: "Sil",
         icon: <Trash2 className="w-3.5 h-3.5" />,
@@ -203,7 +233,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
       showAddRow: true,
       customButtons
     };
-  }, [handleDelete, selectedRow, isProcessing]);
+  }, [handleToggleActivation, handleDelete, selectedRow, isProcessing]);
 
   const cashRegisters = data?.data || [];
 

@@ -1,12 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, Cloud, Store, CircleDollarSign, CheckCircle2, XCircle, AlertCircle, Package, Hash } from "lucide-react";
+import { Trash2, Cloud, Store, CircleDollarSign, CheckCircle2, XCircle, AlertCircle, Package, Hash, CheckCheck } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractSaas } from "../../../hooks/useContractDetail";
 import {
   useCreateContractSaas,
   useUpdateContractSaas,
-  useDeleteContractSaas
+  useDeleteContractSaas,
+  useActivateContractSaas
 } from "../../../hooks/useContractDetailMutations";
 import { useLicenses } from "../../../../licenses/hooks/useLicenses";
 import { useSoftwareProducts } from "../../../../software-products";
@@ -39,11 +40,13 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
   const createMutation = useCreateContractSaas(contractId);
   const updateMutation = useUpdateContractSaas(contractId);
   const deleteMutation = useDeleteContractSaas(contractId);
+  const activateMutation = useActivateContractSaas(contractId);
 
   const isProcessing =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    activateMutation.isPending;
 
   // Lisansları grid için hazırla
   const licenses = useMemo(() => {
@@ -150,6 +153,25 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
+  const handleToggleActivation = useCallback(() => {
+    if (selectedRow?.id) {
+      if (selectedRow.activated) {
+        // Kuruldu -> Kurulmadı
+        updateMutation.mutate({
+          id: selectedRow.id,
+          data: {
+            activated: false,
+            activatedAt: undefined,
+            editDate: new Date().toISOString()
+          }
+        });
+      } else {
+        // Kurulmadı -> Kuruldu (activate endpoint kullan)
+        activateMutation.mutate(selectedRow.id);
+      }
+    }
+  }, [selectedRow, activateMutation, updateMutation]);
+
   const handleCellValueChange = useCallback(
     (row: ContractSaas, columnId: string, newValue: unknown) => {
       if (row?.id) {
@@ -189,6 +211,14 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
   const toolbarConfig = useMemo<ToolbarConfig<ContractSaas>>(() => {
     const customButtons: ToolbarButtonConfig[] = [
       {
+        id: "toggle-activation",
+        label: selectedRow?.activated ? "Kurulmadı Olarak İşaretle" : "Kuruldu Olarak İşaretle",
+        icon: <CheckCheck className="w-3.5 h-3.5" />,
+        onClick: handleToggleActivation,
+        disabled: !selectedRow || isProcessing,
+        variant: selectedRow?.activated ? "default" : "primary"
+      },
+      {
         id: "delete",
         label: "Sil",
         icon: <Trash2 className="w-3.5 h-3.5" />,
@@ -206,7 +236,7 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
       showAddRow: true,
       customButtons
     };
-  }, [handleDelete, selectedRow, isProcessing]);
+  }, [handleToggleActivation, handleDelete, selectedRow, isProcessing]);
 
   const saasList = data?.data || [];
 

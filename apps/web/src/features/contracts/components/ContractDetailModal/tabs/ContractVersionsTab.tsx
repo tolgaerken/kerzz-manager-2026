@@ -1,12 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
-import { Trash2, GitBranch, Store, CircleDollarSign, CheckCircle2, XCircle, Tag } from "lucide-react";
+import { Trash2, GitBranch, Store, CircleDollarSign, CheckCircle2, XCircle, Tag, CheckCheck } from "lucide-react";
 import { Grid, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { useIsMobile } from "../../../../../hooks/useIsMobile";
 import { useContractVersions } from "../../../hooks/useContractDetail";
 import {
   useCreateContractVersion,
   useUpdateContractVersion,
-  useDeleteContractVersion
+  useDeleteContractVersion,
+  useActivateContractVersion
 } from "../../../hooks/useContractDetailMutations";
 import type { ContractVersion } from "../../../types";
 import { contractVersionsColumns } from "../columnDefs";
@@ -32,11 +33,13 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
   const createMutation = useCreateContractVersion(contractId);
   const updateMutation = useUpdateContractVersion(contractId);
   const deleteMutation = useDeleteContractVersion(contractId);
+  const activateMutation = useActivateContractVersion(contractId);
 
   const isProcessing =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    activateMutation.isPending;
 
   const createEmptyRow = useCallback((): ContractVersion => ({
     id: crypto.randomUUID(),
@@ -71,6 +74,25 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
     }
   }, [selectedRow, deleteMutation]);
 
+  const handleToggleActivation = useCallback(() => {
+    if (selectedRow?.id) {
+      if (selectedRow.activated) {
+        // Kuruldu -> Kurulmadı
+        updateMutation.mutate({
+          id: selectedRow.id,
+          data: {
+            activated: false,
+            activatedAt: undefined,
+            editDate: new Date().toISOString()
+          }
+        });
+      } else {
+        // Kurulmadı -> Kuruldu (activate endpoint kullan)
+        activateMutation.mutate(selectedRow.id);
+      }
+    }
+  }, [selectedRow, activateMutation, updateMutation]);
+
   const handleCellValueChange = useCallback(
     (row: ContractVersion, columnId: string, newValue: unknown) => {
       if (row?.id) {
@@ -98,6 +120,14 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
   const toolbarConfig = useMemo<ToolbarConfig<ContractVersion>>(() => {
     const customButtons: ToolbarButtonConfig[] = [
       {
+        id: "toggle-activation",
+        label: selectedRow?.activated ? "Kurulmadı Olarak İşaretle" : "Kuruldu Olarak İşaretle",
+        icon: <CheckCheck className="w-3.5 h-3.5" />,
+        onClick: handleToggleActivation,
+        disabled: !selectedRow || isProcessing,
+        variant: selectedRow?.activated ? "default" : "primary"
+      },
+      {
         id: "delete",
         label: "Sil",
         icon: <Trash2 className="w-3.5 h-3.5" />,
@@ -115,7 +145,7 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
       showAddRow: true,
       customButtons
     };
-  }, [handleDelete, selectedRow, isProcessing]);
+  }, [handleToggleActivation, handleDelete, selectedRow, isProcessing]);
 
   const versions = data?.data || [];
 
