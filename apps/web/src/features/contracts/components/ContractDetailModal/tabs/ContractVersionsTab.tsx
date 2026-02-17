@@ -147,6 +147,17 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
     };
   }, [handleToggleActivation, handleDelete, selectedRow, isProcessing]);
 
+  const mutationError =
+    updateMutation.error || createMutation.error || deleteMutation.error || activateMutation.error;
+
+  const errorBanner = mutationError ? (
+    <div className="rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 p-3 text-sm text-[var(--color-error)]">
+      {mutationError instanceof Error
+        ? mutationError.message
+        : "İşlem sırasında bir hata oluştu"}
+    </div>
+  ) : null;
+
   const versions = data?.data || [];
 
   // Mobile card renderer
@@ -206,6 +217,7 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
   if (isMobile) {
     return (
       <div className="flex flex-col h-full">
+        {errorBanner}
         <MobileCardList
           data={versions}
           loading={isLoading}
@@ -219,6 +231,7 @@ export function ContractVersionsTab({ contractId }: ContractVersionsTabProps) {
   // Desktop view
   return (
     <div className="flex flex-col h-full">
+      {errorBanner}
       <div className="flex-1 min-h-0">
         <Grid<ContractVersion>
           data={versions}

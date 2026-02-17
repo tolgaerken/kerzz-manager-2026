@@ -28,6 +28,7 @@
     "react-i18next": "latest",
     "recharts": "^3.7.0",
     "socket.io-client": "^4.8.3",
+    "uuid": "^11.0.5",
     "zustand": "latest"
   },
   "devDependencies": {
@@ -35,6 +36,7 @@
     "@tanstack/react-query-devtools": "^5.91.3",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
     "@vitejs/plugin-react": "latest",
