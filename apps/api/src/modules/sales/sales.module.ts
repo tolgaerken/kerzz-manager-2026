@@ -19,6 +19,10 @@ import {
   SsoRole,
   SsoRoleSchema,
 } from "../sso/schemas";
+import {
+  EmployeeProfile,
+  EmployeeProfileSchema,
+} from "../employee-profile/schemas/employee-profile.schema";
 
 @Module({
   imports: [
@@ -31,6 +35,7 @@ import {
         { name: SsoUser.name, schema: SsoUserSchema },
         { name: SsoAppLicence.name, schema: SsoAppLicenceSchema },
         { name: SsoRole.name, schema: SsoRoleSchema },
+        { name: EmployeeProfile.name, schema: EmployeeProfileSchema },
       ],
       SSO_DB_CONNECTION
     ),

@@ -44,12 +44,9 @@ export function ApprovalRequestDialog({
     onOpenChange(false);
   };
 
-  // Onaya uygun olmayan satışları filtrele
-  const ineligibleSales = selectedSales.filter(
+  // Zaten onay sürecinde olan satışları bilgilendirme için ayır
+  const alreadyInProcess = selectedSales.filter(
     (s) => s.approvalStatus === "pending" || s.approvalStatus === "approved"
-  );
-  const eligibleSales = selectedSales.filter(
-    (s) => s.approvalStatus === "none" || s.approvalStatus === "rejected"
   );
 
   return (
@@ -75,16 +72,16 @@ export function ApprovalRequestDialog({
           </div>
         </div>
 
-        {/* Uyarı: Bazı satışlar onaya uygun değil */}
-        {ineligibleSales.length > 0 && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30">
-            <AlertCircle className="h-5 w-5 text-[var(--color-warning)] shrink-0 mt-0.5" />
+        {/* Bilgilendirme: Bazı satışlar zaten onay sürecinde */}
+        {alreadyInProcess.length > 0 && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/30">
+            <AlertCircle className="h-5 w-5 text-[var(--color-info)] shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-[var(--color-warning)]">
-                {ineligibleSales.length} satış onaya gönderilemez
+              <p className="font-medium text-[var(--color-info)]">
+                {alreadyInProcess.length} satış zaten onay sürecinde
               </p>
               <p className="text-[var(--color-muted-foreground)] mt-1">
-                Zaten onay bekleyen veya onaylanmış satışlar atlanacak.
+                Bu satışlar yeniden onaya gönderilecek.
               </p>
             </div>
           </div>
@@ -98,18 +95,12 @@ export function ApprovalRequestDialog({
                 <th className="px-3 py-2 text-left font-medium">No</th>
                 <th className="px-3 py-2 text-left font-medium">Müşteri</th>
                 <th className="px-3 py-2 text-right font-medium">Tutar</th>
+                <th className="px-3 py-2 text-center font-medium">Durum</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
               {selectedSales.map((sale) => (
-                <tr
-                  key={sale._id}
-                  className={
-                    ineligibleSales.includes(sale)
-                      ? "opacity-50 line-through"
-                      : ""
-                  }
-                >
+                <tr key={sale._id}>
                   <td className="px-3 py-2 font-mono">{sale.no}</td>
                   <td className="px-3 py-2 truncate max-w-[200px]">
                     {sale.customerName}
@@ -119,6 +110,19 @@ export function ApprovalRequestDialog({
                       style: "currency",
                       currency: "TRY",
                     }).format(sale.grandTotal || 0)}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {alreadyInProcess.includes(sale) ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-warning)]/10 text-[var(--color-warning)]">
+                        {sale.approvalStatus === "pending"
+                          ? "Bekliyor"
+                          : "Onaylı"}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[var(--color-muted-foreground)]">
+                        -
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -157,7 +161,7 @@ export function ApprovalRequestDialog({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isLoading || eligibleSales.length === 0}
+            disabled={isLoading || selectedSales.length === 0}
             className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-50 transition-colors flex items-center gap-2"
           >
             {isLoading ? (
@@ -165,7 +169,7 @@ export function ApprovalRequestDialog({
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                {eligibleSales.length} Satışı Onaya Gönder
+                {selectedSales.length} Satışı Onaya Gönder
               </>
             )}
           </button>

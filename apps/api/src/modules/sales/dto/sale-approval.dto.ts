@@ -53,6 +53,8 @@ export class ApprovalRequestResultDto {
   updatedCount: number;
   saleIds: string[];
   message: string;
+  /** Zaten onay sürecinde olan satışlar (bilgilendirme) */
+  alreadyPending?: { saleId: string; no: number; status: string }[];
 }
 
 /**

@@ -48,6 +48,22 @@ export interface AddUserToAppResult {
   isNewUser: boolean;
 }
 
+export interface PaginationParams {
+  search?: string;
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedAppUsersResponse {
+  data: AppUserDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 @Injectable()
 export class SsoUsersService {
   private readonly logger = new Logger(SsoUsersService.name);
@@ -101,28 +117,29 @@ export class SsoUsersService {
   }
 
   /**
-   * Get all users assigned to this application
+   * Get all users assigned to this application (with search & pagination)
    */
-  async getAppUsers(appId?: string): Promise<AppUserDto[]> {
+  async getAppUsers(
+    appId?: string,
+    params?: PaginationParams
+  ): Promise<PaginatedAppUsersResponse> {
     const effectiveAppId = appId && appId.length > 0 ? appId : this.appId;
 
     const userApps = await this.ssoUserAppModel
-      // user-app kaydında ilgili app_id + devre dışı olmayan atamalar
-      // Bazı eski kayıtlarda isActive alanı olmayabiliyor; onları aktif kabul et
       .find({ app_id: effectiveAppId, isActive: { $ne: false } })
       .sort({ user_name: 1 })
       .lean()
       .exec();
 
     if (userApps.length === 0) {
-      return [];
+      return this.buildPaginatedResponse([], params);
     }
 
     const userIds = userApps.map((ua) => ua.user_id);
     const users = await this.ssoUserModel.find({ id: { $in: userIds } }).lean().exec();
     const userMap = new Map(users.map((u) => [u.id, u]));
 
-    const result: AppUserDto[] = [];
+    let result: AppUserDto[] = [];
     for (const ua of userApps) {
       const user = userMap.get(ua.user_id);
       if (user) {
@@ -131,20 +148,30 @@ export class SsoUsersService {
           name: ua.user_name || user.name,
           email: user.email,
           phone: user.phone,
-          // isActive alanı olmayan eski kayıtları aktif kabul et
           isActive: user.isActive !== false,
           assignedDate: ua.assignedDate
         });
       }
     }
-    return result;
+
+    // Arama filtresi uygula
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase();
+      result = result.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(searchLower) ||
+          u.email?.toLowerCase().includes(searchLower) ||
+          u.phone?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return this.buildPaginatedResponse(result, params);
   }
 
   /**
-   * Get all users from all applications
+   * Get all users from all applications (with search & pagination)
    */
-  async getAllUsers(): Promise<AppUserDto[]> {
-    // Tüm user-app kayıtlarını al
+  async getAllUsers(params?: PaginationParams): Promise<PaginatedAppUsersResponse> {
     const userApps = await this.ssoUserAppModel
       .find({ isActive: { $ne: false } })
       .sort({ user_name: 1 })
@@ -152,17 +179,15 @@ export class SsoUsersService {
       .exec();
 
     if (userApps.length === 0) {
-      return [];
+      return this.buildPaginatedResponse([], params);
     }
 
-    // Benzersiz kullanıcı ID'lerini al
     const userIds = [...new Set(userApps.map((ua) => ua.user_id))];
     const users = await this.ssoUserModel.find({ id: { $in: userIds } }).lean().exec();
     const userMap = new Map(users.map((u) => [u.id, u]));
 
-    // Benzersiz kullanıcıları döndür (aynı kullanıcı birden fazla uygulamada olabilir)
     const seenUserIds = new Set<string>();
-    const result: AppUserDto[] = [];
+    let result: AppUserDto[] = [];
 
     for (const ua of userApps) {
       if (seenUserIds.has(ua.user_id)) continue;
@@ -175,13 +200,24 @@ export class SsoUsersService {
           name: ua.user_name || user.name,
           email: user.email,
           phone: user.phone,
-          // isActive alanı olmayan eski kayıtları aktif kabul et
           isActive: user.isActive !== false,
           assignedDate: ua.assignedDate
         });
       }
     }
-    return result;
+
+    // Arama filtresi uygula
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase();
+      result = result.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(searchLower) ||
+          u.email?.toLowerCase().includes(searchLower) ||
+          u.phone?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return this.buildPaginatedResponse(result, params);
   }
 
   /**
@@ -217,6 +253,23 @@ export class SsoUsersService {
     }
 
     return results;
+  }
+
+  /**
+   * Sayfalama ile response oluştur
+   */
+  private buildPaginatedResponse(
+    allItems: AppUserDto[],
+    params?: PaginationParams
+  ): PaginatedAppUsersResponse {
+    const total = allItems.length;
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 20;
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+    const data = allItems.slice(skip, skip + limit);
+
+    return { data, meta: { total, page, limit, totalPages } };
   }
 
   /**

@@ -2,7 +2,7 @@
  * Root navigator - handles auth state and deep links
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { AuthNavigator } from "./AuthNavigator";
@@ -17,13 +17,25 @@ import type { RootStackParamList } from "./types";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { isAuthenticated, isLoading, restoreSession } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const restoreSession = useAuthStore((state) => state.restoreSession);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   useEffect(() => {
-    restoreSession();
+    let isMounted = true;
+
+    restoreSession().finally(() => {
+      if (isMounted) {
+        setIsBootstrapping(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [restoreSession]);
 
-  if (isLoading) {
+  if (isBootstrapping) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />

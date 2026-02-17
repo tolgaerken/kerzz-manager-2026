@@ -14,6 +14,12 @@ import {
   ApprovalActionResultDto,
 } from "../dto/sale-approval.dto";
 import { SaleApprovalNotificationService } from "./sale-approval-notification.service";
+import {
+  SystemLogsService,
+  SystemLogCategory,
+  SystemLogAction,
+  SystemLogStatus,
+} from "../../system-logs";
 
 @Injectable()
 export class SaleApprovalService {
@@ -22,18 +28,19 @@ export class SaleApprovalService {
   constructor(
     @InjectModel(Sale.name, CONTRACT_DB_CONNECTION)
     private saleModel: Model<SaleDocument>,
-    private notificationService: SaleApprovalNotificationService
+    private notificationService: SaleApprovalNotificationService,
+    private systemLogsService: SystemLogsService
   ) {}
 
   /**
    * Toplu onay isteği gönderir
+   * Zaten onay sürecinde olanları yeniden göndermeye izin verir, bilgilendirme yapar
    */
   async requestApproval(
     saleIds: string[],
     requestedBy: AuthenticatedUser,
     note?: string
   ): Promise<ApprovalRequestResultDto> {
-    // Satışları bul ve durumlarını kontrol et
     const sales = await this.saleModel
       .find({ _id: { $in: saleIds } })
       .lean()
@@ -43,22 +50,23 @@ export class SaleApprovalService {
       throw new NotFoundException("Belirtilen satışlar bulunamadı");
     }
 
-    // Zaten onay bekleyen veya onaylanmış satışları filtrele
-    const eligibleSales = sales.filter(
-      (s) => s.approvalStatus === "none" || s.approvalStatus === "rejected"
-    );
+    // Zaten onay sürecinde/onaylanmış olanları bilgilendirme için ayır
+    const alreadyPending = sales
+      .filter((s) => {
+        const status = s.approvalStatus || "none";
+        return status === "pending" || status === "approved";
+      })
+      .map((s) => ({
+        saleId: s._id.toString(),
+        no: s.no,
+        status: s.approvalStatus || "none",
+      }));
 
-    if (eligibleSales.length === 0) {
-      throw new BadRequestException(
-        "Seçilen satışların tümü zaten onay sürecinde veya onaylanmış"
-      );
-    }
+    // Tüm satışları onay isteğine gönder (yeniden göndermeye izin ver)
+    const allIds = sales.map((s) => s._id.toString());
 
-    const eligibleIds = eligibleSales.map((s) => s._id.toString());
-
-    // Satışları güncelle
     const updateResult = await this.saleModel.updateMany(
-      { _id: { $in: eligibleIds } },
+      { _id: { $in: allIds } },
       {
         $set: {
           approvalStatus: "pending",
@@ -77,17 +85,55 @@ export class SaleApprovalService {
 
     // Yetkililere bildirim gönder
     const updatedSales = await this.saleModel
-      .find({ _id: { $in: eligibleIds } })
+      .find({ _id: { $in: allIds } })
       .lean()
       .exec();
 
-    await this.notificationService.notifyApprovers(updatedSales, requestedBy);
+    const notificationResults = await this.notificationService.notifyApprovers(
+      updatedSales,
+      requestedBy
+    );
+
+    // Detaylı system log
+    await this.systemLogsService.log(
+      SystemLogCategory.CRUD,
+      SystemLogAction.CREATE,
+      "sale-approval",
+      {
+        userId: requestedBy.id,
+        userName: requestedBy.name,
+        entityType: "SaleApprovalRequest",
+        status: SystemLogStatus.SUCCESS,
+        details: {
+          action: "approval-request",
+          saleIds: allIds,
+          saleCount: allIds.length,
+          saleNumbers: updatedSales.map((s) => s.no),
+          totalAmount: updatedSales.reduce(
+            (sum, s) => sum + (s.grandTotal || 0),
+            0
+          ),
+          note: note || "",
+          alreadyPending:
+            alreadyPending.length > 0 ? alreadyPending : undefined,
+          notifications: notificationResults,
+        },
+      }
+    );
+
+    // Mesajı oluştur
+    let message = `${updateResult.modifiedCount} satış onay isteğine gönderildi`;
+    if (alreadyPending.length > 0) {
+      const pendingNos = alreadyPending.map((p) => p.no).join(", ");
+      message += ` (${alreadyPending.length} satış zaten onay sürecindeydi: No ${pendingNos})`;
+    }
 
     return {
       success: true,
       updatedCount: updateResult.modifiedCount,
-      saleIds: eligibleIds,
-      message: `${updateResult.modifiedCount} satış onay isteğine gönderildi`,
+      saleIds: allIds,
+      message,
+      alreadyPending: alreadyPending.length > 0 ? alreadyPending : undefined,
     };
   }
 
@@ -133,13 +179,37 @@ export class SaleApprovalService {
 
     // İstek sahibine bildirim gönder
     const updatedSale = await this.saleModel.findById(saleId).lean().exec();
+    let notificationResult = null;
     if (updatedSale) {
-      await this.notificationService.notifyRequester(
+      notificationResult = await this.notificationService.notifyRequester(
         updatedSale,
         "approved",
         approver
       );
     }
+
+    // Detaylı system log
+    await this.systemLogsService.log(
+      SystemLogCategory.CRUD,
+      SystemLogAction.UPDATE,
+      "sale-approval",
+      {
+        userId: approver.id,
+        userName: approver.name,
+        entityId: saleId,
+        entityType: "SaleApproval",
+        status: SystemLogStatus.SUCCESS,
+        details: {
+          action: "approve",
+          saleNo: sale.no,
+          customerName: sale.customerName,
+          totalAmount: sale.grandTotal || 0,
+          requestedBy: sale.approvalRequestedByName || sale.approvalRequestedBy,
+          note: note || "",
+          notification: notificationResult,
+        },
+      }
+    );
 
     return {
       success: true,
@@ -195,13 +265,37 @@ export class SaleApprovalService {
 
     // İstek sahibine bildirim gönder
     const updatedSale = await this.saleModel.findById(saleId).lean().exec();
+    let notificationResult = null;
     if (updatedSale) {
-      await this.notificationService.notifyRequester(
+      notificationResult = await this.notificationService.notifyRequester(
         updatedSale,
         "rejected",
         approver
       );
     }
+
+    // Detaylı system log
+    await this.systemLogsService.log(
+      SystemLogCategory.CRUD,
+      SystemLogAction.UPDATE,
+      "sale-approval",
+      {
+        userId: approver.id,
+        userName: approver.name,
+        entityId: saleId,
+        entityType: "SaleApproval",
+        status: SystemLogStatus.SUCCESS,
+        details: {
+          action: "reject",
+          saleNo: sale.no,
+          customerName: sale.customerName,
+          totalAmount: sale.grandTotal || 0,
+          requestedBy: sale.approvalRequestedByName || sale.approvalRequestedBy,
+          reason,
+          notification: notificationResult,
+        },
+      }
+    );
 
     return {
       success: true,
@@ -258,13 +352,37 @@ export class SaleApprovalService {
     );
 
     // Her satış için istek sahibine bildirim gönder
+    const notificationResults: any[] = [];
     for (const sale of sales) {
-      await this.notificationService.notifyRequester(
+      const result = await this.notificationService.notifyRequester(
         sale,
         "approved",
         approver
       );
+      notificationResults.push({ saleId: sale._id.toString(), saleNo: sale.no, ...result });
     }
+
+    // Detaylı system log
+    await this.systemLogsService.log(
+      SystemLogCategory.CRUD,
+      SystemLogAction.UPDATE,
+      "sale-approval",
+      {
+        userId: approver.id,
+        userName: approver.name,
+        entityType: "SaleApproval",
+        status: SystemLogStatus.SUCCESS,
+        details: {
+          action: "bulk-approve",
+          saleIds: eligibleIds,
+          saleCount: eligibleIds.length,
+          saleNumbers: sales.map((s) => s.no),
+          totalAmount: sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0),
+          note: note || "",
+          notifications: notificationResults,
+        },
+      }
+    );
 
     return {
       success: true,

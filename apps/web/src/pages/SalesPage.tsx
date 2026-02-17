@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
-import { CalendarDays, MessageSquare, Plus, RefreshCw, ShoppingCart, Send, CheckCircle } from "lucide-react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { CalendarDays, MessageSquare, Plus, RefreshCw, ShoppingCart, Send, CheckCircle, X } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import toast from "react-hot-toast";
@@ -33,6 +33,15 @@ import { useAuth } from "../features/auth";
 
 export function SalesPage() {
   const defaultRange = useMemo(() => getMonthRange(), []);
+
+  // URL'den onay filtresi
+  const [approvalFilterIds, setApprovalFilterIds] = useState<string[] | null>(
+    () => {
+      const params = new URLSearchParams(window.location.search);
+      const ids = params.get("approvalSaleIds");
+      return ids ? ids.split(",") : null;
+    }
+  );
 
   // Ay/Yıl seçici state
   const [selectedMonth, setSelectedMonth] = useState(() => getCurrentMonth());
@@ -92,6 +101,30 @@ export function SalesPage() {
   // WebSocket ile gerçek zamanlı güncellemeler
   useSalesSocket();
 
+  // Onay filtresi aktifken tarih filtresini kaldır (tüm satışları getir)
+  useEffect(() => {
+    if (approvalFilterIds && approvalFilterIds.length > 0) {
+      setQueryParams((prev) => ({
+        ...prev,
+        startDate: undefined,
+        endDate: undefined,
+      }));
+    }
+  }, [approvalFilterIds]);
+
+  const clearApprovalFilter = useCallback(() => {
+    setApprovalFilterIds(null);
+    // URL'den query param'ı temizle
+    window.history.replaceState({}, "", window.location.pathname);
+    // Tarih filtresini geri yükle
+    const range = getMonthRangeFromString(selectedMonth);
+    setQueryParams((prev) => ({
+      ...prev,
+      startDate: range.startDate,
+      endDate: range.endDate,
+    }));
+  }, [selectedMonth]);
+
   const enrichedSales = useMemo(() => {
     if (!data?.data) return [];
     return data.data.map((sale) => ({
@@ -102,9 +135,17 @@ export function SalesPage() {
     }));
   }, [data, getCustomerName]);
 
+  // Onay filtresi aktifse sadece ilgili satışları göster
+  const displayedSales = useMemo(() => {
+    if (!approvalFilterIds || approvalFilterIds.length === 0) {
+      return enrichedSales;
+    }
+    return enrichedSales.filter((s) => approvalFilterIds.includes(s._id));
+  }, [enrichedSales, approvalFilterIds]);
+
   const totalAmount = useMemo(() => {
-    return enrichedSales.reduce((sum, sale) => sum + (sale.grandTotal || 0), 0);
-  }, [enrichedSales]);
+    return displayedSales.reduce((sum, sale) => sum + (sale.grandTotal || 0), 0);
+  }, [displayedSales]);
 
   const handleFilterChange = useCallback(
     (filters: Partial<SaleQueryParams>) => {
@@ -162,8 +203,8 @@ export function SalesPage() {
 
   // Seçili satışları al
   const selectedSales = useMemo(() => {
-    return enrichedSales.filter((s) => selectedSaleIds.includes(s._id));
-  }, [enrichedSales, selectedSaleIds]);
+    return displayedSales.filter((s) => selectedSaleIds.includes(s._id));
+  }, [displayedSales, selectedSaleIds]);
 
   // Onay isteği gönder
   const handleRequestApproval = useCallback(
@@ -354,10 +395,29 @@ export function SalesPage() {
 
       {/* Content Area */}
       <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* Onay filtresi banner */}
+        {approvalFilterIds && approvalFilterIds.length > 0 && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 px-4 py-2.5">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle className="h-4 w-4 text-[var(--color-primary)]" />
+              <span className="font-medium text-[var(--color-primary)]">
+                Onay bekleyen {displayedSales.length} satış gösteriliyor
+              </span>
+            </div>
+            <button
+              onClick={clearApprovalFilter}
+              className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+              Filtreyi Kaldır
+            </button>
+          </div>
+        )}
+
         {/* Grid Container */}
         <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
           <SalesGrid
-            data={enrichedSales}
+            data={displayedSales}
             loading={isLoading}
             onSortChange={handleSortChange}
             onRowDoubleClick={handleRowDoubleClick}
@@ -373,7 +433,7 @@ export function SalesPage() {
         {data?.meta && (
           <div className="flex items-center justify-between px-1">
             <span className="text-sm text-muted-foreground">
-              Toplam: {data.meta.total} kayıt
+              Toplam: {approvalFilterIds ? displayedSales.length : data.meta.total} kayıt
             </span>
             <span className="text-sm font-semibold text-foreground">
               Genel Toplam:{" "}

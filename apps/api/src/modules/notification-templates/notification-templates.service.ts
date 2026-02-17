@@ -29,19 +29,19 @@ export class NotificationTemplatesService implements OnModuleInit {
   }
 
   /**
-   * Varsayılan template'leri seed eder (yoksa oluşturur)
+   * Varsayılan template'leri seed eder (yoksa oluşturur, varsa günceller)
    */
   private async seedDefaultTemplates(): Promise<void> {
     for (const template of defaultTemplates) {
-      const existing = await this.templateModel
-        .findOne({ code: template.code })
+      const result = await this.templateModel
+        .findOneAndUpdate(
+          { code: template.code },
+          { $set: template, $setOnInsert: { id: uuidv4() } },
+          { upsert: true, new: true }
+        )
         .exec();
-      if (!existing) {
-        const newTemplate = new this.templateModel({
-          ...template,
-          id: uuidv4(),
-        });
-        await newTemplate.save();
+
+      if (result.isNew) {
         console.log(`✅ Template seed edildi: ${template.code}`);
       }
     }

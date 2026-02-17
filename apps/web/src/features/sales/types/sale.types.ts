@@ -133,6 +133,7 @@ export interface ApprovalRequestResult {
   updatedCount: number;
   saleIds: string[];
   message: string;
+  alreadyPending?: { saleId: string; no: number; status: string }[];
 }
 
 export interface ApprovalActionResult {

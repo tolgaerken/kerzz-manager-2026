@@ -28,15 +28,16 @@ function useDebounce(callback: (term: string) => void, delay: number) {
   );
 }
 
-interface SsoUser {
+interface AppUser {
   id: string;
   name: string;
-  email: string;
-  avatar?: string;
+  email?: string;
+  phone?: string;
+  isActive: boolean;
 }
 
-interface SsoUserListResponse {
-  data: SsoUser[];
+interface AppUserListResponse {
+  data: AppUser[];
   meta: {
     total: number;
     page: number;
@@ -65,9 +66,9 @@ export function ManagerLookupSelect({
   const [searchTerm, setSearchTerm] = useState("");
   const [inputValue, setInputValue] = useState("");
 
-  // Kullanıcı listesini ara
+  // Uygulamaya atanmış kullanıcı listesini ara
   const { data, isLoading } = useQuery({
-    queryKey: ["sso-users-lookup", searchTerm],
+    queryKey: ["app-users-lookup", searchTerm],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: "1",
@@ -76,7 +77,7 @@ export function ManagerLookupSelect({
       if (searchTerm) {
         params.set("search", searchTerm);
       }
-      const response = await apiGet<SsoUserListResponse>(
+      const response = await apiGet<AppUserListResponse>(
         `${API_BASE_URL}/sso/users?${params.toString()}`
       );
       return response;
@@ -87,10 +88,10 @@ export function ManagerLookupSelect({
 
   // Seçili kullanıcıyı getir (value değiştiğinde)
   const { data: selectedUser } = useQuery({
-    queryKey: ["sso-user-detail", value],
+    queryKey: ["app-user-detail", value],
     queryFn: async () => {
       if (!value) return null;
-      const response = await apiGet<SsoUser>(
+      const response = await apiGet<AppUser>(
         `${API_BASE_URL}/sso/users/${encodeURIComponent(value)}`
       );
       return response;
@@ -130,7 +131,7 @@ export function ManagerLookupSelect({
     [debouncedSearch]
   );
 
-  const handleChange = (_: unknown, newValue: SsoUser | null) => {
+  const handleChange = (_: unknown, newValue: AppUser | null) => {
     if (newValue) {
       onChange(newValue.id, newValue.name);
     } else {
@@ -139,7 +140,7 @@ export function ManagerLookupSelect({
   };
 
   return (
-    <Autocomplete<SsoUser>
+    <Autocomplete<AppUser>
       value={selectedOption}
       onChange={handleChange}
       inputValue={inputValue}
@@ -189,7 +190,6 @@ export function ManagerLookupSelect({
         >
           <Box display="flex" alignItems="center" gap={1}>
             <Avatar
-              src={option.avatar}
               sx={{
                 width: 28,
                 height: 28,
@@ -202,14 +202,16 @@ export function ManagerLookupSelect({
             </Avatar>
             <Box>
               <div style={{ fontWeight: 500 }}>{option.name}</div>
-              <div
-                style={{
-                  fontSize: "0.8em",
-                  color: "var(--color-muted-foreground)",
-                }}
-              >
-                {option.email}
-              </div>
+              {(option.email || option.phone) && (
+                <div
+                  style={{
+                    fontSize: "0.8em",
+                    color: "var(--color-muted-foreground)",
+                  }}
+                >
+                  {option.email || option.phone}
+                </div>
+              )}
             </Box>
           </Box>
         </li>

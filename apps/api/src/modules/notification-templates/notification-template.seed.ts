@@ -337,6 +337,8 @@ export const defaultTemplates: TemplateSeed[] = [
     .content { background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; }
     .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2563eb; }
     .amount { font-size: 20px; color: #2563eb; font-weight: bold; }
+    .btn { display: inline-block; padding: 12px 28px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 15px 0; }
+    .btn-wrap { text-align: center; margin: 20px 0; }
     .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
   </style>
 </head>
@@ -355,7 +357,11 @@ export const defaultTemplates: TemplateSeed[] = [
         <p><strong>İstek Sahibi:</strong> {{requesterName}}</p>
       </div>
       
-      <p>Satışları incelemek ve onaylamak için Kerzz Manager uygulamasına giriş yapınız.</p>
+      <div class="btn-wrap">
+        <a href="{{approvalLink}}" class="btn">Satışları İncele ve Onayla</a>
+      </div>
+
+      <p style="color: #64748b; font-size: 13px;">Butona tıklayarak ilgili satışları doğrudan görüntüleyebilirsiniz.</p>
     </div>
     <div class="footer">
       <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
@@ -370,6 +376,7 @@ export const defaultTemplates: TemplateSeed[] = [
       "saleCount",
       "totalAmount",
       "saleNumbers",
+      "approvalLink",
     ],
     description: "Satış onay isteği geldiğinde yetkililere gönderilen e-posta bildirimi",
   },
@@ -377,12 +384,13 @@ export const defaultTemplates: TemplateSeed[] = [
     name: "Satış Onay İsteği (SMS)",
     code: "sale-approval-request-sms",
     channel: "sms",
-    body: `{{requesterName}} tarafindan {{saleCount}} adet satis onayiniza sunuldu. Toplam: {{totalAmount}}. Kerzz Manager'dan inceleyin.`,
+    body: `{{requesterName}} tarafindan {{saleCount}} adet satis onayiniza sunuldu. Toplam: {{totalAmount}}. Inceleyin: {{approvalLink}}`,
     isActive: true,
     variables: [
       "requesterName",
       "saleCount",
       "totalAmount",
+      "approvalLink",
     ],
     description: "Satış onay isteği geldiğinde yetkililere gönderilen SMS bildirimi",
   },

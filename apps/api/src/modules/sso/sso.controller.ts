@@ -57,23 +57,29 @@ export class SsoController {
    * Get all users assigned to an application
    * @param appId - Optional specific app ID to filter by
    * @param all - If true, get users from all applications
+   * @param search - Optional search term (name, email, phone)
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 20)
    */
   @Get("users")
   async getAppUsers(
     @Req() req: Request & { user?: AuthenticatedUser },
     @Query("appId") appId?: string,
-    @Query("all") all?: string
+    @Query("all") all?: string,
+    @Query("search") search?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string
   ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+
     // all=true ise tüm kullanıcıları getir
     if (all === "true") {
-      return this.usersService.getAllUsers();
+      return this.usersService.getAllUsers({ search, page: pageNum, limit: limitNum });
     }
     // appId belirtilmişse o uygulamanın kullanıcılarını getir
-    if (appId) {
-      return this.usersService.getAppUsers(appId);
-    }
-    // Varsayılan olarak mevcut uygulamanın kullanıcılarını getir
-    return this.usersService.getAppUsers(req.user?.appId);
+    const effectiveAppId = appId || req.user?.appId;
+    return this.usersService.getAppUsers(effectiveAppId, { search, page: pageNum, limit: limitNum });
   }
 
   /**

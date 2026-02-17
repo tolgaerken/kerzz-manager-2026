@@ -1,7 +1,6 @@
 import type { GridColumnDef } from "@kerzz/grid";
-import type { Sale, ApprovalStatus } from "../../types/sale.types";
+import type { Sale } from "../../types/sale.types";
 import { StatusBadge } from "../../../pipeline";
-import { SALES_CONSTANTS } from "../../constants/sales.constants";
 
 const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "-";
@@ -143,21 +142,18 @@ export const salesColumnDefs: GridColumnDef<Sale>[] = [
     cell: (value) => StatusBadge({ status: value as string }),
   },
   {
-    id: "approvalStatus",
-    header: "Onay Durumu",
-    accessorKey: "approvalStatus",
-    width: 130,
+    id: "approved",
+    header: "Onay",
+    accessorKey: "approved",
+    width: 110,
     sortable: true,
     filter: { type: "dropdown", showCounts: true },
-    cell: (value) => {
-      const status = (value as ApprovalStatus) || "none";
-      const config = SALES_CONSTANTS.APPROVAL_STATUS_CONFIG[status];
-      return config?.label || "-";
-    },
+    cell: (value) => (value ? "Onaylandı" : "Onay Yok"),
     cellClassName: (value: unknown) => {
-      const status = (value as ApprovalStatus) || "none";
-      const config = SALES_CONSTANTS.APPROVAL_STATUS_CONFIG[status];
-      return `inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config?.className || ""}`;
+      const isApproved = value as boolean;
+      return isApproved
+        ? "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-success)]/10 text-[var(--color-success)]"
+        : "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface)] text-[var(--color-muted-foreground)]";
     },
   },
   {
