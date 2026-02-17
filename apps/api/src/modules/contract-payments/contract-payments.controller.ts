@@ -80,10 +80,18 @@ export class ContractPaymentsController {
 
   /**
    * Tüm kontratlardaki faturaya dahil edilmemiş kalemleri listeler.
+   * Query params: startDate, endDate (ISO 8601 format)
    */
   @Get("uninvoiced-items")
-  async getAllUninvoicedItems() {
-    return this.uninvoicedItemsService.getAllUninvoicedItems();
+  async getAllUninvoicedItems(
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
+  ) {
+    const dateRange = {
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+    };
+    return this.uninvoicedItemsService.getAllUninvoicedItems(dateRange);
   }
 
   /**

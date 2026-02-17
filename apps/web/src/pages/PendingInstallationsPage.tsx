@@ -321,7 +321,7 @@ export function PendingInstallationsPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-3 p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -346,12 +346,13 @@ export function PendingInstallationsPage() {
       </div>
 
       {/* Grid */}
-      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+      <div className="min-h-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
         <Grid
           data={enrichedData}
           columns={columns}
           loading={isLoading}
           getRowId={(row) => row.id}
+          height="100%"
           onRowDoubleClick={(row) => handleRowDoubleClick(row)}
           onSelectionChange={handleSelectionChange}
           selectedIds={selectedIds}

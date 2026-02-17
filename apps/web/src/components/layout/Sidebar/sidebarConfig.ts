@@ -33,6 +33,7 @@ export const sidebarMenuItems: MenuItemProps[] = [
     subItems: [
       { label: "Kontratları Göster", path: "/contracts" },
       { label: "Kurulum Bekleyen Ürünler", path: "/contracts/pending-installations" },
+      { label: "Faturasız Kalemler", path: "/contracts/uninvoiced-items" },
       { label: "Sözleşme Faturaları", path: "/contract-invoices" },
       { label: "Yazarkasalar", path: "/contracts/cash-registers", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },
       { label: "Destekler", path: "/contracts/supports", requiredPermission: PERMISSIONS.DASHBOARD_VIEW },

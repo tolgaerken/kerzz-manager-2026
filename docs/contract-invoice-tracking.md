@@ -216,9 +216,53 @@ GET /api/contract-payments/uninvoiced-items/{contractId}
 
 ## Gelecek Adımlar
 
-1. [ ] Ara dönem kayıtları için migration script yazılması
+1. [x] Ara dönem kayıtları için migration script yazılması
 2. [ ] Frontend'de faturaya dahil edilmemiş kalemler sayfası
 3. [ ] Tarih bazlı fallback mekanizması (gerekirse)
+
+## Migration Script Kullanımı
+
+Ara dönem kayıtlarını güncellemek için migration script hazırlandı.
+
+**Dosya:** `apps/api/src/modules/contract-payments/scripts/migrate-payment-source-items.ts`
+
+### Çalıştırma Adımları
+
+```bash
+# 1. Önce DRY RUN ile raporu inceleyin (varsayılan)
+cd apps/api
+npx ts-node -r tsconfig-paths/register src/modules/contract-payments/scripts/migrate-payment-source-items.ts
+
+# 2. Raporu inceledikten sonra gerçek migration
+DRY_RUN=false npx ts-node -r tsconfig-paths/register src/modules/contract-payments/scripts/migrate-payment-source-items.ts
+```
+
+### Ortam Değişkenleri
+
+| Değişken | Varsayılan | Açıklama |
+|----------|------------|----------|
+| `DRY_RUN` | `true` | `true` ise sadece rapor üretir, değişiklik yapmaz |
+| `BATCH_SIZE` | `100` | Tek seferde işlenecek kayıt sayısı |
+
+### Script Mantığı
+
+1. `invoiceNo` dolu + `list[].sourceItemId` boş olan kayıtları bulur
+2. Her kayıt için `contractId` üzerinden ilgili kalemleri çeker
+3. Açıklama pattern'ları ile kategori belirler:
+   - `EFT-POS`, `Yazarkasa` → `eftpos`
+   - `Destek`, `Support` → `support`
+   - `Sürüm`, `Version` → `version`
+   - `SaaS`, `Lisans`, `(LIC-xxx)` → `saas`
+   - Diğerleri → `item`
+4. Kategori içindeki kalemlerle açıklama benzerliği hesaplar
+5. Eşleşme güvenilirliğini raporlar: `high`, `medium`, `low`
+
+### Dikkat Edilecekler
+
+- **Veritabanı yedeği alın** - Migration öncesi mutlaka yedek alın
+- **DRY RUN ile başlayın** - Önce raporu inceleyin
+- **Eşleşmeyen kalemleri kontrol edin** - Manuel düzeltme gerekebilir
+- **Düşük güvenilirlik uyarılarını inceleyin** - Yanlış eşleşme olabilir
 
 ## İlgili Dosyalar
 
@@ -233,6 +277,8 @@ apps/api/src/modules/contract-payments/
 │   ├── plan-generator.service.ts       # Plan oluşturma
 │   ├── prorated-plan.service.ts        # Kıst plan yönetimi
 │   └── uninvoiced-items.service.ts     # Faturasız kalem sorgulama
+├── scripts/
+│   └── migrate-payment-source-items.ts # Ara dönem migration script
 ├── contract-payments.controller.ts     # API endpoint'leri
 └── contract-payments.module.ts         # Modül tanımı
 ```

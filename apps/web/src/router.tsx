@@ -32,6 +32,7 @@ import { ContractSaasPage } from "./pages/ContractSaasPage";
 import { ContractDocumentsPage } from "./pages/ContractDocumentsPage";
 import { ProratedReportPage } from "./pages/ProratedReportPage";
 import { PendingInstallationsPage } from "./pages/PendingInstallationsPage";
+import { UninvoicedItemsPage } from "./pages/UninvoicedItemsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
@@ -363,6 +364,14 @@ const pendingInstallationsRoute = createRoute({
   component: PendingInstallationsPage,
 });
 
+// Uninvoiced Items (Faturaya Dahil Edilmemiş Kalemler) page
+const uninvoicedItemsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/contracts/uninvoiced-items",
+  beforeLoad: () => checkPermission(PERMISSIONS.CONTRACT_MENU),
+  component: UninvoicedItemsPage,
+});
+
 // E-Document Credits page
 const eDocCreditsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -572,6 +581,7 @@ const routeTree = rootRoute.addChildren([
     contractDocumentsRoute,
     proratedReportRoute,
     pendingInstallationsRoute,
+    uninvoicedItemsRoute,
     customersRoute,
     licensesRoute,
     hardwareProductsRoute,
