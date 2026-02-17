@@ -460,12 +460,13 @@ export class InvoiceCalculatorService {
 
   /**
    * Bir kalemin faturalanabilir olup olmadigini kontrol eder.
-   * Faturalama kosulu: enabled VE expired degil.
-   * Not: activated alani deploy/aktivasyon takibi icindir,
-   * odeme plani hesaplamasini etkilemez.
+   * Faturalama kosulu: enabled olmasi yeterli.
+   * Not: expired alani kontrat suresi dolmus kalemleri isaretler ancak
+   * odeme plani hesaplamasini etkilemez (kontrat suresi boyunca faturalanir).
+   * activated alani deploy/aktivasyon takibi icindir, hesaplamayi etkilemez.
    */
-  private isBillable(item: { enabled: boolean; expired?: boolean }): boolean {
-    return item.enabled && !(item.expired ?? false);
+  private isBillable(item: { enabled: boolean }): boolean {
+    return item.enabled;
   }
 
 }

@@ -239,6 +239,8 @@ export interface PaymentListItem {
   totalEur: number;
 }
 
+export type PaymentType = "regular" | "prorated";
+
 export interface ContractPayment {
   _id: string;
   id: string;
@@ -267,6 +269,11 @@ export interface ContractPayment {
   block: boolean;
   editDate: string;
   editUser: string;
+  // Kist (prorated) odeme alanlari
+  type?: PaymentType;
+  proratedDays?: number;
+  proratedStartDate?: string;
+  sourceItemId?: string;
 }
 
 // Response types

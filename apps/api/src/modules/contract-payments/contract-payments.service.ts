@@ -137,7 +137,12 @@ export class ContractPaymentsService {
       segment: payment.segment || "",
       block: payment.block || false,
       editDate: payment.editDate,
-      editUser: payment.editUser || ""
+      editUser: payment.editUser || "",
+      // Kist (prorated) odeme alanlari
+      type: payment.type as "regular" | "prorated" | undefined,
+      proratedDays: payment.proratedDays,
+      proratedStartDate: payment.proratedStartDate,
+      sourceItemId: payment.sourceItemId
     };
   }
 

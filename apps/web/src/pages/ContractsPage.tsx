@@ -427,7 +427,7 @@ export function ContractsPage() {
 
   const handleDeleteConfirm = useCallback(() => {
     if (!selectedContract) return;
-    deleteMutation.mutate(selectedContract._id, {
+    deleteMutation.mutate(selectedContract.id, {
       onSuccess: () => {
         setIsDeleteModalOpen(false);
         setSelectedContract(null);

@@ -46,6 +46,8 @@ interface GridRowProps<TData> {
   context?: Record<string, unknown>;
   /** Whether this row is a pending new row (not yet saved) */
   isPendingNewRow?: boolean;
+  /** Optional extra CSS class name for the row */
+  rowClassName?: string;
 }
 
 const NOOP_TOGGLE = () => {};
@@ -74,6 +76,7 @@ function GridRowInner<TData>({
   onSaveAndMoveNext,
   context,
   isPendingNewRow,
+  rowClassName,
 }: GridRowProps<TData>) {
   const hasEditingCell = useMemo(
     () => (isEditing ? columns.some((col) => isEditing(rowIndex, col.id)) : false),
@@ -116,6 +119,7 @@ function GridRowInner<TData>({
     hasEditingCell && 'kz-grid-row--editing',
     hasPendingRow && 'kz-grid-row--changed',
     isPendingNewRow && 'kz-grid-row--pending-new',
+    rowClassName,
   ]
     .filter(Boolean)
     .join(' ');

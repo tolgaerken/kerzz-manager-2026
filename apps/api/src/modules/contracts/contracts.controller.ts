@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, NotFoundException } from "@nestjs/common";
 import { ContractsService } from "./contracts.service";
 import { ContractQueryDto } from "./dto/contract-query.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
@@ -19,7 +19,11 @@ export class ContractsController {
 
   @Get(":id")
   async findOne(@Param("id") id: string) {
-    return this.contractsService.findOne(id);
+    const contract = await this.contractsService.findOne(id);
+    if (!contract) {
+      throw new NotFoundException(`Contract with id ${id} not found`);
+    }
+    return contract;
   }
 
   @AuditLog({ module: "contracts", entityType: "Contract" })
@@ -31,7 +35,11 @@ export class ContractsController {
   @AuditLog({ module: "contracts", entityType: "Contract" })
   @Put(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateContractDto) {
-    return this.contractsService.update(id, dto);
+    const contract = await this.contractsService.update(id, dto);
+    if (!contract) {
+      throw new NotFoundException(`Contract with id ${id} not found`);
+    }
+    return contract;
   }
 
   @AuditLog({ module: "contracts", entityType: "Contract" })

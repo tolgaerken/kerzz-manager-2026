@@ -51,6 +51,7 @@ function GridInner<TData>(
     onNewRowSave,
     onPendingCellChange,
     context,
+    rowClassName,
   } = props;
 
   const locale = useLocale();
@@ -522,6 +523,7 @@ function GridInner<TData>(
           context={context}
           pendingRowIdSet={pendingRowIdSet}
           getRowIdFn={getRowId}
+          rowClassName={rowClassName}
         />
       ) : (
         <div className="kz-grid-no-data">

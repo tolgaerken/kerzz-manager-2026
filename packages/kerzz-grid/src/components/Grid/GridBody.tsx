@@ -44,6 +44,8 @@ interface GridBodyProps<TData> {
   pendingRowIdSet?: Set<string>;
   /** Function to get row ID from row data */
   getRowIdFn?: (row: TData) => string;
+  /** Optional function that returns a CSS class name for each row */
+  rowClassName?: (row: TData) => string;
 }
 
 function GridBodyInner<TData>({
@@ -73,6 +75,7 @@ function GridBodyInner<TData>({
   context,
   pendingRowIdSet,
   getRowIdFn,
+  rowClassName,
 }: GridBodyProps<TData>) {
   const handleSelectionToggle = useCallback(
     (rowId: string, shiftKey: boolean) => {
@@ -124,6 +127,7 @@ function GridBodyInner<TData>({
               onSaveAndMoveNext={onSaveAndMoveNext}
               context={context}
               isPendingNewRow={isPendingNew}
+              rowClassName={rowClassName?.(row)}
             />
           );
         })}

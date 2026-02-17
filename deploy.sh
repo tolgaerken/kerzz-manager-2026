@@ -22,6 +22,10 @@ cd packages/ui-theme
 pnpm build
 cd ../..
 
+cd packages/kerzz-grid
+pnpm build
+cd ../..
+
 echo -e "${YELLOW}[2/8] Frontend build ediliyor...${NC}"
 cd apps/web
 pnpm build

@@ -1,7 +1,33 @@
 import type { GridColumnDef } from "@kerzz/grid";
 import type { ContractPayment } from "../../../types";
 
+/** Kist badge bileşeni */
+const TypeBadge = ({ isProrated }: { isProrated: boolean }) => {
+  if (isProrated) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-info)]/15 text-[var(--color-info)] border border-[var(--color-info)]/30">
+        Kıst
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-muted-foreground)]/10 text-[var(--color-muted-foreground)]">
+      Aylık
+    </span>
+  );
+};
+
 export const contractPaymentsColumns: GridColumnDef<ContractPayment>[] = [
+  {
+    id: "type",
+    accessorKey: "type",
+    header: "Tip",
+    width: 80,
+    minWidth: 70,
+    filter: { type: "dropdown" },
+    editable: false,
+    cell: (value) => <TypeBadge isProrated={value === "prorated"} />
+  },
   {
     id: "payDate",
     accessorKey: "payDate",

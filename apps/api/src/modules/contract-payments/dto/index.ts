@@ -47,6 +47,11 @@ export class ContractPaymentResponseDto {
   block: boolean;
   editDate: Date;
   editUser: string;
+  // Kist (prorated) odeme alanlari
+  type?: "regular" | "prorated";
+  proratedDays?: number;
+  proratedStartDate?: Date;
+  sourceItemId?: string;
 }
 
 export class ContractPaymentsListResponseDto {

@@ -133,6 +133,9 @@ export interface GridProps<TData = unknown> {
   onEditSave?: () => void;
   /** Fired after all pending changes are discarded (Cancel button clicked) */
   onEditCancel?: () => void;
+
+  /** Optional function that returns a CSS class name for each row */
+  rowClassName?: (row: TData) => string;
 }
 
 /** Pin direction for sticky columns */

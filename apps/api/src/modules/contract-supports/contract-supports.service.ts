@@ -88,6 +88,14 @@ export class ContractSupportsService {
       }
     }
 
+    // activated false geldiyse: faturalanmamis kist planini sil
+    if (dto.activated === false) {
+      const existing = await this.contractSupportModel.findOne({ id }).lean().exec();
+      if (existing?.activated) {
+        await this.proratedPlanService.deleteUninvoicedBySourceItem(existing.contractId, id);
+      }
+    }
+
     const updated = await this.contractSupportModel
       .findOneAndUpdate(
         { id },

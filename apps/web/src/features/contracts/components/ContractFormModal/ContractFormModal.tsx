@@ -143,8 +143,21 @@ export function ContractFormModal({
       newErrors.customerId = "Müşteri seçimi zorunludur";
     }
 
+    if (!formData.internalFirm) {
+      newErrors.internalFirm = "Firma seçimi zorunludur";
+    }
+
     if (!formData.startDate) {
       newErrors.startDate = "Başlangıç tarihi zorunludur";
+    }
+
+    if (
+      !formData.noEndDate &&
+      formData.startDate &&
+      formData.endDate &&
+      formData.startDate >= formData.endDate
+    ) {
+      newErrors.endDate = "Bitiş tarihi başlangıç tarihinden sonra olmalıdır";
     }
 
     setErrors(newErrors);
@@ -202,7 +215,7 @@ export function ContractFormModal({
                 </h3>
                 <div className="relative">
                   <label htmlFor="customerId" className={labelClasses}>
-                    Müşteri <span className="text-red-500">*</span>
+                    Müşteri <span className="text-[var(--color-error)]">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -215,7 +228,7 @@ export function ContractFormModal({
                         setShowCustomerDropdown(true);
                       }}
                       onFocus={() => setShowCustomerDropdown(true)}
-                      className={`${inputClasses} ${errors.customerId ? "border-red-500" : ""}`}
+                      className={`${inputClasses} ${errors.customerId ? "border-[var(--color-error)]" : ""}`}
                       placeholder="Müşteri ara..."
                     />
                     {showCustomerDropdown && customersData?.data && customersData.data.length > 0 && (
@@ -239,7 +252,7 @@ export function ContractFormModal({
                     )}
                   </div>
                   {errors.customerId && (
-                    <p className="mt-1 text-sm text-red-500">{errors.customerId}</p>
+                    <p className="mt-1 text-sm text-[var(--color-error)]">{errors.customerId}</p>
                   )}
                 </div>
               </div>
@@ -253,7 +266,7 @@ export function ContractFormModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="startDate" className={labelClasses}>
-                      Başlangıç Tarihi <span className="text-red-500">*</span>
+                      Başlangıç Tarihi <span className="text-[var(--color-error)]">*</span>
                     </label>
                     <input
                       type="date"
@@ -261,10 +274,10 @@ export function ContractFormModal({
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleChange}
-                      className={`${inputClasses} ${errors.startDate ? "border-red-500" : ""}`}
+                      className={`${inputClasses} ${errors.startDate ? "border-[var(--color-error)]" : ""}`}
                     />
                     {errors.startDate && (
-                      <p className="mt-1 text-sm text-red-500">{errors.startDate}</p>
+                      <p className="mt-1 text-sm text-[var(--color-error)]">{errors.startDate}</p>
                     )}
                   </div>
 
@@ -279,8 +292,11 @@ export function ContractFormModal({
                       value={formData.endDate || ""}
                       onChange={handleChange}
                       disabled={formData.noEndDate}
-                      className={`${inputClasses} ${formData.noEndDate ? "opacity-50" : ""}`}
+                      className={`${inputClasses} ${formData.noEndDate ? "opacity-50" : ""} ${errors.endDate ? "border-[var(--color-error)]" : ""}`}
                     />
+                    {errors.endDate && (
+                      <p className="mt-1 text-sm text-[var(--color-error)]">{errors.endDate}</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -309,14 +325,14 @@ export function ContractFormModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="internalFirm" className={labelClasses}>
-                      Firma
+                      Firma <span className="text-[var(--color-error)]">*</span>
                     </label>
                     <select
                       id="internalFirm"
                       name="internalFirm"
                       value={formData.internalFirm}
                       onChange={handleChange}
-                      className={selectClasses}
+                      className={`${selectClasses} ${errors.internalFirm ? "border-[var(--color-error)]" : ""}`}
                     >
                       <option value="">Seçiniz</option>
                       {companiesData?.map((company) => (
@@ -325,6 +341,9 @@ export function ContractFormModal({
                         </option>
                       ))}
                     </select>
+                    {errors.internalFirm && (
+                      <p className="mt-1 text-sm text-[var(--color-error)]">{errors.internalFirm}</p>
+                    )}
                   </div>
 
                   <div>

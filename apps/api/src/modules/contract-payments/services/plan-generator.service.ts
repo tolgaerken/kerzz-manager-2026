@@ -230,17 +230,15 @@ export class PlanGeneratorService {
 
       finalPlans.push(updatedPlan as ContractPayment);
 
-      const invoicedDate = new Date(invoicedPlan.payDate);
-      const monthKey = `${invoicedDate.getUTCFullYear()}-${invoicedDate.getUTCMonth()}`;
-      invoicedMonths.add(monthKey);
+      // Eski sistemde payDate ayin son gunu 21:00 UTC olarak kaydedilmis
+      // (TR 00:00). toMonthKey bu formati dogru aya normalize eder.
+      invoicedMonths.add(toMonthKey(new Date(invoicedPlan.payDate)));
     }
 
     // Faturali aylarla eslesen yeni planlari cikar
     const remainingNewPlans = newPlans.filter((np) => {
       if (!np.payDate) return true;
-      const npDate = new Date(np.payDate);
-      const monthKey = `${npDate.getUTCFullYear()}-${npDate.getUTCMonth()}`;
-      return !invoicedMonths.has(monthKey);
+      return !invoicedMonths.has(toMonthKey(new Date(np.payDate)));
     });
 
     // Faturasiz yeni planlari upsert et

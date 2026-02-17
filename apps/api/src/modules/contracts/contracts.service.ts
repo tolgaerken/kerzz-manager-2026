@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, SortOrder } from "mongoose";
+import { Model, SortOrder, Types } from "mongoose";
 import { Contract, ContractDocument } from "./schemas/contract.schema";
 import {
   Customer,
@@ -56,6 +56,19 @@ export class ContractsService {
     private customerModel: Model<CustomerDocument>,
     private readonly contractPaymentsService: ContractPaymentsService
   ) {}
+
+  /**
+   * Gelen id parametresinin _id (ObjectId) mi yoksa id (custom string) mi olduğunu algılar.
+   * Frontend bazı yerlerde _id, bazı yerlerde id gönderiyor.
+   */
+  private buildIdFilter(idParam: string): Record<string, unknown> {
+    if (Types.ObjectId.isValid(idParam)) {
+      return {
+        $or: [{ _id: new Types.ObjectId(idParam) }, { id: idParam }]
+      };
+    }
+    return { id: idParam };
+  }
 
   // Tarih bazlı filtreleme için yardımcı metod
   private getDateBasedFilter(
@@ -159,7 +172,8 @@ export class ContractsService {
   }
 
   async findOne(id: string): Promise<ContractResponseDto | null> {
-    const contract = await this.contractModel.findOne({ id }).lean().exec();
+    const filter = this.buildIdFilter(id);
+    const contract = await this.contractModel.findOne(filter).lean().exec();
     return contract ? this.mapToResponseDto(contract) : null;
   }
 
@@ -385,8 +399,9 @@ export class ContractsService {
       updateData.contractFlow = dto.contractFlow;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
+    const filter = this.buildIdFilter(id);
     const updated = await this.contractModel
-      .findOneAndUpdate({ id }, { $set: updateData }, { new: true })
+      .findOneAndUpdate(filter, { $set: updateData }, { new: true })
       .lean()
       .exec();
 
@@ -400,7 +415,8 @@ export class ContractsService {
   async delete(
     id: string
   ): Promise<{ deletedPaymentPlans: number }> {
-    const contract = await this.contractModel.findOne({ id }).lean().exec();
+    const filter = this.buildIdFilter(id);
+    const contract = await this.contractModel.findOne(filter).lean().exec();
     if (!contract) {
       throw new NotFoundException(`Contract with id ${id} not found`);
     }
@@ -410,7 +426,7 @@ export class ContractsService {
       await this.contractPaymentsService.deleteByContractId(contract.id);
 
     // Sonra kontratı sil
-    await this.contractModel.findOneAndDelete({ id }).exec();
+    await this.contractModel.findOneAndDelete({ _id: contract._id }).exec();
 
     return { deletedPaymentPlans };
   }
