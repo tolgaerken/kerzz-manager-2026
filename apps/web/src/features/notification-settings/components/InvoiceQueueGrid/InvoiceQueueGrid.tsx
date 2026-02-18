@@ -1,9 +1,10 @@
 import { useMemo, useCallback, useState } from "react";
 import { Grid, type GridColumnDef } from "@kerzz/grid";
-import { Eye, MessageSquare, Contact } from "lucide-react";
+import { Eye, MessageSquare, Contact, Bell } from "lucide-react";
 import { invoiceQueueColumnDefs } from "./columnDefs";
 import { ContactInfoModal } from "../ContactInfoModal";
-import type { QueueInvoiceItem, QueueCustomer } from "../../types";
+import { NotifyHistoryModal } from "../NotifyHistoryModal";
+import type { QueueInvoiceItem, QueueCustomer, QueueNotifyEntry } from "../../types";
 
 interface InvoiceQueueGridProps {
   data: QueueInvoiceItem[];
@@ -21,10 +22,41 @@ export function InvoiceQueueGrid({
   onPreviewSms,
 }: InvoiceQueueGridProps) {
   const [contactCustomer, setContactCustomer] = useState<QueueCustomer | null>(null);
+  const [notifyModal, setNotifyModal] = useState<{
+    invoiceNumber: string;
+    history: QueueNotifyEntry[];
+  } | null>(null);
 
   const columns = useMemo<GridColumnDef<QueueInvoiceItem>[]>(
     () => [
       ...invoiceQueueColumnDefs,
+      {
+        id: "notifyCount",
+        header: "Bildirim",
+        accessorKey: "notifyCount",
+        width: 100,
+        cell: (_value, row) => {
+          const count = row.notifyCount ?? 0;
+          if (count === 0) {
+            return <span className="text-[var(--color-muted-foreground)]">0</span>;
+          }
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setNotifyModal({
+                  invoiceNumber: row.invoiceNumber,
+                  history: row.notifyHistory ?? [],
+                });
+              }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors"
+            >
+              <Bell className="w-3 h-3" />
+              {count}
+            </button>
+          );
+        },
+      },
       {
         id: "actions",
         header: "İşlemler",
@@ -66,7 +98,7 @@ export function InvoiceQueueGrid({
         ),
       },
     ],
-    [onPreviewEmail, onPreviewSms, setContactCustomer],
+    [onPreviewEmail, onPreviewSms, setContactCustomer, setNotifyModal],
   );
 
   const handleSelectionChange = useCallback(
@@ -86,6 +118,12 @@ export function InvoiceQueueGrid({
         customer={contactCustomer}
         onClose={() => setContactCustomer(null)}
       />
+      <NotifyHistoryModal
+        isOpen={notifyModal !== null}
+        invoiceNumber={notifyModal?.invoiceNumber ?? ""}
+        history={notifyModal?.history ?? []}
+        onClose={() => setNotifyModal(null)}
+      />
       <Grid<QueueInvoiceItem>
         data={data}
         columns={columns}
@@ -97,6 +135,7 @@ export function InvoiceQueueGrid({
         selectionCheckbox
         onSelectionChange={handleSelectionChange}
         stateKey="invoice-queue-grid"
+        toolbar={true}
       />
     </div>
   );

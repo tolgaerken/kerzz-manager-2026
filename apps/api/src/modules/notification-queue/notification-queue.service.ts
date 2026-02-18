@@ -74,7 +74,7 @@ export class NotificationQueueService {
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
-      "https://payment.kerzz.com:3889";
+      "https://pay-kerzz.cloudlabs.com.tr";
   }
 
   /**
@@ -199,6 +199,17 @@ export class NotificationQueueService {
       const customer = inv.customerId ? customerMap.get(inv.customerId) : null;
       const contractUsers = inv.customerId ? (contractUsersMap.get(inv.customerId) ?? []) : [];
       const contacts = this.buildContactList(customer ?? null, contractUsers);
+      const notifyHistory = (Array.isArray(inv.notify) ? inv.notify : []).map((n) => ({
+        sms: !!n.sms,
+        email: !!n.email,
+        sendTime: n.sendTime ? formatDate(n.sendTime) : null,
+        users: (Array.isArray(n.users) ? n.users : []).map((u) => ({
+          name: u.name || "",
+          email: u.email || "",
+          phone: u.gsm || "",
+        })),
+      }));
+
       return {
         _id: (inv as { _id: { toString: () => string } })._id.toString(),
         id: inv.id,
@@ -208,7 +219,8 @@ export class NotificationQueueService {
         overdueDays,
         status,
         lastNotify: inv.lastNotify ? formatDate(inv.lastNotify) : null,
-        notifyCount: Array.isArray(inv.notify) ? inv.notify.length : 0,
+        notifyCount: notifyHistory.length,
+        notifyHistory,
         customer: this.mapCustomer(customer ?? null, contacts),
       };
     });
@@ -385,26 +397,18 @@ export class NotificationQueueService {
    * Secilen kayitlar icin manuel bildirim gonderir
    */
   async sendManualNotification(dto: ManualSendDto): Promise<ManualSendResponseDto> {
-    const settings = await this.settingsService.getSettings();
     const results: ManualSendResultItemDto[] = [];
     let sent = 0;
     let failed = 0;
 
     for (const item of dto.items) {
-      if (item.type === "invoice") {
-        const outcome = await this.sendForInvoice(item.id, dto.channels, settings);
-        for (const r of outcome) {
-          results.push(r);
-          if (r.success) sent++;
-          else failed++;
-        }
-      } else {
-        const outcome = await this.sendForContract(item.id, dto.channels, settings);
-        for (const r of outcome) {
-          results.push(r);
-          if (r.success) sent++;
-          else failed++;
-        }
+      const outcome = item.type === "invoice"
+        ? await this.sendForInvoice(item.id, dto.channels)
+        : await this.sendForContract(item.id, dto.channels);
+      for (const r of outcome) {
+        results.push(r);
+        if (r.success) sent++;
+        else failed++;
       }
     }
 
@@ -413,8 +417,7 @@ export class NotificationQueueService {
 
   private async sendForInvoice(
     invoiceId: string,
-    channels: ("email" | "sms")[],
-    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+    channels: ("email" | "sms")[]
   ): Promise<ManualSendResultItemDto[]> {
     const invoice = await this.invoiceModel.findOne({ id: invoiceId }).lean().exec();
     if (!invoice || !invoice.customerId) {
@@ -438,6 +441,10 @@ export class NotificationQueueService {
       }));
     }
 
+    const contractUsersMap = await this.getContractUsersForCustomer([invoice.customerId]);
+    const contractUsers = contractUsersMap.get(invoice.customerId) ?? [];
+    const contacts = this.buildContactList(customer, contractUsers);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = invoice.dueDate ? new Date(invoice.dueDate) : null;
@@ -455,41 +462,77 @@ export class NotificationQueueService {
     const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined);
     const notifications: DispatchNotificationDto[] = [];
 
-    if (channels.includes("email") && settings.emailEnabled && customer.email) {
-      notifications.push({
-        templateCode: `${templateCodeBase}-email`,
-        channel: "email",
-        recipient: { email: customer.email, name: customer.name },
-        contextType: "invoice",
-        contextId: invoice.id,
-        customerId: invoice.customerId,
-        invoiceId: invoice.id,
-        templateData,
-      });
+    if (channels.includes("email")) {
+      const emailContacts = contacts.filter((c) => c.email);
+      const uniqueEmails = new Set<string>();
+      
+      for (const contact of emailContacts) {
+        if (uniqueEmails.has(contact.email)) continue;
+        uniqueEmails.add(contact.email);
+        
+        notifications.push({
+          templateCode: `${templateCodeBase}-email`,
+          channel: "email",
+          recipient: { email: contact.email, name: contact.name },
+          contextType: "invoice",
+          contextId: invoice.id,
+          customerId: invoice.customerId,
+          invoiceId: invoice.id,
+          templateData,
+        });
+      }
     }
-    if (channels.includes("sms") && settings.smsEnabled && customer.phone) {
-      notifications.push({
-        templateCode: `${templateCodeBase}-sms`,
-        channel: "sms",
-        recipient: { phone: customer.phone, name: customer.name },
-        contextType: "invoice",
-        contextId: invoice.id,
-        customerId: invoice.customerId,
-        invoiceId: invoice.id,
-        templateData,
-      });
+    if (channels.includes("sms")) {
+      const smsContacts = contacts.filter((c) => c.phone);
+      const uniquePhones = new Set<string>();
+      
+      for (const contact of smsContacts) {
+        if (uniquePhones.has(contact.phone)) continue;
+        uniquePhones.add(contact.phone);
+        
+        notifications.push({
+          templateCode: `${templateCodeBase}-sms`,
+          channel: "sms",
+          recipient: { phone: contact.phone, name: contact.name },
+          contextType: "invoice",
+          contextId: invoice.id,
+          customerId: invoice.customerId,
+          invoiceId: invoice.id,
+          templateData,
+        });
+      }
+    }
+
+    if (notifications.length === 0) {
+      return channels.map((ch) => ({
+        type: "invoice" as const,
+        id: invoiceId,
+        channel: ch,
+        success: false,
+        error: ch === "email"
+          ? "Hiçbir ilgili kişinin e-posta adresi yok"
+          : "Hiçbir ilgili kişinin telefon numarası yok",
+      }));
     }
 
     const dispatchResults = await this.dispatchService.dispatchBulk(notifications);
-    const outcome: ManualSendResultItemDto[] = dispatchResults.map((r, idx) => ({
-      type: "invoice" as const,
-      id: invoiceId,
-      channel: notifications[idx]?.channel ?? (r.channel as "email" | "sms"),
-      success: r.success,
-      error: r.error,
-    }));
+    const dispatchOutcome: ManualSendResultItemDto[] = dispatchResults.map((r, idx) => {
+      const n = notifications[idx];
+      const ch = n?.channel ?? (r.channel as "email" | "sms");
+      return {
+        type: "invoice" as const,
+        id: invoiceId,
+        channel: ch,
+        recipient: ch === "email" ? n?.recipient?.email : n?.recipient?.phone,
+        success: r.success,
+        error: r.error,
+      };
+    });
 
-    if (outcome.some((o) => o.success)) {
+    if (dispatchOutcome.some((o) => o.success)) {
+      const notifiedUsers = contacts
+        .filter((c) => c.email || c.phone)
+        .map((c) => ({ name: c.name || "", email: c.email || "", gsm: c.phone || "", smsText: "" }));
       await this.invoiceModel.updateOne(
         { id: invoiceId },
         {
@@ -500,20 +543,19 @@ export class NotificationQueueService {
               email: channels.includes("email"),
               push: false,
               sendTime: new Date(),
-              users: [{ name: customer.name || "", email: customer.email || "", gsm: customer.phone || "", smsText: "" }],
+              users: notifiedUsers,
             },
           },
         }
       );
     }
 
-    return outcome;
+    return dispatchOutcome;
   }
 
   private async sendForContract(
     contractId: string,
-    channels: ("email" | "sms")[],
-    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+    channels: ("email" | "sms")[]
   ): Promise<ManualSendResultItemDto[]> {
     const contract = await this.contractModel.findOne({ id: contractId }).lean().exec();
     if (!contract || !contract.customerId) {
@@ -526,7 +568,6 @@ export class NotificationQueueService {
       }));
     }
 
-    // Kontrat bildirimi kapalıysa gönderme
     if (contract.noNotification === true) {
       return channels.map((ch) => ({
         type: "contract" as const,
@@ -548,6 +589,11 @@ export class NotificationQueueService {
       }));
     }
 
+    const contractUsers = contract.id
+      ? await this.getContractUsersForContract(contract.id)
+      : [];
+    const contacts = this.buildContactList(customer, contractUsers);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
@@ -556,39 +602,72 @@ export class NotificationQueueService {
     const templateData = buildContractTemplateData(contract, customer, remainingDays);
     const notifications: DispatchNotificationDto[] = [];
 
-    if (channels.includes("email") && settings.emailEnabled && customer.email) {
-      notifications.push({
-        templateCode: "contract-expiry-email",
-        channel: "email",
-        recipient: { email: customer.email, name: customer.name },
-        contextType: "contract",
-        contextId: contract.id,
-        customerId: contract.customerId,
-        contractId: contract.id,
-        templateData,
-      });
+    if (channels.includes("email")) {
+      const emailContacts = contacts.filter((c) => c.email);
+      const uniqueEmails = new Set<string>();
+      
+      for (const contact of emailContacts) {
+        if (uniqueEmails.has(contact.email)) continue;
+        uniqueEmails.add(contact.email);
+        
+        notifications.push({
+          templateCode: "contract-expiry-email",
+          channel: "email",
+          recipient: { email: contact.email, name: contact.name },
+          contextType: "contract",
+          contextId: contract.id,
+          customerId: contract.customerId,
+          contractId: contract.id,
+          templateData,
+        });
+      }
     }
-    if (channels.includes("sms") && settings.smsEnabled && customer.phone) {
-      notifications.push({
-        templateCode: "contract-expiry-sms",
-        channel: "sms",
-        recipient: { phone: customer.phone, name: customer.name },
-        contextType: "contract",
-        contextId: contract.id,
-        customerId: contract.customerId,
-        contractId: contract.id,
-        templateData,
-      });
+    if (channels.includes("sms")) {
+      const smsContacts = contacts.filter((c) => c.phone);
+      const uniquePhones = new Set<string>();
+      
+      for (const contact of smsContacts) {
+        if (uniquePhones.has(contact.phone)) continue;
+        uniquePhones.add(contact.phone);
+        
+        notifications.push({
+          templateCode: "contract-expiry-sms",
+          channel: "sms",
+          recipient: { phone: contact.phone, name: contact.name },
+          contextType: "contract",
+          contextId: contract.id,
+          customerId: contract.customerId,
+          contractId: contract.id,
+          templateData,
+        });
+      }
+    }
+
+    if (notifications.length === 0) {
+      return channels.map((ch) => ({
+        type: "contract" as const,
+        id: contractId,
+        channel: ch,
+        success: false,
+        error: ch === "email"
+          ? "Hiçbir ilgili kişinin e-posta adresi yok"
+          : "Hiçbir ilgili kişinin telefon numarası yok",
+      }));
     }
 
     const dispatchResults = await this.dispatchService.dispatchBulk(notifications);
-    return dispatchResults.map((r, idx) => ({
-      type: "contract" as const,
-      id: contractId,
-      channel: notifications[idx]?.channel ?? (r.channel as "email" | "sms"),
-      success: r.success,
-      error: r.error,
-    }));
+    return dispatchResults.map((r, idx) => {
+      const n = notifications[idx];
+      const ch = n?.channel ?? (r.channel as "email" | "sms");
+      return {
+        type: "contract" as const,
+        id: contractId,
+        channel: ch,
+        recipient: ch === "email" ? n?.recipient?.email : n?.recipient?.phone,
+        success: r.success,
+        error: r.error,
+      };
+    });
   }
 
   /**

@@ -98,6 +98,19 @@ export interface QueueCustomerDto {
   contacts: QueueContactDto[];
 }
 
+export interface QueueNotifyUserDto {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface QueueNotifyEntryDto {
+  sms: boolean;
+  email: boolean;
+  sendTime: string | null;
+  users: QueueNotifyUserDto[];
+}
+
 export interface QueueInvoiceItemDto {
   _id: string;
   id: string;
@@ -108,6 +121,7 @@ export interface QueueInvoiceItemDto {
   status: "due" | "overdue";
   lastNotify: string | null;
   notifyCount: number;
+  notifyHistory: QueueNotifyEntryDto[];
   customer: QueueCustomerDto;
 }
 
@@ -153,6 +167,7 @@ export interface ManualSendResultItemDto {
   type: "invoice" | "contract";
   id: string;
   channel: "email" | "sms";
+  recipient?: string;
   success: boolean;
   error?: string;
 }

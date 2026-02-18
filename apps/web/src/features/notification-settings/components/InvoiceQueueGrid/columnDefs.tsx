@@ -66,10 +66,4 @@ export const invoiceQueueColumnDefs: GridColumnDef<QueueInvoiceItem>[] = [
     valueFormatter: (value) => (value as string | null) ?? "—",
     cellClassName: "text-[var(--color-muted-foreground)]",
   },
-  {
-    id: "notifyCount",
-    header: "Bildirim Sayısı",
-    accessorKey: "notifyCount",
-    width: 120,
-  },
 ];

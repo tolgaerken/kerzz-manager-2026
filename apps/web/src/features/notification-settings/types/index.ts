@@ -178,6 +178,19 @@ export interface QueueCustomer {
   contacts: QueueContact[];
 }
 
+export interface QueueNotifyUser {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface QueueNotifyEntry {
+  sms: boolean;
+  email: boolean;
+  sendTime: string | null;
+  users: QueueNotifyUser[];
+}
+
 export interface QueueInvoiceItem {
   _id: string;
   id: string;
@@ -188,6 +201,7 @@ export interface QueueInvoiceItem {
   status: "due" | "overdue";
   lastNotify: string | null;
   notifyCount: number;
+  notifyHistory: QueueNotifyEntry[];
   customer: QueueCustomer;
 }
 
@@ -258,6 +272,7 @@ export interface ManualSendResultItem {
   type: "invoice" | "contract";
   id: string;
   channel: "email" | "sms";
+  recipient?: string;
   success: boolean;
   error?: string;
 }

@@ -22,6 +22,7 @@ export function NotificationHistoryGrid({
         getRowId={(row) => row._id}
         selectionMode="none"
         stateKey="notification-history-grid"
+        toolbar={true}
       />
     </div>
   );

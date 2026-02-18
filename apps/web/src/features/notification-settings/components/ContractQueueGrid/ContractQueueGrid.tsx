@@ -97,6 +97,7 @@ export function ContractQueueGrid({
         selectionCheckbox
         onSelectionChange={handleSelectionChange}
         stateKey="contract-queue-grid"
+        toolbar={true}
       />
     </div>
   );

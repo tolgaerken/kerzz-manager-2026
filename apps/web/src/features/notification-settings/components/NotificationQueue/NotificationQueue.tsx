@@ -46,7 +46,7 @@ export function NotificationQueue() {
   const [resultModal, setResultModal] = useState<{
     sent: number;
     failed: number;
-    results: { type: string; id: string; channel: string; success: boolean; error?: string }[];
+    results: { type: string; id: string; channel: string; recipient?: string; success: boolean; error?: string }[];
   } | null>(null);
   const [selectedOverdueDays, setSelectedOverdueDays] = useState<number[]>([]);
   const [previewParams, setPreviewParams] = useState<QueuePreviewParams | null>(null);
@@ -449,8 +449,13 @@ export function NotificationQueue() {
                       <XCircle className="w-4 h-4 flex-shrink-0" />
                     )}
                     <span>
-                      {r.type} {r.id} – {r.channel}
-                      {r.error && `: ${r.error}`}
+                      {r.channel === "email" ? "E-posta" : "SMS"}
+                      {r.recipient && (
+                        <span className="font-medium"> → {r.recipient}</span>
+                      )}
+                      {r.error && (
+                        <span className="text-[var(--color-error)]"> – {r.error}</span>
+                      )}
                     </span>
                   </div>
                 ))}
