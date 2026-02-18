@@ -35,7 +35,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTabProps) {
   const isMobile = useIsMobile();
-  const [selectedRow, setSelectedRow] = useState<ContractCashRegister | null>(null);
+  const [selectedRows, setSelectedRows] = useState<ContractCashRegister[]>([]);
 
   // Data hooks
   const { data, isLoading } = useContractCashRegisters(contractId);
@@ -131,30 +131,34 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
   );
 
   const handleDelete = useCallback(() => {
-    if (selectedRow?.id) {
-      deleteMutation.mutate(selectedRow.id);
-      setSelectedRow(null);
-    }
-  }, [selectedRow, deleteMutation]);
-
-  const handleToggleActivation = useCallback(() => {
-    if (selectedRow?.id) {
-      if (selectedRow.activated) {
-        // Kuruldu -> Kurulmadı
-        updateMutation.mutate({
-          id: selectedRow.id,
-          data: {
-            activated: false,
-            activatedAt: undefined,
-            editDate: new Date().toISOString()
-          }
-        });
-      } else {
-        // Kurulmadı -> Kuruldu (activate endpoint kullan)
-        activateMutation.mutate(selectedRow.id);
+    for (const row of selectedRows) {
+      if (row?.id) {
+        deleteMutation.mutate(row.id);
       }
     }
-  }, [selectedRow, activateMutation, updateMutation]);
+    setSelectedRows([]);
+  }, [selectedRows, deleteMutation]);
+
+  const handleToggleActivation = useCallback(() => {
+    for (const row of selectedRows) {
+      if (row?.id) {
+        if (row.activated) {
+          // Kuruldu -> Kurulmadı
+          updateMutation.mutate({
+            id: row.id,
+            data: {
+              activated: false,
+              activatedAt: undefined,
+              editDate: new Date().toISOString()
+            }
+          });
+        } else {
+          // Kurulmadı -> Kuruldu (activate endpoint kullan)
+          activateMutation.mutate(row.id);
+        }
+      }
+    }
+  }, [selectedRows, activateMutation, updateMutation]);
 
   const handleCellValueChange = useCallback(
     (row: ContractCashRegister, columnId: string, newValue: unknown) => {
@@ -183,27 +187,42 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
 
   const handleRowClick = useCallback(
     (row: ContractCashRegister) => {
-      setSelectedRow(row);
+      setSelectedRows((prev) =>
+        prev.some((r) => r.id === row.id)
+          ? prev.filter((r) => r.id !== row.id)
+          : [...prev, row]
+      );
     },
     []
   );
 
   const toolbarConfig = useMemo<ToolbarConfig<ContractCashRegister>>(() => {
+    const hasSelected = selectedRows.length > 0;
+    const allActivated = selectedRows.every((r) => r.activated);
+    const allDeactivated = selectedRows.every((r) => !r.activated);
+
     const customButtons: ToolbarButtonConfig[] = [
       {
         id: "toggle-activation",
-        label: selectedRow?.activated ? "Kurulmadı Olarak İşaretle" : "Kuruldu Olarak İşaretle",
+        label:
+          selectedRows.length === 0
+            ? "Kuruldu Olarak İşaretle"
+            : allActivated
+              ? "Kurulmadı Olarak İşaretle"
+              : allDeactivated
+                ? "Kuruldu Olarak İşaretle"
+                : "Kuruldu/Kurulmadı Değiştir",
         icon: <CheckCheck className="w-3.5 h-3.5" />,
         onClick: handleToggleActivation,
-        disabled: !selectedRow || isProcessing,
-        variant: selectedRow?.activated ? "default" : "primary"
+        disabled: !hasSelected || isProcessing,
+        variant: allActivated ? "default" : "primary"
       },
       {
         id: "delete",
         label: "Sil",
         icon: <Trash2 className="w-3.5 h-3.5" />,
         onClick: handleDelete,
-        disabled: !selectedRow || isProcessing,
+        disabled: !hasSelected || isProcessing,
         variant: "danger"
       }
     ];
@@ -216,7 +235,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
       showAddRow: true,
       customButtons
     };
-  }, [handleToggleActivation, handleDelete, selectedRow, isProcessing]);
+  }, [handleToggleActivation, handleDelete, selectedRows, isProcessing]);
 
   const mutationError =
     updateMutation.error || createMutation.error || deleteMutation.error || activateMutation.error;
@@ -329,7 +348,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
           height="100%"
           locale="tr"
           toolbar={toolbarConfig}
-          selectionMode="single"
+          selectionMode="multiple"
         />
       </div>
     </div>
