@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Plus, Pencil, Trash2, Users, RefreshCw, Receipt } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, RefreshCw, Receipt, FileText, Key } from "lucide-react";
 import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
@@ -7,6 +7,8 @@ import {
   CustomersFilters,
   CustomerFormModal,
   DeleteConfirmModal,
+  CustomerContractsModal,
+  CustomerLicensesModal,
   useCustomers,
   useCreateCustomer,
   useUpdateCustomer,
@@ -39,6 +41,8 @@ export function CustomersPage() {
   // Modal state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isContractsModalOpen, setIsContractsModalOpen] = useState(false);
+  const [isLicensesModalOpen, setIsLicensesModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   // Queries & Mutations
@@ -195,12 +199,34 @@ export function CustomersPage() {
     openAccountTransactionsModal(selectedCustomer.erpId, "VERI");
   }, [selectedCustomer, openAccountTransactionsModal]);
 
+  const handleOpenContracts = useCallback(() => {
+    setIsContractsModalOpen(true);
+  }, []);
+
+  const handleOpenLicenses = useCallback(() => {
+    setIsLicensesModalOpen(true);
+  }, []);
+
   // Toolbar buttons
   const toolbarButtons = useMemo<ToolbarButtonConfig[]>(() => {
     const hasSelection = !!selectedCustomer;
     const hasErpId = !!selectedCustomer?.erpId;
 
     return [
+      {
+        id: "contracts",
+        label: "Kontratlar",
+        icon: <FileText className="h-4 w-4" />,
+        onClick: handleOpenContracts,
+        disabled: isLoading || !hasSelection
+      },
+      {
+        id: "licenses",
+        label: "Lisanslar",
+        icon: <Key className="h-4 w-4" />,
+        onClick: handleOpenLicenses,
+        disabled: isLoading || !hasSelection
+      },
       {
         id: "account-transactions",
         label: "Cari Hareketleri",
@@ -209,7 +235,7 @@ export function CustomersPage() {
         disabled: isLoading || !hasSelection || !hasErpId
       }
     ];
-  }, [selectedCustomer, isLoading, handleOpenAccountTransactions]);
+  }, [selectedCustomer, isLoading, handleOpenContracts, handleOpenLicenses, handleOpenAccountTransactions]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -292,6 +318,20 @@ export function CustomersPage() {
 
       {/* Account Transactions Modal */}
       <AccountTransactionsModal />
+
+      {/* Customer Contracts Modal */}
+      <CustomerContractsModal
+        isOpen={isContractsModalOpen}
+        customer={selectedCustomer}
+        onClose={() => setIsContractsModalOpen(false)}
+      />
+
+      {/* Customer Licenses Modal */}
+      <CustomerLicensesModal
+        isOpen={isLicensesModalOpen}
+        customer={selectedCustomer}
+        onClose={() => setIsLicensesModalOpen(false)}
+      />
     </div>
   );
 }
