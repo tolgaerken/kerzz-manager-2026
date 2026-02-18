@@ -43,13 +43,13 @@ export class SmsService {
   }
 
   /**
-   * Türkçe karakterleri ASCII eşdeğerlerine dönüştürür
-   * SMS'lerde Türkçe karakter problemi yaşanmaması için kullanılır
+   * SMS metnini gateway uyumlu ASCII karakterlere dönüştürür.
+   * JetSMS tarafında UTF-8 karakterlerin bozulmaması için kullanılır.
    */
-  private normalizeTurkishChars(text: string): string {
+  private normalizeSmsText(text: string): string {
     if (!text) return "";
 
-    const turkishMap: Record<string, string> = {
+    const charMap: Record<string, string> = {
       ş: "s",
       Ş: "S",
       ğ: "g",
@@ -62,11 +62,23 @@ export class SmsService {
       Ç: "C",
       ı: "i",
       İ: "I",
+      "₺": "TL",
+      "€": "EUR",
+      "£": "GBP",
+      "¥": "YEN",
+      "’": "'",
+      "‘": "'",
+      "“": "\"",
+      "”": "\"",
+      "–": "-",
+      "—": "-",
+      "…": "...",
+      "\u00a0": " ",
     };
 
     return text
       .split("")
-      .map((char) => turkishMap[char] || char)
+      .map((char) => charMap[char] || char)
       .join("");
   }
 
@@ -116,8 +128,8 @@ export class SmsService {
       };
     }
 
-    // Türkçe karakterleri normalize et
-    const normalizedMessage = this.normalizeTurkishChars(message);
+    // Gateway'de bozulma olmaması için karakterleri normalize et
+    const normalizedMessage = this.normalizeSmsText(message);
 
     // URL parametrelerini encode et
     const params = new URLSearchParams({
