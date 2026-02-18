@@ -269,9 +269,9 @@ export class ContractCashRegistersService {
     const { contractId } = query;
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
 
     // Base filter
     const baseFilter: Record<string, unknown> = {};
@@ -368,7 +368,7 @@ export class ContractCashRegistersService {
   ): Promise<TimePeriodStatsDto> {
     const filter = {
       ...baseFilter,
-      editDate: { $gte: startDate }
+      firstRegister: { $exists: true, $gte: startDate }
     };
 
     const result = await this.contractCashRegisterModel.aggregate([
@@ -455,8 +455,8 @@ export class ContractCashRegistersService {
 
     // Son 12 ay için boş array oluştur
     for (let i = 11; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
       months.push({ month: monthKey, count: 0 });
     }
 
@@ -464,12 +464,13 @@ export class ContractCashRegistersService {
     const results = await Promise.all(
       months.map(async (m) => {
         const [year, month] = m.month.split("-").map(Number);
-        const monthStart = new Date(year, month - 1, 1);
-        const monthEnd = new Date(year, month, 1);
+        const monthStart = new Date(Date.UTC(year, month - 1, 1));
+        const monthEnd = new Date(Date.UTC(year, month, 1));
 
         const count = await this.contractCashRegisterModel.countDocuments({
           ...filter,
-          editDate: {
+          firstRegister: {
+            $exists: true,
             $gte: monthStart,
             $lt: monthEnd
           }

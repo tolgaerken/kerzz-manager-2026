@@ -67,6 +67,9 @@ export class ContractCashRegister {
 
   @Prop()
   editUser: string;
+
+  @Prop({ type: Date, index: true })
+  firstRegister: Date;
 }
 
 export const ContractCashRegisterSchema = SchemaFactory.createForClass(ContractCashRegister);
@@ -75,6 +78,7 @@ export const ContractCashRegisterSchema = SchemaFactory.createForClass(ContractC
 ContractCashRegisterSchema.index({ contractId: 1 });
 ContractCashRegisterSchema.index({ enabled: 1, expired: 1 }); // Aktif kayıt sorguları için
 ContractCashRegisterSchema.index({ editDate: -1 }); // Zaman bazlı sıralama için
+ContractCashRegisterSchema.index({ firstRegister: -1 }); // firstRegister bazlı zaman sorguları için
 ContractCashRegisterSchema.index({ type: 1 }); // Tür filtreleme için
 ContractCashRegisterSchema.index({ model: 1 }); // Model dağılımı için
 ContractCashRegisterSchema.index({ currency: 1 }); // Currency bazlı sorgular için
