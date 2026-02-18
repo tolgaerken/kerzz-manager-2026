@@ -16,8 +16,17 @@ export class ErpBalanceCron {
     private readonly systemLogsService: SystemLogsService
   ) {}
 
-  @Cron(CronExpression.EVERY_HOUR)
-  async handleErpBalanceSync(): Promise<void> {
+  @Cron('0 */10 8-19 * * *')
+  async handleErpBalanceSyncBusinessHours(): Promise<void> {
+    await this.syncErpBalance();
+  }
+
+  @Cron('0 */30 20-23,0-7 * * *')
+  async handleErpBalanceSyncOffHours(): Promise<void> {
+    await this.syncErpBalance();
+  }
+
+  private async syncErpBalance(): Promise<void> {
     this.logger.log("ERP bakiye senkronizasyonu başlatılıyor...");
 
     try {
