@@ -18,6 +18,7 @@ import {
 import { NotificationDispatchService } from "../../notification-dispatch";
 import type { AuthenticatedUser } from "../../auth/auth.types";
 import type { Sale } from "../schemas/sale.schema";
+import { resolveApprovalWebUrl } from "./approval-link-url.util";
 
 interface RecipientUser {
   id: string;
@@ -74,7 +75,17 @@ export class SaleApprovalNotificationService {
     private readonly notificationDispatch: NotificationDispatchService
   ) {
     this.appId = this.configService.get<string>("APP_ID") || "kerzz-manager";
-    this.webUrl = this.configService.get<string>("WEB_URL") || "https://io.kerzz.com";
+    const configuredWebUrl = this.configService.get<string>("WEB_URL");
+    const nodeEnv = this.configService.get<string>("NODE_ENV");
+    const resolvedUrl = resolveApprovalWebUrl(configuredWebUrl, nodeEnv);
+
+    this.webUrl = resolvedUrl.webUrl;
+
+    if (resolvedUrl.isFallback && configuredWebUrl) {
+      this.logger.warn(
+        `WEB_URL değeri geçersiz veya üretimde local/private olduğu için fallback kullanıldı: ${this.webUrl}`
+      );
+    }
   }
 
   /**

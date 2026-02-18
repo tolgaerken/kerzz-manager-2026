@@ -42,6 +42,7 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
     onColumnOrderChange,
     onColumnVisibilityChange,
   } = props;
+  const safeData = Array.isArray(data) ? data : [];
 
   const theme = useGridTheme();
   const effectiveRowHeight = rowHeightProp ?? theme.spacing.rowHeight;
@@ -55,7 +56,7 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
 
   // Global search (first step - searches all columns)
   const globalSearch = useGlobalSearch({
-    data,
+    data: safeData,
     columns: columns as GridColumnDef<TData>[],
   });
 
@@ -176,10 +177,10 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
 
   // Auto-detect numeric columns and resolve alignment
   const resolvedColumns = useMemo(() => {
-    if (data.length === 0) return orderedColumns;
+    if (safeData.length === 0) return orderedColumns;
 
     // Find first non-null value for each column to detect type
-    const sampleRow = data[0];
+    const sampleRow = safeData[0];
 
     return orderedColumns.map((col) => {
       // Skip columns with explicit align
@@ -195,7 +196,7 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
 
       return col;
     });
-  }, [orderedColumns, data]);
+  }, [orderedColumns, safeData]);
 
   // Partition columns into left-pinned, center, right-pinned and compute sticky offsets
   const columnsWithStickyMeta = useMemo((): ColumnWithStickyMeta<TData>[] => {
@@ -380,10 +381,10 @@ export function useGridInstance<TData>(props: GridProps<TData>, extraRowCount = 
 
   return {
     // Data
-    originalData: data,
+    originalData: safeData,
     filteredData,
     orderedColumns: columnsWithStickyMeta,
-    totalRowCount: data.length,
+    totalRowCount: safeData.length,
     filteredRowCount: filteredData.length,
 
     // Theme

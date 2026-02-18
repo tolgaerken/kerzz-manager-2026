@@ -1,5 +1,5 @@
 import { Grid } from "@kerzz/grid";
-import { notificationHistoryColumnDefs } from "./columnDefs.tsx";
+import { notificationHistoryColumnDefs } from "./columnDefs";
 import type { NotificationLog } from "../../types";
 
 interface NotificationHistoryGridProps {

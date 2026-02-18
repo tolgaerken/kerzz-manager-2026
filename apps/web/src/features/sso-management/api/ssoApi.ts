@@ -145,21 +145,42 @@ export interface UsersListParams {
   all?: boolean;
 }
 
+type ApiArrayResponse<T> = T[] | { data?: T[] };
+
+function normalizeArrayResponse<T>(response: ApiArrayResponse<T>): T[] {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (response && Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  return [];
+}
+
 export const usersApi = {
   list: (params?: UsersListParams) => {
     const queryParams = new URLSearchParams();
     if (params?.appId) queryParams.set("appId", params.appId);
     if (params?.all) queryParams.set("all", "true");
     const queryString = queryParams.toString();
-    return apiGet<TUser[]>(`${API_BASE_URL}/sso/users${queryString ? `?${queryString}` : ""}`);
+    return apiGet<ApiArrayResponse<TUser>>(`${API_BASE_URL}/sso/users${queryString ? `?${queryString}` : ""}`).then(
+      normalizeArrayResponse
+    );
   },
 
   search: (query: string, limit = 20) =>
-    apiGet<TUser[]>(`${API_BASE_URL}/sso/users/search?q=${encodeURIComponent(query)}&limit=${limit}`),
+    apiGet<ApiArrayResponse<TUser>>(
+      `${API_BASE_URL}/sso/users/search?q=${encodeURIComponent(query)}&limit=${limit}`
+    ).then(normalizeArrayResponse),
 
   getById: (id: string) => apiGet<TUser>(`${API_BASE_URL}/sso/users/${encodeURIComponent(id)}`),
 
-  getRoles: (userId: string) => apiGet<string[]>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}/roles`),
+  getRoles: (userId: string) =>
+    apiGet<ApiArrayResponse<string>>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}/roles`).then(
+      normalizeArrayResponse
+    ),
 
   updateRoles: (userId: string, roles: string[]) =>
     apiPut<void>(`${API_BASE_URL}/sso/users/${encodeURIComponent(userId)}/roles`, { roles }),

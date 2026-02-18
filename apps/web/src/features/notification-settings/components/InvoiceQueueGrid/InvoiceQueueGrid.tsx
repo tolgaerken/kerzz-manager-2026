@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useState } from "react";
 import { Grid, type GridColumnDef } from "@kerzz/grid";
 import { Eye, MessageSquare, Contact } from "lucide-react";
-import { invoiceQueueColumnDefs } from "./columnDefs.tsx";
+import { invoiceQueueColumnDefs } from "./columnDefs";
 import { ContactInfoModal } from "../ContactInfoModal";
 import type { QueueInvoiceItem, QueueCustomer } from "../../types";
 

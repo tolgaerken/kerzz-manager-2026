@@ -56,6 +56,11 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   PAYMENT_BASE_URL?: string;
+
+  // Web uygulamasi URL'i - satis onay linkleri icin
+  @IsOptional()
+  @IsString()
+  WEB_URL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
