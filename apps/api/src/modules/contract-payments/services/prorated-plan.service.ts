@@ -72,6 +72,23 @@ export class ProratedPlanService {
     description: string,
     options?: ProratedPlanOptions,
   ): Promise<ContractPayment | null> {
+    const contract = await this.contractModel
+      .findOne({ id: contractId })
+      .lean()
+      .exec();
+
+    if (!contract) {
+      throw new NotFoundException(`Kontrat bulunamadi: ${contractId}`);
+    }
+
+    // Is kurali: yillik kontratlarda kist plan hic olusturulmaz
+    if (contract.yearly) {
+      this.logger.log(
+        `Kist plan atlaniyor: ${contractId} - yillik kontrat`,
+      );
+      return null;
+    }
+
     // Ay faturasi henuz kesilmemisse kist plan olusturma
     const alreadyInvoiced = await this.isMonthAlreadyInvoiced(
       contractId,
@@ -82,15 +99,6 @@ export class ProratedPlanService {
         `Kist plan atlaniyor: ${contractId} - ay henuz faturalanmamis, regular plan kist hesaplanacak`,
       );
       return null;
-    }
-
-    const contract = await this.contractModel
-      .findOne({ id: contractId })
-      .lean()
-      .exec();
-
-    if (!contract) {
-      throw new NotFoundException(`Kontrat bulunamadi: ${contractId}`);
     }
 
     const customer = await findCustomerByAnyId(this.customerModel, contract.customerId);
