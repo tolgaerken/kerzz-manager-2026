@@ -54,6 +54,8 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     deleteMutation.isPending ||
     activateMutation.isPending;
 
+  const cashRegisters = data?.data || [];
+
   // Lisansları grid için hazırla
   const licenses = useMemo(() => {
     return licensesData?.data
@@ -130,13 +132,20 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     [licenses]
   );
 
+  const handleSelectionChange = useCallback(
+    (selectedIds: string[]) => {
+      const rows = cashRegisters.filter((r) => selectedIds.includes(r.id || r._id));
+      setSelectedRows(rows);
+    },
+    [cashRegisters]
+  );
+
   const handleDelete = useCallback(() => {
     for (const row of selectedRows) {
       if (row?.id) {
         deleteMutation.mutate(row.id);
       }
     }
-    setSelectedRows([]);
   }, [selectedRows, deleteMutation]);
 
   const handleToggleActivation = useCallback(() => {
@@ -183,17 +192,6 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
       }
     },
     [updateMutation, licenses]
-  );
-
-  const handleRowClick = useCallback(
-    (row: ContractCashRegister) => {
-      setSelectedRows((prev) =>
-        prev.some((r) => r.id === row.id)
-          ? prev.filter((r) => r.id !== row.id)
-          : [...prev, row]
-      );
-    },
-    []
   );
 
   const toolbarConfig = useMemo<ToolbarConfig<ContractCashRegister>>(() => {
@@ -247,8 +245,6 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
         : "İşlem sırasında bir hata oluştu"}
     </div>
   ) : null;
-
-  const cashRegisters = data?.data || [];
 
   // Mobile card renderer
   const renderCashRegisterCard = useCallback((cr: ContractCashRegister) => (
@@ -340,7 +336,7 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
           loading={isLoading}
           getRowId={(row) => row.id || row._id}
           onCellValueChange={handleCellValueChange}
-          onRowClick={handleRowClick}
+          onSelectionChange={handleSelectionChange}
           createEmptyRow={createEmptyRow}
           onNewRowSave={handleNewRowSave}
           onPendingCellChange={handlePendingCellChange}

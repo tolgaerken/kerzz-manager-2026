@@ -48,6 +48,8 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     deleteMutation.isPending ||
     activateMutation.isPending;
 
+  const saasList = data?.data || [];
+
   // Lisansları grid için hazırla
   const licenses = useMemo(() => {
     return licensesData?.data
@@ -88,13 +90,20 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
     [updateMutation]
   );
 
+  const handleSelectionChange = useCallback(
+    (selectedIds: string[]) => {
+      const rows = saasList.filter((r) => selectedIds.includes(r.id || r._id));
+      setSelectedRows(rows);
+    },
+    [saasList]
+  );
+
   const handleDelete = useCallback(() => {
     for (const row of selectedRows) {
       if (row?.id) {
         deleteMutation.mutate(row.id);
       }
     }
-    setSelectedRows([]);
   }, [selectedRows, deleteMutation]);
 
   const handleToggleActivation = useCallback(() => {
@@ -117,17 +126,6 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
       }
     }
   }, [selectedRows, activateMutation, updateMutation]);
-
-  const handleRowClick = useCallback(
-    (row: ContractSaas) => {
-      setSelectedRows((prev) =>
-        prev.some((r) => r.id === row.id)
-          ? prev.filter((r) => r.id !== row.id)
-          : [...prev, row]
-      );
-    },
-    []
-  );
 
   // Grid context
   const gridContext = useMemo(
@@ -260,8 +258,6 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
   const mutationError =
     updateMutation.error || createMutation.error || deleteMutation.error || activateMutation.error;
 
-  const saasList = data?.data || [];
-
   // Mobile card renderer
   const renderSaasCard = useCallback((saas: ContractSaas) => {
     const product = products.find(p => p.id === saas.productId);
@@ -369,7 +365,7 @@ export function ContractSaasTab({ contractId }: ContractSaasTabProps) {
           loading={isLoading}
           getRowId={(row) => row.id || row._id}
           onCellValueChange={handleCellValueChange}
-          onRowClick={handleRowClick}
+          onSelectionChange={handleSelectionChange}
           createEmptyRow={createEmptyRow}
           onNewRowSave={handleNewRowSave}
           onPendingCellChange={handlePendingCellChange}
