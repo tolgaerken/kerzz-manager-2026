@@ -27,6 +27,9 @@ export function EntityLogTab({
 }: EntityLogTabProps) {
   const userInfo = useAuthStore((state) => state.userInfo);
 
+  const isCollectionTab = contextType === "collection";
+  const shouldFetch = !isPlaceholder && (isCollectionTab ? !!customerId : !!contextId);
+
   const {
     data: logsData,
     isLoading,
@@ -36,11 +39,10 @@ export function EntityLogTab({
     {
       customerId,
       contextType,
-      contextId,
+      contextId: isCollectionTab ? undefined : contextId,
       limit: 100,
     },
-    // placeholder değilse ve contextId varsa sorgu yap
-    !isPlaceholder && !!contextId
+    shouldFetch
   );
 
   const createLogMutation = useCreateManagerLog();

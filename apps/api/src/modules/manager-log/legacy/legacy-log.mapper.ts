@@ -24,6 +24,7 @@ function toLegacyEntity(log: LegacyLogDocument): LegacyLogEntity {
 function normalizeContextType(logType?: string): string {
   if (!logType) return "customer";
   if (logType === "licence") return "license";
+  if (logType === "payment") return "collection";
   return logType;
 }
 

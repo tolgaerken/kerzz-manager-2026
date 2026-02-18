@@ -71,6 +71,7 @@ export class LegacyLogRepository {
       customer: "customer",
       invoice: "invoice",
       "payment-plan": "payment",
+      collection: "payment",
     };
 
     return mapping[contextType] ?? null;

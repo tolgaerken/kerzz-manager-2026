@@ -24,7 +24,7 @@ const TAB_CONFIGS: EntityTabConfig[] = [
   { type: "invoice", label: "Fatura", icon: "Receipt", enabled: true },
   { type: "payment-plan", label: "Ödeme Planı", icon: "Calendar", enabled: true },
   { type: "e-transform", label: "E-Dönüşüm", icon: "RefreshCw", enabled: true },
-  { type: "collection", label: "Tahsilat", icon: "CreditCard", enabled: false },
+  { type: "collection", label: "Tahsilat", icon: "CreditCard", enabled: true },
   { type: "technical", label: "Teknik", icon: "Wrench", enabled: false },
 ];
 
