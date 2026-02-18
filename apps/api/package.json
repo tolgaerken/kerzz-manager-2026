@@ -41,6 +41,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.6",
     "@types/node": "latest",
     "@types/nodemailer": "^7.0.9",
@@ -48,6 +49,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
+    "dotenv": "^17.3.1",
     "eslint": "latest",
     "ts-node-dev": "latest",
     "typescript": "latest"
