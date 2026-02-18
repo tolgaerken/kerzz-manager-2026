@@ -14,7 +14,7 @@ import { LogPanelContextBanner } from "./LogPanelContextBanner";
 import { EntityLogTab } from "./EntityLogTab";
 import { useLogPanelStore } from "../../store/logPanelStore";
 import { useCustomer } from "../../../customers/hooks/useCustomers";
-import { useManagerLog } from "../../hooks";
+import { useManagerLog, useEntityLogCounts } from "../../hooks";
 import type { EntityTabType, EntityTabConfig } from "../../types";
 
 /** Tab konfigürasyonları */
@@ -134,6 +134,9 @@ export function EntityLogPanel() {
     }
   }, [entityContext?.activeTab]);
 
+  // Tab başına log count'larını getir
+  const { counts: logCounts } = useEntityLogCounts(entityContext);
+
   if (!isOpen || !isEntityMode || !entityContext) return null;
 
   const panelTitle = entityContext.title || "Loglar";
@@ -187,6 +190,17 @@ export function EntityLogPanel() {
                 {tab.label}
                 {!tab.enabled && (
                   <span className="ml-1 text-[10px] opacity-70">•</span>
+                )}
+                {tab.enabled && logCounts[tab.type] > 0 && (
+                  <span
+                    className={`ml-1 min-w-[1.25rem] px-1 py-0.5 text-[10px] font-medium rounded-full text-center ${
+                      isActive
+                        ? "bg-[var(--color-primary-foreground)]/20"
+                        : "bg-[var(--color-muted-foreground)]/20"
+                    }`}
+                  >
+                    {logCounts[tab.type]}
+                  </span>
                 )}
               </button>
             );

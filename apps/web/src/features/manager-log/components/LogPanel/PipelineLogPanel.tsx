@@ -324,6 +324,17 @@ export function PipelineLogPanel() {
               >
                 <Users className="w-3 h-3" />
                 Lead
+                {(pipelineData?.lead.length ?? 0) > 0 && (
+                  <span
+                    className={`ml-1 min-w-[1.25rem] px-1 py-0.5 text-[10px] font-medium rounded-full text-center ${
+                      activeContext.type === "lead"
+                        ? "bg-[var(--color-info)]/30"
+                        : "bg-[var(--color-muted-foreground)]/20"
+                    }`}
+                  >
+                    {pipelineData?.lead.length}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => handleContextChange("offer")}
@@ -335,6 +346,17 @@ export function PipelineLogPanel() {
               >
                 <FileText className="w-3 h-3" />
                 Teklif
+                {(pipelineData?.offer.length ?? 0) > 0 && (
+                  <span
+                    className={`ml-1 min-w-[1.25rem] px-1 py-0.5 text-[10px] font-medium rounded-full text-center ${
+                      activeContext.type === "offer"
+                        ? "bg-[var(--color-warning)]/30"
+                        : "bg-[var(--color-muted-foreground)]/20"
+                    }`}
+                  >
+                    {pipelineData?.offer.length}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => handleContextChange("sale")}
@@ -346,6 +368,17 @@ export function PipelineLogPanel() {
               >
                 <ShoppingCart className="w-3 h-3" />
                 Satış
+                {(pipelineData?.sale.length ?? 0) > 0 && (
+                  <span
+                    className={`ml-1 min-w-[1.25rem] px-1 py-0.5 text-[10px] font-medium rounded-full text-center ${
+                      activeContext.type === "sale"
+                        ? "bg-[var(--color-success)]/30"
+                        : "bg-[var(--color-muted-foreground)]/20"
+                    }`}
+                  >
+                    {pipelineData?.sale.length}
+                  </span>
+                )}
               </button>
             </div>
           </div>
