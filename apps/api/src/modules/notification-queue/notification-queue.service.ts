@@ -74,7 +74,7 @@ export class NotificationQueueService {
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
-      "http://localhost:3889";
+      "https://payment.kerzz.com:3889";
   }
 
   /**
