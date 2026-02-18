@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { Grid, type GridColumnDef, type ToolbarConfig } from "@kerzz/grid";
+import { Grid, type GridColumnDef, type ToolbarConfig, type ToolbarButtonConfig } from "@kerzz/grid";
 import { LinkIcon, CheckCircle, Send } from "lucide-react";
 import type { BankTransaction, BankAccount, ErpStatus } from "../../types";
 
@@ -9,6 +9,8 @@ interface BankTransactionsGridProps {
   bankAccounts: BankAccount[];
   onStatusChange: (id: string, status: ErpStatus) => void;
   onUnlink: (id: string) => void;
+  customButtons?: ToolbarButtonConfig[];
+  onSelectionChange?: (ids: string[]) => void;
 }
 
 function formatCurrency(value: number): string {
@@ -67,6 +69,8 @@ export function BankTransactionsGrid({
   bankAccounts,
   onStatusChange,
   onUnlink,
+  customButtons,
+  onSelectionChange,
 }: BankTransactionsGridProps) {
   const getBankName = useCallback(
     (bankAccId: string): string => {
@@ -229,8 +233,9 @@ export function BankTransactionsGrid({
   const toolbarConfig: ToolbarConfig<BankTransaction> = useMemo(
     () => ({
       exportFileName: "banka-islemleri",
+      customButtons: customButtons ?? [],
     }),
-    [],
+    [customButtons],
   );
 
   return (
@@ -244,6 +249,8 @@ export function BankTransactionsGrid({
         stateKey="bank-transactions-grid"
         getRowId={(row) => row.id}
         toolbar={toolbarConfig}
+        selectionMode="multiple"
+        onSelectionChange={onSelectionChange}
       />
     </div>
   );

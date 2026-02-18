@@ -122,6 +122,9 @@ export class Contract {
   @Prop({ default: 0 })
   notify: number;
 
+  @Prop()
+  lastNotify: Date;
+
   @Prop({ default: false })
   onlineCheck: boolean;
 

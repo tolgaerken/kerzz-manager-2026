@@ -33,20 +33,7 @@ export function LogInput({ onSend, isLoading }: LogInputProps) {
   // Sadece bu app'e atanmış kullanıcıları getir
   const { data: appUsersData } = useAppUsers();
   const currentUser = useAuthStore((state) => state.userInfo);
-  const appUsers = useMemo(() => {
-    if (Array.isArray(appUsersData)) {
-      return appUsersData;
-    }
-
-    if (appUsersData && typeof appUsersData === "object" && "data" in appUsersData) {
-      const nestedData = appUsersData.data;
-      if (Array.isArray(nestedData)) {
-        return nestedData;
-      }
-    }
-
-    return [];
-  }, [appUsersData]);
+  const appUsers = useMemo(() => appUsersData ?? [], [appUsersData]);
 
   // Mention için sadece app kullanıcılarını filtrele
   const filteredUsers = useMemo<MentionUser[]>(() => {

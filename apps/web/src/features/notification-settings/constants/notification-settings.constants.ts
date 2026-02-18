@@ -9,5 +9,6 @@ export const NOTIFICATION_SETTINGS_CONSTANTS = {
     QUEUE_STATS: "/notification-queue/stats",
     QUEUE_SEND: "/notification-queue/send",
     QUEUE_PREVIEW: "/notification-queue/preview",
+    CRON_DRY_RUN: "/cron-jobs",
   },
 } as const;

@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Trash2, X, AlertTriangle, CheckCircle, Repeat } from "lucide-react";
+import { RefreshCw, Trash2, X, AlertTriangle, CheckCircle, Repeat, Receipt } from "lucide-react";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   AutoPaymentTokensGrid,
@@ -19,6 +19,7 @@ import type {
   AutoPaymentQueryParams,
   PaymentPlanItem,
 } from "../features/automated-payments";
+import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 export function AutomatedPaymentsPage() {
   // ── Query State ──
@@ -74,6 +75,9 @@ export function AutomatedPaymentsPage() {
       });
     }
   });
+
+  // ── Account transactions store ──
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // ── Mutations ──
   const collectMutation = useCollectPayment();
@@ -236,6 +240,12 @@ export function AutomatedPaymentsPage() {
     [selectedCustomer, collectMutation]
   );
 
+  // Cari hareketleri modalını aç
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedCustomer?.erpId) return;
+    openAccountTransactionsModal(selectedCustomer.erpId, selectedCustomer.companyId || "VERI");
+  }, [selectedCustomer, openAccountTransactionsModal]);
+
   // Token sil
   const handleDeleteSelected = useCallback(() => {
     if (selectedTokens.length === 0) return;
@@ -249,6 +259,20 @@ export function AutomatedPaymentsPage() {
 
   // ERP cari bakiyesi (gercek bakiye)
   const customerBalance = selectedCustomer?.balance ?? 0;
+
+  // Grid toolbar custom buttons
+  const toolbarCustomButtons = useMemo(
+    () => [
+      {
+        id: "account-transactions",
+        label: "Cari Hareketleri",
+        icon: <Receipt className="w-4 h-4" />,
+        onClick: handleOpenAccountTransactions,
+        disabled: !selectedCustomer?.erpId || selectedTokens.length > 1,
+      },
+    ],
+    [selectedCustomer, selectedTokens.length, handleOpenAccountTransactions],
+  );
 
   // CollapsibleSection hook
   const collapsible = CollapsibleSection({
@@ -398,6 +422,7 @@ export function AutomatedPaymentsPage() {
               data={data?.data ?? []}
               loading={isLoading}
               onSelectionChanged={handleTokenSelectionChanged}
+              customButtons={toolbarCustomButtons}
             />
           </div>
         </div>
@@ -427,6 +452,7 @@ export function AutomatedPaymentsPage() {
           </div>
         </div>
       </div>
+      <AccountTransactionsModal />
     </div>
   );
 }

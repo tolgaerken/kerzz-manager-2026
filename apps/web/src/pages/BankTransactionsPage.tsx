@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, List } from "lucide-react";
+import { LayoutDashboard, List, Receipt } from "lucide-react";
 import {
   BankSummaryCards,
   BankTransactionFilters,
@@ -13,9 +13,11 @@ import {
 } from "../features/bank-transactions";
 import type {
   BankTransactionQueryParams,
+  BankTransaction,
   DateRange,
   ErpStatus,
 } from "../features/bank-transactions";
+import { AccountTransactionsModal, useAccountTransactionsStore } from "../features/account-transactions";
 
 const { EXCLUDED_BANK_ACC_IDS, QUERY_KEYS } = BANK_TRANSACTIONS_CONSTANTS;
 
@@ -32,6 +34,10 @@ function toISODateString(date: Date): string {
 
 export function BankTransactionsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+
+  // Seçim state'i
+  const [selectedCount, setSelectedCount] = useState(0);
+  const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
 
   // Tarih araligi state'i (varsayilan: bugun)
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -75,6 +81,9 @@ export function BankTransactionsPage() {
 
   const updateMutation = useUpdateBankTransaction();
 
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
+
   // Gizlenmesi gereken banka hesaplarini filtrele
   const filteredTransactions = useMemo(() => {
     if (!transactionsData?.data) return [];
@@ -110,6 +119,44 @@ export function BankTransactionsPage() {
       });
     },
     [updateMutation],
+  );
+
+  // Seçim değişikliği
+  const handleSelectionChange = useCallback(
+    (ids: string[]) => {
+      setSelectedCount(ids.length);
+      if (ids.length === 1) {
+        const transaction = filteredTransactions.find((t) => t.id === ids[0]);
+        setSelectedTransaction(transaction ?? null);
+      } else {
+        setSelectedTransaction(null);
+      }
+    },
+    [filteredTransactions],
+  );
+
+  // Cari hareketleri modalını aç
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedTransaction?.erpAccountCode) return;
+    const bankAccount = bankAccounts.find(
+      (b) => b.bankAccId === selectedTransaction.bankAccId,
+    );
+    const company = bankAccount?.erpCompanyId || "VERI";
+    openAccountTransactionsModal(selectedTransaction.erpAccountCode, company);
+  }, [selectedTransaction, bankAccounts, openAccountTransactionsModal]);
+
+  // Grid toolbar custom buttons
+  const toolbarCustomButtons = useMemo(
+    () => [
+      {
+        id: "account-transactions",
+        label: "Cari Hareketleri",
+        icon: <Receipt className="w-4 h-4" />,
+        onClick: handleOpenAccountTransactions,
+        disabled: !selectedTransaction?.erpAccountCode || selectedCount > 1,
+      },
+    ],
+    [selectedTransaction, selectedCount, handleOpenAccountTransactions],
   );
 
   return (
@@ -170,8 +217,12 @@ export function BankTransactionsPage() {
           bankAccounts={bankAccounts}
           onStatusChange={handleStatusChange}
           onUnlink={handleUnlink}
+          customButtons={toolbarCustomButtons}
+          onSelectionChange={handleSelectionChange}
         />
       )}
+
+      <AccountTransactionsModal />
     </div>
   );
 }

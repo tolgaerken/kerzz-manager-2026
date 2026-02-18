@@ -14,6 +14,10 @@ import {
   Customer,
   CustomerDocument,
 } from "../customers/schemas/customer.schema";
+import {
+  ContractUser,
+  ContractUserDocument,
+} from "../contract-users/schemas/contract-user.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { NotificationSettingsService } from "../notification-settings";
 import {
@@ -26,6 +30,8 @@ import {
   buildInvoiceTemplateData,
   buildContractTemplateData,
   formatDate,
+  normalizePhone,
+  normalizeEmail,
 } from "./notification-data.helper";
 import {
   calculateRemainingDays,
@@ -38,6 +44,7 @@ import {
   QueueInvoiceItemDto,
   QueueContractItemDto,
   QueueCustomerDto,
+  QueueContactDto,
   PaginatedQueueInvoicesResponseDto,
   PaginatedQueueContractsResponseDto,
   QueueStatsResponseDto,
@@ -57,6 +64,8 @@ export class NotificationQueueService {
     private contractModel: Model<ContractDocument>,
     @InjectModel(Customer.name, CONTRACT_DB_CONNECTION)
     private customerModel: Model<CustomerDocument>,
+    @InjectModel(ContractUser.name, CONTRACT_DB_CONNECTION)
+    private contractUserModel: Model<ContractUserDocument>,
     private settingsService: NotificationSettingsService,
     private dispatchService: NotificationDispatchService,
     private templatesService: NotificationTemplatesService,
@@ -176,10 +185,10 @@ export class NotificationQueueService {
     ]);
 
     const customerIds = [...new Set(invoices.map((i) => i.customerId).filter(Boolean))] as string[];
-    const customers = await this.customerModel
-      .find({ id: { $in: customerIds } })
-      .lean()
-      .exec();
+    const [customers, contractUsersMap] = await Promise.all([
+      this.customerModel.find({ id: { $in: customerIds } }).lean().exec(),
+      this.getContractUsersForCustomer(customerIds),
+    ]);
     const customerMap = new Map(customers.map((c) => [c.id, c]));
 
     const data: QueueInvoiceItemDto[] = invoices.map((inv) => {
@@ -188,6 +197,8 @@ export class NotificationQueueService {
       const overdueDays = due && due < today ? Math.floor((today.getTime() - due.getTime()) / (24 * 60 * 60 * 1000)) : 0;
       const status: "due" | "overdue" = overdueDays > 0 ? "overdue" : "due";
       const customer = inv.customerId ? customerMap.get(inv.customerId) : null;
+      const contractUsers = inv.customerId ? (contractUsersMap.get(inv.customerId) ?? []) : [];
+      const contacts = this.buildContactList(customer ?? null, contractUsers);
       return {
         _id: (inv as { _id: { toString: () => string } })._id.toString(),
         id: inv.id,
@@ -198,7 +209,7 @@ export class NotificationQueueService {
         status,
         lastNotify: inv.lastNotify ? formatDate(inv.lastNotify) : null,
         notifyCount: Array.isArray(inv.notify) ? inv.notify.length : 0,
-        customer: this.mapCustomer(customer ?? null),
+        customer: this.mapCustomer(customer ?? null, contacts),
       };
     });
 
@@ -272,16 +283,30 @@ export class NotificationQueueService {
     ]);
 
     const customerIds = [...new Set(contracts.map((c) => c.customerId).filter(Boolean))] as string[];
-    const customers = await this.customerModel
-      .find({ id: { $in: customerIds } })
-      .lean()
-      .exec();
+    // ContractUser.contractId = Contract.id (UUID) — NOT Contract.contractId (iş kodu)
+    const contractInternalIds = contracts.map((c) => c.id).filter((id): id is string => !!id);
+
+    const [customers, allContractUsers] = await Promise.all([
+      this.customerModel.find({ id: { $in: customerIds } }).lean().exec(),
+      contractInternalIds.length > 0
+        ? this.contractUserModel.find({ contractId: { $in: contractInternalIds } }).lean().exec()
+        : Promise.resolve([]),
+    ]);
     const customerMap = new Map(customers.map((c) => [c.id, c]));
+
+    // contract.id (UUID) → kullanıcılar haritası
+    const contractUsersMap = new Map<string, { name?: string; email?: string; gsm?: string; role?: string }[]>();
+    for (const cu of allContractUsers) {
+      if (!contractUsersMap.has(cu.contractId)) contractUsersMap.set(cu.contractId, []);
+      contractUsersMap.get(cu.contractId)!.push({ name: cu.name, email: cu.email, gsm: cu.gsm, role: cu.role });
+    }
 
     const data: QueueContractItemDto[] = contracts.map((cont) => {
       const endDate = cont.endDate ? new Date(cont.endDate) : null;
       const remainingDays = calculateRemainingDays(endDate, today);
       const customer = cont.customerId ? customerMap.get(cont.customerId) : null;
+      const contractUsers = cont.id ? (contractUsersMap.get(cont.id) ?? []) : [];
+      const contacts = this.buildContactList(customer ?? null, contractUsers);
       return {
         _id: (cont as { _id: { toString: () => string } })._id.toString(),
         id: cont.id,
@@ -290,7 +315,7 @@ export class NotificationQueueService {
         brand: cont.brand || "",
         endDate: cont.endDate ? formatDate(cont.endDate) : "",
         remainingDays,
-        customer: this.mapCustomer(customer ?? null),
+        customer: this.mapCustomer(customer ?? null, contacts),
       };
     });
 
@@ -673,16 +698,133 @@ export class NotificationQueueService {
     };
   }
 
-  private mapCustomer(customer: { id: string; name?: string; companyName?: string; email?: string; phone?: string } | null): QueueCustomerDto {
+  /**
+   * Müşteri iletişim bilgilerini kontrat kullanıcılarıyla birleştirir, mükerrerleri temizler.
+   * Karşılaştırma normalize edilmiş email ve telefon üzerinden yapılır.
+   */
+  private buildContactList(
+    customer: { name?: string; companyName?: string; email?: string; phone?: string } | null,
+    contractUsers: { name?: string; email?: string; gsm?: string; role?: string }[]
+  ): QueueContactDto[] {
+    const contacts: QueueContactDto[] = [];
+    // Mükerrer: hem email hem telefon aynı olan gerçek kopyaları temizle.
+    // Sadece email veya sadece telefon eşleşmesi yeterli değil — farklı kişiler
+    // aynı şirket telefonunu paylaşabilir.
+    const seenKeys = new Set<string>();
+
+    const addContact = (
+      name: string,
+      email: string,
+      phone: string,
+      role: string
+    ) => {
+      const normEmail = normalizeEmail(email);
+      const normPhone = normalizePhone(phone);
+
+      if (!normEmail && !normPhone) return;
+
+      const key = `${normEmail}|${normPhone}`;
+      if (seenKeys.has(key)) return;
+      seenKeys.add(key);
+
+      contacts.push({ name, email: normEmail, phone: normPhone, role });
+    };
+
+    if (customer) {
+      addContact(
+        customer.name ?? "",
+        customer.email ?? "",
+        customer.phone ?? "",
+        "primary"
+      );
+    }
+
+    for (const cu of contractUsers) {
+      addContact(
+        cu.name ?? "",
+        cu.email ?? "",
+        cu.gsm ?? "",
+        cu.role ?? ""
+      );
+    }
+
+    return contacts;
+  }
+
+  /**
+   * Bir müşterinin tüm kontratlarına ait kontrat kullanıcılarını getirir.
+   * customerId → Contract.contractId → ContractUser.contractId zinciri
+   */
+  private async getContractUsersForCustomer(
+    customerIds: string[]
+  ): Promise<Map<string, { name?: string; email?: string; gsm?: string; role?: string }[]>> {
+    if (customerIds.length === 0) return new Map();
+
+    // ContractUser.contractId = Contract.id (UUID) — NOT Contract.contractId (iş kodu)
+    const contracts = await this.contractModel
+      .find({ customerId: { $in: customerIds } }, { customerId: 1, id: 1 })
+      .lean()
+      .exec();
+
+    const contractInternalIds = contracts
+      .map((c) => c.id)
+      .filter((id): id is string => !!id);
+
+    const contractUsers = contractInternalIds.length > 0
+      ? await this.contractUserModel
+          .find({ contractId: { $in: contractInternalIds } })
+          .lean()
+          .exec()
+      : [];
+
+    // contract.id → customerId haritası
+    const contractToCustomer = new Map<string, string>();
+    for (const c of contracts) {
+      if (c.id && c.customerId) {
+        contractToCustomer.set(c.id, c.customerId);
+      }
+    }
+
+    // customerId → contractUsers haritası
+    const result = new Map<string, { name?: string; email?: string; gsm?: string; role?: string }[]>();
+    for (const cu of contractUsers) {
+      const cid = contractToCustomer.get(cu.contractId);
+      if (!cid) continue;
+      if (!result.has(cid)) result.set(cid, []);
+      result.get(cid)!.push({ name: cu.name, email: cu.email, gsm: cu.gsm, role: cu.role });
+    }
+
+    return result;
+  }
+
+  /**
+   * Bir kontrattaki kontrat kullanıcılarını getirir.
+   * contract.contractId üzerinden sorgu yapılır.
+   */
+  private async getContractUsersForContract(
+    contractId: string
+  ): Promise<{ name?: string; email?: string; gsm?: string; role?: string }[]> {
+    if (!contractId) return [];
+    return this.contractUserModel
+      .find({ contractId })
+      .lean()
+      .exec();
+  }
+
+  private mapCustomer(
+    customer: { id: string; name?: string; companyName?: string; email?: string; phone?: string } | null,
+    contacts: QueueContactDto[] = []
+  ): QueueCustomerDto {
     if (!customer) {
-      return { id: "", name: "", companyName: "", email: "", phone: "" };
+      return { id: "", name: "", companyName: "", email: "", phone: "", contacts: [] };
     }
     return {
       id: customer.id,
       name: customer.name ?? "",
       companyName: customer.companyName ?? "",
-      email: customer.email ?? "",
-      phone: customer.phone ?? "",
+      email: normalizeEmail(customer.email),
+      phone: normalizePhone(customer.phone),
+      contacts,
     };
   }
 }

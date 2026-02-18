@@ -9,6 +9,15 @@ import { Platform, PermissionsAndroid } from "react-native";
 import { authStorage } from "../lib/secureStorage";
 import { apiClient } from "../lib/apiClient";
 
+function isFirebaseAvailable(): boolean {
+  try {
+    messaging();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface PushNotificationPayload {
   notificationId?: string;
   entityType?: "customer" | "contract" | "license" | "notification";
@@ -28,6 +37,7 @@ class PushNotificationService {
    * Request notification permissions
    */
   async requestPermission(): Promise<boolean> {
+    if (!isFirebaseAvailable()) return false;
     try {
       if (Platform.OS === "ios") {
         const authStatus = await messaging().requestPermission();
@@ -98,6 +108,7 @@ class PushNotificationService {
    * Set up notification listeners
    */
   setupListeners(onNotificationOpened: NotificationHandler): void {
+    if (!isFirebaseAvailable()) return;
     this.onNotificationOpenedHandler = onNotificationOpened;
 
     // Handle notification when app is in foreground

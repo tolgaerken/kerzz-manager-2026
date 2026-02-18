@@ -6,6 +6,7 @@ import { ContractNotificationCron } from "./contract-notification.cron";
 import { StalePipelineCron } from "./stale-pipeline.cron";
 import { ManagerLogReminderCron } from "./manager-log-reminder.cron";
 import { ProratedInvoiceCron } from "./prorated-invoice.cron";
+import { CronJobsController } from "./cron-jobs.controller";
 import { Invoice, InvoiceSchema } from "../invoices/schemas/invoice.schema";
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
@@ -50,6 +51,7 @@ import { ContractInvoicesModule } from "../contract-invoices/contract-invoices.m
     ContractPaymentsModule,
     ContractInvoicesModule,
   ],
+  controllers: [CronJobsController],
   providers: [
     InvoiceNotificationCron,
     ContractNotificationCron,

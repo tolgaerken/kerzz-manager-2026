@@ -20,11 +20,18 @@ import {
 import { PaymentsService } from "../payments/payments.service";
 import {
   buildInvoiceTemplateData,
+  formatDate,
+  formatCurrency,
 } from "../notification-queue/notification-data.helper";
 import {
   SystemLogsService,
   SystemLogAction,
 } from "../system-logs";
+import type {
+  InvoiceNotificationDryRunResponse,
+  InvoiceDryRunItem,
+  DryRunNotificationItem,
+} from "./dto/dry-run.dto";
 
 @Injectable()
 export class InvoiceNotificationCron {
@@ -102,6 +109,10 @@ export class InvoiceNotificationCron {
       if (!settings.emailEnabled && !settings.smsEnabled) {
         console.log("⚠️ Hiçbir bildirim kanalı aktif değil");
         return;
+      }
+
+      if (settings.dryRunMode) {
+        console.log("🧪 [DRY RUN] Fatura bildirim cron'u kuru çalışma modunda — gerçek gönderim yapılmayacak");
       }
 
       // Cron başlangıcını logla (ayar kontrolleri geçtikten sonra)
@@ -220,11 +231,7 @@ export class InvoiceNotificationCron {
     const nextDay = new Date(targetDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
-    // Vadesi tam N gün önce dolmuş, ödenmemiş faturalar
-    // Son N gün içinde bildirim gönderilmemiş olanlar
-    const checkDate = new Date(today);
-    checkDate.setDate(checkDate.getDate() - 1); // Dün
-
+    // Vadesi tam N gün önce dolmuş, ödenmemiş ve bugün henüz bildirim gönderilmemiş faturalar
     const invoices = await this.invoiceModel
       .find({
         dueDate: { $gte: targetDate, $lt: nextDay },
@@ -232,7 +239,7 @@ export class InvoiceNotificationCron {
         $or: [
           { lastNotify: { $exists: false } },
           { lastNotify: null },
-          { lastNotify: { $lt: checkDate } },
+          { lastNotify: { $lt: today } },
         ],
       })
       .lean()
@@ -287,6 +294,18 @@ export class InvoiceNotificationCron {
             `⚠️ Müşteri bulunamadı: ${invoice.customerId} (Fatura: ${invoice.invoiceNumber})`
           );
           failed++;
+          continue;
+        }
+
+        // DRY RUN MODU: Gerçek gönderim yapma, sadece logla
+        if (settings.dryRunMode) {
+          const channels: string[] = [];
+          if (settings.emailEnabled && customer.email) channels.push(`email(${customer.email})`);
+          if (settings.smsEnabled && customer.phone) channels.push(`sms(${customer.phone})`);
+          console.log(
+            `🧪 [DRY RUN] Fatura bildirimi atlanıyor — Fatura: ${invoice.invoiceNumber}, Müşteri: ${customer.name}, Kanallar: ${channels.join(", ") || "yok"}`
+          );
+          sent += channels.length;
           continue;
         }
 
@@ -381,5 +400,221 @@ export class InvoiceNotificationCron {
     }
 
     return { sent, failed };
+  }
+
+  /**
+   * Dry run: Gercek bildirim gondermeden ne olacagini raporlar.
+   * Odeme linki olusturma gibi yan etkiler atlanir.
+   */
+  async dryRun(): Promise<InvoiceNotificationDryRunResponse> {
+    const startTime = Date.now();
+    const settings = await this.settingsService.getSettings();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const items: InvoiceDryRunItem[] = [];
+    let emailCount = 0;
+    let smsCount = 0;
+    let totalDue = 0;
+    let totalOverdue = 0;
+
+    // 1. Son odeme tarihi bugun olan faturalar
+    if (settings.invoiceDueReminderDays.includes(0)) {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const invoices = await this.invoiceModel
+        .find({
+          dueDate: { $gte: today, $lt: tomorrow },
+          isPaid: false,
+          $or: [
+            { lastNotify: { $exists: false } },
+            { lastNotify: null },
+            { lastNotify: { $lt: today } },
+          ],
+        })
+        .lean()
+        .exec();
+
+      totalDue = invoices.length;
+
+      for (const invoice of invoices) {
+        const result = await this.buildDryRunItem(
+          invoice, "invoice-due", settings, "due"
+        );
+        items.push(result.item);
+        emailCount += result.emailCount;
+        smsCount += result.smsCount;
+      }
+    }
+
+    // 2. Vadesi gecmis faturalar
+    const lookbackDays = settings.invoiceLookbackDays ?? 90;
+    for (const days of settings.invoiceOverdueDays) {
+      if (days > lookbackDays) continue;
+
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() - days);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const invoices = await this.invoiceModel
+        .find({
+          dueDate: { $gte: targetDate, $lt: nextDay },
+          isPaid: false,
+          $or: [
+            { lastNotify: { $exists: false } },
+            { lastNotify: null },
+            { lastNotify: { $lt: today } },
+          ],
+        })
+        .lean()
+        .exec();
+
+      totalOverdue += invoices.length;
+
+      const templateSuffix = days <= 3 ? "3" : days <= 5 ? "5" : "5";
+      const templateCode = `invoice-overdue-${templateSuffix}`;
+
+      for (const invoice of invoices) {
+        const result = await this.buildDryRunItem(
+          invoice, templateCode, settings, "overdue", days
+        );
+        items.push(result.item);
+        emailCount += result.emailCount;
+        smsCount += result.smsCount;
+      }
+    }
+
+    return {
+      cronName: "invoice-notification",
+      executedAt: new Date().toISOString(),
+      durationMs: Date.now() - startTime,
+      settings: {
+        cronEnabled: settings.cronEnabled,
+        invoiceNotificationCronEnabled: settings.invoiceNotificationCronEnabled,
+        emailEnabled: settings.emailEnabled,
+        smsEnabled: settings.smsEnabled,
+        invoiceDueReminderDays: settings.invoiceDueReminderDays,
+        invoiceOverdueDays: settings.invoiceOverdueDays,
+        invoiceLookbackDays: settings.invoiceLookbackDays ?? 90,
+      },
+      summary: {
+        totalInvoicesDue: totalDue,
+        totalInvoicesOverdue: totalOverdue,
+        totalNotificationsWouldSend: emailCount + smsCount,
+        byChannel: { email: emailCount, sms: smsCount },
+      },
+      items,
+    };
+  }
+
+  /**
+   * Tek bir fatura icin dry run item'i olusturur (yan etkisiz)
+   */
+  private async buildDryRunItem(
+    invoice: Invoice,
+    templateCodeBase: string,
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>,
+    status: "due" | "overdue",
+    overdueDays?: number,
+  ): Promise<{ item: InvoiceDryRunItem; emailCount: number; smsCount: number }> {
+    let ec = 0;
+    let sc = 0;
+
+    if (!invoice.customerId) {
+      return {
+        item: {
+          invoiceNumber: invoice.invoiceNumber || "",
+          invoiceId: invoice.id,
+          customerId: "",
+          customerName: "",
+          grandTotal: invoice.grandTotal || 0,
+          dueDate: invoice.dueDate ? formatDate(invoice.dueDate) : "",
+          overdueDays,
+          status,
+          notifications: [],
+          skippedReason: "Musteri ID bos",
+        },
+        emailCount: 0,
+        smsCount: 0,
+      };
+    }
+
+    const customer = await this.customerModel
+      .findOne({ id: invoice.customerId })
+      .lean()
+      .exec();
+
+    if (!customer) {
+      return {
+        item: {
+          invoiceNumber: invoice.invoiceNumber || "",
+          invoiceId: invoice.id,
+          customerId: invoice.customerId,
+          customerName: "",
+          grandTotal: invoice.grandTotal || 0,
+          dueDate: invoice.dueDate ? formatDate(invoice.dueDate) : "",
+          overdueDays,
+          status,
+          notifications: [],
+          skippedReason: `Musteri bulunamadi: ${invoice.customerId}`,
+        },
+        emailCount: 0,
+        smsCount: 0,
+      };
+    }
+
+    // Dry run'da gercek odeme linki olusturmuyoruz
+    const paymentLinkUrl = `${this.paymentBaseUrl}/odeme/${invoice.id}`;
+
+    const templateData = buildInvoiceTemplateData(
+      invoice, customer, paymentLinkUrl, overdueDays
+    );
+
+    const notifications: DryRunNotificationItem[] = [];
+
+    if (settings.emailEnabled && customer.email) {
+      notifications.push({
+        templateCode: `${templateCodeBase}-email`,
+        channel: "email",
+        recipient: { email: customer.email, name: customer.name },
+        contextType: "invoice",
+        contextId: invoice.id,
+        customerId: invoice.customerId,
+        templateData,
+      });
+      ec++;
+    }
+
+    if (settings.smsEnabled && customer.phone) {
+      notifications.push({
+        templateCode: `${templateCodeBase}-sms`,
+        channel: "sms",
+        recipient: { phone: customer.phone, name: customer.name },
+        contextType: "invoice",
+        contextId: invoice.id,
+        customerId: invoice.customerId,
+        templateData,
+      });
+      sc++;
+    }
+
+    return {
+      item: {
+        invoiceNumber: invoice.invoiceNumber || "",
+        invoiceId: invoice.id,
+        customerId: invoice.customerId || "",
+        customerName: customer.name || customer.brand || "",
+        grandTotal: invoice.grandTotal || 0,
+        dueDate: invoice.dueDate ? formatDate(invoice.dueDate) : "",
+        overdueDays,
+        status,
+        notifications,
+      },
+      emailCount: ec,
+      smsCount: sc,
+    };
   }
 }

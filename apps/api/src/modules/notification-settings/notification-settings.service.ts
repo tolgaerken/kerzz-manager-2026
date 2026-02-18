@@ -46,6 +46,7 @@ export class NotificationSettingsService implements OnModuleInit {
         proratedInvoiceCronEnabled: true,
         stalePipelineCronEnabled: true,
         managerLogReminderCronEnabled: true,
+        dryRunMode: false,
       });
       await settings.save();
       console.log("✅ Bildirim ayarları varsayılan değerlerle oluşturuldu");
@@ -115,6 +116,7 @@ export class NotificationSettingsService implements OnModuleInit {
       proratedInvoiceCronEnabled: doc.proratedInvoiceCronEnabled ?? true,
       stalePipelineCronEnabled: doc.stalePipelineCronEnabled ?? true,
       managerLogReminderCronEnabled: doc.managerLogReminderCronEnabled ?? true,
+      dryRunMode: doc.dryRunMode ?? false,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };

@@ -65,6 +65,10 @@ export class NotificationSettings {
   @Prop({ default: true })
   managerLogReminderCronEnabled: boolean;
 
+  // Kuru çalışma modu: true iken cron'lar gerçek işlem yapmaz, sadece log atar
+  @Prop({ default: false })
+  dryRunMode: boolean;
+
   @Prop()
   createdAt: Date;
 

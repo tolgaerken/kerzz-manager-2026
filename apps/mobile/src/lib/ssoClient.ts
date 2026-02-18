@@ -11,12 +11,6 @@ import type {
 } from "@kerzz/shared";
 import { AUTH_ENDPOINTS } from "@kerzz/shared";
 
-interface SsoResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
 function normalizeGsm(gsm: string): string {
   const digits = gsm.replace(/\D/g, "");
 
@@ -42,7 +36,7 @@ function normalizeGsm(gsm: string): string {
 async function ssoRequest<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<SsoResponse<T>> {
+): Promise<T> {
   const url = `${config.ssoBaseUrl}${endpoint}`;
 
   const headers: Record<string, string> = {
@@ -67,7 +61,7 @@ async function ssoRequest<T>(
     );
   }
 
-  return data;
+  return data as T;
 }
 
 export class SsoError extends Error {
@@ -86,16 +80,10 @@ export const ssoClient = {
    * Login with email and password
    */
   login: async (credentials: LoginCredentials): Promise<UserInfo> => {
-    const response = await ssoRequest<UserInfo>(AUTH_ENDPOINTS.LOGIN, {
+    return ssoRequest<UserInfo>(AUTH_ENDPOINTS.LOGIN, {
       method: "POST",
       body: JSON.stringify(credentials),
     });
-
-    if (!response.data) {
-      throw new SsoError("Login failed: No user data returned", 401);
-    }
-
-    return response.data;
   },
 
   /**
@@ -121,16 +109,10 @@ export const ssoClient = {
       gsm: normalizeGsm(request.gsm),
     };
 
-    const response = await ssoRequest<UserInfo>(AUTH_ENDPOINTS.VERIFY_OTP, {
+    return ssoRequest<UserInfo>(AUTH_ENDPOINTS.VERIFY_OTP, {
       method: "POST",
       body: JSON.stringify(normalizedRequest),
     });
-
-    if (!response.data) {
-      throw new SsoError("OTP verification failed: No user data returned", 401);
-    }
-
-    return response.data;
   },
 
   /**

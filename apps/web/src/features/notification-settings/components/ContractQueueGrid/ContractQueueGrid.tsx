@@ -1,18 +1,9 @@
-import { useCallback, useMemo, useRef } from "react";
-import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type ColDef,
-  type GridReadyEvent,
-  type SelectionChangedEvent,
-  themeQuartz,
-} from "ag-grid-community";
-import { Eye, MessageSquare } from "lucide-react";
+import { useMemo, useCallback, useState } from "react";
+import { Grid, type GridColumnDef } from "@kerzz/grid";
+import { Eye, MessageSquare, Contact } from "lucide-react";
 import { contractQueueColumnDefs } from "./columnDefs";
-import type { QueueContractItem } from "../../types";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
+import { ContactInfoModal } from "../ContactInfoModal";
+import type { QueueContractItem, QueueCustomer } from "../../types";
 
 interface ContractQueueGridProps {
   data: QueueContractItem[];
@@ -22,37 +13,6 @@ interface ContractQueueGridProps {
   onPreviewSms: (id: string) => void;
 }
 
-function ActionsCellRenderer(params: {
-  data: QueueContractItem;
-  context: { onPreviewEmail: (id: string) => void; onPreviewSms: (id: string) => void };
-}) {
-  if (!params.data) return null;
-  return (
-    <div className="flex items-center gap-1 h-full">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          params.context.onPreviewEmail(params.data.id);
-        }}
-        title="E-posta Önizleme"
-        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-      >
-        <Eye className="w-4 h-4" />
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          params.context.onPreviewSms(params.data.id);
-        }}
-        title="SMS Önizleme"
-        className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
-      >
-        <MessageSquare className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  );
-}
-
 export function ContractQueueGrid({
   data,
   loading,
@@ -60,86 +20,83 @@ export function ContractQueueGrid({
   onPreviewEmail,
   onPreviewSms,
 }: ContractQueueGridProps) {
-  const gridRef = useRef<AgGridReact<QueueContractItem>>(null);
+  const [contactCustomer, setContactCustomer] = useState<QueueCustomer | null>(null);
 
-  const context = useMemo(
-    () => ({ onPreviewEmail, onPreviewSms }),
-    [onPreviewEmail, onPreviewSms]
-  );
-
-  const columnDefs = useMemo<ColDef<QueueContractItem>[]>(
+  const columns = useMemo<GridColumnDef<QueueContractItem>[]>(
     () => [
       ...contractQueueColumnDefs,
       {
-        headerName: "İşlemler",
+        id: "actions",
+        header: "İşlemler",
         width: 100,
         sortable: false,
-        cellRenderer: ActionsCellRenderer,
+        cell: (_value, row) => (
+          <div className="flex items-center gap-1 h-full">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setContactCustomer(row.customer);
+              }}
+              title="İletişim Bilgileri"
+              className="p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-hover)] rounded transition-colors"
+            >
+              <Contact className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPreviewEmail(row.id);
+              }}
+              title="E-posta Önizleme"
+              className="p-1.5 text-[var(--color-info)] hover:bg-[var(--color-info)]/10 rounded transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPreviewSms(row.id);
+              }}
+              title="SMS Önizleme"
+              className="p-1.5 text-[var(--color-success)] hover:bg-[var(--color-success)]/10 rounded transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ),
       },
     ],
-    []
+    [onPreviewEmail, onPreviewSms, setContactCustomer],
   );
 
-  const defaultColDef = useMemo(
-    () => ({
-      resizable: true,
-      sortable: true,
-    }),
-    []
-  );
-
-  const onGridReady = useCallback((params: GridReadyEvent<QueueContractItem>) => {
-    params.api.sizeColumnsToFit();
-  }, []);
-
-  const handleSelectionChanged = useCallback(
-    (event: SelectionChangedEvent<QueueContractItem>) => {
-      const selected = event.api.getSelectedRows();
-      onSelectionChanged(selected);
+  const handleSelectionChange = useCallback(
+    (selectedIds: string[]) => {
+      const items = selectedIds
+        .map((id) => data.find((item) => item.id === id))
+        .filter((item): item is QueueContractItem => item !== undefined);
+      onSelectionChanged(items);
     },
-    [onSelectionChanged]
+    [data, onSelectionChanged],
   );
-
-  const customTheme = themeQuartz.withParams({
-    backgroundColor: "var(--color-surface)",
-    foregroundColor: "var(--color-foreground)",
-    headerBackgroundColor: "var(--color-surface-elevated)",
-    headerTextColor: "var(--color-foreground)",
-    oddRowBackgroundColor: "var(--color-surface)",
-    rowHoverColor: "var(--color-surface-elevated)",
-    borderColor: "var(--color-border)",
-    fontFamily: "inherit",
-    fontSize: 13,
-    headerFontSize: 12,
-    rowHeight: 40,
-    headerHeight: 44,
-  });
 
   return (
     <div className="h-full w-full flex-1">
-      <AgGridReact<QueueContractItem>
-        ref={gridRef}
-        theme={customTheme}
-        context={context}
-        rowData={data}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        onGridReady={onGridReady}
-        onSelectionChanged={handleSelectionChanged}
+      <ContactInfoModal
+        isOpen={contactCustomer !== null}
+        customer={contactCustomer}
+        onClose={() => setContactCustomer(null)}
+      />
+      <Grid<QueueContractItem>
+        data={data}
+        columns={columns}
         loading={loading}
-        rowSelection={{ mode: "multiRow", checkboxes: true, headerCheckbox: true }}
-        suppressCellFocus={true}
-        animateRows={false}
-        enableCellTextSelection={true}
-        getRowId={(params) => params.data.id}
-        rowBuffer={20}
-        suppressScrollOnNewData={true}
-        debounceVerticalScrollbar={true}
-        noRowsOverlayComponent={() => (
-          <span className="text-[var(--color-muted)]">
-            Bildirim bekleyen kontrat bulunamadı.
-          </span>
-        )}
+        height="100%"
+        locale="tr"
+        getRowId={(row) => row.id}
+        selectionMode="multiple"
+        selectionCheckbox
+        onSelectionChange={handleSelectionChange}
+        stateKey="contract-queue-grid"
       />
     </div>
   );

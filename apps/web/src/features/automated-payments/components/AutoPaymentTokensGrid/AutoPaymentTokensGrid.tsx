@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Grid } from "@kerzz/grid";
+import { Grid, type ToolbarButtonConfig } from "@kerzz/grid";
 import { tokenColumnDefs } from "./columnDefs";
 import type { AutoPaymentTokenItem } from "../../types/automatedPayment.types";
 
@@ -7,12 +7,14 @@ interface AutoPaymentTokensGridProps {
   data: AutoPaymentTokenItem[];
   loading: boolean;
   onSelectionChanged: (items: AutoPaymentTokenItem[]) => void;
+  customButtons?: ToolbarButtonConfig[];
 }
 
 export function AutoPaymentTokensGrid({
   data,
   loading,
   onSelectionChanged,
+  customButtons,
 }: AutoPaymentTokensGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
@@ -55,7 +57,7 @@ export function AutoPaymentTokensGrid({
         getRowId={(row) => row._id}
         selectionMode="multiple"
         onSelectionChange={handleSelectionChange}
-        toolbar
+        toolbar={{ customButtons: customButtons ?? [] }}
         stateKey="auto-payment-tokens"
       />
     </div>

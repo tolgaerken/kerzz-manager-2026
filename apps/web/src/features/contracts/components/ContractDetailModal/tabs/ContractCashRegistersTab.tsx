@@ -76,30 +76,13 @@ export function ContractCashRegistersTab({ contractId }: ContractCashRegistersTa
     );
   }, [eftPosModelsData]);
 
-  // Lisans seçildiğinde brand'ı güncelle
-  const handleLicenseSelect = useCallback(
-    (rowId: string, license: { id: string; brandName: string } | null) => {
-      if (rowId) {
-        updateMutation.mutate({
-          id: rowId,
-          data: {
-            brand: license?.brandName || "",
-            editDate: new Date().toISOString()
-          }
-        });
-      }
-    },
-    [updateMutation]
-  );
-
   // Grid context
   const gridContext = useMemo(
     () => ({
       licenses,
-      eftPosModels,
-      onLicenseSelect: handleLicenseSelect
+      eftPosModels
     }),
-    [licenses, eftPosModels, handleLicenseSelect]
+    [licenses, eftPosModels]
   );
 
   const createEmptyRow = useCallback((): ContractCashRegister => ({

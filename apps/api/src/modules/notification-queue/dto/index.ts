@@ -82,12 +82,20 @@ export class ManualSendDto {
   channels: ("email" | "sms")[];
 }
 
+export interface QueueContactDto {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+}
+
 export interface QueueCustomerDto {
   id: string;
   name: string;
   companyName: string;
   email: string;
   phone: string;
+  contacts: QueueContactDto[];
 }
 
 export interface QueueInvoiceItemDto {

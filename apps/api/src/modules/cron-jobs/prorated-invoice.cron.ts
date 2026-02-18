@@ -3,6 +3,8 @@ import { Cron } from "@nestjs/schedule";
 import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
 import { ContractInvoiceOrchestratorService } from "../contract-invoices/services/contract-invoice-orchestrator.service";
 import { NotificationSettingsService } from "../notification-settings";
+import type { ProratedInvoiceDryRunResponse } from "./dto/dry-run.dto";
+import { formatDate } from "../notification-queue/notification-data.helper";
 
 /**
  * Kist fatura cron job'i.
@@ -46,6 +48,19 @@ export class ProratedInvoiceCron {
 
     this.logger.log(`${pendingPlans.length} adet kist plan bulundu.`);
 
+    // DRY RUN MODU: Gerçek fatura kesme, sadece logla
+    if (settings.dryRunMode) {
+      this.logger.log(
+        `🧪 [DRY RUN] ${pendingPlans.length} kıst plan için fatura kesilecekti — kuru çalışma modunda atlandı`
+      );
+      for (const plan of pendingPlans) {
+        this.logger.log(
+          `🧪 [DRY RUN] PlanId: ${plan.id}, CustomerId: ${plan.customerId}, Tutar: ${plan.total}`
+        );
+      }
+      return;
+    }
+
     const planIds = pendingPlans.map((p) => p.id);
 
     // Ayni cariye ait planlari tek faturada birlestir (merge=true)
@@ -68,5 +83,44 @@ export class ProratedInvoiceCron {
         );
       }
     }
+  }
+
+  /**
+   * Dry run: Gercek fatura kesmeden ne olacagini raporlar
+   */
+  async dryRun(): Promise<ProratedInvoiceDryRunResponse> {
+    const startTime = Date.now();
+    const settings = await this.settingsService.getSettings();
+
+    const pendingPlans =
+      await this.proratedPlanService.findUninvoicedProratedPlans();
+
+    const uniqueCustomers = new Set(pendingPlans.map((p) => p.customerId));
+    const totalAmount = pendingPlans.reduce((sum, p) => sum + (p.total || 0), 0);
+
+    const items = pendingPlans.map((plan) => ({
+      planId: plan.id,
+      contractId: plan.contractId,
+      customerId: plan.customerId || "",
+      amount: plan.total || 0,
+      payDate: plan.payDate ? formatDate(plan.payDate) : "",
+      description: plan.company || "",
+    }));
+
+    return {
+      cronName: "prorated-invoice",
+      executedAt: new Date().toISOString(),
+      durationMs: Date.now() - startTime,
+      settings: {
+        cronEnabled: settings.cronEnabled,
+        proratedInvoiceCronEnabled: settings.proratedInvoiceCronEnabled,
+      },
+      summary: {
+        totalUninvoicedPlans: pendingPlans.length,
+        uniqueCustomers: uniqueCustomers.size,
+        totalAmount,
+      },
+      items,
+    };
   }
 }

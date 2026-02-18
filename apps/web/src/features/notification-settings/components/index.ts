@@ -8,3 +8,5 @@ export { InvoiceQueueGrid } from "./InvoiceQueueGrid";
 export { ContractQueueGrid } from "./ContractQueueGrid";
 export { NotificationHistoryGrid } from "./NotificationHistoryGrid";
 export { OverdueDaysFilter } from "./OverdueDaysFilter";
+export { CronDryRun } from "./CronDryRun";
+export { ContactInfoModal } from "./ContactInfoModal";

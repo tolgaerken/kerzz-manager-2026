@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Settings, Mail, MessageSquare, History, ListChecks } from "lucide-react";
+import { Settings, Mail, MessageSquare, History, ListChecks, PlayCircle } from "lucide-react";
 import {
   GeneralSettings,
   TemplateList,
   NotificationHistory,
   NotificationQueue,
+  CronDryRun,
 } from "../features/notification-settings/components";
 
-type TabId = "general" | "email" | "sms" | "queue" | "history";
+type TabId = "general" | "email" | "sms" | "queue" | "history" | "dry-run";
 
 interface Tab {
   id: TabId;
@@ -21,6 +22,7 @@ const TABS: Tab[] = [
   { id: "sms", label: "SMS Şablonları", icon: <MessageSquare className="w-4 h-4" /> },
   { id: "queue", label: "Bildirim Kuyruğu", icon: <ListChecks className="w-4 h-4" /> },
   { id: "history", label: "Gönderim Geçmişi", icon: <History className="w-4 h-4" /> },
+  { id: "dry-run", label: "Cron Test", icon: <PlayCircle className="w-4 h-4" /> },
 ];
 
 export function NotificationSettingsPage() {
@@ -66,6 +68,7 @@ export function NotificationSettingsPage() {
         {activeTab === "sms" && <TemplateList channel="sms" />}
         {activeTab === "queue" && <NotificationQueue />}
         {activeTab === "history" && <NotificationHistory />}
+        {activeTab === "dry-run" && <CronDryRun />}
       </div>
     </div>
   );

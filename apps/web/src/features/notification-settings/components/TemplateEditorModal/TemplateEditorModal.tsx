@@ -23,6 +23,9 @@ const AVAILABLE_VARIABLES = [
   { name: "remainingDays", description: "Kalan gün sayısı" },
 ];
 
+const PAYMENT_BASE_URL =
+  import.meta.env.VITE_PAYMENT_BASE_URL || "https://kerzz-pay.cloudlabs.com.tr";
+
 // Örnek veriler - önizleme için
 const SAMPLE_DATA: Record<string, string> = {
   company: "Örnek Şirket A.Ş.",
@@ -31,8 +34,8 @@ const SAMPLE_DATA: Record<string, string> = {
   amount: "5.250,00 TL",
   dueDate: "15.02.2026",
   overdueDays: "5",
-  paymentLink: "https://pay.kerzz.com/odeme/example-token",
-  confirmLink: "https://pay.kerzz.com/odeme/example-token",
+  paymentLink: `${PAYMENT_BASE_URL}/odeme/example-token`,
+  confirmLink: `${PAYMENT_BASE_URL}/odeme/example-token`,
   contractEndDate: "31.03.2026",
   remainingDays: "30",
 };

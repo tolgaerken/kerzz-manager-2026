@@ -5,6 +5,7 @@ import { ManagerNotificationService } from "../manager-notification/manager-noti
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
 import { SystemLogsService, SystemLogAction } from "../system-logs";
 import { NotificationSettingsService } from "../notification-settings";
+import type { ManagerLogReminderDryRunResponse } from "./dto/dry-run.dto";
 
 @Injectable()
 export class ManagerLogReminderCron {
@@ -26,6 +27,20 @@ export class ManagerLogReminderCron {
     const settings = await this.settingsService.getSettings();
     if (!settings.managerLogReminderCronEnabled) {
       return; // Sessizce çık — 15 dakikada bir çalıştığı için log spam'i önle
+    }
+
+    if (settings.dryRunMode) {
+      // Dry run modunda bekleyen hatırlatmaları logla, gerçek işlem yapma
+      const pendingReminders = await this.managerLogService.getPendingReminders(new Date());
+      if (pendingReminders.length > 0) {
+        this.logger.log(
+          `🧪 [DRY RUN] ${pendingReminders.length} hatırlatma işlenecekti — kuru çalışma modunda atlandı`
+        );
+        for (const log of pendingReminders) {
+          this.logger.log(`🧪 [DRY RUN] LogId: ${log._id} → userId: ${log.authorId} — ${log.message}`);
+        }
+      }
+      return;
     }
 
     const startTime = Date.now();
@@ -143,5 +158,41 @@ export class ManagerLogReminderCron {
   private truncateMessage(message: string, maxLength: number): string {
     if (message.length <= maxLength) return message;
     return message.substring(0, maxLength - 3) + "...";
+  }
+
+  /**
+   * Dry run: Gercek bildirim olusturmadan ne olacagini raporlar
+   */
+  async dryRun(): Promise<ManagerLogReminderDryRunResponse> {
+    const startTime = Date.now();
+    const settings = await this.settingsService.getSettings();
+
+    const pendingReminders = await this.managerLogService.getPendingReminders(
+      new Date()
+    );
+
+    const items = pendingReminders.map((log) => ({
+      logId: log._id,
+      authorId: log.authorId,
+      customerId: log.customerId,
+      contextType: log.contextType,
+      contextId: log.contextId,
+      message: this.truncateMessage(log.message, 100),
+      pipelineRef: log.pipelineRef,
+    }));
+
+    return {
+      cronName: "manager-log-reminder",
+      executedAt: new Date().toISOString(),
+      durationMs: Date.now() - startTime,
+      settings: {
+        cronEnabled: settings.cronEnabled,
+        managerLogReminderCronEnabled: settings.managerLogReminderCronEnabled,
+      },
+      summary: {
+        totalPendingReminders: items.length,
+      },
+      items,
+    };
   }
 }

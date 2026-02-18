@@ -1,45 +1,40 @@
-import type { ColDef } from "ag-grid-community";
+import type { GridColumnDef } from "@kerzz/grid";
 import type { QueueContractItem } from "../../types";
 
-export const contractQueueColumnDefs: ColDef<QueueContractItem>[] = [
+export const contractQueueColumnDefs: GridColumnDef<QueueContractItem>[] = [
   {
-    headerName: "Kontrat / Firma",
-    flex: 1,
+    id: "contractFirm",
+    header: "Kontrat / Firma",
     minWidth: 200,
-    valueGetter: (params) => {
-      const d = params.data;
-      if (!d) return "";
-      const main = d.contractId || d.company || "";
-      return d.brand ? `${main} — ${d.brand}` : main;
+    accessorFn: (row) => {
+      const main = row.contractId || row.company || "";
+      return row.brand ? `${main} — ${row.brand}` : main;
     },
-    cellClass: "font-medium",
+    cellClassName: "font-medium",
   },
   {
-    headerName: "Müşteri",
-    flex: 1,
+    id: "customer",
+    header: "Müşteri",
     minWidth: 180,
-    valueGetter: (params) => {
-      const c = params.data?.customer;
-      return c?.companyName || c?.name || "";
-    },
+    accessorFn: (row) => row.customer?.companyName || row.customer?.name || "",
   },
   {
-    field: "endDate",
-    headerName: "Bitiş Tarihi",
+    id: "endDate",
+    header: "Bitiş Tarihi",
+    accessorKey: "endDate",
     width: 120,
   },
   {
-    field: "remainingDays",
-    headerName: "Kalan Gün",
+    id: "remainingDays",
+    header: "Kalan Gün",
+    accessorKey: "remainingDays",
     width: 100,
   },
   {
-    headerName: "İletişim",
+    id: "contact",
+    header: "İletişim",
     width: 200,
-    cellClass: "text-[var(--color-muted)]",
-    valueGetter: (params) => {
-      const c = params.data?.customer;
-      return c?.email || c?.phone || "—";
-    },
+    accessorFn: (row) => row.customer?.email || row.customer?.phone || "—",
+    cellClassName: "text-[var(--color-muted-foreground)]",
   },
 ];

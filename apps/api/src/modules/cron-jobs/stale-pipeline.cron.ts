@@ -11,6 +11,10 @@ import {
 } from "../manager-notification/schemas/manager-notification.schema";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
 import { NotificationSettingsService } from "../notification-settings";
+import type {
+  StalePipelineDryRunResponse,
+  StalePipelineDryRunItem,
+} from "./dto/dry-run.dto";
 
 @Injectable()
 export class StalePipelineCron {
@@ -126,7 +130,129 @@ export class StalePipelineCron {
       return;
     }
 
+    // DRY RUN MODU: Gerçek bildirim oluşturma, sadece logla
+    if (settings.dryRunMode) {
+      this.logger.log(
+        `🧪 [DRY RUN] ${notifications.length} hareketsiz pipeline bildirimi oluşturulacaktı — kuru çalışma modunda atlandı`
+      );
+      for (const n of notifications) {
+        this.logger.log(
+          `🧪 [DRY RUN] ${n.contextType}:${n.contextId} → userId: ${n.userId} — ${n.message}`
+        );
+      }
+      return;
+    }
+
     await this.notificationService.createMany(notifications);
     this.logger.log(`${notifications.length} hareketsiz pipeline bildirimi üretildi.`);
+  }
+
+  /**
+   * Dry run: Gercek bildirim olusturmadan ne olacagini raporlar
+   */
+  async dryRun(): Promise<StalePipelineDryRunResponse> {
+    const startTime = Date.now();
+    const settings = await this.settingsService.getSettings();
+
+    const now = new Date();
+    const staleBefore = new Date(now);
+    staleBefore.setDate(now.getDate() - this.staleDays);
+
+    const [leads, offers] = await Promise.all([
+      this.leadModel
+        .find({
+          status: { $in: ["new", "contacted", "qualified"] },
+          updatedAt: { $lte: staleBefore },
+          assignedUserId: { $ne: "" },
+        })
+        .lean()
+        .exec(),
+      this.offerModel
+        .find({
+          status: { $in: ["draft", "sent", "revised", "waiting", "approved"] },
+          updatedAt: { $lte: staleBefore },
+          sellerId: { $ne: "" },
+        })
+        .lean()
+        .exec(),
+    ]);
+
+    // Deduplication: mevcut bildirimleri kontrol et
+    const notificationWindowStart = new Date(now);
+    notificationWindowStart.setDate(now.getDate() - this.staleDays);
+
+    const contextIds = [
+      ...leads.map((lead) => lead._id.toString()),
+      ...offers.map((offer) => offer._id.toString()),
+    ];
+
+    const existingNotifications = contextIds.length
+      ? await this.notificationModel
+          .find({
+            type: "stale",
+            contextId: { $in: contextIds },
+            createdAt: { $gte: notificationWindowStart },
+          })
+          .lean()
+          .exec()
+      : [];
+
+    const existingMap = new Set(
+      existingNotifications.map((n) => `${n.contextType}:${n.contextId}`)
+    );
+
+    const items: StalePipelineDryRunItem[] = [];
+    let alreadyNotifiedCount = 0;
+
+    for (const lead of leads) {
+      const alreadyNotified = existingMap.has(`lead:${lead._id.toString()}`);
+      if (alreadyNotified) alreadyNotifiedCount++;
+      if (!lead.assignedUserId) continue;
+
+      items.push({
+        type: "lead",
+        id: lead._id.toString(),
+        name: lead.companyName || lead.contactName || "",
+        userId: lead.assignedUserId,
+        customerId: lead.customerId || "",
+        message: `Lead ${lead.companyName || lead.contactName || ""} ${this.staleDays} gundur guncellenmedi`,
+        alreadyNotified,
+      });
+    }
+
+    for (const offer of offers) {
+      const alreadyNotified = existingMap.has(`offer:${offer._id.toString()}`);
+      if (alreadyNotified) alreadyNotifiedCount++;
+      if (!offer.sellerId) continue;
+
+      items.push({
+        type: "offer",
+        id: offer._id.toString(),
+        name: offer.customerName || "",
+        userId: offer.sellerId,
+        customerId: offer.customerId || "",
+        message: `Teklif ${offer.customerName || ""} ${this.staleDays} gundur guncellenmedi`,
+        alreadyNotified,
+      });
+    }
+
+    const wouldCreate = items.filter((i) => !i.alreadyNotified).length;
+
+    return {
+      cronName: "stale-pipeline",
+      executedAt: new Date().toISOString(),
+      durationMs: Date.now() - startTime,
+      settings: {
+        cronEnabled: settings.cronEnabled,
+        stalePipelineCronEnabled: settings.stalePipelineCronEnabled,
+      },
+      summary: {
+        totalStaleLeads: leads.length,
+        totalStaleOffers: offers.length,
+        totalNotificationsWouldCreate: wouldCreate,
+        alreadyNotifiedCount,
+      },
+      items,
+    };
   }
 }

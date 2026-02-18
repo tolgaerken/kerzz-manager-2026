@@ -3,6 +3,30 @@
  * Cron job'lar ve notification-queue servisi tarafindan ortak kullanilir.
  */
 
+/**
+ * Türk telefon numaralarını standart formata normalize eder: 05XXXXXXXXX
+ * Örnekler:
+ *   +905551234567  → 05551234567
+ *   905551234567   → 05551234567
+ *   5551234567     → 05551234567
+ *   0555 123 45 67 → 05551234567
+ */
+export function normalizePhone(phone: string | undefined | null): string {
+  if (!phone) return "";
+  let digits = phone.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("90")) {
+    digits = "0" + digits.slice(2);
+  }
+  if (digits.length === 10 && digits.startsWith("5")) {
+    digits = "0" + digits;
+  }
+  return digits;
+}
+
+export function normalizeEmail(email: string | undefined | null): string {
+  return (email ?? "").trim().toLowerCase();
+}
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",

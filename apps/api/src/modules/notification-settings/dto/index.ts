@@ -68,6 +68,10 @@ export class UpdateNotificationSettingsDto {
   @IsBoolean()
   @IsOptional()
   managerLogReminderCronEnabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  dryRunMode?: boolean;
 }
 
 export class NotificationSettingsResponseDto {
@@ -86,6 +90,7 @@ export class NotificationSettingsResponseDto {
   proratedInvoiceCronEnabled: boolean;
   stalePipelineCronEnabled: boolean;
   managerLogReminderCronEnabled: boolean;
+  dryRunMode: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -3,6 +3,7 @@ import { Eye } from "lucide-react";
 import { Grid } from "@kerzz/grid";
 import type { MobileFilterColumnConfig, MobileSortColumnConfig, ToolbarButtonConfig } from "@kerzz/grid";
 import type { UninvoicedItem } from "../types/uninvoiced-items.types";
+import { CATEGORY_INFO } from "../types/uninvoiced-items.types";
 import { uninvoicedItemsColumns } from "./uninvoicedItemsColumns";
 
 // Mobil filtre konfigürasyonu
@@ -102,6 +103,44 @@ export function UninvoicedItemsGrid({
           customButtons: toolbarCustomButtons,
         }}
         mobileConfig={{
+          cardRenderer: ({ item, isSelected, onDoubleTap }) => {
+            const category = CATEGORY_INFO[item.category];
+            return (
+              <div
+                className={`p-3 rounded-lg border transition-colors cursor-pointer ${
+                  isSelected
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)]"
+                }`}
+                onDoubleClick={onDoubleTap}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
+                      {item.description}
+                    </p>
+                    {item.company && (
+                      <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5 truncate">
+                        {item.company}
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      color: category.color,
+                      backgroundColor: `color-mix(in srgb, ${category.color} 15%, transparent)`,
+                    }}
+                  >
+                    {category.label}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--color-muted-foreground)] mt-1.5">
+                  Kontrat No: {item.contractNo ?? item.contractId}
+                </p>
+              </div>
+            );
+          },
           filterColumns: mobileFilterColumns,
           sortColumns: mobileSortColumns,
           estimatedCardHeight: 100,

@@ -3,6 +3,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { Invoice, InvoiceSchema } from "../invoices/schemas/invoice.schema";
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
+import { ContractUser, ContractUserSchema } from "../contract-users/schemas/contract-user.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { NotificationSettingsModule } from "../notification-settings";
 import { NotificationDispatchModule } from "../notification-dispatch";
@@ -18,6 +19,7 @@ import { NotificationQueueService } from "./notification-queue.service";
         { name: Invoice.name, schema: InvoiceSchema },
         { name: Contract.name, schema: ContractSchema },
         { name: Customer.name, schema: CustomerSchema },
+        { name: ContractUser.name, schema: ContractUserSchema },
       ],
       CONTRACT_DB_CONNECTION
     ),
