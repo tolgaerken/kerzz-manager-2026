@@ -38,6 +38,8 @@ export interface LogQueryParams {
   contextId?: string;
   page?: number;
   limit?: number;
+  /** Sadece queryKey farklılaştırması için kullanılır, API'ye gönderilmez */
+  _countOnly?: boolean;
 }
 
 export interface LogsResponse {
