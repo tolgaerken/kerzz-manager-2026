@@ -87,7 +87,8 @@ export class ContractsService {
       yearly,
       search,
       sortField = "no",
-      sortOrder = "desc"
+      sortOrder = "desc",
+      customerId
     } = query;
 
     // Build filter query
@@ -108,6 +109,11 @@ export class ContractsService {
     // Yearly/Monthly filter
     if (yearly !== undefined) {
       filter.yearly = yearly;
+    }
+
+    // Customer filter
+    if (customerId) {
+      filter.customerId = customerId;
     }
 
     // Search filter - $or ile birleştir

@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, SortOrder, PipelineStage } from "mongoose";
 import { Customer, CustomerDocument } from "./schemas/customer.schema";
+import { Contract, ContractDocument } from "../contracts/schemas/contract.schema";
+import { getActiveContractFilter } from "../contracts/utils/contract-date.utils";
 import { CustomerQueryDto } from "./dto/customer-query.dto";
 import {
   PaginatedCustomersResponseDto,
@@ -16,7 +18,9 @@ import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module"
 export class CustomersService {
   constructor(
     @InjectModel(Customer.name, CONTRACT_DB_CONNECTION)
-    private customerModel: Model<CustomerDocument>
+    private customerModel: Model<CustomerDocument>,
+    @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
+    private contractModel: Model<ContractDocument>
   ) {}
 
   async findAll(query: CustomerQueryDto): Promise<PaginatedCustomersResponseDto> {
@@ -27,7 +31,8 @@ export class CustomersService {
       type = "customer",
       sortField = "name",
       sortOrder = "asc",
-      fields: rawFields
+      fields: rawFields,
+      activeContractsOnly = false
     } = query;
 
     const numericPage = Number(page);
@@ -51,6 +56,23 @@ export class CustomersService {
         { type: "customer" },
         { type: { $exists: false }, taxNo: { $exists: true, $ne: null, $nin: ["", " "] } }
       ];
+    }
+
+    // Aktif kontrat filtresi: sistemdeki "active" flow ile aynı mantık
+    // (startDate <= bugün, endDate null değil, endDate'in ay sonu >= bugün)
+    if (activeContractsOnly) {
+      const activeContractFilter = getActiveContractFilter();
+
+      const rawIds = await this.contractModel
+        .distinct("customerId", activeContractFilter)
+        .exec();
+
+      // null, undefined ve boş string değerlerini temizle
+      const activeCustomerIds = rawIds.filter(
+        (id): id is string => typeof id === "string" && id.trim().length > 0
+      );
+
+      baseFilter.id = { $in: activeCustomerIds };
     }
 
     let filter: Record<string, any> = { ...baseFilter };
@@ -244,6 +266,7 @@ export class CustomersService {
       email: customer.email || "",
       taxOffice: customer.taxOffice || "",
       enabled: customer.enabled ?? true,
+      segmentId: customer.segmentId || null,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt
     };

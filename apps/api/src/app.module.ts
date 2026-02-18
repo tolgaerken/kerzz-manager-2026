@@ -5,6 +5,7 @@ import { DatabaseModule, ContractDatabaseModule, HelpersDatabaseModule, SsoDatab
 import { HealthModule } from "./modules/health/health.module";
 import { ContractsModule } from "./modules/contracts";
 import { CustomersModule } from "./modules/customers";
+import { CustomerSegmentsModule } from "./modules/customer-segments";
 import { LicensesModule } from "./modules/licenses";
 import { HardwareProductsModule } from "./modules/hardware-products";
 import { SoftwareProductsModule } from "./modules/software-products";
@@ -96,6 +97,7 @@ import { AuditModule } from "./common/audit";
     VersionModule,
     ContractsModule,
     CustomersModule,
+    CustomerSegmentsModule,
     LicensesModule,
     HardwareProductsModule,
     SoftwareProductsModule,

@@ -3,6 +3,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ContractsPage } from "./pages/ContractsPage";
 import { CustomersPage } from "./pages/CustomersPage";
+import { CustomerSegmentsPage } from "./pages/CustomerSegmentsPage";
 import { LicensesPage } from "./pages/LicensesPage";
 import { HardwareProductsPage } from "./pages/HardwareProductsPage";
 import { SoftwareProductsPage } from "./pages/SoftwareProductsPage";
@@ -178,6 +179,14 @@ const customersRoute = createRoute({
   path: "/customers",
   beforeLoad: () => checkPermission(PERMISSIONS.CUSTOMER_MENU),
   component: CustomersPage,
+});
+
+// Customer Segments page
+const customerSegmentsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: "/customer-segments",
+  beforeLoad: () => checkPermission(PERMISSIONS.CUSTOMER_MENU),
+  component: CustomerSegmentsPage,
 });
 
 // Licenses page
@@ -583,6 +592,7 @@ const routeTree = rootRoute.addChildren([
     pendingInstallationsRoute,
     uninvoicedItemsRoute,
     customersRoute,
+    customerSegmentsRoute,
     licensesRoute,
     hardwareProductsRoute,
     softwareProductsRoute,

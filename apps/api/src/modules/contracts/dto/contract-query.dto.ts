@@ -34,4 +34,8 @@ export class ContractQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: "asc" | "desc";
+
+  @IsOptional()
+  @IsString()
+  customerId?: string;
 }

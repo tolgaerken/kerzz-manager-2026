@@ -4,6 +4,7 @@ import type { PhoneInputValue } from "../../../../components/ui";
 import type { Customer, CreateCustomerInput, UpdateCustomerInput } from "../../types";
 import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
 import type { AddressData } from "../../../locations";
+import { useCustomerSegmentsMinimal } from "../../../customer-segments";
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ export function CustomerFormModal({
 }: CustomerFormModalProps) {
   const isEdit = !!customer;
 
+  const { data: segments } = useCustomerSegmentsMinimal();
+
   const [formData, setFormData] = useState<CreateCustomerInput>({
     taxNo: "",
     name: "",
@@ -29,7 +32,8 @@ export function CustomerFormModal({
     address: { ...EMPTY_ADDRESS },
     phone: "",
     email: "",
-    enabled: true
+    enabled: true,
+    segmentId: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -50,7 +54,8 @@ export function CustomerFormModal({
         address: customer.address || { ...EMPTY_ADDRESS },
         phone: customer.phone,
         email: customer.email,
-        enabled: customer.enabled
+        enabled: customer.enabled,
+        segmentId: customer.segmentId || ""
       });
     } else {
       setPhoneValue({ countryCode: "90", phoneNumber: "" });
@@ -61,7 +66,8 @@ export function CustomerFormModal({
         address: { ...EMPTY_ADDRESS },
         phone: "",
         email: "",
-        enabled: true
+        enabled: true,
+        segmentId: ""
       });
     }
     setErrors({});
@@ -172,6 +178,29 @@ export function CustomerFormModal({
               className={inputClasses}
               placeholder="Marka"
             />
+          </div>
+
+          {/* Segment */}
+          <div>
+            <label htmlFor="segmentId" className={labelClasses}>
+              Segment
+            </label>
+            <select
+              id="segmentId"
+              name="segmentId"
+              value={formData.segmentId || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, segmentId: e.target.value || undefined }))
+              }
+              className={inputClasses}
+            >
+              <option value="">Segment seçin</option>
+              {segments?.map((segment) => (
+                <option key={segment._id} value={segment._id}>
+                  {segment.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

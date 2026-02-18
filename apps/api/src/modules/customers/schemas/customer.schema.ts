@@ -71,6 +71,9 @@ export class Customer {
   @Prop({ type: Boolean, default: true })
   enabled: boolean;
 
+  @Prop({ type: String, default: null })
+  segmentId: string;
+
   @Prop({ type: Date })
   createdAt: Date;
 
@@ -84,3 +87,4 @@ export const CustomerSchema = SchemaFactory.createForClass(Customer);
 CustomerSchema.index({ taxNo: 1 });
 CustomerSchema.index({ name: 1 });
 CustomerSchema.index({ brand: 1 });
+CustomerSchema.index({ segmentId: 1 });

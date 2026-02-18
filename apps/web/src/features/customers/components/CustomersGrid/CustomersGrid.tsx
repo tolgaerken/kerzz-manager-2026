@@ -1,21 +1,31 @@
-import { useCallback } from "react";
-import { Grid, type SortingState } from "@kerzz/grid";
-import { customerColumnDefs } from "./columnDefs";
+import { useCallback, useMemo } from "react";
+import { Grid, type SortingState, type ToolbarButtonConfig } from "@kerzz/grid";
+import { buildCustomerColumnDefs } from "./columnDefs";
 import type { Customer } from "../../types";
 
 interface CustomersGridProps {
   data: Customer[];
   loading: boolean;
+  segmentMap: Record<string, string>;
+  selectedId?: string | null;
+  toolbarButtons?: ToolbarButtonConfig[];
   onSortChange: (sortField: string, sortOrder: "asc" | "desc") => void;
+  onRowClick?: (customer: Customer) => void;
   onRowDoubleClick?: (customer: Customer) => void;
 }
 
 export function CustomersGrid({
   data,
   loading,
+  segmentMap,
+  selectedId,
+  toolbarButtons,
   onSortChange,
+  onRowClick,
   onRowDoubleClick
 }: CustomersGridProps) {
+  const columns = useMemo(() => buildCustomerColumnDefs(segmentMap), [segmentMap]);
+
   const handleSortChange = useCallback(
     (sorting: SortingState) => {
       if (sorting.length > 0) {
@@ -23,6 +33,13 @@ export function CustomersGrid({
       }
     },
     [onSortChange]
+  );
+
+  const handleRowClick = useCallback(
+    (row: Customer) => {
+      onRowClick?.(row);
+    },
+    [onRowClick]
   );
 
   const handleRowDoubleClick = useCallback(
@@ -36,7 +53,7 @@ export function CustomersGrid({
     <div className="h-full w-full flex-1">
       <Grid<Customer>
         data={data}
-        columns={customerColumnDefs}
+        columns={columns}
         height="100%"
         width="100%"
         locale="tr"
@@ -44,13 +61,17 @@ export function CustomersGrid({
         stateKey="customers-grid"
         stateStorage="localStorage"
         getRowId={(row) => row._id}
+        selectionMode="single"
+        selectedIds={selectedId ? [selectedId] : []}
         onSortChange={handleSortChange}
+        onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
         toolbar={{
           showSearch: true,
           showColumnVisibility: true,
           showExcelExport: true,
-          showPdfExport: false
+          showPdfExport: false,
+          customButtons: toolbarButtons
         }}
       />
     </div>

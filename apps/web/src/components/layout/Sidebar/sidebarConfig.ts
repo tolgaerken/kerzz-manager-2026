@@ -46,8 +46,11 @@ export const sidebarMenuItems: MenuItemProps[] = [
   {
     icon: Users,
     label: "Müşteriler",
-    path: "/customers",
     requiredPermission: PERMISSIONS.CUSTOMER_MENU,
+    subItems: [
+      { label: "Müşteri Listesi", path: "/customers" },
+      { label: "Segmentler", path: "/customer-segments" },
+    ],
   },
   {
     icon: Key,

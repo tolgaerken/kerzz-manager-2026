@@ -1,4 +1,4 @@
-import { IsOptional, IsNumber, IsString, IsArray, Min, IsIn } from "class-validator";
+import { IsOptional, IsNumber, IsString, IsArray, IsBoolean, Min, IsIn } from "class-validator";
 import { Type, Transform } from "class-transformer";
 
 export class CustomerQueryDto {
@@ -36,4 +36,9 @@ export class CustomerQueryDto {
   @IsString({ each: true })
   @Transform(({ value }) => (typeof value === "string" ? value.split(",") : value))
   fields?: string[];
+
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  activeContractsOnly?: boolean;
 }

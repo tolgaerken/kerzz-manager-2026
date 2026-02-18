@@ -87,4 +87,8 @@ export class CreateCustomerDto {
   @IsBoolean()
   @IsOptional()
   enabled?: boolean = true;
+
+  @IsString()
+  @IsOptional()
+  segmentId?: string;
 }

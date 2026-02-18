@@ -37,6 +37,7 @@ export interface ContractQueryParams {
   search?: string;
   sortField?: string;
   sortOrder?: "asc" | "desc";
+  customerId?: string;
 }
 
 export interface ContractCounts {

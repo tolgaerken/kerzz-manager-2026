@@ -15,6 +15,7 @@ export interface Customer {
   email: string;
   taxOffice: string;
   enabled: boolean;
+  segmentId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +27,7 @@ export interface CustomerQueryParams {
   type?: CustomerType | "all";
   sortField?: string;
   sortOrder?: "asc" | "desc";
+  activeContractsOnly?: boolean;
 }
 
 export interface PaginationMeta {
@@ -52,6 +54,7 @@ export interface CreateCustomerInput {
   email?: string;
   taxOffice?: string;
   enabled?: boolean;
+  segmentId?: string;
 }
 
 export interface UpdateCustomerInput {
@@ -64,4 +67,5 @@ export interface UpdateCustomerInput {
   email?: string;
   taxOffice?: string;
   enabled?: boolean;
+  segmentId?: string;
 }

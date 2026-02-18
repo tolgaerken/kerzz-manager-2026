@@ -1,17 +1,16 @@
-import { useState, useCallback } from "react";
-import { Plus, Pencil, Trash2, Users, RefreshCw } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { Plus, Pencil, Trash2, Users, RefreshCw, Receipt } from "lucide-react";
+import type { ToolbarButtonConfig } from "@kerzz/grid";
 import { CollapsibleSection } from "../components/ui/CollapsibleSection";
 import {
   CustomersGrid,
   CustomersFilters,
-  CustomersPagination,
   CustomerFormModal,
   DeleteConfirmModal,
   useCustomers,
   useCreateCustomer,
   useUpdateCustomer,
-  useDeleteCustomer,
-  CUSTOMERS_CONSTANTS
+  useDeleteCustomer
 } from "../features/customers";
 import type {
   Customer,
@@ -19,12 +18,16 @@ import type {
   CreateCustomerInput,
   UpdateCustomerInput
 } from "../features/customers";
+import { useCustomerSegmentsMinimal } from "../features/customer-segments";
+import {
+  AccountTransactionsModal,
+  useAccountTransactionsStore
+} from "../features/account-transactions";
 
 export function CustomersPage() {
-  // Query state
+  // Query state - no pagination, fetch all data for virtual scroll
   const [queryParams, setQueryParams] = useState<CustomerQueryParams>({
-    page: 1,
-    limit: CUSTOMERS_CONSTANTS.DEFAULT_PAGE_SIZE,
+    limit: 99999,
     search: "",
     sortField: "name",
     sortOrder: "asc"
@@ -40,9 +43,19 @@ export function CustomersPage() {
 
   // Queries & Mutations
   const { data, isLoading, error, refetch, isFetching } = useCustomers(queryParams);
+  const { data: segmentsData } = useCustomerSegmentsMinimal();
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
   const deleteMutation = useDeleteCustomer();
+
+  // segmentId -> segment adı eşleştirme
+  const segmentMap = useMemo<Record<string, string>>(() => {
+    if (!segmentsData) return {};
+    return Object.fromEntries(segmentsData.map((s) => [s._id, s.name]));
+  }, [segmentsData]);
+
+  // Account transactions store
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
 
   // CollapsibleSection hook
   const collapsible = CollapsibleSection({
@@ -97,30 +110,26 @@ export function CustomersPage() {
     children: (
       <CustomersFilters
         search={queryParams.search || ""}
-        onSearchChange={(search) => setQueryParams((prev) => ({ ...prev, search, page: 1 }))}
+        onSearchChange={(search) => setQueryParams((prev) => ({ ...prev, search }))}
+        activeContractsOnly={queryParams.activeContractsOnly ?? false}
+        onActiveContractsOnlyChange={(activeContractsOnly) =>
+          setQueryParams((prev) => ({ ...prev, activeContractsOnly }))
+        }
       />
     ),
   });
 
   // Handlers
-  const handleSearchChange = useCallback((search: string) => {
-    setQueryParams((prev) => ({ ...prev, search, page: 1 }));
-  }, []);
-
-  const handlePageChange = useCallback((page: number) => {
-    setQueryParams((prev) => ({ ...prev, page }));
-  }, []);
-
-  const handlePageSizeChange = useCallback((limit: number) => {
-    setQueryParams((prev) => ({ ...prev, limit, page: 1 }));
-  }, []);
-
   const handleSortChange = useCallback(
     (sortField: string, sortOrder: "asc" | "desc") => {
       setQueryParams((prev) => ({ ...prev, sortField, sortOrder }));
     },
     []
   );
+
+  const handleRowClick = useCallback((customer: Customer) => {
+    setSelectedCustomer(customer);
+  }, []);
 
   const handleRowDoubleClick = useCallback((customer: Customer) => {
     setSelectedCustomer(customer);
@@ -181,6 +190,27 @@ export function CustomersPage() {
     setSelectedCustomer(null);
   }, []);
 
+  const handleOpenAccountTransactions = useCallback(() => {
+    if (!selectedCustomer?.erpId) return;
+    openAccountTransactionsModal(selectedCustomer.erpId, "VERI");
+  }, [selectedCustomer, openAccountTransactionsModal]);
+
+  // Toolbar buttons
+  const toolbarButtons = useMemo<ToolbarButtonConfig[]>(() => {
+    const hasSelection = !!selectedCustomer;
+    const hasErpId = !!selectedCustomer?.erpId;
+
+    return [
+      {
+        id: "account-transactions",
+        label: "Cari Hareketleri",
+        icon: <Receipt className="h-4 w-4" />,
+        onClick: handleOpenAccountTransactions,
+        disabled: isLoading || !hasSelection || !hasErpId
+      }
+    ];
+  }, [selectedCustomer, isLoading, handleOpenAccountTransactions]);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Collapsible Filters & Actions Container */}
@@ -212,20 +242,14 @@ export function CustomersPage() {
           <CustomersGrid
             data={data?.data || []}
             loading={isLoading}
+            segmentMap={segmentMap}
+            selectedId={selectedCustomer?._id}
+            toolbarButtons={toolbarButtons}
             onSortChange={handleSortChange}
+            onRowClick={handleRowClick}
             onRowDoubleClick={handleRowDoubleClick}
           />
         </div>
-
-        {/* Pagination */}
-        <CustomersPagination
-          currentPage={queryParams.page || 1}
-          totalPages={data?.meta.totalPages || 0}
-          total={data?.meta.total || 0}
-          pageSize={queryParams.limit || CUSTOMERS_CONSTANTS.DEFAULT_PAGE_SIZE}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-        />
       </div>
 
       {/* Quick Actions - Show when hovering a row (simplified version) */}
@@ -265,6 +289,9 @@ export function CustomersPage() {
         onConfirm={handleDeleteConfirm}
         isLoading={deleteMutation.isPending}
       />
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }

@@ -18,6 +18,7 @@ function buildQueryString(params: CustomerQueryParams): string {
   if (params.search) searchParams.set("search", params.search);
   if (params.sortField) searchParams.set("sortField", params.sortField);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+  if (params.activeContractsOnly) searchParams.set("activeContractsOnly", "true");
 
   return searchParams.toString();
 }

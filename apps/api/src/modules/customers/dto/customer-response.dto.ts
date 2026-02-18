@@ -23,6 +23,7 @@ export class CustomerResponseDto {
   email: string;
   taxOffice: string;
   enabled: boolean;
+  segmentId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
