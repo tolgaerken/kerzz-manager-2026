@@ -1,5 +1,9 @@
-import { apiGet } from "../../../lib/apiClient";
-import type { ProratedReportResponse, ProratedReportFilter } from "../types/prorated-report.types";
+import { apiDelete, apiGet } from "../../../lib/apiClient";
+import type {
+  ProratedReportResponse,
+  ProratedReportFilter,
+  RemoveProratedReportItemResponse,
+} from "../types/prorated-report.types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3888/api";
 
@@ -21,4 +25,11 @@ export async function fetchProratedReport(
   const qs = params.toString();
   const url = `${API_BASE_URL}/contract-payments/prorated-report${qs ? `?${qs}` : ""}`;
   return apiGet(url);
+}
+
+export async function removeProratedReportItem(
+  planId: string,
+): Promise<RemoveProratedReportItemResponse> {
+  const url = `${API_BASE_URL}/contract-payments/prorated-report/${planId}`;
+  return apiDelete(url);
 }

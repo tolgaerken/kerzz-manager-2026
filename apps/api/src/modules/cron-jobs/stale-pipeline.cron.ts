@@ -15,6 +15,7 @@ import type {
   StalePipelineDryRunResponse,
   StalePipelineDryRunItem,
 } from "./dto/dry-run.dto";
+import type { CronManualRunResponseDto } from "./dto/manual-run.dto";
 
 @Injectable()
 export class StalePipelineCron {
@@ -254,5 +255,222 @@ export class StalePipelineCron {
       },
       items,
     };
+  }
+
+  async manualRun(target: {
+    targetType: "lead" | "offer";
+    contextId: string;
+  }): Promise<CronManualRunResponseDto> {
+    const startTime = Date.now();
+    const executedAt = new Date().toISOString();
+
+    try {
+      const settings = await this.settingsService.getSettings();
+      if (!settings.stalePipelineCronEnabled) {
+        return {
+          cronName: "stale-pipeline",
+          success: true,
+          skipped: true,
+          message: "Hareketsiz pipeline cron'u devre disi oldugu icin islem atlandi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      const now = new Date();
+      const staleBefore = new Date(now);
+      staleBefore.setDate(now.getDate() - this.staleDays);
+
+      if (target.targetType === "lead") {
+        const lead = await this.leadModel.findById(target.contextId).lean().exec();
+        if (!lead) {
+          return {
+            cronName: "stale-pipeline",
+            success: false,
+            skipped: false,
+            message: `Lead bulunamadi: ${target.contextId}`,
+            executedAt,
+            durationMs: Date.now() - startTime,
+          };
+        }
+
+        const validStatuses = ["new", "contacted", "qualified"];
+        const isStale = lead.updatedAt instanceof Date && lead.updatedAt <= staleBefore;
+        if (!validStatuses.includes(lead.status) || !isStale || !lead.assignedUserId) {
+          return {
+            cronName: "stale-pipeline",
+            success: true,
+            skipped: true,
+            message: "Lead cron kosullarini saglamadigi icin atlandi",
+            executedAt,
+            durationMs: Date.now() - startTime,
+            details: {
+              status: lead.status,
+              updatedAt: lead.updatedAt,
+              assignedUserId: lead.assignedUserId,
+            },
+          };
+        }
+
+        const notificationWindowStart = new Date(now);
+        notificationWindowStart.setDate(now.getDate() - this.staleDays);
+        const existing = await this.notificationModel
+          .findOne({
+            type: "stale",
+            contextType: "lead",
+            contextId: lead._id.toString(),
+            createdAt: { $gte: notificationWindowStart },
+          })
+          .lean()
+          .exec();
+
+        if (existing) {
+          return {
+            cronName: "stale-pipeline",
+            success: true,
+            skipped: true,
+            message: "Lead icin son 14 gun icinde stale bildirimi zaten olusturulmus",
+            executedAt,
+            durationMs: Date.now() - startTime,
+          };
+        }
+
+        const notification = {
+          userId: lead.assignedUserId,
+          type: "stale" as const,
+          logId: "stale",
+          customerId: lead.customerId || "",
+          contextType: "lead",
+          contextId: lead._id.toString(),
+          message: `Lead ${lead.companyName || lead.contactName || ""} ${this.staleDays} gündür güncellenmedi`,
+        };
+
+        if (settings.dryRunMode) {
+          return {
+            cronName: "stale-pipeline",
+            success: true,
+            skipped: true,
+            message: "Dry run modu acik oldugu icin bildirim kaydi olusturulmadi",
+            executedAt,
+            durationMs: Date.now() - startTime,
+            details: notification,
+          };
+        }
+
+        await this.notificationService.createMany([notification]);
+        return {
+          cronName: "stale-pipeline",
+          success: true,
+          skipped: false,
+          message: "Lead icin stale bildirimi olusturuldu",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            contextType: "lead",
+            contextId: lead._id.toString(),
+            userId: lead.assignedUserId,
+          },
+        };
+      }
+
+      const offer = await this.offerModel.findById(target.contextId).lean().exec();
+      if (!offer) {
+        return {
+          cronName: "stale-pipeline",
+          success: false,
+          skipped: false,
+          message: `Teklif bulunamadi: ${target.contextId}`,
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      const validStatuses = ["draft", "sent", "revised", "waiting", "approved"];
+      const isStale = offer.updatedAt instanceof Date && offer.updatedAt <= staleBefore;
+      if (!validStatuses.includes(offer.status) || !isStale || !offer.sellerId) {
+        return {
+          cronName: "stale-pipeline",
+          success: true,
+          skipped: true,
+          message: "Teklif cron kosullarini saglamadigi icin atlandi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            status: offer.status,
+            updatedAt: offer.updatedAt,
+            sellerId: offer.sellerId,
+          },
+        };
+      }
+
+      const notificationWindowStart = new Date(now);
+      notificationWindowStart.setDate(now.getDate() - this.staleDays);
+      const existing = await this.notificationModel
+        .findOne({
+          type: "stale",
+          contextType: "offer",
+          contextId: offer._id.toString(),
+          createdAt: { $gte: notificationWindowStart },
+        })
+        .lean()
+        .exec();
+
+      if (existing) {
+        return {
+          cronName: "stale-pipeline",
+          success: true,
+          skipped: true,
+          message: "Teklif icin son 14 gun icinde stale bildirimi zaten olusturulmus",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      const notification = {
+        userId: offer.sellerId,
+        type: "stale" as const,
+        logId: "stale",
+        customerId: offer.customerId || "",
+        contextType: "offer",
+        contextId: offer._id.toString(),
+        message: `Teklif ${offer.customerName || ""} ${this.staleDays} gündür güncellenmedi`,
+      };
+
+      if (settings.dryRunMode) {
+        return {
+          cronName: "stale-pipeline",
+          success: true,
+          skipped: true,
+          message: "Dry run modu acik oldugu icin bildirim kaydi olusturulmadi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: notification,
+        };
+      }
+
+      await this.notificationService.createMany([notification]);
+      return {
+        cronName: "stale-pipeline",
+        success: true,
+        skipped: false,
+        message: "Teklif icin stale bildirimi olusturuldu",
+        executedAt,
+        durationMs: Date.now() - startTime,
+        details: {
+          contextType: "offer",
+          contextId: offer._id.toString(),
+          userId: offer.sellerId,
+        },
+      };
+    } catch (error) {
+      return {
+        cronName: "stale-pipeline",
+        success: false,
+        skipped: false,
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+        executedAt,
+        durationMs: Date.now() - startTime,
+      };
+    }
   }
 }

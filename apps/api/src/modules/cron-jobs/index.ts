@@ -6,3 +6,4 @@ export * from "./stale-pipeline.cron";
 export * from "./manager-log-reminder.cron";
 export * from "./prorated-invoice.cron";
 export * from "./dto/dry-run.dto";
+export * from "./dto/manual-run.dto";

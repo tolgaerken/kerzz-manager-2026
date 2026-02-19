@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import {
@@ -203,6 +208,19 @@ export class ProratedPlanService {
       .exec();
   }
 
+  async findUninvoicedProratedPlanById(
+    planId: string,
+  ): Promise<ContractPayment | null> {
+    return this.paymentModel
+      .findOne({
+        id: planId,
+        type: "prorated",
+        $or: [{ invoiceNo: "" }, { invoiceNo: { $exists: false } }],
+      })
+      .lean()
+      .exec();
+  }
+
   /**
    * Belirli bir kaynak kaleme ait faturasi kesilmemis kist planlari siler.
    * Kalem silindiginde cagrilir.
@@ -227,6 +245,40 @@ export class ProratedPlanService {
     }
 
     return result.deletedCount;
+  }
+
+  /**
+   * Belirli bir kıst planı ID ile siler.
+   * Sadece faturası kesilmemiş kıst kayıtlar silinebilir.
+   */
+  async deleteProratedPlanById(planId: string): Promise<{ id: string; deleted: true }> {
+    const plan = await this.paymentModel
+      .findOne({ id: planId, type: "prorated" })
+      .lean()
+      .exec();
+
+    if (!plan) {
+      throw new NotFoundException(`Kıst plan bulunamadı: ${planId}`);
+    }
+
+    const hasInvoiceNo =
+      typeof plan.invoiceNo === "string" && plan.invoiceNo.trim().length > 0;
+    if (hasInvoiceNo) {
+      throw new BadRequestException(
+        "Faturalanmış kıst kaydı rapordan çıkarılamaz.",
+      );
+    }
+
+    await this.paymentModel
+      .deleteOne({
+        id: planId,
+        type: "prorated",
+        $or: [{ invoiceNo: "" }, { invoiceNo: { $exists: false } }],
+      })
+      .exec();
+
+    this.logger.log(`Kıst plan silindi: id=${planId}`);
+    return { id: planId, deleted: true };
   }
 
   /**

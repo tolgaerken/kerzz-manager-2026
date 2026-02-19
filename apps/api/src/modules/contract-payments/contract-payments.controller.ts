@@ -128,6 +128,15 @@ export class ContractPaymentsController {
     return { data, total: data.length };
   }
 
+  /**
+   * Belirli bir kıst planı rapordan çıkarır.
+   */
+  @AuditLog({ module: "contract-payments", entityType: "ContractPayment" })
+  @Delete("prorated-report/:planId")
+  async deleteProratedReportItem(@Param("planId") planId: string) {
+    return this.proratedPlanService.deleteProratedPlanById(planId);
+  }
+
   // ─── CRUD Endpoint'leri ───────────────────────────────────────────
 
   @Get()

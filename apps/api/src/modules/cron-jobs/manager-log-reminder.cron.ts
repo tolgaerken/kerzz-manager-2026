@@ -6,6 +6,7 @@ import { CreateManagerNotificationDto } from "../manager-notification/dto";
 import { SystemLogsService, SystemLogAction } from "../system-logs";
 import { NotificationSettingsService } from "../notification-settings";
 import type { ManagerLogReminderDryRunResponse } from "./dto/dry-run.dto";
+import type { CronManualRunResponseDto } from "./dto/manual-run.dto";
 
 @Injectable()
 export class ManagerLogReminderCron {
@@ -194,5 +195,120 @@ export class ManagerLogReminderCron {
       },
       items,
     };
+  }
+
+  async manualRun(target: { logId: string }): Promise<CronManualRunResponseDto> {
+    const startTime = Date.now();
+    const executedAt = new Date().toISOString();
+
+    try {
+      const settings = await this.settingsService.getSettings();
+      if (!settings.managerLogReminderCronEnabled) {
+        return {
+          cronName: "manager-log-reminder",
+          success: true,
+          skipped: true,
+          message: "Manager log reminder cron'u devre disi oldugu icin islem atlandi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      const log = await this.managerLogService.findOne(target.logId);
+      if (!log) {
+        return {
+          cronName: "manager-log-reminder",
+          success: false,
+          skipped: false,
+          message: `Log bulunamadi: ${target.logId}`,
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      if (!log.reminder) {
+        return {
+          cronName: "manager-log-reminder",
+          success: true,
+          skipped: true,
+          message: "Log icin reminder tanimi olmadigindan islem atlandi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      if (log.reminder.completed) {
+        return {
+          cronName: "manager-log-reminder",
+          success: true,
+          skipped: true,
+          message: "Reminder zaten tamamlanmis",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      if (log.reminder.date > new Date()) {
+        return {
+          cronName: "manager-log-reminder",
+          success: true,
+          skipped: true,
+          message: "Reminder zamani henuz gelmedigi icin islem atlandi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            reminderDate: log.reminder.date.toISOString(),
+          },
+        };
+      }
+
+      if (settings.dryRunMode) {
+        return {
+          cronName: "manager-log-reminder",
+          success: true,
+          skipped: true,
+          message: "Dry run modu acik oldugu icin reminder bildirimi olusturulmadi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            logId: log._id,
+            authorId: log.authorId,
+          },
+        };
+      }
+
+      await this.processReminder({
+        _id: log._id,
+        id: log.id,
+        customerId: log.customerId,
+        contextType: log.contextType,
+        contextId: log.contextId,
+        message: log.message,
+        authorId: log.authorId,
+        pipelineRef: log.pipelineRef,
+      });
+
+      return {
+        cronName: "manager-log-reminder",
+        success: true,
+        skipped: false,
+        message: "Reminder bildirimi olusturuldu ve reminder tamamlandi",
+        executedAt,
+        durationMs: Date.now() - startTime,
+        details: {
+          logId: log._id,
+          authorId: log.authorId,
+        },
+      };
+    } catch (error) {
+      return {
+        cronName: "manager-log-reminder",
+        success: false,
+        skipped: false,
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+        executedAt,
+        durationMs: Date.now() - startTime,
+      };
+    }
   }
 }

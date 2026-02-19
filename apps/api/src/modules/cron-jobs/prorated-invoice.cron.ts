@@ -4,6 +4,7 @@ import { ProratedPlanService } from "../contract-payments/services/prorated-plan
 import { ContractInvoiceOrchestratorService } from "../contract-invoices/services/contract-invoice-orchestrator.service";
 import { NotificationSettingsService } from "../notification-settings";
 import type { ProratedInvoiceDryRunResponse } from "./dto/dry-run.dto";
+import type { CronManualRunResponseDto } from "./dto/manual-run.dto";
 import { formatDate } from "../notification-queue/notification-data.helper";
 
 /**
@@ -122,5 +123,111 @@ export class ProratedInvoiceCron {
       },
       items,
     };
+  }
+
+  async manualRun(target: { planId: string }): Promise<CronManualRunResponseDto> {
+    const startTime = Date.now();
+    const executedAt = new Date().toISOString();
+
+    try {
+      const settings = await this.settingsService.getSettings();
+      if (!settings.proratedInvoiceCronEnabled) {
+        return {
+          cronName: "prorated-invoice",
+          success: true,
+          skipped: true,
+          message: "Kist fatura cron'u devre disi oldugu icin islem atlandi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      const plan = await this.proratedPlanService.findUninvoicedProratedPlanById(
+        target.planId
+      );
+      if (!plan) {
+        return {
+          cronName: "prorated-invoice",
+          success: true,
+          skipped: true,
+          message: "Plan bulunamadi veya plan daha once faturalanmis",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            planId: target.planId,
+          },
+        };
+      }
+
+      if (settings.dryRunMode) {
+        return {
+          cronName: "prorated-invoice",
+          success: true,
+          skipped: true,
+          message: "Dry run modu acik oldugu icin fatura kesimi yapilmadi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            planId: plan.id,
+            customerId: plan.customerId,
+            amount: plan.total,
+          },
+        };
+      }
+
+      const results = await this.invoiceOrchestratorService.createMergedInvoices([
+        plan.id,
+      ]);
+      const result = results.find((item) => item.planId === plan.id) ?? results[0];
+
+      if (!result) {
+        return {
+          cronName: "prorated-invoice",
+          success: false,
+          skipped: false,
+          message: "Fatura sonucu alinamadi",
+          executedAt,
+          durationMs: Date.now() - startTime,
+        };
+      }
+
+      if (!result.success) {
+        return {
+          cronName: "prorated-invoice",
+          success: false,
+          skipped: false,
+          message: result.error || "Fatura olusturma basarisiz",
+          executedAt,
+          durationMs: Date.now() - startTime,
+          details: {
+            planId: result.planId,
+            mergedPlanIds: result.mergedPlanIds,
+          },
+        };
+      }
+
+      return {
+        cronName: "prorated-invoice",
+        success: true,
+        skipped: false,
+        message: "Kist plan icin fatura olusturuldu",
+        executedAt,
+        durationMs: Date.now() - startTime,
+        details: {
+          planId: result.planId,
+          invoiceNo: result.invoiceNo,
+          mergedPlanIds: result.mergedPlanIds,
+        },
+      };
+    } catch (error) {
+      return {
+        cronName: "prorated-invoice",
+        success: false,
+        skipped: false,
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+        executedAt,
+        durationMs: Date.now() - startTime,
+      };
+    }
   }
 }

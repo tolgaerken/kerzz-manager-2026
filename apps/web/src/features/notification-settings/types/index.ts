@@ -311,6 +311,23 @@ export type CronName =
   | "manager-log-reminder"
   | "prorated-invoice";
 
+export interface CronManualRunRequest {
+  targetType?: "lead" | "offer";
+  contextId?: string;
+  logId?: string;
+  planId?: string;
+}
+
+export interface CronManualRunResponse {
+  cronName: CronName;
+  success: boolean;
+  skipped: boolean;
+  message: string;
+  executedAt: string;
+  durationMs: number;
+  details?: Record<string, unknown>;
+}
+
 export interface DryRunNotificationItem {
   templateCode: string;
   channel: "email" | "sms";

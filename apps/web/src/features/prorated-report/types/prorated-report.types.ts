@@ -33,6 +33,11 @@ export interface ProratedReportResponse {
   total: number;
 }
 
+export interface RemoveProratedReportItemResponse {
+  id: string;
+  deleted: true;
+}
+
 export interface ProratedReportFilter {
   paid?: boolean;
   invoiced?: boolean;

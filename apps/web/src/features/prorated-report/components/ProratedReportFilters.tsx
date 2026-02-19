@@ -1,8 +1,11 @@
+import { RotateCw } from "lucide-react";
 import type { ProratedReportFilter } from "../types/prorated-report.types";
 
 interface ProratedReportFiltersProps {
   filter: ProratedReportFilter;
   onChange: (filter: ProratedReportFilter) => void;
+  onRefresh: () => void;
+  refreshing?: boolean;
   totalCount: number;
   totalAmount: number;
 }
@@ -10,6 +13,8 @@ interface ProratedReportFiltersProps {
 export function ProratedReportFilters({
   filter,
   onChange,
+  onRefresh,
+  refreshing = false,
   totalCount,
   totalAmount,
 }: ProratedReportFiltersProps) {
@@ -67,6 +72,16 @@ export function ProratedReportFilters({
           <option value="false">Faturasız</option>
         </select>
       </div>
+
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={refreshing}
+        className="inline-flex h-8 items-center gap-1 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-surface-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <RotateCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+        Yenile
+      </button>
 
       {/* Özet */}
       <div className="ml-auto flex items-center gap-4">

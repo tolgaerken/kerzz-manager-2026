@@ -1,4 +1,6 @@
+import { Loader2, PlayCircle } from "lucide-react";
 import type {
+  CronName,
   CronDryRunResponse,
   InvoiceNotificationDryRunResponse,
   ContractNotificationDryRunResponse,
@@ -7,10 +9,56 @@ import type {
   ProratedInvoiceDryRunResponse,
 } from "../../types";
 
+export interface DryRunRunnableRecord {
+  key: string;
+  cronName: CronName;
+  label: string;
+  payload:
+    | {
+        kind: "notification-send";
+        type: "invoice" | "contract";
+        id: string;
+        channels: ("email" | "sms")[];
+      }
+    | {
+        kind: "cron-manual-run";
+        targetType?: "lead" | "offer";
+        contextId?: string;
+        logId?: string;
+        planId?: string;
+      };
+}
+
+function RunButton({
+  runnable,
+  isRunning,
+  onClick,
+}: {
+  runnable: boolean;
+  isRunning: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!runnable || isRunning}
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary)]/40 px-2 py-1 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 disabled:cursor-not-allowed disabled:border-[var(--color-border)] disabled:text-[var(--color-muted-foreground)] disabled:hover:bg-transparent"
+    >
+      {isRunning ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <PlayCircle className="h-3.5 w-3.5" />
+      )}
+      Manuel
+    </button>
+  );
+}
+
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-[var(--color-surface)] rounded-lg p-3">
-      <div className="text-xs text-[var(--color-muted)]">{label}</div>
+      <div className="text-xs text-[var(--color-muted-foreground)]">{label}</div>
       <div className="text-lg font-semibold text-[var(--color-foreground)] mt-0.5">
         {value}
       </div>
@@ -23,8 +71,8 @@ function ChannelBadge({ channel }: { channel: "email" | "sms" }) {
     <span
       className={`inline-flex px-1.5 py-0.5 text-xs rounded ${
         channel === "email"
-          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
-          : "bg-green-100 dark:bg-green-900/30 text-green-600"
+          ? "bg-[var(--color-info)]/10 text-[var(--color-info)]"
+          : "bg-[var(--color-success)]/10 text-[var(--color-success)]"
       }`}
     >
       {channel === "email" ? "Email" : "SMS"}
@@ -34,14 +82,22 @@ function ChannelBadge({ channel }: { channel: "email" | "sms" }) {
 
 function EmptyState() {
   return (
-    <div className="py-6 text-center text-sm text-[var(--color-muted)]">
+    <div className="py-6 text-center text-sm text-[var(--color-muted-foreground)]">
       Bu cron calistiginda islenecek kayit bulunamadi.
     </div>
   );
 }
 
 // ── Invoice ──
-function InvoiceResult({ data }: { data: InvoiceNotificationDryRunResponse }) {
+function InvoiceResult({
+  data,
+  onRunRecord,
+  runningRecordKey,
+}: {
+  data: InvoiceNotificationDryRunResponse;
+  onRunRecord?: (record: DryRunRunnableRecord) => void;
+  runningRecordKey?: string | null;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-3">
@@ -51,7 +107,7 @@ function InvoiceResult({ data }: { data: InvoiceNotificationDryRunResponse }) {
         <StatCard label="SMS" value={data.summary.byChannel.sms} />
       </div>
 
-      <div className="text-xs text-[var(--color-muted)]">
+      <div className="text-xs text-[var(--color-muted-foreground)]">
         Hatirlatma gunleri: {data.settings.invoiceDueReminderDays.join(", ")} |
         Vadesi gecmis gunler: {data.settings.invoiceOverdueDays.join(", ")} |
         Lookback: {data.settings.invoiceLookbackDays} gun
@@ -63,7 +119,7 @@ function InvoiceResult({ data }: { data: InvoiceNotificationDryRunResponse }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted)]">
+              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
                 <th className="pb-2 pr-3">Fatura No</th>
                 <th className="pb-2 pr-3">Musteri</th>
                 <th className="pb-2 pr-3 text-right">Tutar</th>
@@ -71,11 +127,12 @@ function InvoiceResult({ data }: { data: InvoiceNotificationDryRunResponse }) {
                 <th className="pb-2 pr-3">Gecikme</th>
                 <th className="pb-2 pr-3">Durum</th>
                 <th className="pb-2">Kanal</th>
+                <th className="pb-2 pl-3 text-right">Test</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((item, i) => (
-                <tr key={i} className="border-b border-[var(--color-border)]/50">
+                <tr key={`${item.invoiceId}-${i}`} className="border-b border-[var(--color-border)]/50">
                   <td className="py-2 pr-3 font-mono text-xs">{item.invoiceNumber}</td>
                   <td className="py-2 pr-3">{item.customerName || item.customerId}</td>
                   <td className="py-2 pr-3 text-right">
@@ -102,6 +159,38 @@ function InvoiceResult({ data }: { data: InvoiceNotificationDryRunResponse }) {
                       )}
                     </div>
                   </td>
+                  <td className="py-2 pl-3 text-right">
+                    {(() => {
+                      const channels = Array.from(
+                        new Set(item.notifications.map((n) => n.channel))
+                      );
+                      const contextId = item.notifications[0]?.contextId || item.invoiceId;
+                      const runnable = channels.length > 0 && Boolean(contextId);
+                      const recordKey = `invoice-notification:invoice:${contextId}`;
+                      const isRunning = runningRecordKey === recordKey;
+
+                      return (
+                        <RunButton
+                          runnable={runnable}
+                          isRunning={isRunning}
+                          onClick={() => {
+                            if (!runnable || !contextId || !onRunRecord) return;
+                            onRunRecord({
+                              key: recordKey,
+                              cronName: "invoice-notification",
+                              label: item.invoiceNumber || item.invoiceId,
+                              payload: {
+                                kind: "notification-send",
+                                type: "invoice",
+                                id: contextId,
+                                channels,
+                              },
+                            });
+                          }}
+                        />
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -113,7 +202,15 @@ function InvoiceResult({ data }: { data: InvoiceNotificationDryRunResponse }) {
 }
 
 // ── Contract ──
-function ContractResult({ data }: { data: ContractNotificationDryRunResponse }) {
+function ContractResult({
+  data,
+  onRunRecord,
+  runningRecordKey,
+}: {
+  data: ContractNotificationDryRunResponse;
+  onRunRecord?: (record: DryRunRunnableRecord) => void;
+  runningRecordKey?: string | null;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
@@ -122,7 +219,7 @@ function ContractResult({ data }: { data: ContractNotificationDryRunResponse }) 
         <StatCard label="SMS" value={data.summary.byChannel.sms} />
       </div>
 
-      <div className="text-xs text-[var(--color-muted)]">
+      <div className="text-xs text-[var(--color-muted-foreground)]">
         Hatirlatma gunleri: bitis oncesi {data.settings.contractExpiryDays.join(", ")} gun
       </div>
 
@@ -132,18 +229,19 @@ function ContractResult({ data }: { data: ContractNotificationDryRunResponse }) 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted)]">
+              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
                 <th className="pb-2 pr-3">Kontrat</th>
                 <th className="pb-2 pr-3">Sirket</th>
                 <th className="pb-2 pr-3">Musteri</th>
                 <th className="pb-2 pr-3">Bitis Tarihi</th>
                 <th className="pb-2 pr-3">Kalan Gun</th>
                 <th className="pb-2">Kanal</th>
+                <th className="pb-2 pl-3 text-right">Test</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((item, i) => (
-                <tr key={i} className="border-b border-[var(--color-border)]/50">
+                <tr key={`${item.contractId}-${i}`} className="border-b border-[var(--color-border)]/50">
                   <td className="py-2 pr-3 font-mono text-xs">{item.contractId}</td>
                   <td className="py-2 pr-3">{item.company}</td>
                   <td className="py-2 pr-3">{item.customerName}</td>
@@ -163,6 +261,38 @@ function ContractResult({ data }: { data: ContractNotificationDryRunResponse }) 
                       )}
                     </div>
                   </td>
+                  <td className="py-2 pl-3 text-right">
+                    {(() => {
+                      const channels = Array.from(
+                        new Set(item.notifications.map((n) => n.channel))
+                      );
+                      const contextId = item.notifications[0]?.contextId;
+                      const runnable = channels.length > 0 && Boolean(contextId);
+                      const recordKey = `contract-notification:contract:${contextId ?? item.contractId}`;
+                      const isRunning = runningRecordKey === recordKey;
+
+                      return (
+                        <RunButton
+                          runnable={runnable}
+                          isRunning={isRunning}
+                          onClick={() => {
+                            if (!runnable || !contextId || !onRunRecord) return;
+                            onRunRecord({
+                              key: recordKey,
+                              cronName: "contract-notification",
+                              label: item.contractId || contextId,
+                              payload: {
+                                kind: "notification-send",
+                                type: "contract",
+                                id: contextId,
+                                channels,
+                              },
+                            });
+                          }}
+                        />
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -174,7 +304,15 @@ function ContractResult({ data }: { data: ContractNotificationDryRunResponse }) 
 }
 
 // ── Stale Pipeline ──
-function StalePipelineResult({ data }: { data: StalePipelineDryRunResponse }) {
+function StalePipelineResult({
+  data,
+  onRunRecord,
+  runningRecordKey,
+}: {
+  data: StalePipelineDryRunResponse;
+  onRunRecord?: (record: DryRunRunnableRecord) => void;
+  runningRecordKey?: string | null;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-3">
@@ -190,12 +328,13 @@ function StalePipelineResult({ data }: { data: StalePipelineDryRunResponse }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted)]">
+              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
                 <th className="pb-2 pr-3">Tip</th>
                 <th className="pb-2 pr-3">Isim</th>
                 <th className="pb-2 pr-3">Kullanici</th>
                 <th className="pb-2 pr-3">Mesaj</th>
                 <th className="pb-2">Durum</th>
+                <th className="pb-2 pl-3 text-right">Test</th>
               </tr>
             </thead>
             <tbody>
@@ -204,8 +343,8 @@ function StalePipelineResult({ data }: { data: StalePipelineDryRunResponse }) {
                   <td className="py-2 pr-3">
                     <span className={`inline-flex px-1.5 py-0.5 text-xs rounded ${
                       item.type === "lead"
-                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600"
-                        : "bg-orange-100 dark:bg-orange-900/30 text-orange-600"
+                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                        : "bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
                     }`}>
                       {item.type === "lead" ? "Lead" : "Teklif"}
                     </span>
@@ -215,10 +354,36 @@ function StalePipelineResult({ data }: { data: StalePipelineDryRunResponse }) {
                   <td className="py-2 pr-3 text-xs max-w-xs truncate">{item.message}</td>
                   <td className="py-2">
                     {item.alreadyNotified ? (
-                      <span className="text-xs text-[var(--color-muted)]">Bildirilmis</span>
+                      <span className="text-xs text-[var(--color-muted-foreground)]">Bildirilmis</span>
                     ) : (
                       <span className="text-xs text-[var(--color-success)]">Yeni</span>
                     )}
+                  </td>
+                  <td className="py-2 pl-3 text-right">
+                    {(() => {
+                      const recordKey = `stale-pipeline:${item.type}:${item.id}`;
+                      const isRunning = runningRecordKey === recordKey;
+
+                      return (
+                        <RunButton
+                          runnable={true}
+                          isRunning={isRunning}
+                          onClick={() => {
+                            if (!onRunRecord) return;
+                            onRunRecord({
+                              key: recordKey,
+                              cronName: "stale-pipeline",
+                              label: item.name || item.id,
+                              payload: {
+                                kind: "cron-manual-run",
+                                targetType: item.type,
+                                contextId: item.id,
+                              },
+                            });
+                          }}
+                        />
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
@@ -231,7 +396,15 @@ function StalePipelineResult({ data }: { data: StalePipelineDryRunResponse }) {
 }
 
 // ── Manager Log Reminder ──
-function ManagerLogResult({ data }: { data: ManagerLogReminderDryRunResponse }) {
+function ManagerLogResult({
+  data,
+  onRunRecord,
+  runningRecordKey,
+}: {
+  data: ManagerLogReminderDryRunResponse;
+  onRunRecord?: (record: DryRunRunnableRecord) => void;
+  runningRecordKey?: string | null;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3">
@@ -244,11 +417,12 @@ function ManagerLogResult({ data }: { data: ManagerLogReminderDryRunResponse }) 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted)]">
+              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
                 <th className="pb-2 pr-3">Log ID</th>
                 <th className="pb-2 pr-3">Yazar</th>
                 <th className="pb-2 pr-3">Musteri</th>
                 <th className="pb-2">Mesaj</th>
+                <th className="pb-2 pl-3 text-right">Test</th>
               </tr>
             </thead>
             <tbody>
@@ -258,6 +432,30 @@ function ManagerLogResult({ data }: { data: ManagerLogReminderDryRunResponse }) 
                   <td className="py-2 pr-3 font-mono text-xs">{item.authorId}</td>
                   <td className="py-2 pr-3 font-mono text-xs">{item.customerId}</td>
                   <td className="py-2 text-xs max-w-sm truncate">{item.message}</td>
+                  <td className="py-2 pl-3 text-right">
+                    {(() => {
+                      const recordKey = `manager-log-reminder:${item.logId}`;
+                      const isRunning = runningRecordKey === recordKey;
+                      return (
+                        <RunButton
+                          runnable={true}
+                          isRunning={isRunning}
+                          onClick={() => {
+                            if (!onRunRecord) return;
+                            onRunRecord({
+                              key: recordKey,
+                              cronName: "manager-log-reminder",
+                              label: item.logId,
+                              payload: {
+                                kind: "cron-manual-run",
+                                logId: item.logId,
+                              },
+                            });
+                          }}
+                        />
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -269,7 +467,15 @@ function ManagerLogResult({ data }: { data: ManagerLogReminderDryRunResponse }) 
 }
 
 // ── Prorated Invoice ──
-function ProratedResult({ data }: { data: ProratedInvoiceDryRunResponse }) {
+function ProratedResult({
+  data,
+  onRunRecord,
+  runningRecordKey,
+}: {
+  data: ProratedInvoiceDryRunResponse;
+  onRunRecord?: (record: DryRunRunnableRecord) => void;
+  runningRecordKey?: string | null;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
@@ -287,13 +493,14 @@ function ProratedResult({ data }: { data: ProratedInvoiceDryRunResponse }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted)]">
+              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
                 <th className="pb-2 pr-3">Plan ID</th>
                 <th className="pb-2 pr-3">Kontrat</th>
                 <th className="pb-2 pr-3">Musteri</th>
                 <th className="pb-2 pr-3 text-right">Tutar</th>
                 <th className="pb-2 pr-3">Odeme Tarihi</th>
                 <th className="pb-2">Aciklama</th>
+                <th className="pb-2 pl-3 text-right">Test</th>
               </tr>
             </thead>
             <tbody>
@@ -307,6 +514,30 @@ function ProratedResult({ data }: { data: ProratedInvoiceDryRunResponse }) {
                   </td>
                   <td className="py-2 pr-3">{item.payDate}</td>
                   <td className="py-2 text-xs max-w-xs truncate">{item.description}</td>
+                  <td className="py-2 pl-3 text-right">
+                    {(() => {
+                      const recordKey = `prorated-invoice:${item.planId}`;
+                      const isRunning = runningRecordKey === recordKey;
+                      return (
+                        <RunButton
+                          runnable={true}
+                          isRunning={isRunning}
+                          onClick={() => {
+                            if (!onRunRecord) return;
+                            onRunRecord({
+                              key: recordKey,
+                              cronName: "prorated-invoice",
+                              label: item.planId,
+                              payload: {
+                                kind: "cron-manual-run",
+                                planId: item.planId,
+                              },
+                            });
+                          }}
+                        />
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -318,7 +549,15 @@ function ProratedResult({ data }: { data: ProratedInvoiceDryRunResponse }) {
 }
 
 // ── Main Panel ──
-export function DryRunResultPanel({ data }: { data: CronDryRunResponse }) {
+export function DryRunResultPanel({
+  data,
+  onRunRecord,
+  runningRecordKey,
+}: {
+  data: CronDryRunResponse;
+  onRunRecord?: (record: DryRunRunnableRecord) => void;
+  runningRecordKey?: string | null;
+}) {
   const executedDate = new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
     month: "2-digit",
@@ -331,19 +570,49 @@ export function DryRunResultPanel({ data }: { data: CronDryRunResponse }) {
   return (
     <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-[var(--color-muted)]">
+        <span className="text-xs text-[var(--color-muted-foreground)]">
           Calistirilma: {executedDate}
         </span>
-        <span className="text-xs text-[var(--color-muted)]">
+        <span className="text-xs text-[var(--color-muted-foreground)]">
           Sure: {data.durationMs}ms
         </span>
       </div>
 
-      {data.cronName === "invoice-notification" && <InvoiceResult data={data} />}
-      {data.cronName === "contract-notification" && <ContractResult data={data} />}
-      {data.cronName === "stale-pipeline" && <StalePipelineResult data={data} />}
-      {data.cronName === "manager-log-reminder" && <ManagerLogResult data={data} />}
-      {data.cronName === "prorated-invoice" && <ProratedResult data={data} />}
+      {data.cronName === "invoice-notification" && (
+        <InvoiceResult
+          data={data}
+          onRunRecord={onRunRecord}
+          runningRecordKey={runningRecordKey}
+        />
+      )}
+      {data.cronName === "contract-notification" && (
+        <ContractResult
+          data={data}
+          onRunRecord={onRunRecord}
+          runningRecordKey={runningRecordKey}
+        />
+      )}
+      {data.cronName === "stale-pipeline" && (
+        <StalePipelineResult
+          data={data}
+          onRunRecord={onRunRecord}
+          runningRecordKey={runningRecordKey}
+        />
+      )}
+      {data.cronName === "manager-log-reminder" && (
+        <ManagerLogResult
+          data={data}
+          onRunRecord={onRunRecord}
+          runningRecordKey={runningRecordKey}
+        />
+      )}
+      {data.cronName === "prorated-invoice" && (
+        <ProratedResult
+          data={data}
+          onRunRecord={onRunRecord}
+          runningRecordKey={runningRecordKey}
+        />
+      )}
     </div>
   );
 }
