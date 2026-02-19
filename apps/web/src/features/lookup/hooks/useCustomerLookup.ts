@@ -62,10 +62,14 @@ export function useCustomerLookup(options: UseCustomerLookupOptions = {}) {
       const results: CustomerLookupItem[] = [];
       for (const c of customers) {
         if (results.length >= limit) break;
+        const matchErpMappings = c.erpMappings?.some(
+          (m) => m.erpId && m.erpId.toLowerCase().includes(lower)
+        );
         const match =
           (c.name && c.name.toLowerCase().includes(lower)) ||
           (c.companyName && c.companyName.toLowerCase().includes(lower)) ||
           (c.erpId && c.erpId.toLowerCase().includes(lower)) ||
+          matchErpMappings ||
           (c.taxNo && c.taxNo.toLowerCase().includes(lower));
         if (match) results.push(c);
       }

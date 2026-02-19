@@ -7,8 +7,23 @@ import {
   IsIn,
   ValidateNested,
   ValidateIf,
+  IsArray,
 } from "class-validator";
 import { Type } from "class-transformer";
+
+export class ErpMappingInputDto {
+  @IsString()
+  @IsNotEmpty()
+  companyId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  erpId: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrimary?: boolean;
+}
 
 export class CustomerAddressInputDto {
   @IsOptional()
@@ -91,4 +106,10 @@ export class CreateCustomerDto {
   @IsString()
   @IsOptional()
   segmentId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ErpMappingInputDto)
+  erpMappings?: ErpMappingInputDto[];
 }

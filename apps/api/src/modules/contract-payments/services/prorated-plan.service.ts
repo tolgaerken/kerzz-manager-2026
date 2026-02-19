@@ -23,6 +23,7 @@ import {
   Customer,
   CustomerDocument,
 } from "../../customers/schemas/customer.schema";
+import { getCustomerErpId } from "../../customers/utils/customer-erp-resolver";
 import { ExchangeRateService } from "../../exchange-rate";
 import { CurrencyType } from "../interfaces/payment-plan.interfaces";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
@@ -158,6 +159,7 @@ export class ProratedPlanService {
       itemId: item.itemId,
     };
 
+    const resolvedErpId = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
     const plan: Partial<ContractPayment> = {
       id: generatePaymentId(),
       contractId: contract.id,
@@ -173,7 +175,7 @@ export class ProratedPlanService {
       list: [listItem],
       ref: `${customer.id}-${generateShortId()}`,
       customerId: customer.id || "",
-      companyId: customer.erpId || "",
+      companyId: resolvedErpId,
       balance: 0,
       invoiceTotal: 0,
       block: false,

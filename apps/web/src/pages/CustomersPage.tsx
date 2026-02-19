@@ -12,7 +12,9 @@ import {
   useCustomers,
   useCreateCustomer,
   useUpdateCustomer,
-  useDeleteCustomer
+  useDeleteCustomer,
+  getCustomerErpId,
+  hasCustomerErpId
 } from "../features/customers";
 import type {
   Customer,
@@ -195,8 +197,10 @@ export function CustomersPage() {
   }, []);
 
   const handleOpenAccountTransactions = useCallback(() => {
-    if (!selectedCustomer?.erpId) return;
-    openAccountTransactionsModal(selectedCustomer.erpId, "VERI");
+    if (!selectedCustomer) return;
+    const resolvedErpId = getCustomerErpId(selectedCustomer);
+    if (!resolvedErpId) return;
+    openAccountTransactionsModal(resolvedErpId, "VERI");
   }, [selectedCustomer, openAccountTransactionsModal]);
 
   const handleOpenContracts = useCallback(() => {
@@ -210,7 +214,7 @@ export function CustomersPage() {
   // Toolbar buttons
   const toolbarButtons = useMemo<ToolbarButtonConfig[]>(() => {
     const hasSelection = !!selectedCustomer;
-    const hasErpId = !!selectedCustomer?.erpId;
+    const hasErpId = hasCustomerErpId(selectedCustomer);
 
     return [
       {

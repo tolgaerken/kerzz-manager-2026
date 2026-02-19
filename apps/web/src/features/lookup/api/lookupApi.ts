@@ -12,7 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3888/api"
  * Backend'e fields parametresi göndererek sadece gerekli alanları alır.
  */
 export async function fetchCustomerLookup(): Promise<CustomerLookupItem[]> {
-  const fields = "id,name,companyName,erpId,taxNo";
+  const fields = "id,name,companyName,erpId,erpMappings,taxNo";
   const url = `${API_BASE_URL}/customers?limit=99999&type=all&fields=${fields}`;
   const result = await apiGet<LookupResponse<CustomerLookupItem>>(url);
   return result.data;

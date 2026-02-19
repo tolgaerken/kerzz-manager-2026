@@ -12,6 +12,7 @@ import {
 } from "../../contract-payments/schemas/contract-payment.schema";
 import { Invoice, InvoiceDocument } from "../../invoices/schemas/invoice.schema";
 import { Customer } from "../../customers/schemas/customer.schema";
+import { getCustomerErpId } from "../../customers/utils/customer-erp-resolver";
 import { Contract } from "../../contracts/schemas/contract.schema";
 import { CompaniesService } from "../../companies";
 import { InvoiceMapperService } from "./invoice-mapper.service";
@@ -184,6 +185,7 @@ export class InvoiceCreatorService {
     const dueDate = addDays(invoiceDate, CONTRACT_DUE_DAYS);
 
     // Global invoice olustur (mapper'dan hesaplanan degerler)
+    const resolvedErpId = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
     const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
       {
         ...paymentPlan,
@@ -192,7 +194,7 @@ export class InvoiceCreatorService {
         invoiceDate,
         dueDate,
       } as ContractPayment,
-      customer.erpId || "",
+      resolvedErpId,
       contract.internalFirm || "",
     );
 
@@ -265,13 +267,14 @@ export class InvoiceCreatorService {
       ? new Date(paymentPlan.dueDate)
       : addDays(invoiceDate, CONTRACT_DUE_DAYS);
 
+    const resolvedErpIdForUpdate = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
     const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
       {
         ...paymentPlan,
         invoiceDate,
         dueDate,
       } as ContractPayment,
-      customer.erpId || "",
+      resolvedErpIdForUpdate,
       contract.internalFirm || "",
     );
 

@@ -10,11 +10,18 @@ export class CustomerAddressDto {
   country: string;
 }
 
+export class ErpMappingDto {
+  companyId: string;
+  erpId: string;
+  isPrimary?: boolean;
+}
+
 export class CustomerResponseDto {
   _id: string;
   type: string;
   id: string;
   erpId: string;
+  erpMappings?: ErpMappingDto[];
   taxNo: string;
   name: string;
   brand: string;

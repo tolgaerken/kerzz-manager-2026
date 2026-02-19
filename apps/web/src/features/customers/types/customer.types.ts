@@ -2,11 +2,18 @@ import type { AddressData } from "../../locations/types";
 
 export type CustomerType = "prospect" | "customer";
 
+export interface ErpMapping {
+  companyId: string;
+  erpId: string;
+  isPrimary?: boolean;
+}
+
 export interface Customer {
   _id: string;
   type: CustomerType;
   id: string;
   erpId: string;
+  erpMappings?: ErpMapping[];
   taxNo: string;
   name: string;
   brand: string;
@@ -44,6 +51,12 @@ export interface CustomersResponse {
   meta: PaginationMeta;
 }
 
+export interface ErpMappingInput {
+  companyId: string;
+  erpId: string;
+  isPrimary?: boolean;
+}
+
 export interface CreateCustomerInput {
   type?: CustomerType;
   taxNo?: string;
@@ -55,6 +68,7 @@ export interface CreateCustomerInput {
   taxOffice?: string;
   enabled?: boolean;
   segmentId?: string;
+  erpMappings?: ErpMappingInput[];
 }
 
 export interface UpdateCustomerInput {
@@ -68,4 +82,5 @@ export interface UpdateCustomerInput {
   taxOffice?: string;
   enabled?: boolean;
   segmentId?: string;
+  erpMappings?: ErpMappingInput[];
 }

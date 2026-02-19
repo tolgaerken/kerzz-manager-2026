@@ -5,6 +5,18 @@ import type { AuditFields } from "../../../common/audit";
 export type CustomerDocument = Customer & Document & AuditFields;
 
 @Schema({ _id: false })
+export class ErpMapping {
+  @Prop({ required: true })
+  companyId: string;
+
+  @Prop({ required: true })
+  erpId: string;
+
+  @Prop({ default: false })
+  isPrimary: boolean;
+}
+
+@Schema({ _id: false })
 export class CustomerAddress {
   @Prop({ default: "" })
   address: string;
@@ -47,6 +59,9 @@ export class Customer {
   @Prop({ type: String, index: true })
   erpId: string;
 
+  @Prop({ type: [ErpMapping], default: [] })
+  erpMappings: ErpMapping[];
+
   @Prop({ type: String })
   taxNo: string;
 
@@ -88,3 +103,7 @@ CustomerSchema.index({ taxNo: 1 });
 CustomerSchema.index({ name: 1 });
 CustomerSchema.index({ brand: 1 });
 CustomerSchema.index({ segmentId: 1 });
+
+// Indexes for erpMappings lookups
+CustomerSchema.index({ "erpMappings.companyId": 1 });
+CustomerSchema.index({ "erpMappings.erpId": 1 });

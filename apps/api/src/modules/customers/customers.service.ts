@@ -84,6 +84,7 @@ export class CustomersService {
           { name: { $regex: search, $options: "i" } },
           { brand: { $regex: search, $options: "i" } },
           { erpId: { $regex: search, $options: "i" } },
+          { "erpMappings.erpId": { $regex: search, $options: "i" } },
           { taxNo: { $regex: search, $options: "i" } },
           { "address.city": { $regex: search, $options: "i" } },
           { phone: { $regex: search, $options: "i" } },
@@ -216,6 +217,14 @@ export class CustomersService {
       return byErpId;
     }
 
+    const byMappingErpId = await this.customerModel
+      .findOne({ "erpMappings.erpId": identifier })
+      .lean()
+      .exec();
+    if (byMappingErpId) {
+      return byMappingErpId;
+    }
+
     if (!/^[a-f0-9]{24}$/i.test(identifier)) {
       return null;
     }
@@ -231,23 +240,35 @@ export class CustomersService {
   }
 
   private mapToMinimalResponseDto(customer: Record<string, unknown>): CustomerMinimalResponseDto {
+    const rawMappings = customer.erpMappings as Array<{ companyId: string; erpId: string; isPrimary?: boolean }> | undefined;
     return {
       _id: String(customer._id),
       id: (customer.id as string) || "",
       name: customer.name as string | undefined,
       brand: customer.brand as string | undefined,
       erpId: customer.erpId as string | undefined,
+      erpMappings: rawMappings?.map((m) => ({
+        companyId: m.companyId,
+        erpId: m.erpId,
+        isPrimary: m.isPrimary,
+      })),
       taxNo: customer.taxNo as string | undefined
     };
   }
 
   private mapToResponseDto(customer: Customer): CustomerResponseDto {
     const addr = customer.address || {} as any;
+    const mappings = customer.erpMappings || [];
     return {
       _id: customer._id.toString(),
       type: customer.type || "customer",
       id: customer.id || "",
       erpId: customer.erpId || "",
+      erpMappings: mappings.map((m) => ({
+        companyId: m.companyId,
+        erpId: m.erpId,
+        isPrimary: m.isPrimary,
+      })),
       taxNo: customer.taxNo || "",
       name: customer.name || "",
       brand: customer.brand || "",

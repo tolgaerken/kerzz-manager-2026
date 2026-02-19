@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Modal, PhoneInput, parsePhoneNumber, formatFullPhoneNumber } from "../../../../components/ui";
 import type { PhoneInputValue } from "../../../../components/ui";
-import type { Customer, CreateCustomerInput, UpdateCustomerInput } from "../../types";
+import type { Customer, CreateCustomerInput, UpdateCustomerInput, ErpMappingInput } from "../../types";
 import { AddressSelector, EMPTY_ADDRESS } from "../../../locations";
 import type { AddressData } from "../../../locations";
 import { useCustomerSegmentsMinimal } from "../../../customer-segments";
+import { ErpMappingsEditor } from "./ErpMappingsEditor";
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -33,11 +34,13 @@ export function CustomerFormModal({
     phone: "",
     email: "",
     enabled: true,
-    segmentId: ""
+    segmentId: "",
+    erpMappings: []
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [phoneValue, setPhoneValue] = useState<PhoneInputValue>({ countryCode: "90", phoneNumber: "" });
+  const [erpMappings, setErpMappings] = useState<ErpMappingInput[]>([]);
 
   useEffect(() => {
     if (customer) {
@@ -47,6 +50,14 @@ export function CustomerFormModal({
         : { countryCode: "90", phoneNumber: "" };
       setPhoneValue(parsedPhone);
 
+      // ERP mappings'i ayarla
+      const mappings: ErpMappingInput[] = (customer.erpMappings || []).map((m) => ({
+        companyId: m.companyId,
+        erpId: m.erpId,
+        isPrimary: m.isPrimary,
+      }));
+      setErpMappings(mappings);
+
       setFormData({
         taxNo: customer.taxNo,
         name: customer.name,
@@ -55,10 +66,12 @@ export function CustomerFormModal({
         phone: customer.phone,
         email: customer.email,
         enabled: customer.enabled,
-        segmentId: customer.segmentId || ""
+        segmentId: customer.segmentId || "",
+        erpMappings: mappings
       });
     } else {
       setPhoneValue({ countryCode: "90", phoneNumber: "" });
+      setErpMappings([]);
       setFormData({
         taxNo: "",
         name: "",
@@ -67,7 +80,8 @@ export function CustomerFormModal({
         phone: "",
         email: "",
         enabled: true,
-        segmentId: ""
+        segmentId: "",
+        erpMappings: []
       });
     }
     setErrors({});
@@ -103,6 +117,11 @@ export function CustomerFormModal({
     setPhoneValue(value);
   }, []);
 
+  const handleErpMappingsChange = useCallback((newMappings: ErpMappingInput[]) => {
+    setErpMappings(newMappings);
+    setFormData((prev) => ({ ...prev, erpMappings: newMappings }));
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -112,7 +131,11 @@ export function CustomerFormModal({
     const fullPhone = phoneValue.phoneNumber
       ? formatFullPhoneNumber(phoneValue)
       : "";
-    onSubmit({ ...formData, phone: fullPhone });
+
+    // Boş erpId'li mapping'leri filtrele
+    const validMappings = erpMappings.filter((m) => m.erpId && m.erpId.trim());
+
+    onSubmit({ ...formData, phone: fullPhone, erpMappings: validMappings.length > 0 ? validMappings : undefined });
   };
 
   const inputClasses =
@@ -254,6 +277,13 @@ export function CustomerFormModal({
             </label>
           </div>
         </div>
+
+        {/* ERP Kodları */}
+        <ErpMappingsEditor
+          mappings={erpMappings}
+          legacyErpId={customer?.erpId}
+          onChange={handleErpMappingsChange}
+        />
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-[var(--color-border)]">

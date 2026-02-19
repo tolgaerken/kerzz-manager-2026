@@ -13,6 +13,7 @@ import {
 } from "../../contract-payments/schemas/contract-payment.schema";
 import { Invoice, InvoiceDocument } from "../../invoices/schemas/invoice.schema";
 import { Customer } from "../../customers/schemas/customer.schema";
+import { getCustomerErpId } from "../../customers/utils/customer-erp-resolver";
 import { Contract } from "../../contracts/schemas/contract.schema";
 import { CompaniesService } from "../../companies";
 import { InvoiceMapperService } from "./invoice-mapper.service";
@@ -259,6 +260,7 @@ export class InvoiceMergerService {
     );
 
     // Global invoice olustur
+    const resolvedErpId = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
     const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
       {
         ...plan,
@@ -267,7 +269,7 @@ export class InvoiceMergerService {
         invoiceDate,
         dueDate,
       } as ContractPayment,
-      customer.erpId || "",
+      resolvedErpId,
       contract.internalFirm || "",
     );
 
@@ -395,11 +397,12 @@ export class InvoiceMergerService {
 
     // Global invoice olustur (ilk planin id'si ile)
     const primaryPlan = plans[0];
+    const mergedErpId = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
     const globalInvoice = this.invoiceMapperService.mapMergedPlansToInvoice(
       plans,
       mergedList,
       totalAmount,
-      customer.erpId || "",
+      mergedErpId,
       contract.internalFirm || "",
       sentInvoice.invoiceNumber,
       sentInvoice.uuid,
@@ -453,9 +456,10 @@ export class InvoiceMergerService {
       ? new Date(plan.dueDate)
       : addDays(invoiceDate, CONTRACT_DUE_DAYS);
 
+    const updateOnlyErpId = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
     const globalInvoice = this.invoiceMapperService.mapPaymentPlanToInvoice(
       { ...plan, invoiceDate, dueDate } as ContractPayment,
-      customer.erpId || "",
+      updateOnlyErpId,
       contract.internalFirm || "",
     );
 

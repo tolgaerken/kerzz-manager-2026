@@ -1,6 +1,6 @@
-import { IsString, IsOptional, IsBoolean, IsIn, ValidateNested } from "class-validator";
+import { IsString, IsOptional, IsBoolean, IsIn, ValidateNested, IsArray } from "class-validator";
 import { Type } from "class-transformer";
-import { CustomerAddressInputDto } from "./create-customer.dto";
+import { CustomerAddressInputDto, ErpMappingInputDto } from "./create-customer.dto";
 
 export class UpdateCustomerDto {
   @IsOptional()
@@ -44,4 +44,10 @@ export class UpdateCustomerDto {
   @IsString()
   @IsOptional()
   segmentId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ErpMappingInputDto)
+  erpMappings?: ErpMappingInputDto[];
 }

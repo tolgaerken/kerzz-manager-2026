@@ -1,3 +1,10 @@
+/** ERP mapping için minimal tip */
+export interface ErpMappingMinimal {
+  companyId: string;
+  erpId: string;
+  isPrimary?: boolean;
+}
+
 /** Müşteri lookup için gereken minimal alanlar */
 export interface CustomerLookupItem {
   _id: string;
@@ -5,6 +12,7 @@ export interface CustomerLookupItem {
   name?: string;
   companyName?: string;
   erpId?: string;
+  erpMappings?: ErpMappingMinimal[];
   taxNo?: string;
 }
 

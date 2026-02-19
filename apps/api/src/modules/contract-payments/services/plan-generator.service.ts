@@ -22,6 +22,7 @@ import {
 } from "../interfaces/payment-plan.interfaces";
 import { Contract } from "../../contracts/schemas/contract.schema";
 import { Customer } from "../../customers/schemas/customer.schema";
+import { getCustomerErpId } from "../../customers/utils/customer-erp-resolver";
 import { CONTRACT_DB_CONNECTION } from "../../../database/contract-database.module";
 import { generatePaymentId, generateShortId } from "../utils/id-generator";
 import { safeRound } from "../utils/math.utils";
@@ -140,6 +141,7 @@ export class PlanGeneratorService {
         );
       }
 
+      const resolvedErpId = getCustomerErpId(customer, { internalFirm: contract.internalFirm });
       const plan: Partial<ContractPayment> = {
         id: generatePaymentId(),
         contractId: contract.id,
@@ -155,7 +157,7 @@ export class PlanGeneratorService {
         list: listItems,
         ref: `${customer.id}-${generateShortId()}`,
         customerId: customer.id || "",
-        companyId: customer.erpId || "",
+        companyId: resolvedErpId,
         balance: 0,
         invoiceTotal: 0,
         block: false,
