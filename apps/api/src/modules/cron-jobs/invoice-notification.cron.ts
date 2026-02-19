@@ -272,6 +272,12 @@ export class InvoiceNotificationCron {
   ): Promise<{ sent: number; failed: number }> {
     let sent = 0;
     let failed = 0;
+    let skippedDuplicate = 0;
+
+    // Tüm fatura ID'leri için daha önce gönderilmiş templateCode'ları al
+    const invoiceIds = invoices.map((inv) => inv.id).filter(Boolean);
+    const sentConditionsMap =
+      await this.dispatchService.getDistinctTemplateCodesForInvoices(invoiceIds);
 
     for (const invoice of invoices) {
       try {
@@ -280,6 +286,23 @@ export class InvoiceNotificationCron {
             `⚠️ Müşteri ID boş (Fatura: ${invoice.invoiceNumber}), atlanıyor`
           );
           failed++;
+          continue;
+        }
+
+        // Bu fatura için daha önce gönderilmiş templateCode'ları kontrol et
+        const sentConditions = sentConditionsMap.get(invoice.id) ?? [];
+        const emailTemplateCode = `${templateCodeBase}-email`;
+        const smsTemplateCode = `${templateCodeBase}-sms`;
+
+        const emailAlreadySent = sentConditions.includes(emailTemplateCode);
+        const smsAlreadySent = sentConditions.includes(smsTemplateCode);
+
+        // Her iki kanal için de daha önce gönderilmişse atla
+        if (emailAlreadySent && smsAlreadySent) {
+          console.log(
+            `⏭️ Fatura ${invoice.invoiceNumber} için ${templateCodeBase} koşulu zaten gönderilmiş, atlanıyor`
+          );
+          skippedDuplicate++;
           continue;
         }
 
@@ -300,8 +323,10 @@ export class InvoiceNotificationCron {
         // DRY RUN MODU: Gerçek gönderim yapma, sadece logla
         if (settings.dryRunMode) {
           const channels: string[] = [];
-          if (settings.emailEnabled && customer.email) channels.push(`email(${customer.email})`);
-          if (settings.smsEnabled && customer.phone) channels.push(`sms(${customer.phone})`);
+          if (settings.emailEnabled && customer.email && !emailAlreadySent)
+            channels.push(`email(${customer.email})`);
+          if (settings.smsEnabled && customer.phone && !smsAlreadySent)
+            channels.push(`sms(${customer.phone})`);
           console.log(
             `🧪 [DRY RUN] Fatura bildirimi atlanıyor — Fatura: ${invoice.invoiceNumber}, Müşteri: ${customer.name}, Kanallar: ${channels.join(", ") || "yok"}`
           );
@@ -322,10 +347,10 @@ export class InvoiceNotificationCron {
 
         const notifications: DispatchNotificationDto[] = [];
 
-        // Email bildirimi
-        if (settings.emailEnabled && customer.email) {
+        // Email bildirimi (daha önce gönderilmemişse)
+        if (settings.emailEnabled && customer.email && !emailAlreadySent) {
           notifications.push({
-            templateCode: `${templateCodeBase}-email`,
+            templateCode: emailTemplateCode,
             channel: "email",
             recipient: {
               email: customer.email,
@@ -339,10 +364,10 @@ export class InvoiceNotificationCron {
           });
         }
 
-        // SMS bildirimi
-        if (settings.smsEnabled && customer.phone) {
+        // SMS bildirimi (daha önce gönderilmemişse)
+        if (settings.smsEnabled && customer.phone && !smsAlreadySent) {
           notifications.push({
-            templateCode: `${templateCodeBase}-sms`,
+            templateCode: smsTemplateCode,
             channel: "sms",
             recipient: {
               phone: customer.phone,
@@ -354,6 +379,14 @@ export class InvoiceNotificationCron {
             invoiceId: invoice.id,
             templateData,
           });
+        }
+
+        // Gönderilecek bildirim yoksa atla
+        if (notifications.length === 0) {
+          console.log(
+            `⏭️ Fatura ${invoice.invoiceNumber} için gönderilecek yeni bildirim yok`
+          );
+          continue;
         }
 
         // Bildirimleri gönder
@@ -373,8 +406,8 @@ export class InvoiceNotificationCron {
               $set: { lastNotify: new Date() },
               $push: {
                 notify: {
-                  sms: settings.smsEnabled,
-                  email: settings.emailEnabled,
+                  sms: settings.smsEnabled && !smsAlreadySent,
+                  email: settings.emailEnabled && !emailAlreadySent,
                   push: false,
                   sendTime: new Date(),
                   users: [
@@ -397,6 +430,10 @@ export class InvoiceNotificationCron {
         );
         failed++;
       }
+    }
+
+    if (skippedDuplicate > 0) {
+      console.log(`⏭️ ${skippedDuplicate} fatura duplicate koşul nedeniyle atlandı`);
     }
 
     return { sent, failed };

@@ -25,78 +25,70 @@ export function NotificationSettingsPage() {
   const { data: stats, isLoading: statsLoading } = useQueueStats();
 
   return (
-    <div className="flex h-full flex-col gap-3 p-4">
-      {/* Header + Tabs */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Başlık */}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Header Container */}
+      <div className="mb-3 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-surface">
+        {/* Üst satır: Title + Tab Butonları */}
+        <div className="flex items-center justify-between p-3 md:p-4">
           <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-[var(--color-primary)]" />
-            <h1 className="text-lg font-semibold text-[var(--color-foreground)]">
+            <Bell className="h-5 w-5 text-primary" />
+            <h1 className="text-base md:text-lg font-semibold text-foreground">
               Bildirim Ayarları
             </h1>
           </div>
 
-          {/* İstatistik Chip'leri */}
+          {/* Tab Butonları */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface-elevated)] text-xs">
-              <span className="text-[var(--color-muted-foreground)]">Bekleyen:</span>
-              <span className="font-semibold text-[var(--color-foreground)]">
-                {statsLoading ? "—" : stats?.pendingInvoices ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface-elevated)] text-xs">
-              <span className="text-[var(--color-muted-foreground)]">Vadesi Gelen:</span>
-              <span className="font-semibold text-[var(--color-foreground)]">
-                {statsLoading ? "—" : stats?.dueInvoices ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-error)]/10 text-xs">
-              <span className="text-[var(--color-error)]">Vadesi Geçmiş:</span>
-              <span className="font-semibold text-[var(--color-error)]">
-                {statsLoading ? "—" : stats?.overdueInvoices ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--color-surface-elevated)] text-xs">
-              <span className="text-[var(--color-muted-foreground)]">Kontratlar:</span>
-              <span className="font-semibold text-[var(--color-foreground)]">
-                {statsLoading ? "—" : stats?.pendingContracts ?? 0}
-              </span>
-            </div>
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border-subtle bg-surface-elevated text-muted-foreground hover:border-border hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden lg:inline">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Tab Butonları */}
-        <div className="flex rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-0.5">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                    : "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)]"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            );
-          })}
+        {/* Alt satır: İstatistik Chip'leri */}
+        <div className="hidden md:flex items-center gap-1.5 px-3 pb-3 md:px-4 md:pb-4">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            Bekleyen: {statsLoading ? "—" : stats?.pendingInvoices ?? 0}
+          </span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            Vadesi Gelen: {statsLoading ? "—" : stats?.dueInvoices ?? 0}
+          </span>
+          <span className="rounded-full bg-error/10 px-2 py-0.5 text-xs font-medium text-error">
+            Vadesi Geçmiş: {statsLoading ? "—" : stats?.overdueInvoices ?? 0}
+          </span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            Kontratlar: {statsLoading ? "—" : stats?.pendingContracts ?? 0}
+          </span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        {activeTab === "general" && <GeneralSettings />}
-        {activeTab === "email" && <TemplateList channel="email" />}
-        {activeTab === "sms" && <TemplateList channel="sms" />}
-        {activeTab === "queue" && <NotificationQueue />}
-        {activeTab === "history" && <NotificationHistory />}
-        {activeTab === "dry-run" && <CronDryRun />}
+      {/* Content Area */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
+          <div className="flex-1 overflow-auto p-4">
+            {activeTab === "general" && <GeneralSettings />}
+            {activeTab === "email" && <TemplateList channel="email" />}
+            {activeTab === "sms" && <TemplateList channel="sms" />}
+            {activeTab === "queue" && <NotificationQueue />}
+            {activeTab === "history" && <NotificationHistory />}
+            {activeTab === "dry-run" && <CronDryRun />}
+          </div>
+        </div>
       </div>
     </div>
   );

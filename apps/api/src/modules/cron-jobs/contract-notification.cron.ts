@@ -178,11 +178,34 @@ export class ContractNotificationCron {
   ): Promise<{ sent: number; failed: number }> {
     let sent = 0;
     let failed = 0;
+    let skippedDuplicate = 0;
+
+    // Tüm kontrat ID'leri için daha önce gönderilmiş templateCode'ları al
+    const contractIds = contracts.map((c) => c.id).filter(Boolean);
+    const sentConditionsMap =
+      await this.dispatchService.getDistinctTemplateCodesForContracts(contractIds);
+
+    const emailTemplateCode = "contract-expiry-email";
+    const smsTemplateCode = "contract-expiry-sms";
 
     for (const contract of contracts) {
       try {
         const endDate = contract.endDate ? new Date(contract.endDate) : null;
         const remainingDays = calculateRemainingDays(endDate, referenceDate);
+
+        // Bu kontrat için daha önce gönderilmiş templateCode'ları kontrol et
+        const sentConditions = sentConditionsMap.get(contract.id) ?? [];
+        const emailAlreadySent = sentConditions.includes(emailTemplateCode);
+        const smsAlreadySent = sentConditions.includes(smsTemplateCode);
+
+        // Her iki kanal için de daha önce gönderilmişse atla
+        if (emailAlreadySent && smsAlreadySent) {
+          console.log(
+            `⏭️ Kontrat ${contract.contractId} için contract-expiry koşulu zaten gönderilmiş, atlanıyor`
+          );
+          skippedDuplicate++;
+          continue;
+        }
 
         // Müşteri bilgilerini al (Customer koleksiyonu id alanı üzerinden ilişkilendirilir)
         const customer = await this.customerModel
@@ -198,6 +221,20 @@ export class ContractNotificationCron {
           continue;
         }
 
+        // DRY RUN MODU: Gerçek gönderim yapma, sadece logla
+        if (settings.dryRunMode) {
+          const channels: string[] = [];
+          if (settings.emailEnabled && customer.email && !emailAlreadySent)
+            channels.push(`email(${customer.email})`);
+          if (settings.smsEnabled && customer.phone && !smsAlreadySent)
+            channels.push(`sms(${customer.phone})`);
+          console.log(
+            `🧪 [DRY RUN] Kontrat bildirimi atlanıyor — Kontrat: ${contract.contractId}, Müşteri: ${customer.name}, Kanallar: ${channels.join(", ") || "yok"}`
+          );
+          sent += channels.length;
+          continue;
+        }
+
         // Template verileri hazırla
         const templateData = buildContractTemplateData(
           contract,
@@ -207,10 +244,10 @@ export class ContractNotificationCron {
 
         const notifications: DispatchNotificationDto[] = [];
 
-        // Email bildirimi
-        if (settings.emailEnabled && customer.email) {
+        // Email bildirimi (daha önce gönderilmemişse)
+        if (settings.emailEnabled && customer.email && !emailAlreadySent) {
           notifications.push({
-            templateCode: "contract-expiry-email",
+            templateCode: emailTemplateCode,
             channel: "email",
             recipient: {
               email: customer.email,
@@ -224,10 +261,10 @@ export class ContractNotificationCron {
           });
         }
 
-        // SMS bildirimi
-        if (settings.smsEnabled && customer.phone) {
+        // SMS bildirimi (daha önce gönderilmemişse)
+        if (settings.smsEnabled && customer.phone && !smsAlreadySent) {
           notifications.push({
-            templateCode: "contract-expiry-sms",
+            templateCode: smsTemplateCode,
             channel: "sms",
             recipient: {
               phone: customer.phone,
@@ -241,15 +278,11 @@ export class ContractNotificationCron {
           });
         }
 
-        // DRY RUN MODU: Gerçek gönderim yapma, sadece logla
-        if (settings.dryRunMode) {
-          const channels: string[] = [];
-          if (settings.emailEnabled && customer.email) channels.push(`email(${customer.email})`);
-          if (settings.smsEnabled && customer.phone) channels.push(`sms(${customer.phone})`);
+        // Gönderilecek bildirim yoksa atla
+        if (notifications.length === 0) {
           console.log(
-            `🧪 [DRY RUN] Kontrat bildirimi atlanıyor — Kontrat: ${contract.contractId}, Müşteri: ${customer.name}, Kanallar: ${channels.join(", ") || "yok"}`
+            `⏭️ Kontrat ${contract.contractId} için gönderilecek yeni bildirim yok`
           );
-          sent += channels.length;
           continue;
         }
 
@@ -276,6 +309,10 @@ export class ContractNotificationCron {
         );
         failed++;
       }
+    }
+
+    if (skippedDuplicate > 0) {
+      console.log(`⏭️ ${skippedDuplicate} kontrat duplicate koşul nedeniyle atlandı`);
     }
 
     return { sent, failed };
