@@ -121,4 +121,6 @@ export interface PaymentListItemView {
   company: string;
   totalUsd: number;
   totalEur: number;
+  /** ERP stok kodu (fatura satırına aktarılır) */
+  itemId?: string;
 }

@@ -132,11 +132,12 @@ export class InvoiceMapperService {
       company: string;
       totalUsd: number;
       totalEur: number;
+      itemId?: string;
     }>,
   ) {
     return list.map((row) => ({
       id: row.id?.toString() || this.generateId(),
-      code: "",
+      code: row.itemId || "",
       name: row.description || "",
       description: row.description || "",
       quantity: 1,

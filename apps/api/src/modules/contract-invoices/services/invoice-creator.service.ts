@@ -426,6 +426,7 @@ export class InvoiceCreatorService {
       company: string;
       totalUsd: number;
       totalEur: number;
+      itemId?: string;
     }>,
     noVat: boolean,
   ): CloudInvoiceRow[] {
@@ -436,7 +437,7 @@ export class InvoiceCreatorService {
 
       return {
         id: uuidv4(),
-        code: "",
+        code: item.itemId || "",
         name: item.description || "",
         description: item.description || "",
         quantity: 1,

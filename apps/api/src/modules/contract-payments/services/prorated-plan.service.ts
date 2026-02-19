@@ -37,6 +37,7 @@ export interface ProratedItemInput {
   startDate: Date;
   qty?: number;
   sourceItemId: string; // Kalemi olusturan kalemin id'si (silme icin gerekli)
+  itemId?: string; // ERP stok kodu (fatura satırına aktarılır)
 }
 
 /** Kist plan olusturma opsiyonlari */
@@ -154,6 +155,7 @@ export class ProratedPlanService {
       company: "",
       totalUsd: 0,
       totalEur: 0,
+      itemId: item.itemId,
     };
 
     const plan: Partial<ContractPayment> = {

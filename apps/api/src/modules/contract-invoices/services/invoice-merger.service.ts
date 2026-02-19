@@ -566,7 +566,7 @@ export class InvoiceMergerService {
 
       return {
         id: uuidv4(),
-        code: "",
+        code: item.itemId || "",
         name: item.description || "",
         description: item.description || "",
         quantity: 1,

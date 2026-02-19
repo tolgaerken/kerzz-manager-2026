@@ -17,6 +17,8 @@ export interface PaymentListItem {
   sourceItemId?: string;
   /** Kalem kategorisi */
   category?: PaymentListItemCategory;
+  /** ERP stok kodu (fatura satırına aktarılır) */
+  itemId?: string;
 }
 
 export type ContractPaymentDocument = ContractPayment & Document & AuditFields;

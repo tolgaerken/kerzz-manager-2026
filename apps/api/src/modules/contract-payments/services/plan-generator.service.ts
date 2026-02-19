@@ -377,7 +377,7 @@ export class PlanGeneratorService {
 
   /**
    * InvoiceRow'dan PaymentListItem olusturur.
-   * sourceItemIds ve category bilgilerini tasir.
+   * sourceItemIds, category ve itemId (ERP kodu) bilgilerini tasir.
    */
   private buildPaymentListItem(
     row: InvoiceRow,
@@ -392,6 +392,7 @@ export class PlanGeneratorService {
       totalEur: 0,
       sourceItemId: row.sourceItemIds?.join(","),
       category: row.category as PaymentListItemCategory,
+      itemId: row.itemId,
     };
   }
 }

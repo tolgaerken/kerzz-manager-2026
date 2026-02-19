@@ -18,6 +18,8 @@ import {
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
 import { EFTPOS_DESCRIPTION } from "../contract-payments/constants/invoice.constants";
+import { Contract, ContractDocument } from "../contracts/schemas/contract.schema";
+import { ErpSettingsService } from "../erp-settings";
 
 @Injectable()
 export class ContractCashRegistersService {
@@ -26,7 +28,10 @@ export class ContractCashRegistersService {
   constructor(
     @InjectModel(ContractCashRegister.name, CONTRACT_DB_CONNECTION)
     private contractCashRegisterModel: Model<ContractCashRegisterDocument>,
+    @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
+    private contractModel: Model<ContractDocument>,
     private readonly proratedPlanService: ProratedPlanService,
+    private readonly erpSettingsService: ErpSettingsService,
   ) {}
 
   async findAll(query: ContractCashRegisterQueryDto): Promise<ContractCashRegistersListResponseDto> {
@@ -206,6 +211,13 @@ export class ContractCashRegistersService {
     const startDateObj = new Date(startDate);
 
     if (startDateObj.getUTCDate() !== 1) {
+      const contract = await this.contractModel
+        .findOne({ id: item.contractId })
+        .lean()
+        .exec();
+      const noVat = contract?.noVat ?? false;
+      const eftPosErpId = this.erpSettingsService.getErpId("eftPOS", noVat);
+
       await this.proratedPlanService.createProratedPlan(
         item.contractId,
         {
@@ -213,6 +225,7 @@ export class ContractCashRegistersService {
           currency: item.currency,
           startDate: startDateObj,
           sourceItemId: item.id,
+          itemId: eftPosErpId,
         },
         EFTPOS_DESCRIPTION,
         { skipDayCalculation: true },

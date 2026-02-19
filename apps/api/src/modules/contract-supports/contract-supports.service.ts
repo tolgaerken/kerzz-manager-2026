@@ -18,6 +18,7 @@ import {
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
 import { SUPPORT_DESCRIPTION } from "../contract-payments/constants/invoice.constants";
+import { ErpSettingsService } from "../erp-settings";
 
 @Injectable()
 export class ContractSupportsService {
@@ -25,6 +26,7 @@ export class ContractSupportsService {
     @InjectModel(ContractSupport.name, CONTRACT_DB_CONNECTION)
     private contractSupportModel: Model<ContractSupportDocument>,
     private readonly proratedPlanService: ProratedPlanService,
+    private readonly erpSettingsService: ErpSettingsService,
   ) {}
 
   async findAll(query: ContractSupportQueryDto): Promise<ContractSupportsListResponseDto> {
@@ -175,6 +177,7 @@ export class ContractSupportsService {
           currency: item.currency,
           startDate: new Date(startDate),
           sourceItemId: item.id,
+          itemId: this.erpSettingsService.getErpId("support"),
         },
         SUPPORT_DESCRIPTION,
       );

@@ -12,6 +12,7 @@ import {
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
 import { VERSION_DESCRIPTION } from "../contract-payments/constants/invoice.constants";
+import { ErpSettingsService } from "../erp-settings";
 
 @Injectable()
 export class ContractVersionsService {
@@ -19,6 +20,7 @@ export class ContractVersionsService {
     @InjectModel(ContractVersion.name, CONTRACT_DB_CONNECTION)
     private contractVersionModel: Model<ContractVersionDocument>,
     private readonly proratedPlanService: ProratedPlanService,
+    private readonly erpSettingsService: ErpSettingsService,
   ) {}
 
   async findAll(query: ContractVersionQueryDto): Promise<ContractVersionsListResponseDto> {
@@ -164,6 +166,7 @@ export class ContractVersionsService {
           currency: item.currency,
           startDate: new Date(startDate),
           sourceItemId: item.id,
+          itemId: this.erpSettingsService.getErpId("version"),
         },
         VERSION_DESCRIPTION,
       );

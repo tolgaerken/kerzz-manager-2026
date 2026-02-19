@@ -161,6 +161,7 @@ export class ContractItemsService {
           startDate: new Date(startDate),
           qty: item.qty,
           sourceItemId: item.id,
+          itemId: item.erpId || "",
         },
         item.description || "Kontrat Kalemi",
       );

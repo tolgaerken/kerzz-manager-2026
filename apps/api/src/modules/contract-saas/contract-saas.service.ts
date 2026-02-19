@@ -17,12 +17,15 @@ import {
 } from "./dto";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
+import { SoftwareProduct, SoftwareProductDocument } from "../software-products/schemas/software-product.schema";
 
 @Injectable()
 export class ContractSaasService {
   constructor(
     @InjectModel(ContractSaas.name, CONTRACT_DB_CONNECTION)
     private contractSaasModel: Model<ContractSaasDocument>,
+    @InjectModel(SoftwareProduct.name, CONTRACT_DB_CONNECTION)
+    private softwareProductModel: Model<SoftwareProductDocument>,
     private readonly proratedPlanService: ProratedPlanService,
   ) {}
 
@@ -167,6 +170,15 @@ export class ContractSaasService {
 
     const startDate = (updateData.startDate as Date) || item.startDate;
     if (new Date(startDate).getUTCDate() !== 1) {
+      let erpId = "";
+      if (item.productId) {
+        const product = await this.softwareProductModel
+          .findOne({ id: item.productId })
+          .lean()
+          .exec();
+        erpId = product?.erpId || "";
+      }
+
       await this.proratedPlanService.createProratedPlan(
         item.contractId,
         {
@@ -175,6 +187,7 @@ export class ContractSaasService {
           startDate: new Date(startDate),
           qty: item.qty,
           sourceItemId: item.id,
+          itemId: erpId,
         },
         item.description || "SaaS Hizmeti",
       );
