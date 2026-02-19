@@ -4,9 +4,9 @@
  * Manuel Version Bump Script
  * 
  * Kullanım:
- *   node scripts/version.js patch   # 1.0.0 → 1.0.1
- *   node scripts/version.js minor   # 1.0.0 → 1.1.0
- *   node scripts/version.js major   # 1.0.0 → 2.0.0
+ *   node scripts/version.js patch   # 0.0.1 → 0.0.2
+ *   node scripts/version.js minor   # 0.0.2 → 0.1.0
+ *   node scripts/version.js major   # 0.1.0 → 1.0.0
  *   node scripts/version.js 1.2.3   # Belirli version
  */
 
@@ -15,9 +15,26 @@ const path = require('path');
 
 const API_PACKAGE = path.join(__dirname, '../apps/api/package.json');
 const WEB_PACKAGE = path.join(__dirname, '../apps/web/package.json');
+const DEFAULT_VERSION = '0.0.1';
+
+function parseVersion(versionStr) {
+  if (!versionStr || typeof versionStr !== 'string') {
+    return null;
+  }
+  const match = versionStr.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) {
+    return null;
+  }
+  return {
+    major: parseInt(match[1], 10),
+    minor: parseInt(match[2], 10),
+    patch: parseInt(match[3], 10),
+  };
+}
 
 function bumpVersion(currentVersion, type) {
-  const [major, minor, patch] = currentVersion.split('.').map(Number);
+  const parsed = parseVersion(currentVersion);
+  const { major, minor, patch } = parsed || parseVersion(DEFAULT_VERSION);
 
   switch (type) {
     case 'major':
@@ -27,11 +44,19 @@ function bumpVersion(currentVersion, type) {
     case 'patch':
       return `${major}.${minor}.${patch + 1}`;
     default:
-      // Eğer version formatında ise direkt kullan
       if (/^\d+\.\d+\.\d+$/.test(type)) {
         return type;
       }
-      throw new Error(`Geçersiz bump type: ${type}. Kullanım: patch|minor|major|X.Y.Z`);
+      throw new Error(`Gecersiz bump type: ${type}. Kullanim: patch|minor|major|X.Y.Z`);
+  }
+}
+
+function readPackageVersion(filePath) {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    return pkg.version || DEFAULT_VERSION;
+  } catch {
+    return DEFAULT_VERSION;
   }
 }
 
@@ -45,33 +70,30 @@ function main() {
   const bumpType = process.argv[2];
 
   if (!bumpType) {
-    console.error('❌ Hata: Bump type belirtilmedi');
-    console.log('\nKullanım:');
-    console.log('  npm run version:patch   # 1.0.0 → 1.0.1');
-    console.log('  npm run version:minor   # 1.0.0 → 1.1.0');
-    console.log('  npm run version:major   # 1.0.0 → 2.0.0');
-    console.log('  npm run version 1.2.3   # Belirli version');
+    console.error('Hata: Bump type belirtilmedi');
+    console.log('\nKullanim:');
+    console.log('  pnpm version:patch   # 0.0.1 -> 0.0.2');
+    console.log('  pnpm version:minor   # 0.0.2 -> 0.1.0');
+    console.log('  pnpm version:major   # 0.1.0 -> 1.0.0');
+    console.log('  pnpm version 1.2.3   # Belirli version');
     process.exit(1);
   }
 
   try {
-    // Mevcut versiyonu oku
-    const apiPkg = JSON.parse(fs.readFileSync(API_PACKAGE, 'utf-8'));
-    const currentVersion = apiPkg.version;
+    const currentVersion = readPackageVersion(API_PACKAGE);
     const newVersion = bumpVersion(currentVersion, bumpType);
 
-    console.log(`📦 Version: ${currentVersion} → ${newVersion}`);
+    console.log(`Version: ${currentVersion} -> ${newVersion}`);
 
-    // Güncelle
     updatePackageJson(API_PACKAGE, newVersion);
-    console.log(`✅ apps/api/package.json güncellendi`);
+    console.log(`apps/api/package.json guncellendi`);
 
     updatePackageJson(WEB_PACKAGE, newVersion);
-    console.log(`✅ apps/web/package.json güncellendi`);
+    console.log(`apps/web/package.json guncellendi`);
 
-    console.log(`\n🎉 Version başarıyla ${newVersion} olarak güncellendi!`);
+    console.log(`\nVersion basariyla ${newVersion} olarak guncellendi!`);
   } catch (error) {
-    console.error('❌ Hata:', error.message);
+    console.error('Hata:', error.message);
     process.exit(1);
   }
 }

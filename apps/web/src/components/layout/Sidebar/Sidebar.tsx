@@ -14,8 +14,10 @@ export function Sidebar() {
   const location = useLocation();
   const { isCollapsed, isMobileOpen, toggleCollapsed, setMobileOpen } = useSidebarStore();
   const shouldCollapse = isCollapsed && !isMobile;
-  const { data: versionData } = useVersion();
+  const { data: versionData, isLoading: isVersionLoading, isError: isVersionError } = useVersion();
   const { hasPermission, isAdmin } = usePermissions();
+  const versionValue = versionData?.version ?? (isVersionLoading ? "..." : isVersionError ? "n/a" : "-");
+  const versionName = versionData?.name ?? "Kerzz Manager";
 
   // İzin bazlı menü filtreleme (sub-item düzeyinde izin desteği ile)
   const visibleMenuItems = useMemo(() => {
@@ -90,8 +92,25 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        {/* Toggle Button */}
+        {/* Toggle + Version */}
         <div className={`border-t border-border ${shouldCollapse ? "p-2" : "p-4"}`}>
+          <div className={`mb-2 text-xs text-muted-foreground ${shouldCollapse ? "text-center" : ""}`}>
+            {shouldCollapse ? (
+              <Tooltip content={`${versionName} v${versionValue}`} position="right">
+                <span className="inline-flex w-full items-center justify-center rounded-md bg-surface-elevated px-1.5 py-1 font-medium text-foreground">
+                  v{versionValue}
+                </span>
+              </Tooltip>
+            ) : (
+              <div className="rounded-md bg-surface-elevated px-3 py-2">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-foreground">{versionName}</span>
+                  <span>Versiyon: {versionValue}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <Tooltip content={shouldCollapse ? "Menüyü Genişlet" : "Menüyü Daralt"} position="right" disabled={!shouldCollapse}>
             <button
               onClick={toggleCollapsed}
@@ -111,24 +130,6 @@ export function Sidebar() {
             </button>
           </Tooltip>
         </div>
-
-        {/* Version Info */}
-        {versionData && (
-          <div className={`border-t border-border ${shouldCollapse ? "p-2" : "p-4"}`}>
-            <div className={`text-xs text-muted-foreground ${shouldCollapse ? "text-center" : ""}`}>
-              {shouldCollapse ? (
-                <Tooltip content={`v${versionData.version}`} position="right">
-                  <span>v{versionData.version}</span>
-                </Tooltip>
-              ) : (
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-medium text-foreground">{versionData.name}</span>
-                  <span>Versiyon: {versionData.version}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </aside>
     </>
   );
