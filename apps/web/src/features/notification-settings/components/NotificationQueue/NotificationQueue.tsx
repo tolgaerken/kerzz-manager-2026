@@ -8,13 +8,18 @@ import {
   Eye,
   X,
   Loader2,
+  Send,
+  Pause,
+  Play,
+  Square,
 } from "lucide-react";
 import {
   useInvoiceQueue,
   useContractQueue,
-  useSendManualNotification,
   useQueuePreview,
   useNotificationSettings,
+  useBatchSendNotification,
+  type BatchSendItem,
 } from "../../hooks";
 import { InvoiceQueueGrid } from "../InvoiceQueueGrid";
 import { ContractQueueGrid } from "../ContractQueueGrid";
@@ -51,17 +56,8 @@ export function NotificationQueue() {
   const [selected, setSelected] = useState<ManualSendItem[]>([]);
   const [selectedInvoices, setSelectedInvoices] = useState<QueueInvoiceItem[]>([]);
   const [selectedContracts, setSelectedContracts] = useState<QueueContractItem[]>([]);
-  const [resultModal, setResultModal] = useState<{
-    sent: number;
-    failed: number;
-    results: { type: string; id: string; channel: string; recipient?: string; success: boolean; error?: string }[];
-  } | null>(null);
   const [selectedOverdueDays, setSelectedOverdueDays] = useState<number[]>([]);
   const [previewParams, setPreviewParams] = useState<QueuePreviewParams | null>(null);
-  const [sendingInfo, setSendingInfo] = useState<{
-    count: number;
-    channels: ("email" | "sms")[];
-  } | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<{
     duplicates: DuplicateItem[];
     channels: ("email" | "sms")[];
@@ -71,8 +67,16 @@ export function NotificationQueue() {
   const { data: settings } = useNotificationSettings();
   const { data: invoiceData, isLoading: invoicesLoading } = useInvoiceQueue(invoiceParams);
   const { data: contractData, isLoading: contractsLoading } = useContractQueue(contractParams);
-  const sendMutation = useSendManualNotification();
   const { data: previewData, isLoading: previewLoading } = useQueuePreview(previewParams);
+  
+  const {
+    progress: batchProgress,
+    startBatchSend,
+    pauseBatchSend,
+    resumeBatchSend,
+    cancelBatchSend,
+    clearBatchSend,
+  } = useBatchSendNotification();
 
   // Combobox'tan seçilen günlere göre faturaları filtrele
   const filteredInvoices = useMemo(() => {
@@ -124,28 +128,31 @@ export function NotificationQueue() {
   const executeSend = useCallback(
     (channels: ("email" | "sms")[]) => {
       if (selected.length === 0) return;
-      setSendingInfo({ count: selected.length, channels });
-      sendMutation.mutate(
-        { items: selected, channels },
-        {
-          onSuccess: (res) => {
-            setSendingInfo(null);
-            setResultModal({
-              sent: res.sent,
-              failed: res.failed,
-              results: res.results,
-            });
-            setSelected([]);
-            setSelectedInvoices([]);
-            setSelectedContracts([]);
-          },
-          onError: () => {
-            setSendingInfo(null);
-          },
-        }
-      );
+
+      const batchItems: BatchSendItem[] = [];
+
+      for (const inv of selectedInvoices) {
+        batchItems.push({
+          type: "invoice",
+          id: inv.id,
+          label: inv.invoiceNumber || inv.id,
+        });
+      }
+
+      for (const cont of selectedContracts) {
+        batchItems.push({
+          type: "contract",
+          id: cont.id,
+          label: cont.contractId || cont.company || cont.brand || cont.id,
+        });
+      }
+
+      startBatchSend(batchItems, channels);
+      setSelected([]);
+      setSelectedInvoices([]);
+      setSelectedContracts([]);
     },
-    [selected, sendMutation]
+    [selected, selectedInvoices, selectedContracts, startBatchSend]
   );
 
   const handleSend = useCallback(
@@ -279,23 +286,107 @@ export function NotificationQueue() {
         </div>
       )}
 
-      {/* Sending progress */}
-      {sendingInfo && (
-        <div className="flex items-center gap-4 px-4 py-3 bg-[var(--color-info)]/10 rounded-lg border border-[var(--color-info)]/30">
-          <Loader2 className="w-5 h-5 animate-spin text-[var(--color-info)]" />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1.5">
+      {/* Batch Sending Progress */}
+      {batchProgress.status !== "idle" && (
+        <div className="px-4 py-3 bg-[var(--color-info)]/10 rounded-lg border border-[var(--color-info)]/30">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              {batchProgress.status === "running" ? (
+                <Send className="w-5 h-5 text-[var(--color-info)]" />
+              ) : batchProgress.status === "paused" ? (
+                <Pause className="w-5 h-5 text-[var(--color-warning)]" />
+              ) : batchProgress.status === "completed" ? (
+                <CheckCircle className="w-5 h-5 text-[var(--color-success)]" />
+              ) : (
+                <XCircle className="w-5 h-5 text-[var(--color-error)]" />
+              )}
               <span className="text-sm font-medium text-[var(--color-foreground)]">
-                {sendingInfo.count} bildirim gönderiliyor…
-              </span>
-              <span className="text-xs text-[var(--color-muted)]">
-                {sendingInfo.channels
-                  .map((ch) => (ch === "email" ? "E-posta" : "SMS"))
-                  .join(" + ")}
+                {batchProgress.status === "running" && "Bildirim Gönderiliyor"}
+                {batchProgress.status === "paused" && "Duraklatıldı"}
+                {batchProgress.status === "completed" && "Gönderim Tamamlandı"}
+                {batchProgress.status === "cancelled" && "Gönderim İptal Edildi"}
               </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-[var(--color-border)] overflow-hidden">
-              <div className="h-full rounded-full bg-[var(--color-info)] animate-progress-indeterminate" />
+            <div className="flex items-center gap-1">
+              {batchProgress.status === "running" && (
+                <button
+                  onClick={pauseBatchSend}
+                  className="p-1.5 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  title="Duraklat"
+                >
+                  <Pause className="w-4 h-4" />
+                </button>
+              )}
+              {batchProgress.status === "paused" && (
+                <button
+                  onClick={resumeBatchSend}
+                  className="p-1.5 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  title="Devam Et"
+                >
+                  <Play className="w-4 h-4" />
+                </button>
+              )}
+              {(batchProgress.status === "running" || batchProgress.status === "paused") && (
+                <button
+                  onClick={cancelBatchSend}
+                  className="p-1.5 rounded-md text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+                  title="İptal Et"
+                >
+                  <Square className="w-4 h-4" />
+                </button>
+              )}
+              {(batchProgress.status === "completed" || batchProgress.status === "cancelled") && (
+                <button
+                  onClick={clearBatchSend}
+                  className="p-1.5 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  title="Kapat"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Current Item */}
+          {batchProgress.currentItem && batchProgress.status === "running" && (
+            <div className="flex items-center gap-2 mb-2 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin text-[var(--color-info)]" />
+              <span className="text-[var(--color-muted-foreground)]">İşleniyor:</span>
+              <span className="font-medium text-[var(--color-foreground)]">
+                {batchProgress.currentItem.label}
+              </span>
+              <span className="text-xs text-[var(--color-muted-foreground)]">
+                ({batchProgress.currentItem.type === "invoice" ? "Fatura" : "Kontrat"})
+              </span>
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          <div className="mb-2">
+            <div className="flex items-center justify-between text-xs text-[var(--color-muted-foreground)] mb-1">
+              <span>İlerleme</span>
+              <span>{batchProgress.current} / {batchProgress.total}</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-[var(--color-border)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[var(--color-info)] transition-all duration-300"
+                style={{ width: `${batchProgress.total > 0 ? (batchProgress.current / batchProgress.total) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5 text-[var(--color-success)]">
+              <CheckCircle className="w-4 h-4" />
+              <span className="font-medium">{batchProgress.sent}</span>
+              <span className="text-[var(--color-muted-foreground)]">başarılı</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[var(--color-error)]">
+              <XCircle className="w-4 h-4" />
+              <span className="font-medium">{batchProgress.failed}</span>
+              <span className="text-[var(--color-muted-foreground)]">başarısız</span>
             </div>
           </div>
         </div>
@@ -314,7 +405,7 @@ export function NotificationQueue() {
             onSendSms={() => handleSend(["sms"])}
             onSendAll={() => handleSend(["email", "sms"])}
             globalSelectedCount={selected.length}
-            isSending={sendMutation.isPending}
+            isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
           />
         )}
         {queueTab === "contracts" && (
@@ -328,7 +419,7 @@ export function NotificationQueue() {
             onSendSms={() => handleSend(["sms"])}
             onSendAll={() => handleSend(["email", "sms"])}
             globalSelectedCount={selected.length}
-            isSending={sendMutation.isPending}
+            isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
           />
         )}
       </div>
@@ -462,65 +553,6 @@ export function NotificationQueue() {
                 Kapat
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Result modal */}
-      {resultModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
-              Gönderim Sonucu
-            </h3>
-            <div className="flex gap-4 mb-4">
-              <div className="flex items-center gap-2 text-[var(--color-success)]">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">{resultModal.sent} başarılı</span>
-              </div>
-              <div className="flex items-center gap-2 text-[var(--color-error)]">
-                <XCircle className="w-5 h-5" />
-                <span className="font-medium">{resultModal.failed} başarısız</span>
-              </div>
-            </div>
-            {resultModal.results.length > 0 && (
-              <div className="max-h-48 overflow-y-auto text-sm space-y-1 mb-4">
-                {resultModal.results.slice(0, 20).map((r, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 ${
-                      r.success ? "text-[var(--color-foreground)]" : "text-[var(--color-error)]"
-                    }`}
-                  >
-                    {r.success ? (
-                      <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                    ) : (
-                      <XCircle className="w-4 h-4 flex-shrink-0" />
-                    )}
-                    <span>
-                      {r.channel === "email" ? "E-posta" : "SMS"}
-                      {r.recipient && (
-                        <span className="font-medium"> → {r.recipient}</span>
-                      )}
-                      {r.error && (
-                        <span className="text-[var(--color-error)]"> – {r.error}</span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-                {resultModal.results.length > 20 && (
-                  <p className="text-[var(--color-muted)]">
-                    ... ve {resultModal.results.length - 20} kayıt daha
-                  </p>
-                )}
-              </div>
-            )}
-            <button
-              onClick={() => setResultModal(null)}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90"
-            >
-              Kapat
-            </button>
           </div>
         </div>
       )}
