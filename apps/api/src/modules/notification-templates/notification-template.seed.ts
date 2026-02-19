@@ -531,4 +531,269 @@ export const defaultTemplates: TemplateSeed[] = [
     ],
     description: "Satış reddedildiğinde istek sahibine gönderilen SMS bildirimi",
   },
+
+  // ==================== YILLIK KONTRAT YENİLEME BİLDİRİMLERİ ====================
+  {
+    name: "Yıllık Kontrat Yenileme - Bitiş Öncesi (E-posta)",
+    code: "contract-renewal-pre-expiry-email",
+    channel: "email",
+    subject: "{{company}} - Kontrat Yenileme Zamanı",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2563eb; }
+    .amount { font-size: 24px; color: #2563eb; font-weight: bold; }
+    .old-amount { font-size: 16px; color: #64748b; text-decoration: line-through; }
+    .btn { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }
+    .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 15px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Kontrat Yenileme Zamanı</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{customerName}},</p>
+      <p><strong>{{company}}</strong> için geçerli olan yıllık kontratınızın bitiş tarihi <strong>{{daysFromExpiry}} gün</strong> sonra dolacaktır.</p>
+      
+      <div class="info-box">
+        <p><strong>Şirket:</strong> {{company}}</p>
+        <p><strong>Kontrat Bitiş Tarihi:</strong> {{contractEndDate}}</p>
+        <p><strong>Mevcut Tutar:</strong> <span class="old-amount">{{oldAmount}}</span></p>
+        <p><strong>Yeni Dönem Tutarı:</strong> <span class="amount">{{renewalAmount}}</span></p>
+        <p><strong>Artış Bilgisi:</strong> {{increaseRateInfo}}</p>
+      </div>
+      
+      <div class="warning">
+        <strong>Önemli:</strong> Kontratınızı yenilemezseniz, bitiş tarihinden 5 gün sonra hizmetleriniz otomatik olarak sonlandırılacaktır ({{terminationDate}}).
+      </div>
+      
+      <p>Kontratınızı yenilemek ve hizmetlerinizin kesintisiz devam etmesi için aşağıdaki bağlantıdan ödeme yapabilirsiniz:</p>
+      
+      <div style="text-align: center;">
+        <a href="{{paymentLink}}" class="btn">Şimdi Yenile ve Öde</a>
+      </div>
+      
+      <p style="margin-top: 20px; font-size: 14px; color: #64748b;">
+        Sorularınız için bizimle iletişime geçebilirsiniz.
+      </p>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "company",
+      "customerName",
+      "contractEndDate",
+      "daysFromExpiry",
+      "paymentLink",
+      "renewalAmount",
+      "oldAmount",
+      "increaseRateInfo",
+      "terminationDate",
+    ],
+    description: "Yıllık kontrat bitiş tarihi yaklaştığında gönderilen yenileme e-postası",
+  },
+  {
+    name: "Yıllık Kontrat Yenileme - Bitiş Sonrası 1 Gün (E-posta)",
+    code: "contract-renewal-overdue-1-email",
+    channel: "email",
+    subject: "{{company}} - Kontratınız Sona Erdi - Yenileme Gerekli",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #fffbeb; padding: 20px; border: 1px solid #fde68a; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b; }
+    .amount { font-size: 24px; color: #f59e0b; font-weight: bold; }
+    .btn { display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }
+    .warning { background: #fef2f2; border-left: 4px solid #dc2626; padding: 10px 15px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Kontratınız Sona Erdi</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{customerName}},</p>
+      <p><strong>{{company}}</strong> için geçerli olan yıllık kontratınız <strong>{{contractEndDate}}</strong> tarihinde sona ermiştir.</p>
+      
+      <div class="info-box">
+        <p><strong>Şirket:</strong> {{company}}</p>
+        <p><strong>Kontrat Bitiş Tarihi:</strong> {{contractEndDate}}</p>
+        <p><strong>Yenileme Tutarı:</strong> <span class="amount">{{renewalAmount}}</span></p>
+      </div>
+      
+      <div class="warning">
+        <strong>Dikkat:</strong> Hizmetlerinizin devam edebilmesi için en kısa sürede ödeme yapmanız gerekmektedir. <strong>{{terminationDate}}</strong> tarihinde hizmetleriniz otomatik olarak sonlandırılacaktır.
+      </div>
+      
+      <div style="text-align: center;">
+        <a href="{{paymentLink}}" class="btn">Hemen Yenile ve Öde</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "company",
+      "customerName",
+      "contractEndDate",
+      "paymentLink",
+      "renewalAmount",
+      "terminationDate",
+    ],
+    description: "Yıllık kontrat bitişinden 1 gün sonra gönderilen hatırlatma e-postası",
+  },
+  {
+    name: "Yıllık Kontrat Yenileme - Bitiş Sonrası 3 Gün (E-posta)",
+    code: "contract-renewal-overdue-3-email",
+    channel: "email",
+    subject: "{{company}} - Acil: Kontrat Yenileme Gerekli",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #fef2f2; padding: 20px; border: 1px solid #fecaca; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #dc2626; }
+    .amount { font-size: 24px; color: #dc2626; font-weight: bold; }
+    .btn { display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }
+    .warning { background: #fef2f2; border-left: 4px solid #b91c1c; padding: 10px 15px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Acil: Kontrat Yenileme Gerekli</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{customerName}},</p>
+      <p><strong>{{company}}</strong> kontratınız <strong>3 gündür</strong> sona ermiş durumda ve henüz yenilenmemiştir.</p>
+      
+      <div class="info-box">
+        <p><strong>Şirket:</strong> {{company}}</p>
+        <p><strong>Kontrat Bitiş Tarihi:</strong> {{contractEndDate}}</p>
+        <p><strong>Yenileme Tutarı:</strong> <span class="amount">{{renewalAmount}}</span></p>
+      </div>
+      
+      <div class="warning">
+        <strong>Son Uyarı:</strong> Hizmetleriniz <strong>{{terminationDate}}</strong> tarihinde otomatik olarak sonlandırılacaktır. Lütfen acilen ödeme yapınız.
+      </div>
+      
+      <div style="text-align: center;">
+        <a href="{{paymentLink}}" class="btn">Acil Yenile ve Öde</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "company",
+      "customerName",
+      "contractEndDate",
+      "paymentLink",
+      "renewalAmount",
+      "terminationDate",
+    ],
+    description: "Yıllık kontrat bitişinden 3 gün sonra gönderilen acil hatırlatma e-postası",
+  },
+  {
+    name: "Yıllık Kontrat Yenileme - Son Uyarı 5 Gün (E-posta)",
+    code: "contract-renewal-overdue-5-email",
+    channel: "email",
+    subject: "{{company}} - SON UYARI: Yarın Hizmetler Sonlandırılacak",
+    body: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #7f1d1d; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #fef2f2; padding: 20px; border: 1px solid #fecaca; }
+    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #7f1d1d; }
+    .amount { font-size: 24px; color: #7f1d1d; font-weight: bold; }
+    .btn { display: inline-block; background: #7f1d1d; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin: 10px 5px; font-size: 16px; }
+    .critical-warning { background: #7f1d1d; color: white; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SON UYARI</h1>
+    </div>
+    <div class="content">
+      <p>Sayın {{customerName}},</p>
+      <p><strong>{{company}}</strong> kontratınız <strong>5 gündür</strong> sona ermiş durumda.</p>
+      
+      <div class="critical-warning">
+        <strong>HİZMETLERİNİZ YARIN ({{terminationDate}}) SONLANDIRILACAKTIR!</strong>
+      </div>
+      
+      <div class="info-box">
+        <p><strong>Şirket:</strong> {{company}}</p>
+        <p><strong>Kontrat Bitiş Tarihi:</strong> {{contractEndDate}}</p>
+        <p><strong>Yenileme Tutarı:</strong> <span class="amount">{{renewalAmount}}</span></p>
+        <p><strong>Sonlandırma Tarihi:</strong> {{terminationDate}}</p>
+      </div>
+      
+      <p>Bu son uyarıdır. Hizmetlerinizin devam edebilmesi için <strong>bugün</strong> ödeme yapmanız gerekmektedir.</p>
+      
+      <div style="text-align: center;">
+        <a href="{{paymentLink}}" class="btn">SON ŞANS: Hemen Öde</a>
+      </div>
+      
+      <p style="margin-top: 20px; font-size: 14px; color: #dc2626;">
+        Ödeme yapılmaması durumunda yarın itibariyle tüm hizmetleriniz askıya alınacaktır.
+      </p>
+    </div>
+    <div class="footer">
+      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+    variables: [
+      "company",
+      "customerName",
+      "contractEndDate",
+      "paymentLink",
+      "renewalAmount",
+      "terminationDate",
+    ],
+    description: "Yıllık kontrat bitişinden 5 gün sonra gönderilen son uyarı e-postası - yarın sonlandırma",
+  },
 ];

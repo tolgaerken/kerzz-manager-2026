@@ -45,6 +45,9 @@ export class NotificationLog {
   @Prop({ default: "" })
   contractId: string;
 
+  @Prop({ default: "" })
+  renewalCycleKey: string;
+
   @Prop({ required: true, enum: ["sent", "failed"] })
   status: NotificationLogStatus;
 
@@ -87,5 +90,7 @@ NotificationLogSchema.index({ status: 1 });
 NotificationLogSchema.index({ customerId: 1 });
 NotificationLogSchema.index({ invoiceId: 1 });
 NotificationLogSchema.index({ contractId: 1 });
+NotificationLogSchema.index({ renewalCycleKey: 1 });
+NotificationLogSchema.index({ contractId: 1, templateCode: 1, renewalCycleKey: 1 });
 NotificationLogSchema.index({ sentAt: -1 });
 NotificationLogSchema.index({ createdAt: -1 });

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
 import { CRON_JOB_NAMES } from "./cron-scheduler.service";
@@ -19,11 +19,11 @@ import {
 } from "../notification-dispatch";
 import {
   buildContractTemplateData,
+  buildContractRenewalTemplateData,
+  ContractRenewalData,
+  formatDate,
 } from "../notification-queue/notification-data.helper";
-import {
-  SystemLogsService,
-  SystemLogAction,
-} from "../system-logs";
+import { SystemLogsService, SystemLogAction } from "../system-logs";
 import {
   calculateRemainingDays,
   getMonthBoundaries,
@@ -33,10 +33,37 @@ import type {
   ContractDryRunItem,
   DryRunNotificationItem,
 } from "./dto/dry-run.dto";
-import { formatDate } from "../notification-queue/notification-data.helper";
+import {
+  AnnualContractRenewalPricingService,
+  RenewalPricingResult,
+} from "./services";
+import { ContractPaymentLinkHelper } from "./services/contract-payment-link.helper";
+
+type MilestoneType =
+  | "pre-expiry"
+  | "post-1"
+  | "post-3"
+  | "post-5"
+  | "termination";
+
+interface MilestoneConfig {
+  milestone: MilestoneType;
+  daysFromExpiry: number;
+  templateCode: string;
+}
+
+const YEARLY_CONTRACT_MILESTONES: MilestoneConfig[] = [
+  { milestone: "post-5", daysFromExpiry: -5, templateCode: "contract-renewal-overdue-5-email" },
+  { milestone: "post-3", daysFromExpiry: -3, templateCode: "contract-renewal-overdue-3-email" },
+  { milestone: "post-1", daysFromExpiry: -1, templateCode: "contract-renewal-overdue-1-email" },
+];
+
+const TERMINATION_DAY = 6;
 
 @Injectable()
 export class ContractNotificationCron {
+  private readonly logger = new Logger(ContractNotificationCron.name);
+
   constructor(
     @InjectModel(Contract.name, CONTRACT_DB_CONNECTION)
     private contractModel: Model<ContractDocument>,
@@ -44,13 +71,11 @@ export class ContractNotificationCron {
     private customerModel: Model<CustomerDocument>,
     private settingsService: NotificationSettingsService,
     private dispatchService: NotificationDispatchService,
-    private systemLogsService: SystemLogsService
+    private systemLogsService: SystemLogsService,
+    private renewalPricingService: AnnualContractRenewalPricingService,
+    private paymentLinkHelper: ContractPaymentLinkHelper
   ) {}
 
-  /**
-   * Kontrat bitiş tarihi yaklaşan bildirimleri gönderir
-   * Varsayılan: Her gün 09:30 (DB ayarlarından değiştirilebilir)
-   */
   @Cron("30 9 * * *", {
     name: CRON_JOB_NAMES.CONTRACT_NOTIFICATION,
     timeZone: "Europe/Istanbul",
@@ -59,26 +84,22 @@ export class ContractNotificationCron {
     const startTime = Date.now();
 
     try {
-      // Ayarları al
       const settings = await this.settingsService.getSettings();
 
-      // Cron devre dışıysa çık
       if (!settings.cronEnabled || !settings.contractNotificationCronEnabled) {
-        console.log("⏸️ Kontrat bildirim cron'u devre dışı");
+        this.logger.log("Kontrat bildirim cron'u devre dışı");
         return;
       }
 
-      // En az bir kanal aktif olmalı
       if (!settings.emailEnabled && !settings.smsEnabled) {
-        console.log("⚠️ Hiçbir bildirim kanalı aktif değil");
+        this.logger.warn("Hiçbir bildirim kanalı aktif değil");
         return;
       }
 
       if (settings.dryRunMode) {
-        console.log("🧪 [DRY RUN] Kontrat bildirim cron'u kuru çalışma modunda — gerçek gönderim yapılmayacak");
+        this.logger.log("[DRY RUN] Kontrat bildirim cron'u kuru çalışma modunda");
       }
 
-      // Cron başlangıcını logla (ayar kontrolleri geçtikten sonra)
       await this.systemLogsService.logCron(
         SystemLogAction.CRON_START,
         "contract-notification",
@@ -91,7 +112,12 @@ export class ContractNotificationCron {
       let totalSent = 0;
       let totalFailed = 0;
 
-      // Her bir hatırlatma günü için kontratları işle
+      // 1. Yıllık kontratlar için yenileme akışı
+      const yearlyResult = await this.processYearlyContractRenewals(today, settings);
+      totalSent += yearlyResult.sent;
+      totalFailed += yearlyResult.failed;
+
+      // 2. Aylık/diğer kontratlar için mevcut akış
       for (const days of settings.contractExpiryDays) {
         const result = await this.processContractsExpiring(today, days, settings);
         totalSent += result.sent;
@@ -100,7 +126,6 @@ export class ContractNotificationCron {
 
       const duration = Date.now() - startTime;
 
-      // Cron bitişini logla
       await this.systemLogsService.logCron(
         SystemLogAction.CRON_END,
         "contract-notification",
@@ -114,8 +139,8 @@ export class ContractNotificationCron {
         }
       );
 
-      console.log(
-        `✅ Kontrat bildirim cron'u tamamlandı: ${totalSent} gönderildi, ${totalFailed} başarısız`
+      this.logger.log(
+        `Kontrat bildirim cron'u tamamlandı: ${totalSent} gönderildi, ${totalFailed} başarısız`
       );
     } catch (error) {
       const errorMessage =
@@ -130,29 +155,377 @@ export class ContractNotificationCron {
         }
       );
 
-      console.error("❌ Kontrat bildirim cron'u başarısız:", errorMessage);
+      this.logger.error(`Kontrat bildirim cron'u başarısız: ${errorMessage}`);
     }
   }
 
   /**
-   * Bitiş tarihi N gün sonrasının ayına denk gelen kontratları işler
+   * Yıllık kontratlar için yenileme bildirimi akışı.
+   * Pre-expiry ve post-expiry milestone'larını işler.
+   */
+  private async processYearlyContractRenewals(
+    today: Date,
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<{ sent: number; failed: number }> {
+    let sent = 0;
+    let failed = 0;
+
+    // Pre-expiry: contractExpiryDays ayarlarındaki günler için
+    for (const days of settings.contractExpiryDays) {
+      const result = await this.processYearlyPreExpiry(today, days, settings);
+      sent += result.sent;
+      failed += result.failed;
+    }
+
+    // Post-expiry milestones: +1, +3, +5 gün
+    for (const milestoneConfig of YEARLY_CONTRACT_MILESTONES) {
+      const result = await this.processYearlyPostExpiry(
+        today,
+        milestoneConfig,
+        settings
+      );
+      sent += result.sent;
+      failed += result.failed;
+    }
+
+    // Termination check: +6 gün (mock)
+    await this.processTerminationCheck(today, settings);
+
+    return { sent, failed };
+  }
+
+  /**
+   * Yıllık kontratlar için bitiş öncesi (pre-expiry) bildirimleri.
+   */
+  private async processYearlyPreExpiry(
+    today: Date,
+    daysBeforeExpiry: number,
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<{ sent: number; failed: number }> {
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() + daysBeforeExpiry);
+
+    const targetDateStart = new Date(targetDate);
+    targetDateStart.setHours(0, 0, 0, 0);
+    const targetDateEnd = new Date(targetDate);
+    targetDateEnd.setHours(23, 59, 59, 999);
+
+    const contracts = await this.contractModel
+      .find({
+        yearly: true,
+        isActive: true,
+        noEndDate: false,
+        noNotification: false,
+        endDate: { $gte: targetDateStart, $lte: targetDateEnd },
+      })
+      .lean()
+      .exec();
+
+    this.logger.log(
+      `Yıllık pre-expiry (${daysBeforeExpiry} gün): ${contracts.length} kontrat bulundu`
+    );
+
+    return this.sendYearlyRenewalNotifications(
+      contracts,
+      today,
+      "pre-expiry",
+      daysBeforeExpiry,
+      "contract-renewal-pre-expiry-email",
+      settings
+    );
+  }
+
+  /**
+   * Yıllık kontratlar için bitiş sonrası (post-expiry) bildirimleri.
+   */
+  private async processYearlyPostExpiry(
+    today: Date,
+    milestoneConfig: MilestoneConfig,
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<{ sent: number; failed: number }> {
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() + milestoneConfig.daysFromExpiry);
+
+    const targetDateStart = new Date(targetDate);
+    targetDateStart.setHours(0, 0, 0, 0);
+    const targetDateEnd = new Date(targetDate);
+    targetDateEnd.setHours(23, 59, 59, 999);
+
+    const contracts = await this.contractModel
+      .find({
+        yearly: true,
+        isActive: true,
+        noEndDate: false,
+        noNotification: false,
+        endDate: { $gte: targetDateStart, $lte: targetDateEnd },
+      })
+      .lean()
+      .exec();
+
+    this.logger.log(
+      `Yıllık ${milestoneConfig.milestone}: ${contracts.length} kontrat bulundu`
+    );
+
+    return this.sendYearlyRenewalNotifications(
+      contracts,
+      today,
+      milestoneConfig.milestone,
+      milestoneConfig.daysFromExpiry,
+      milestoneConfig.templateCode,
+      settings
+    );
+  }
+
+  /**
+   * Yıllık kontrat yenileme bildirimleri gönderir.
+   */
+  private async sendYearlyRenewalNotifications(
+    contracts: Contract[],
+    today: Date,
+    milestone: MilestoneType,
+    daysFromExpiry: number,
+    templateCode: string,
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<{ sent: number; failed: number }> {
+    let sent = 0;
+    let failed = 0;
+    let skippedDuplicate = 0;
+
+    const contractIds = contracts.map((c) => c.id).filter(Boolean);
+    const cycleKeys = contracts.map((c) =>
+      this.generateCycleKey(c.endDate ? new Date(c.endDate) : new Date())
+    );
+    const uniqueCycleKey = cycleKeys[0] || this.generateCycleKey(new Date());
+
+    const sentConditionsMap =
+      await this.dispatchService.getDistinctTemplateCodesForContractCycles(
+        contractIds,
+        uniqueCycleKey
+      );
+
+    const results = await Promise.allSettled(
+      contracts.map(async (contract) => {
+        try {
+          const cycleKey = this.generateCycleKey(
+            contract.endDate ? new Date(contract.endDate) : new Date()
+          );
+          const mapKey = `${contract.id}:${cycleKey}`;
+          const sentTemplates = sentConditionsMap.get(mapKey) ?? [];
+
+          if (sentTemplates.includes(templateCode)) {
+            this.logger.debug(
+              `Kontrat ${contract.contractId} için ${templateCode} zaten gönderilmiş (cycle: ${cycleKey})`
+            );
+            return { status: "skipped-duplicate" as const };
+          }
+
+          const customer = await this.customerModel
+            .findOne({ id: contract.customerId })
+            .lean()
+            .exec();
+
+          if (!customer) {
+            this.logger.warn(
+              `Müşteri bulunamadı: ${contract.customerId} (Kontrat: ${contract.contractId})`
+            );
+            return { status: "failed" as const, reason: "customer-not-found" };
+          }
+
+          if (settings.dryRunMode) {
+            this.logger.log(
+              `[DRY RUN] Yıllık kontrat bildirimi: ${contract.contractId}, Milestone: ${milestone}`
+            );
+            return { status: "dry-run" as const };
+          }
+
+          const pricingResult = await this.renewalPricingService.calculateRenewalPrice(
+            contract.id
+          );
+
+          const paymentLinkResult = await this.paymentLinkHelper.createRenewalPaymentLink(
+            contract,
+            customer,
+            pricingResult.newTotalTL
+          );
+
+          const renewalData: ContractRenewalData = {
+            paymentLink: paymentLinkResult.url,
+            renewalAmount: pricingResult.newTotalTL,
+            oldAmount: pricingResult.oldTotalTL,
+            increaseRateInfo: this.formatIncreaseRateInfo(pricingResult),
+            daysFromExpiry: Math.abs(daysFromExpiry),
+            terminationDate: this.calculateTerminationDate(contract.endDate),
+            milestone,
+          };
+
+          const templateData = buildContractRenewalTemplateData(
+            contract,
+            customer,
+            renewalData
+          );
+
+          const notifications: DispatchNotificationDto[] = [];
+
+          if (settings.emailEnabled && customer.email) {
+            notifications.push({
+              templateCode,
+              channel: "email",
+              recipient: {
+                email: customer.email,
+                name: customer.name,
+              },
+              contextType: "contract",
+              contextId: contract.id,
+              customerId: contract.customerId,
+              contractId: contract.id,
+              renewalCycleKey: cycleKey,
+              templateData,
+            });
+          }
+
+          if (notifications.length === 0) {
+            return { status: "no-channel" as const };
+          }
+
+          const dispatchResults = await this.dispatchService.dispatchBulk(notifications);
+          const successCount = dispatchResults.filter((r) => r.success).length;
+          const failCount = dispatchResults.filter((r) => !r.success).length;
+
+          return {
+            status: "processed" as const,
+            sent: successCount,
+            failed: failCount,
+          };
+        } catch (error) {
+          this.logger.error(
+            `Yıllık kontrat bildirimi gönderilemedi: ${contract.contractId}`,
+            error
+          );
+          return { status: "error" as const };
+        }
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const value = result.value;
+        if (value.status === "processed") {
+          sent += value.sent;
+          failed += value.failed;
+        } else if (value.status === "skipped-duplicate") {
+          skippedDuplicate++;
+        } else if (value.status === "failed" || value.status === "error") {
+          failed++;
+        } else if (value.status === "dry-run") {
+          sent++;
+        }
+      } else {
+        failed++;
+      }
+    }
+
+    if (skippedDuplicate > 0) {
+      this.logger.log(`${skippedDuplicate} kontrat duplicate nedeniyle atlandı`);
+    }
+
+    return { sent, failed };
+  }
+
+  /**
+   * Termination check: Bitiş tarihinden 6 gün sonra ödeme yapılmamışsa mock sonlandırma.
+   */
+  private async processTerminationCheck(
+    today: Date,
+    settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
+  ): Promise<void> {
+    const terminationTargetDate = new Date(today);
+    terminationTargetDate.setDate(terminationTargetDate.getDate() - TERMINATION_DAY);
+
+    const targetDateStart = new Date(terminationTargetDate);
+    targetDateStart.setHours(0, 0, 0, 0);
+    const targetDateEnd = new Date(terminationTargetDate);
+    targetDateEnd.setHours(23, 59, 59, 999);
+
+    const contracts = await this.contractModel
+      .find({
+        yearly: true,
+        isActive: true,
+        noEndDate: false,
+        endDate: { $gte: targetDateStart, $lte: targetDateEnd },
+      })
+      .lean()
+      .exec();
+
+    this.logger.log(
+      `Termination check (+${TERMINATION_DAY} gün): ${contracts.length} kontrat bulundu`
+    );
+
+    for (const contract of contracts) {
+      // TODO: Gerçek ödeme kontrolü yapılacak
+      // Şimdilik mock: Ödeme yapılmadığını varsayıyoruz
+      const paymentReceived = false;
+
+      if (!paymentReceived) {
+        if (settings.dryRunMode) {
+          this.logger.log(
+            `[DRY RUN] [MOCK TERMINATION] Kontrat ${contract.contractId} için hizmet sonlandırma tetiklenecekti`
+          );
+        } else {
+          // TODO: Gerçek hizmet sonlandırma implementasyonu
+          this.logger.warn(
+            `[MOCK TERMINATION] Kontrat ${contract.contractId} için hizmet sonlandırma tetiklendi (mock - gerçek aksiyon yok)`
+          );
+
+          await this.systemLogsService.logCron(
+            SystemLogAction.CRON_END,
+            "contract-termination-mock",
+            {
+              details: {
+                contractId: contract.contractId,
+                customerId: contract.customerId,
+                endDate: contract.endDate,
+                message: "Mock hizmet sonlandırma tetiklendi - gerçek aksiyon bekliyor",
+              },
+            }
+          );
+        }
+      } else {
+        // TODO: Gerçek kontrat yenileme implementasyonu
+        this.logger.log(
+          `[MOCK RENEWAL] Kontrat ${contract.contractId} için ödeme alındı, yenileme tetiklendi (mock)`
+        );
+
+        await this.systemLogsService.logCron(
+          SystemLogAction.CRON_END,
+          "contract-renewal-mock",
+          {
+            details: {
+              contractId: contract.contractId,
+              customerId: contract.customerId,
+              message: "Mock kontrat yenileme tetiklendi - gerçek aksiyon bekliyor",
+            },
+          }
+        );
+      }
+    }
+  }
+
+  /**
+   * Aylık/diğer kontratlar için mevcut bitiş bildirimi akışı (geriye uyumluluk).
    */
   private async processContractsExpiring(
     today: Date,
     days: number,
     settings: Awaited<ReturnType<NotificationSettingsService["getSettings"]>>
   ): Promise<{ sent: number; failed: number }> {
-    // N gün sonraki tarih
     const targetDate = new Date(today);
     targetDate.setDate(targetDate.getDate() + days);
     const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
 
-    // Bitiş tarihi hedef ayin icinde olan kontratlar
-    // noEndDate === false (belirli bir bitiş tarihi var)
-    // noNotification === false (bildirim açık)
-    // lastNotify bugün değil (bugün zaten bildirim gönderilmemiş)
+    // Yıllık olmayan kontratlar için mevcut akış
     const contracts = await this.contractModel
       .find({
+        yearly: { $ne: true },
         endDate: { $gte: monthStart, $lte: monthEnd },
         noEndDate: false,
         noNotification: false,
@@ -165,15 +538,15 @@ export class ContractNotificationCron {
       .lean()
       .exec();
 
-    console.log(
-      `📋 Bitiş tarihi hedef ayda olan ${contracts.length} kontrat bulundu`
+    this.logger.log(
+      `Aylık kontrat bitiş (${days} gün): ${contracts.length} kontrat bulundu`
     );
 
     return this.sendNotificationsForContracts(contracts, today, settings);
   }
 
   /**
-   * Kontratlar için bildirim gönderir
+   * Aylık kontratlar için bildirim gönderir (mevcut akış).
    */
   private async sendNotificationsForContracts(
     contracts: Contract[],
@@ -184,7 +557,6 @@ export class ContractNotificationCron {
     let failed = 0;
     let skippedDuplicate = 0;
 
-    // Tüm kontrat ID'leri için daha önce gönderilmiş templateCode'ları al
     const contractIds = contracts.map((c) => c.id).filter(Boolean);
     const sentConditionsMap =
       await this.dispatchService.getDistinctTemplateCodesForContracts(contractIds);
@@ -197,49 +569,41 @@ export class ContractNotificationCron {
         const endDate = contract.endDate ? new Date(contract.endDate) : null;
         const remainingDays = calculateRemainingDays(endDate, referenceDate);
 
-        // Bu kontrat için daha önce gönderilmiş templateCode'ları kontrol et
         const sentConditions = sentConditionsMap.get(contract.id) ?? [];
         const emailAlreadySent = sentConditions.includes(emailTemplateCode);
         const smsAlreadySent = sentConditions.includes(smsTemplateCode);
 
-        // Her iki kanal için de daha önce gönderilmişse atla
         if (emailAlreadySent && smsAlreadySent) {
-          console.log(
-            `⏭️ Kontrat ${contract.contractId} için contract-expiry koşulu zaten gönderilmiş, atlanıyor`
-          );
           skippedDuplicate++;
           continue;
         }
 
-        // Müşteri bilgilerini al (Customer koleksiyonu id alanı üzerinden ilişkilendirilir)
         const customer = await this.customerModel
           .findOne({ id: contract.customerId })
           .lean()
           .exec();
 
         if (!customer) {
-          console.warn(
-            `⚠️ Müşteri bulunamadı: ${contract.customerId} (Kontrat: ${contract.contractId})`
+          this.logger.warn(
+            `Müşteri bulunamadı: ${contract.customerId} (Kontrat: ${contract.contractId})`
           );
           failed++;
           continue;
         }
 
-        // DRY RUN MODU: Gerçek gönderim yapma, sadece logla
         if (settings.dryRunMode) {
           const channels: string[] = [];
           if (settings.emailEnabled && customer.email && !emailAlreadySent)
             channels.push(`email(${customer.email})`);
           if (settings.smsEnabled && customer.phone && !smsAlreadySent)
             channels.push(`sms(${customer.phone})`);
-          console.log(
-            `🧪 [DRY RUN] Kontrat bildirimi atlanıyor — Kontrat: ${contract.contractId}, Müşteri: ${customer.name}, Kanallar: ${channels.join(", ") || "yok"}`
+          this.logger.log(
+            `[DRY RUN] Kontrat bildirimi: ${contract.contractId}, Kanallar: ${channels.join(", ") || "yok"}`
           );
           sent += channels.length;
           continue;
         }
 
-        // Template verileri hazırla
         const templateData = buildContractTemplateData(
           contract,
           customer,
@@ -248,7 +612,6 @@ export class ContractNotificationCron {
 
         const notifications: DispatchNotificationDto[] = [];
 
-        // Email bildirimi (daha önce gönderilmemişse)
         if (settings.emailEnabled && customer.email && !emailAlreadySent) {
           notifications.push({
             templateCode: emailTemplateCode,
@@ -265,7 +628,6 @@ export class ContractNotificationCron {
           });
         }
 
-        // SMS bildirimi (daha önce gönderilmemişse)
         if (settings.smsEnabled && customer.phone && !smsAlreadySent) {
           notifications.push({
             templateCode: smsTemplateCode,
@@ -282,15 +644,10 @@ export class ContractNotificationCron {
           });
         }
 
-        // Gönderilecek bildirim yoksa atla
         if (notifications.length === 0) {
-          console.log(
-            `⏭️ Kontrat ${contract.contractId} için gönderilecek yeni bildirim yok`
-          );
           continue;
         }
 
-        // Bildirimleri gönder
         const results = await this.dispatchService.dispatchBulk(notifications);
 
         const successCount = results.filter((r) => r.success).length;
@@ -299,7 +656,6 @@ export class ContractNotificationCron {
         sent += successCount;
         failed += failCount;
 
-        // Başarılı gönderim sonrası lastNotify güncelle (tekrar gönderimi önler)
         if (successCount > 0) {
           await this.contractModel.updateOne(
             { _id: contract._id },
@@ -307,8 +663,8 @@ export class ContractNotificationCron {
           );
         }
       } catch (error) {
-        console.error(
-          `❌ Kontrat bildirimi gönderilemedi: ${contract.contractId}`,
+        this.logger.error(
+          `Kontrat bildirimi gönderilemedi: ${contract.contractId}`,
           error
         );
         failed++;
@@ -316,14 +672,55 @@ export class ContractNotificationCron {
     }
 
     if (skippedDuplicate > 0) {
-      console.log(`⏭️ ${skippedDuplicate} kontrat duplicate koşul nedeniyle atlandı`);
+      this.logger.log(`${skippedDuplicate} kontrat duplicate nedeniyle atlandı`);
     }
 
     return { sent, failed };
   }
 
   /**
-   * Dry run: Gercek bildirim gondermeden ne olacagini raporlar
+   * Cycle key oluşturur (endDate bazlı).
+   * Aynı kontratın farklı yenileme döngülerinde tekrar bildirim alabilmesi için.
+   */
+  private generateCycleKey(endDate: Date): string {
+    const year = endDate.getFullYear();
+    const month = String(endDate.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  }
+
+  /**
+   * Artış oranı bilgisini formatlar.
+   */
+  private formatIncreaseRateInfo(pricing: RenewalPricingResult): string {
+    const parts: string[] = [];
+
+    if (pricing.currencyBreakdown.tl.old > 0) {
+      parts.push(`TL: %${(pricing.tlIncreaseRate * 100).toFixed(1)} (${pricing.inflationSource})`);
+    }
+
+    if (pricing.currencyBreakdown.usd.old > 0) {
+      parts.push(`USD: %${(pricing.usdIncreaseRate * 100).toFixed(1)}`);
+    }
+
+    if (pricing.currencyBreakdown.eur.old > 0) {
+      parts.push(`EUR: %5`);
+    }
+
+    return parts.join(", ") || "Artış uygulanmadı";
+  }
+
+  /**
+   * Sonlandırma tarihini hesaplar (endDate + 6 gün).
+   */
+  private calculateTerminationDate(endDate: Date | undefined): string {
+    if (!endDate) return "";
+    const termDate = new Date(endDate);
+    termDate.setDate(termDate.getDate() + TERMINATION_DAY);
+    return formatDate(termDate);
+  }
+
+  /**
+   * Dry run: Gerçek bildirim göndermeden ne olacağını raporlar.
    */
   async dryRun(): Promise<ContractNotificationDryRunResponse> {
     const startTime = Date.now();
@@ -336,6 +733,79 @@ export class ContractNotificationCron {
     let emailCount = 0;
     let smsCount = 0;
 
+    // Yıllık kontratlar için dry run
+    for (const days of settings.contractExpiryDays) {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() + days);
+
+      const targetDateStart = new Date(targetDate);
+      targetDateStart.setHours(0, 0, 0, 0);
+      const targetDateEnd = new Date(targetDate);
+      targetDateEnd.setHours(23, 59, 59, 999);
+
+      const yearlyContracts = await this.contractModel
+        .find({
+          yearly: true,
+          isActive: true,
+          noEndDate: false,
+          noNotification: false,
+          endDate: { $gte: targetDateStart, $lte: targetDateEnd },
+        })
+        .lean()
+        .exec();
+
+      for (const contract of yearlyContracts) {
+        const endDate = contract.endDate ? new Date(contract.endDate) : null;
+        const remainingDays = calculateRemainingDays(endDate, today);
+
+        const customer = await this.customerModel
+          .findOne({ id: contract.customerId })
+          .lean()
+          .exec();
+
+        if (!customer) {
+          items.push({
+            contractId: contract.contractId || contract.id,
+            company: contract.company || "",
+            customerId: contract.customerId || "",
+            customerName: "",
+            endDate: endDate ? formatDate(endDate) : "",
+            remainingDays,
+            notifications: [],
+            skippedReason: `Müşteri bulunamadı: ${contract.customerId}`,
+          });
+          continue;
+        }
+
+        const notifications: DryRunNotificationItem[] = [];
+
+        if (settings.emailEnabled && customer.email) {
+          notifications.push({
+            templateCode: "contract-renewal-pre-expiry-email",
+            channel: "email",
+            recipient: { email: customer.email, name: customer.name },
+            contextType: "contract",
+            contextId: contract.id,
+            customerId: contract.customerId,
+            templateData: { milestone: "pre-expiry", daysFromExpiry: days },
+          });
+          emailCount++;
+        }
+
+        items.push({
+          contractId: contract.contractId || contract.id,
+          company: contract.company || "",
+          customerId: contract.customerId || "",
+          customerName: customer.name || "",
+          endDate: endDate ? formatDate(endDate) : "",
+          remainingDays,
+          notifications,
+          isYearly: true,
+        });
+      }
+    }
+
+    // Aylık kontratlar için dry run (mevcut akış)
     for (const days of settings.contractExpiryDays) {
       const targetDate = new Date(today);
       targetDate.setDate(targetDate.getDate() + days);
@@ -343,6 +813,7 @@ export class ContractNotificationCron {
 
       const contracts = await this.contractModel
         .find({
+          yearly: { $ne: true },
           endDate: { $gte: monthStart, $lte: monthEnd },
           noEndDate: false,
           noNotification: false,
@@ -368,7 +839,7 @@ export class ContractNotificationCron {
             endDate: endDate ? formatDate(endDate) : "",
             remainingDays,
             notifications: [],
-            skippedReason: `Musteri bulunamadi: ${contract.customerId}`,
+            skippedReason: `Müşteri bulunamadı: ${contract.customerId}`,
           });
           continue;
         }
@@ -406,10 +877,11 @@ export class ContractNotificationCron {
           contractId: contract.contractId || contract.id,
           company: contract.company || "",
           customerId: contract.customerId || "",
-          customerName: customer.name || customer.brand || "",
+          customerName: customer.name || "",
           endDate: endDate ? formatDate(endDate) : "",
           remainingDays,
           notifications,
+          isYearly: false,
         });
       }
     }

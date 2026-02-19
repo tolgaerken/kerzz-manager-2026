@@ -82,6 +82,7 @@ export class NotificationDispatchService {
         customerId: dto.customerId || "",
         invoiceId: dto.invoiceId || "",
         contractId: dto.contractId || "",
+        renewalCycleKey: dto.renewalCycleKey || "",
         status: sendResult.success ? "sent" : "failed",
         errorMessage: sendResult.error || "",
         messageId: sendResult.messageId || "",
@@ -118,6 +119,7 @@ export class NotificationDispatchService {
         customerId: dto.customerId || "",
         invoiceId: dto.invoiceId || "",
         contractId: dto.contractId || "",
+        renewalCycleKey: dto.renewalCycleKey || "",
         status: "failed",
         errorMessage,
         templateData: dto.templateData,
@@ -332,6 +334,44 @@ export class NotificationDispatchService {
     const map = new Map<string, string[]>();
     for (const item of result) {
       map.set(item._id, item.templateCodes);
+    }
+    return map;
+  }
+
+  /**
+   * Belirtilen kontrat ID'leri ve cycleKey için gönderilmiş templateCode'ları döner.
+   * Yıllık kontrat yenileme akışında milestone bazlı duplicate kontrolü için kullanılır.
+   * @returns Map<`${contractId}:${cycleKey}`, templateCode[]>
+   */
+  async getDistinctTemplateCodesForContractCycles(
+    contractIds: string[],
+    cycleKey: string
+  ): Promise<Map<string, string[]>> {
+    if (contractIds.length === 0) return new Map();
+
+    const result = await this.logModel.aggregate<{
+      _id: { contractId: string; renewalCycleKey: string };
+      templateCodes: string[];
+    }>([
+      {
+        $match: {
+          contractId: { $in: contractIds },
+          renewalCycleKey: cycleKey,
+          status: "sent",
+        },
+      },
+      {
+        $group: {
+          _id: { contractId: "$contractId", renewalCycleKey: "$renewalCycleKey" },
+          templateCodes: { $addToSet: "$templateCode" },
+        },
+      },
+    ]);
+
+    const map = new Map<string, string[]>();
+    for (const item of result) {
+      const key = `${item._id.contractId}:${item._id.renewalCycleKey}`;
+      map.set(key, item.templateCodes);
     }
     return map;
   }

@@ -125,5 +125,6 @@ export interface DispatchNotificationDto {
   customerId?: string;
   invoiceId?: string;
   contractId?: string;
+  renewalCycleKey?: string;
   templateData: Record<string, unknown>;
 }

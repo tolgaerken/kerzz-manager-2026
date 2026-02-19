@@ -77,6 +77,7 @@ export interface ContractDryRunItem {
   remainingDays: number;
   notifications: DryRunNotificationItem[];
   skippedReason?: string;
+  isYearly?: boolean;
 }
 
 // ── Stale Pipeline ──

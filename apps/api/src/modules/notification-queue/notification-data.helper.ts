@@ -66,6 +66,16 @@ export interface ContractLike {
   customerId?: string;
 }
 
+export interface ContractRenewalData {
+  paymentLink: string;
+  renewalAmount: number;
+  oldAmount: number;
+  increaseRateInfo: string;
+  daysFromExpiry: number;
+  terminationDate: string;
+  milestone: "pre-expiry" | "post-1" | "post-3" | "post-5" | "termination";
+}
+
 /**
  * Fatura icin template data olusturur.
  * paymentLink: olusturulmus odeme linki URL'si (PaymentsService araciligiyla uretilmeli)
@@ -89,7 +99,7 @@ export function buildInvoiceTemplateData(
 }
 
 /**
- * Kontrat icin template data olusturur
+ * Kontrat icin template data olusturur (eski format - geriye uyumluluk)
  */
 export function buildContractTemplateData(
   contract: ContractLike,
@@ -102,5 +112,35 @@ export function buildContractTemplateData(
     customerName: customer.name || "",
     contractEndDate: formatDate(contract.endDate),
     remainingDays: remainingDays.toString(),
+  };
+}
+
+/**
+ * Yıllık kontrat yenileme bildirimi için genişletilmiş template data oluşturur.
+ * Ödeme linki, artış bilgileri ve sonlandırma tarihi içerir.
+ */
+export function buildContractRenewalTemplateData(
+  contract: ContractLike,
+  customer: CustomerLike,
+  renewalData: ContractRenewalData
+): Record<string, string> {
+  const endDate = contract.endDate ? new Date(contract.endDate) : new Date();
+  const terminationDate = new Date(endDate);
+  terminationDate.setDate(terminationDate.getDate() + 6);
+
+  return {
+    company: contract.company || customer.companyName || customer.name || "",
+    customerName: customer.name || "",
+    contractEndDate: formatDate(contract.endDate),
+    daysFromExpiry: renewalData.daysFromExpiry.toString(),
+    paymentLink: renewalData.paymentLink,
+    renewalAmount: formatCurrency(renewalData.renewalAmount),
+    oldAmount: formatCurrency(renewalData.oldAmount),
+    increaseRateInfo: renewalData.increaseRateInfo,
+    terminationDate: formatDate(terminationDate),
+    milestone: renewalData.milestone,
+    isPreExpiry: renewalData.daysFromExpiry > 0 ? "true" : "false",
+    isPostExpiry: renewalData.daysFromExpiry <= 0 ? "true" : "false",
+    isLastWarning: renewalData.milestone === "post-5" ? "true" : "false",
   };
 }
