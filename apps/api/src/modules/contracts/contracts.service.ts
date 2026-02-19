@@ -347,7 +347,7 @@ export class ContractsService {
       erpBalance: 0,
       enabled: false,
       blockedLicance: false,
-      isFree: false,
+      isFree: dto.isFree ?? false,
       hasLog: false,
       onlineCheck: false,
       isExtendable: false,
@@ -404,6 +404,7 @@ export class ContractsService {
     if (dto.contractFlow !== undefined)
       updateData.contractFlow = dto.contractFlow;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+    if (dto.isFree !== undefined) updateData.isFree = dto.isFree;
 
     const filter = this.buildIdFilter(id);
     const updated = await this.contractModel

@@ -16,6 +16,10 @@ import { useCustomerLookup } from "../features/lookup";
 /** Grup şirketlerinin cari kodları */
 const GROUP_COMPANY_IDS = new Set(["M0002", "M1246", "E0061", "M0072", "M2186", "A0001"]);
 
+function normalizeCariKey(value: string | undefined | null): string {
+  return value?.toString().trim().toUpperCase() ?? "";
+}
+
 export function ReceivablesPage() {
   const isMobile = useIsMobile();
 
@@ -56,9 +60,10 @@ export function ReceivablesPage() {
 
   /** erpId -> CustomerLookupItem reverse map */
   const erpIdToCustomerMap = useMemo(() => {
-    const map = new Map<string, { _id: string; name?: string; companyName?: string }>();
+    const map = new Map<string, { id: string; _id: string; name?: string; companyName?: string }>();
     for (const c of customers) {
-      if (c.erpId) map.set(c.erpId, c);
+      const erpKey = normalizeCariKey(c.erpId);
+      if (erpKey) map.set(erpKey, c);
     }
     return map;
   }, [customers]);
@@ -98,11 +103,11 @@ export function ReceivablesPage() {
   // Log panelini aç (toolbar butonu)
   const handleOpenLogs = useCallback(() => {
     if (!selectedItem) return;
-    const customer = erpIdToCustomerMap.get(selectedItem.CariKodu);
+    const customer = erpIdToCustomerMap.get(normalizeCariKey(selectedItem.CariKodu));
     if (!customer) return;
     openEntityPanel({
-      customerId: customer._id,
-      activeTab: "contract",
+      customerId: customer.id,
+      activeTab: "collection",
       title: `Cari: ${selectedItem.CariUnvan || selectedItem.CariKodu}`,
     });
   }, [selectedItem, erpIdToCustomerMap, openEntityPanel]);
@@ -116,7 +121,7 @@ export function ReceivablesPage() {
   // Seçili kaydın müşteri eşleşmesi var mı?
   const hasCustomerId = useMemo(() => {
     if (!selectedItem) return false;
-    return erpIdToCustomerMap.has(selectedItem.CariKodu);
+    return erpIdToCustomerMap.has(normalizeCariKey(selectedItem.CariKodu));
   }, [selectedItem, erpIdToCustomerMap]);
 
   // Seçili kayıtların toplamı

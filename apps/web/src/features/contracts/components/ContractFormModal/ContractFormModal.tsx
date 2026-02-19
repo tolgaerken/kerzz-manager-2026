@@ -80,7 +80,8 @@ export function ContractFormModal({
     noVat: false,
     noNotification: false,
     contractFlow: "future",
-    isActive: true
+    isActive: true,
+    isFree: false
   });
 
   const [selectedCustomerName, setSelectedCustomerName] = useState("");
@@ -105,7 +106,8 @@ export function ContractFormModal({
         noVat: false,
         noNotification: false,
         contractFlow: "future",
-        isActive: true
+        isActive: true,
+        isFree: false
       });
       setSelectedCustomerName("");
       setCustomerSearch("");
@@ -490,6 +492,19 @@ export function ContractFormModal({
                     />
                     <span className="text-sm text-[var(--color-foreground)]">
                       Kontrat Aktif
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isFree"
+                      checked={formData.isFree}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-[var(--color-foreground)]">
+                      Ücretsiz Kontrat
                     </span>
                   </label>
                 </div>

@@ -441,6 +441,19 @@ export function ContractEditFormModal({
                       Kontrat Aktif
                     </span>
                   </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isFree"
+                      checked={formData.isFree}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-[var(--color-foreground)]">
+                      Ücretsiz Kontrat
+                    </span>
+                  </label>
                 </div>
               </div>
 

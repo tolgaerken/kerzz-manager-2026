@@ -65,4 +65,8 @@ export class CreateContractDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean = true;
+
+  @IsOptional()
+  @IsBoolean()
+  isFree?: boolean = false;
 }

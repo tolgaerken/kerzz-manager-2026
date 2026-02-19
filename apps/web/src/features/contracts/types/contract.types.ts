@@ -80,6 +80,7 @@ export interface CreateContractInput {
   noNotification?: boolean;
   contractFlow?: BillingType;
   isActive?: boolean;
+  isFree?: boolean;
 }
 
 export interface UpdateContractInput extends CreateContractInput {

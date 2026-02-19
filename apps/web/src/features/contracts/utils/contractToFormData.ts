@@ -35,6 +35,7 @@ export function contractToFormData(contract: Contract): CreateContractInput {
     noVat: false,
     noNotification: false,
     contractFlow: normalizeBillingType(contract.contractFlow),
-    isActive: contract.isActive ?? true
+    isActive: contract.isActive ?? true,
+    isFree: !!contract.isFree
   };
 }
