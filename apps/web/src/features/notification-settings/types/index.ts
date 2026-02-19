@@ -60,6 +60,15 @@ export interface RenderTemplateResponse {
   body: string;
 }
 
+export interface SendTemplateTestEmailDto {
+  recipientEmail: string;
+}
+
+export interface SendTemplateTestEmailResponse {
+  success: boolean;
+  messageId?: string;
+}
+
 // ==================== NOTIFICATION SETTINGS TYPES ====================
 
 export interface NotificationSettings {

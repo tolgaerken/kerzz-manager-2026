@@ -90,3 +90,15 @@ export function useRenderTemplate() {
     }) => notificationTemplatesApi.render(code, data),
   });
 }
+
+export function useSendTemplateTestEmail() {
+  return useMutation({
+    mutationFn: ({
+      code,
+      recipientEmail,
+    }: {
+      code: string;
+      recipientEmail: string;
+    }) => notificationTemplatesApi.sendTestEmail(code, { recipientEmail }),
+  });
+}

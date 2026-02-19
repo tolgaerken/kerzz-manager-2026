@@ -6,6 +6,7 @@ import {
   IsArray,
   IsNumber,
   Min,
+  IsEmail,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { NotificationChannel } from "../schemas/notification-template.schema";
@@ -131,4 +132,14 @@ export class RenderTemplateDto {
 export class RenderTemplateResponseDto {
   subject?: string;
   body: string;
+}
+
+export class SendTestEmailDto {
+  @IsEmail()
+  recipientEmail: string;
+}
+
+export class SendTestEmailResponseDto {
+  success: boolean;
+  messageId?: string;
 }

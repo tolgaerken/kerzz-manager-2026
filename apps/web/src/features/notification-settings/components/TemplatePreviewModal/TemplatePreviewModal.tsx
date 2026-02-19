@@ -1,5 +1,6 @@
-import { X, RefreshCw } from "lucide-react";
-import { useTemplatePreview } from "../../hooks";
+import { useEffect, useState, type FormEvent } from "react";
+import { X, RefreshCw, Send } from "lucide-react";
+import { useTemplatePreview, useSendTemplateTestEmail } from "../../hooks";
 import type { NotificationTemplate } from "../../types";
 
 interface TemplatePreviewModalProps {
@@ -14,6 +15,26 @@ export function TemplatePreviewModal({
   onClose,
 }: TemplatePreviewModalProps) {
   const { data, isLoading } = useTemplatePreview(isOpen ? template.code : "");
+  const sendTestEmailMutation = useSendTemplateTestEmail();
+  const [recipientEmail, setRecipientEmail] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setRecipientEmail("");
+      sendTestEmailMutation.reset();
+    }
+  }, [isOpen, sendTestEmailMutation]);
+
+  const handleSendTestEmail = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const email = recipientEmail.trim();
+    if (!email) return;
+
+    await sendTestEmailMutation.mutateAsync({
+      code: template.code,
+      recipientEmail: email,
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -89,13 +110,54 @@ export function TemplatePreviewModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-[var(--color-border)]">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors"
-          >
-            Kapat
-          </button>
+        <div className="px-6 py-4 border-t border-[var(--color-border)] space-y-3">
+          {template.channel === "email" && (
+            <form
+              onSubmit={handleSendTestEmail}
+              className="flex flex-col gap-2 md:flex-row md:items-center"
+            >
+              <input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="test@example.com"
+                className="w-full md:max-w-sm px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
+              />
+              <button
+                type="submit"
+                disabled={sendTestEmailMutation.isPending || recipientEmail.trim().length === 0}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] bg-[var(--color-primary)] rounded-md hover:bg-[var(--color-primary)]/90 transition-colors disabled:opacity-50"
+              >
+                {sendTestEmailMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                Test Mail Gönder
+              </button>
+            </form>
+          )}
+
+          {sendTestEmailMutation.isSuccess && (
+            <div className="p-3 text-sm text-[var(--color-success-foreground)] bg-[var(--color-success)]/10 rounded-md">
+              Test maili başarıyla gönderildi.
+            </div>
+          )}
+
+          {sendTestEmailMutation.isError && (
+            <div className="p-3 text-sm text-[var(--color-error-foreground)] bg-[var(--color-error)]/10 rounded-md">
+              Hata: {sendTestEmailMutation.error.message}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors"
+            >
+              Kapat
+            </button>
+          </div>
         </div>
       </div>
     </div>

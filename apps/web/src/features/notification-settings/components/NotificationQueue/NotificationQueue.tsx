@@ -50,6 +50,11 @@ type QueueTab = "invoices" | "yearly-contracts" | "monthly-contracts";
 
 export function NotificationQueue() {
   const [queueTab, setQueueTab] = useState<QueueTab>("invoices");
+  const [loadedTabs, setLoadedTabs] = useState<Record<QueueTab, boolean>>({
+    invoices: false,
+    "yearly-contracts": false,
+    "monthly-contracts": false,
+  });
   const [invoiceParams, setInvoiceParams] = useState<InvoiceQueueQueryParams>({
     type: "all",
     limit: 10000,
@@ -75,9 +80,24 @@ export function NotificationQueue() {
   const pendingSendRef = useRef<{ channels: ("email" | "sms")[] } | null>(null);
 
   const { data: settings } = useNotificationSettings();
-  const { data: invoiceData, isLoading: invoicesLoading } = useInvoiceQueue(invoiceParams);
-  const { data: yearlyContractData, isLoading: yearlyContractsLoading } = useContractQueue(yearlyContractParams);
-  const { data: monthlyContractData, isLoading: monthlyContractsLoading } = useContractQueue(monthlyContractParams);
+  const {
+    data: invoiceData,
+    isLoading: invoicesLoading,
+    isFetching: invoicesFetching,
+    refetch: refetchInvoices,
+  } = useInvoiceQueue(invoiceParams, { enabled: loadedTabs.invoices });
+  const {
+    data: yearlyContractData,
+    isLoading: yearlyContractsLoading,
+    isFetching: yearlyContractsFetching,
+    refetch: refetchYearlyContracts,
+  } = useContractQueue(yearlyContractParams, { enabled: loadedTabs["yearly-contracts"] });
+  const {
+    data: monthlyContractData,
+    isLoading: monthlyContractsLoading,
+    isFetching: monthlyContractsFetching,
+    refetch: refetchMonthlyContracts,
+  } = useContractQueue(monthlyContractParams, { enabled: loadedTabs["monthly-contracts"] });
   const { data: previewData, isLoading: previewLoading } = useQueuePreview(previewParams);
   
   const {
@@ -237,6 +257,38 @@ export function NotificationQueue() {
     pendingSendRef.current = null;
   }, []);
 
+  const handleFetchCurrentTab = useCallback(() => {
+    if (!loadedTabs[queueTab]) {
+      setLoadedTabs((prev) => ({ ...prev, [queueTab]: true }));
+      return;
+    }
+
+    if (queueTab === "invoices") {
+      void refetchInvoices();
+      return;
+    }
+
+    if (queueTab === "yearly-contracts") {
+      void refetchYearlyContracts();
+      return;
+    }
+
+    void refetchMonthlyContracts();
+  }, [
+    loadedTabs,
+    queueTab,
+    refetchInvoices,
+    refetchMonthlyContracts,
+    refetchYearlyContracts,
+  ]);
+
+  const isCurrentTabFetching =
+    (queueTab === "invoices" && (invoicesLoading || invoicesFetching)) ||
+    (queueTab === "yearly-contracts" &&
+      (yearlyContractsLoading || yearlyContractsFetching)) ||
+    (queueTab === "monthly-contracts" &&
+      (monthlyContractsLoading || monthlyContractsFetching));
+
   return (
     <div className="space-y-4 flex flex-col h-full">
       {/* Sub-tabs */}
@@ -318,6 +370,15 @@ export function NotificationQueue() {
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
           />
+          <button
+            type="button"
+            onClick={handleFetchCurrentTab}
+            disabled={isCurrentTabFetching}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isCurrentTabFetching ? "animate-spin" : ""}`} />
+            Getir
+          </button>
         </div>
       )}
       {queueTab === "yearly-contracts" && (
@@ -365,6 +426,15 @@ export function NotificationQueue() {
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
           />
+          <button
+            type="button"
+            onClick={handleFetchCurrentTab}
+            disabled={isCurrentTabFetching}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isCurrentTabFetching ? "animate-spin" : ""}`} />
+            Getir
+          </button>
         </div>
       )}
       {queueTab === "monthly-contracts" && (
@@ -378,6 +448,15 @@ export function NotificationQueue() {
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
           />
+          <button
+            type="button"
+            onClick={handleFetchCurrentTab}
+            disabled={isCurrentTabFetching}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isCurrentTabFetching ? "animate-spin" : ""}`} />
+            Getir
+          </button>
         </div>
       )}
 
@@ -490,46 +569,85 @@ export function NotificationQueue() {
       {/* AG Grid */}
       <div className="flex-1 min-h-[400px]">
         {queueTab === "invoices" && (
-          <InvoiceQueueGrid
-            data={filteredInvoices}
-            loading={invoicesLoading}
-            onSelectionChanged={handleInvoiceSelectionChanged}
-            onPreviewEmail={handlePreviewEmail}
-            onPreviewSms={handlePreviewSms}
-            onSendEmail={() => handleSend(["email"])}
-            onSendSms={() => handleSend(["sms"])}
-            onSendAll={() => handleSend(["email", "sms"])}
-            globalSelectedCount={selected.length}
-            isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
-          />
+          loadedTabs.invoices ? (
+            <InvoiceQueueGrid
+              data={filteredInvoices}
+              loading={invoicesLoading}
+              onSelectionChanged={handleInvoiceSelectionChanged}
+              onPreviewEmail={handlePreviewEmail}
+              onPreviewSms={handlePreviewSms}
+              onSendEmail={() => handleSend(["email"])}
+              onSendSms={() => handleSend(["sms"])}
+              onSendAll={() => handleSend(["email", "sms"])}
+              globalSelectedCount={selected.length}
+              isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
+            />
+          ) : (
+            <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-[var(--color-border)]">
+              <button
+                type="button"
+                onClick={handleFetchCurrentTab}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Fatura Verilerini Getir
+              </button>
+            </div>
+          )
         )}
         {queueTab === "yearly-contracts" && (
-          <YearlyContractQueueGrid
-            data={yearlyContractData?.data ?? []}
-            loading={yearlyContractsLoading}
-            onSelectionChanged={handleContractSelectionChanged}
-            onPreviewEmail={handlePreviewEmail}
-            onPreviewSms={handlePreviewSms}
-            onSendEmail={() => handleSend(["email"])}
-            onSendSms={() => handleSend(["sms"])}
-            onSendAll={() => handleSend(["email", "sms"])}
-            globalSelectedCount={selected.length}
-            isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
-          />
+          loadedTabs["yearly-contracts"] ? (
+            <YearlyContractQueueGrid
+              data={yearlyContractData?.data ?? []}
+              loading={yearlyContractsLoading}
+              onSelectionChanged={handleContractSelectionChanged}
+              onPreviewEmail={handlePreviewEmail}
+              onPreviewSms={handlePreviewSms}
+              onSendEmail={() => handleSend(["email"])}
+              onSendSms={() => handleSend(["sms"])}
+              onSendAll={() => handleSend(["email", "sms"])}
+              globalSelectedCount={selected.length}
+              isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
+            />
+          ) : (
+            <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-[var(--color-border)]">
+              <button
+                type="button"
+                onClick={handleFetchCurrentTab}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Yıllık Kontrat Verilerini Getir
+              </button>
+            </div>
+          )
         )}
         {queueTab === "monthly-contracts" && (
-          <ContractQueueGrid
-            data={monthlyContractData?.data ?? []}
-            loading={monthlyContractsLoading}
-            onSelectionChanged={handleContractSelectionChanged}
-            onPreviewEmail={handlePreviewEmail}
-            onPreviewSms={handlePreviewSms}
-            onSendEmail={() => handleSend(["email"])}
-            onSendSms={() => handleSend(["sms"])}
-            onSendAll={() => handleSend(["email", "sms"])}
-            globalSelectedCount={selected.length}
-            isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
-          />
+          loadedTabs["monthly-contracts"] ? (
+            <ContractQueueGrid
+              data={monthlyContractData?.data ?? []}
+              loading={monthlyContractsLoading}
+              onSelectionChanged={handleContractSelectionChanged}
+              onPreviewEmail={handlePreviewEmail}
+              onPreviewSms={handlePreviewSms}
+              onSendEmail={() => handleSend(["email"])}
+              onSendSms={() => handleSend(["sms"])}
+              onSendAll={() => handleSend(["email", "sms"])}
+              globalSelectedCount={selected.length}
+              isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
+            />
+          ) : (
+            <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-[var(--color-border)]">
+              <button
+                type="button"
+                onClick={handleFetchCurrentTab}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Aylık Kontrat Verilerini Getir
+              </button>
+            </div>
+          )
         )}
       </div>
 

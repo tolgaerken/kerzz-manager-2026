@@ -16,6 +16,7 @@ import {
   UpdateNotificationTemplateDto,
   NotificationTemplateQueryDto,
   RenderTemplateDto,
+  SendTestEmailDto,
 } from "./dto";
 import { AuditLog } from "../system-logs";
 
@@ -70,5 +71,13 @@ export class NotificationTemplatesController {
   @Get("preview/:code")
   async previewTemplate(@Param("code") code: string) {
     return this.templatesService.previewTemplate(code);
+  }
+
+  @Post("preview/:code/send-test")
+  async sendTestEmail(
+    @Param("code") code: string,
+    @Body() dto: SendTestEmailDto
+  ) {
+    return this.templatesService.sendPreviewEmail(code, dto.recipientEmail);
   }
 }

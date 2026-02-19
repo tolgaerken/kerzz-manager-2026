@@ -7,6 +7,8 @@ import type {
   CreateNotificationTemplateDto,
   UpdateNotificationTemplateDto,
   RenderTemplateResponse,
+  SendTemplateTestEmailDto,
+  SendTemplateTestEmailResponse,
 } from "../types";
 
 const { API_BASE_URL, ENDPOINTS } = NOTIFICATION_SETTINGS_CONSTANTS;
@@ -80,5 +82,14 @@ export const notificationTemplatesApi = {
     const url = `${API_BASE_URL}${ENDPOINTS.TEMPLATES}/preview/${code}`;
 
     return apiGet<RenderTemplateResponse>(url);
+  },
+
+  async sendTestEmail(
+    code: string,
+    dto: SendTemplateTestEmailDto
+  ): Promise<SendTemplateTestEmailResponse> {
+    const url = `${API_BASE_URL}${ENDPOINTS.TEMPLATES}/preview/${code}/send-test`;
+
+    return apiPost<SendTemplateTestEmailResponse>(url, dto);
   },
 };

@@ -9,17 +9,29 @@ import type {
 
 const QUERY_KEY = "notification-queue";
 
-export function useInvoiceQueue(params?: InvoiceQueueQueryParams) {
+type QueueQueryOptions = {
+  enabled?: boolean;
+};
+
+export function useInvoiceQueue(
+  params?: InvoiceQueueQueryParams,
+  options?: QueueQueryOptions
+) {
   return useQuery({
     queryKey: [QUERY_KEY, "invoices", params],
     queryFn: () => notificationQueueApi.getInvoiceQueue(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function useContractQueue(params?: ContractQueueQueryParams) {
+export function useContractQueue(
+  params?: ContractQueueQueryParams,
+  options?: QueueQueryOptions
+) {
   return useQuery({
     queryKey: [QUERY_KEY, "contracts", params],
     queryFn: () => notificationQueueApi.getContractQueue(params),
+    enabled: options?.enabled ?? true,
   });
 }
 

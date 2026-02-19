@@ -6,12 +6,14 @@ import {
   NotificationTemplate,
   NotificationTemplateSchema,
 } from "./schemas/notification-template.schema";
+import { EmailModule } from "../email";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: NotificationTemplate.name, schema: NotificationTemplateSchema },
     ]),
+    EmailModule,
   ],
   controllers: [NotificationTemplatesController],
   providers: [NotificationTemplatesService],

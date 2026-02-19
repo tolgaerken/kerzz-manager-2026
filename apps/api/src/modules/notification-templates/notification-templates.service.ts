@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
@@ -14,14 +19,17 @@ import {
   NotificationTemplateResponseDto,
   PaginatedNotificationTemplatesResponseDto,
   RenderTemplateResponseDto,
+  SendTestEmailResponseDto,
 } from "./dto";
 import { defaultTemplates } from "./notification-template.seed";
+import { EmailService } from "../email";
 
 @Injectable()
 export class NotificationTemplatesService implements OnModuleInit {
   constructor(
     @InjectModel(NotificationTemplate.name)
-    private templateModel: Model<NotificationTemplateDocument>
+    private templateModel: Model<NotificationTemplateDocument>,
+    private readonly emailService: EmailService
   ) {}
 
   async onModuleInit() {
@@ -29,19 +37,22 @@ export class NotificationTemplatesService implements OnModuleInit {
   }
 
   /**
-   * Varsayılan template'leri seed eder (yoksa oluşturur, varsa günceller)
+   * Varsayılan template'leri seed eder (yalnızca yoksa oluşturur).
+   * Mevcut kayıtları güncellemez; kullanıcı özelleştirmeleri korunur.
    */
   private async seedDefaultTemplates(): Promise<void> {
     for (const template of defaultTemplates) {
-      const result = await this.templateModel
-        .findOneAndUpdate(
-          { code: template.code },
-          { $set: template, $setOnInsert: { id: uuidv4() } },
-          { upsert: true, new: true }
-        )
+      const existingTemplate = await this.templateModel
+        .findOne({ code: template.code })
+        .select("_id")
+        .lean()
         .exec();
 
-      if (result.isNew) {
+      if (!existingTemplate) {
+        await this.templateModel.create({
+          ...template,
+          id: uuidv4(),
+        });
         console.log(`✅ Template seed edildi: ${template.code}`);
       }
     }
@@ -183,6 +194,58 @@ export class NotificationTemplatesService implements OnModuleInit {
     };
 
     return this.renderTemplate(code, sampleData);
+  }
+
+  async sendPreviewEmail(
+    code: string,
+    recipientEmail: string
+  ): Promise<SendTestEmailResponseDto> {
+    const template = await this.templateModel
+      .findOne({ code })
+      .select("name channel")
+      .lean()
+      .exec();
+
+    if (!template) {
+      throw new NotFoundException(`Template bulunamadı: ${code}`);
+    }
+
+    if (template.channel !== "email") {
+      throw new BadRequestException(
+        "Test mail gönderimi sadece e-posta şablonları için kullanılabilir."
+      );
+    }
+
+    const preview = await this.previewTemplate(code);
+    const subject = preview.subject?.trim() || `[Test] ${template.name}`;
+    const result = await this.emailService.send({
+      to: recipientEmail,
+      subject,
+      html: preview.body,
+      text: this.stripHtml(preview.body),
+    });
+
+    if (!result.success) {
+      throw new BadRequestException(
+        result.error || "Test mail gönderimi başarısız oldu."
+      );
+    }
+
+    return {
+      success: true,
+      messageId: result.messageId,
+    };
+  }
+
+  private stripHtml(html: string): string {
+    return html
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   private mapToResponseDto(

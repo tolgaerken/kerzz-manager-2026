@@ -10,11 +10,14 @@ import type {
 } from "../../types";
 
 export function NotificationHistory() {
+  const [shouldLoadGrid, setShouldLoadGrid] = useState(false);
   const [queryParams, setQueryParams] = useState<NotificationLogQueryParams>({
     limit: 10000,
   });
 
-  const { data, isLoading, refetch } = useNotificationLogs(queryParams);
+  const { data, isLoading, refetch, isFetching } = useNotificationLogs(queryParams, {
+    enabled: shouldLoadGrid,
+  });
 
   const handleFilterChange = useCallback(
     (
@@ -25,6 +28,14 @@ export function NotificationHistory() {
     },
     []
   );
+
+  const handleFetchGrid = useCallback(() => {
+    if (!shouldLoadGrid) {
+      setShouldLoadGrid(true);
+      return;
+    }
+    void refetch();
+  }, [refetch, shouldLoadGrid]);
 
   return (
     <div className="space-y-4 flex flex-col h-full">
@@ -121,21 +132,35 @@ export function NotificationHistory() {
         />
 
         <button
-          onClick={() => refetch()}
-          disabled={isLoading}
+          type="button"
+          onClick={handleFetchGrid}
+          disabled={isLoading || isFetching}
           className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)] transition-colors"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          Yenile
+          <RefreshCw className={`w-4 h-4 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+          Getir
         </button>
       </div>
 
       {/* AG Grid */}
       <div className="flex-1 min-h-[400px]">
-        <NotificationHistoryGrid
-          data={data?.data ?? []}
-          loading={isLoading}
-        />
+        {shouldLoadGrid ? (
+          <NotificationHistoryGrid
+            data={data?.data ?? []}
+            loading={isLoading}
+          />
+        ) : (
+          <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-[var(--color-border)]">
+            <button
+              type="button"
+              onClick={handleFetchGrid}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-md hover:bg-[var(--color-primary)]/20 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Geçmiş Verilerini Getir
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
