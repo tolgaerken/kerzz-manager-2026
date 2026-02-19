@@ -6,6 +6,7 @@ import type {
   InflationRateQueryParams,
   InflationRatesResponse,
 } from "../types";
+import { sanitizeInflationRateId } from "../utils/sanitizeInflationRateId";
 
 const { API_BASE_URL, ENDPOINTS } = INFLATION_RATES_CONSTANTS;
 
@@ -41,11 +42,13 @@ export async function updateInflationRate(
   id: string,
   data: Partial<InflationRateFormData>,
 ): Promise<InflationRateItem> {
-  const url = `${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`;
+  const sanitizedId = sanitizeInflationRateId(id);
+  const url = `${API_BASE_URL}${ENDPOINTS.UPDATE(encodeURIComponent(sanitizedId))}`;
   return apiPatch<InflationRateItem>(url, data);
 }
 
 export async function deleteInflationRate(id: string): Promise<void> {
-  const url = `${API_BASE_URL}${ENDPOINTS.DELETE(id)}`;
+  const sanitizedId = sanitizeInflationRateId(id);
+  const url = `${API_BASE_URL}${ENDPOINTS.DELETE(encodeURIComponent(sanitizedId))}`;
   return apiDelete<void>(url);
 }

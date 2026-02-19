@@ -17,6 +17,7 @@ import {
 } from "./dto";
 import { InflationRatesService } from "./inflation-rates.service";
 import { AuditLog } from "../system-logs";
+import { normalizeInflationRateId } from "./utils/normalize-inflation-rate-id";
 
 @Controller("inflation-rates")
 @RequirePermission(PERMISSIONS.FINANCE_MENU)
@@ -30,7 +31,7 @@ export class InflationRatesController {
 
   @Get(":id")
   async findOne(@Param("id") id: string) {
-    return this.service.findOne(id);
+    return this.service.findOne(normalizeInflationRateId(id));
   }
 
   @AuditLog({ module: "inflation-rates", entityType: "InflationRate" })
@@ -42,12 +43,12 @@ export class InflationRatesController {
   @AuditLog({ module: "inflation-rates", entityType: "InflationRate" })
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: UpdateInflationRateDto) {
-    return this.service.update(id, dto);
+    return this.service.update(normalizeInflationRateId(id), dto);
   }
 
   @AuditLog({ module: "inflation-rates", entityType: "InflationRate" })
   @Delete(":id")
   async delete(@Param("id") id: string) {
-    return this.service.delete(id);
+    return this.service.delete(normalizeInflationRateId(id));
   }
 }
