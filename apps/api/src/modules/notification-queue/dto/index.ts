@@ -44,7 +44,23 @@ export class InvoiceQueueQueryDto {
   limit?: number = 50;
 }
 
+export type ContractQueueType = "yearly" | "monthly" | "all";
+export type ContractMilestone = "pre-expiry" | "post-1" | "post-3" | "post-5" | "all";
+
 export class ContractQueueQueryDto {
+  @IsOptional()
+  @IsEnum(["yearly", "monthly", "all"])
+  contractType?: ContractQueueType = "all";
+
+  @IsOptional()
+  @IsEnum(["pre-expiry", "post-1", "post-3", "post-5", "all"])
+  milestone?: ContractMilestone = "all";
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  daysFromExpiry?: number;
+
   @IsOptional()
   @IsString()
   search?: string;
@@ -136,6 +152,12 @@ export interface QueueContractItemDto {
   remainingDays: number;
   sentConditions: string[];
   customer: QueueCustomerDto;
+  yearly: boolean;
+  milestone: ContractMilestone | null;
+  renewalAmount?: number;
+  oldAmount?: number;
+  increaseRateInfo?: string;
+  terminationDate?: string;
 }
 
 export interface PaginatedQueueInvoicesResponseDto {
@@ -163,6 +185,8 @@ export interface QueueStatsResponseDto {
   overdueInvoices: number;
   dueInvoices: number;
   pendingContracts: number;
+  yearlyContracts: number;
+  monthlyContracts: number;
 }
 
 export interface ManualSendResultItemDto {

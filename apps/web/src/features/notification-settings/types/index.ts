@@ -220,6 +220,9 @@ export interface QueueInvoiceItem {
   customer: QueueCustomer;
 }
 
+export type ContractQueueType = "yearly" | "monthly" | "all";
+export type ContractMilestone = "pre-expiry" | "post-1" | "post-3" | "post-5" | "all";
+
 export interface QueueContractItem {
   _id: string;
   id: string;
@@ -230,6 +233,12 @@ export interface QueueContractItem {
   remainingDays: number;
   sentConditions: string[];
   customer: QueueCustomer;
+  yearly: boolean;
+  milestone: ContractMilestone | null;
+  renewalAmount?: number;
+  oldAmount?: number;
+  increaseRateInfo?: string;
+  terminationDate?: string;
 }
 
 export interface InvoiceQueueQueryParams {
@@ -242,6 +251,9 @@ export interface InvoiceQueueQueryParams {
 }
 
 export interface ContractQueueQueryParams {
+  contractType?: ContractQueueType;
+  milestone?: ContractMilestone;
+  daysFromExpiry?: number;
   search?: string;
   page?: number;
   limit?: number;
@@ -272,6 +284,8 @@ export interface QueueStats {
   overdueInvoices: number;
   dueInvoices: number;
   pendingContracts: number;
+  yearlyContracts: number;
+  monthlyContracts: number;
 }
 
 export interface ManualSendItem {

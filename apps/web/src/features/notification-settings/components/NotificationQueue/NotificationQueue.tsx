@@ -3,6 +3,8 @@ import {
   RefreshCw,
   FileText,
   Building,
+  Calendar,
+  CalendarDays,
   CheckCircle,
   XCircle,
   Eye,
@@ -23,6 +25,7 @@ import {
 } from "../../hooks";
 import { InvoiceQueueGrid } from "../InvoiceQueueGrid";
 import { ContractQueueGrid } from "../ContractQueueGrid";
+import { YearlyContractQueueGrid } from "../YearlyContractQueueGrid";
 import { OverdueDaysFilter } from "../OverdueDaysFilter";
 import {
   DuplicateSendWarningModal,
@@ -38,11 +41,12 @@ import type {
   QueueContractItem,
   InvoiceQueueQueryParams,
   ContractQueueQueryParams,
+  ContractMilestone,
   ManualSendItem,
   QueuePreviewParams,
 } from "../../types";
 
-type QueueTab = "invoices" | "contracts";
+type QueueTab = "invoices" | "yearly-contracts" | "monthly-contracts";
 
 export function NotificationQueue() {
   const [queueTab, setQueueTab] = useState<QueueTab>("invoices");
@@ -50,7 +54,13 @@ export function NotificationQueue() {
     type: "all",
     limit: 10000,
   });
-  const [contractParams, setContractParams] = useState<ContractQueueQueryParams>({
+  const [yearlyContractParams, setYearlyContractParams] = useState<ContractQueueQueryParams>({
+    contractType: "yearly",
+    milestone: "all",
+    limit: 10000,
+  });
+  const [monthlyContractParams, setMonthlyContractParams] = useState<ContractQueueQueryParams>({
+    contractType: "monthly",
     limit: 10000,
   });
   const [selected, setSelected] = useState<ManualSendItem[]>([]);
@@ -66,7 +76,8 @@ export function NotificationQueue() {
 
   const { data: settings } = useNotificationSettings();
   const { data: invoiceData, isLoading: invoicesLoading } = useInvoiceQueue(invoiceParams);
-  const { data: contractData, isLoading: contractsLoading } = useContractQueue(contractParams);
+  const { data: yearlyContractData, isLoading: yearlyContractsLoading } = useContractQueue(yearlyContractParams);
+  const { data: monthlyContractData, isLoading: monthlyContractsLoading } = useContractQueue(monthlyContractParams);
   const { data: previewData, isLoading: previewLoading } = useQueuePreview(previewParams);
   
   const {
@@ -113,14 +124,16 @@ export function NotificationQueue() {
 
   const handlePreviewEmail = useCallback(
     (id: string) => {
-      setPreviewParams({ type: queueTab === "invoices" ? "invoice" : "contract", id, channel: "email" });
+      const type = queueTab === "invoices" ? "invoice" : "contract";
+      setPreviewParams({ type, id, channel: "email" });
     },
     [queueTab]
   );
 
   const handlePreviewSms = useCallback(
     (id: string) => {
-      setPreviewParams({ type: queueTab === "invoices" ? "invoice" : "contract", id, channel: "sms" });
+      const type = queueTab === "invoices" ? "invoice" : "contract";
+      setPreviewParams({ type, id, channel: "sms" });
     },
     [queueTab]
   );
@@ -226,15 +239,36 @@ export function NotificationQueue() {
           Faturalar
         </button>
         <button
-          onClick={() => setQueueTab("contracts")}
+          onClick={() => setQueueTab("yearly-contracts")}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-            queueTab === "contracts"
+            queueTab === "yearly-contracts"
               ? "border-[var(--color-primary)] text-[var(--color-primary)]"
               : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
           }`}
         >
-          <Building className="w-4 h-4" />
-          Kontratlar
+          <Calendar className="w-4 h-4" />
+          Yıllık Kontratlar
+          {yearlyContractData?.data?.length ? (
+            <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-[var(--color-warning)]/20 text-[var(--color-warning)]">
+              {yearlyContractData.data.length}
+            </span>
+          ) : null}
+        </button>
+        <button
+          onClick={() => setQueueTab("monthly-contracts")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            queueTab === "monthly-contracts"
+              ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+              : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+          }`}
+        >
+          <CalendarDays className="w-4 h-4" />
+          Aylık Kontratlar
+          {monthlyContractData?.data?.length ? (
+            <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-[var(--color-info)]/20 text-[var(--color-info)]">
+              {monthlyContractData.data.length}
+            </span>
+          ) : null}
         </button>
       </div>
 
@@ -272,14 +306,61 @@ export function NotificationQueue() {
           />
         </div>
       )}
-      {queueTab === "contracts" && (
+      {queueTab === "yearly-contracts" && (
+        <div className="flex flex-wrap items-center gap-4">
+          <select
+            value={yearlyContractParams.milestone ?? "all"}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.startsWith("days-")) {
+                const days = parseInt(value.replace("days-", ""), 10);
+                setYearlyContractParams((p) => ({
+                  ...p,
+                  milestone: "pre-expiry",
+                  daysFromExpiry: days,
+                }));
+              } else {
+                setYearlyContractParams((p) => ({
+                  ...p,
+                  milestone: value as ContractMilestone,
+                  daysFromExpiry: undefined,
+                }));
+              }
+            }}
+            className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
+          >
+            <option value="all">Tüm Durumlar</option>
+            <optgroup label="Bitiş Öncesi">
+              <option value="pre-expiry">Tüm Bitiş Öncesi</option>
+              <option value="days-30">30 günden az kalan</option>
+              <option value="days-15">15 günden az kalan</option>
+              <option value="days-7">7 günden az kalan</option>
+            </optgroup>
+            <optgroup label="Bitiş Sonrası">
+              <option value="post-1">+1 Gün (Hatırlatma)</option>
+              <option value="post-3">+3 Gün (Hatırlatma)</option>
+              <option value="post-5">+5 Gün (Son Uyarı)</option>
+            </optgroup>
+          </select>
+          <input
+            type="text"
+            placeholder="Ara (firma, marka...)"
+            value={yearlyContractParams.search ?? ""}
+            onChange={(e) =>
+              setYearlyContractParams((p) => ({ ...p, search: e.target.value || undefined }))
+            }
+            className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
+          />
+        </div>
+      )}
+      {queueTab === "monthly-contracts" && (
         <div className="flex flex-wrap items-center gap-4">
           <input
             type="text"
             placeholder="Ara (firma, marka...)"
-            value={contractParams.search ?? ""}
+            value={monthlyContractParams.search ?? ""}
             onChange={(e) =>
-              setContractParams((p) => ({ ...p, search: e.target.value || undefined }))
+              setMonthlyContractParams((p) => ({ ...p, search: e.target.value || undefined }))
             }
             className="px-3 py-2 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)] w-64"
           />
@@ -408,10 +489,24 @@ export function NotificationQueue() {
             isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
           />
         )}
-        {queueTab === "contracts" && (
+        {queueTab === "yearly-contracts" && (
+          <YearlyContractQueueGrid
+            data={yearlyContractData?.data ?? []}
+            loading={yearlyContractsLoading}
+            onSelectionChanged={handleContractSelectionChanged}
+            onPreviewEmail={handlePreviewEmail}
+            onPreviewSms={handlePreviewSms}
+            onSendEmail={() => handleSend(["email"])}
+            onSendSms={() => handleSend(["sms"])}
+            onSendAll={() => handleSend(["email", "sms"])}
+            globalSelectedCount={selected.length}
+            isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
+          />
+        )}
+        {queueTab === "monthly-contracts" && (
           <ContractQueueGrid
-            data={contractData?.data ?? []}
-            loading={contractsLoading}
+            data={monthlyContractData?.data ?? []}
+            loading={monthlyContractsLoading}
             onSelectionChanged={handleContractSelectionChanged}
             onPreviewEmail={handlePreviewEmail}
             onPreviewSms={handlePreviewSms}

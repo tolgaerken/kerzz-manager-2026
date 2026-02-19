@@ -29,6 +29,9 @@ function buildInvoiceQueryString(params?: InvoiceQueueQueryParams): string {
 function buildContractQueryString(params?: ContractQueueQueryParams): string {
   if (!params) return "";
   const searchParams = new URLSearchParams();
+  if (params.contractType) searchParams.set("contractType", params.contractType);
+  if (params.milestone) searchParams.set("milestone", params.milestone);
+  if (params.daysFromExpiry != null) searchParams.set("daysFromExpiry", params.daysFromExpiry.toString());
   if (params.search) searchParams.set("search", params.search);
   if (params.page) searchParams.set("page", params.page.toString());
   if (params.limit) searchParams.set("limit", params.limit.toString());

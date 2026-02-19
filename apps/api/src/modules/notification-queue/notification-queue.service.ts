@@ -29,13 +29,16 @@ import { PaymentsService } from "../payments/payments.service";
 import {
   buildInvoiceTemplateData,
   buildContractTemplateData,
+  buildContractRenewalTemplateData,
   formatDate,
   normalizePhone,
   normalizeEmail,
+  ContractRenewalData,
 } from "./notification-data.helper";
 import {
   calculateRemainingDays,
   getMonthBoundaries,
+  getEndOfMonthExpr,
 } from "../contracts/utils/contract-date.utils";
 import {
   InvoiceQueueQueryDto,
@@ -50,7 +53,9 @@ import {
   QueueStatsResponseDto,
   ManualSendResponseDto,
   ManualSendResultItemDto,
+  ContractMilestone,
 } from "./dto";
+import { AnnualContractRenewalPricingService } from "../cron-jobs/services/annual-contract-renewal-pricing.service";
 
 @Injectable()
 export class NotificationQueueService {
@@ -70,7 +75,8 @@ export class NotificationQueueService {
     private dispatchService: NotificationDispatchService,
     private templatesService: NotificationTemplatesService,
     private paymentsService: PaymentsService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private renewalPricingService: AnnualContractRenewalPricingService
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
@@ -240,49 +246,59 @@ export class NotificationQueueService {
   }
 
   /**
-   * Ayarlardaki contractExpiryDays esik gunlerinin isabet ettigi ay icindeki
-   * kontratlari musteri bilgileriyle listeler.
-   * Ornegin [30, 15, 7] ise bugunden itibaren 30, 15 veya 7 gun sonraki tarihin
-   * ayina denk gelen kontratlar dondurulur.
+   * Kontratları listeler. Yıllık ve aylık kontratlar için farklı filtreleme mantığı.
+   * Yıllık kontratlar: pre-expiry ve post-expiry (+1, +3, +5 gün) milestone'ları
+   * Aylık kontratlar: mevcut ay bazlı filtreleme
    */
   async getPendingContracts(
     query: ContractQueueQueryDto
   ): Promise<PaginatedQueueContractsResponseDto> {
-    const { search, page = 1, limit = 50 } = query;
+    const {
+      contractType = "all",
+      milestone = "all",
+      daysFromExpiry,
+      search,
+      page = 1,
+      limit = 50,
+    } = query;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Ayarlardan esik gunlerini al (orn: [30, 15, 7])
     const settings = await this.settingsService.getSettings();
     const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
-
-    // Her esik gunu icin ay araligi olustur
-    const dateRanges = expiryDays.map((days) => {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() + days);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-      return { endDate: { $gte: monthStart, $lte: monthEnd } };
-    });
 
     const filter: Record<string, unknown> = {
       noEndDate: false,
       noNotification: false,
-      $or: dateRanges,
+      isActive: true,
     };
 
+    if (contractType === "yearly") {
+      filter.yearly = true;
+      this.applyYearlyContractFilter(filter, today, expiryDays, milestone, daysFromExpiry);
+    } else if (contractType === "monthly") {
+      filter.yearly = { $ne: true };
+      this.applyMonthlyContractFilter(filter, today, expiryDays);
+    } else {
+      this.applyAllContractsFilter(filter, today, expiryDays, milestone, daysFromExpiry);
+    }
+
     if (search) {
-      // search varsa $or zaten kullanildigindan $and ile birlestir
-      filter.$and = [
-        { $or: dateRanges },
-        {
-          $or: [
-            { company: { $regex: search, $options: "i" } },
-            { brand: { $regex: search, $options: "i" } },
-            { description: { $regex: search, $options: "i" } },
-          ],
-        },
-      ];
-      delete filter.$or;
+      const searchCondition = {
+        $or: [
+          { company: { $regex: search, $options: "i" } },
+          { brand: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ],
+      };
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or as unknown[] }, searchCondition];
+        delete filter.$or;
+      } else if (filter.$and) {
+        (filter.$and as unknown[]).push(searchCondition);
+      } else {
+        filter.$and = [searchCondition];
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -298,7 +314,6 @@ export class NotificationQueueService {
     ]);
 
     const customerIds = [...new Set(contracts.map((c) => c.customerId).filter(Boolean))] as string[];
-    // ContractUser.contractId = Contract.id (UUID) — NOT Contract.contractId (iş kodu)
     const contractInternalIds = contracts.map((c) => c.id).filter((id): id is string => !!id);
 
     const [customers, allContractUsers, sentConditionsMap] = await Promise.all([
@@ -310,31 +325,59 @@ export class NotificationQueueService {
     ]);
     const customerMap = new Map(customers.map((c) => [c.id, c]));
 
-    // contract.id (UUID) → kullanıcılar haritası
     const contractUsersMap = new Map<string, { name?: string; email?: string; gsm?: string; role?: string }[]>();
     for (const cu of allContractUsers) {
       if (!contractUsersMap.has(cu.contractId)) contractUsersMap.set(cu.contractId, []);
       contractUsersMap.get(cu.contractId)!.push({ name: cu.name, email: cu.email, gsm: cu.gsm, role: cu.role });
     }
 
-    const data: QueueContractItemDto[] = contracts.map((cont) => {
-      const endDate = cont.endDate ? new Date(cont.endDate) : null;
-      const remainingDays = calculateRemainingDays(endDate, today);
-      const customer = cont.customerId ? customerMap.get(cont.customerId) : null;
-      const contractUsers = cont.id ? (contractUsersMap.get(cont.id) ?? []) : [];
-      const contacts = this.buildContactList(customer ?? null, contractUsers);
-      return {
-        _id: (cont as { _id: { toString: () => string } })._id.toString(),
-        id: cont.id,
-        contractId: cont.contractId || "",
-        company: cont.company || "",
-        brand: cont.brand || "",
-        endDate: cont.endDate ? formatDate(cont.endDate) : "",
-        remainingDays,
-        sentConditions: sentConditionsMap.get(cont.id) ?? [],
-        customer: this.mapCustomer(customer ?? null, contacts),
-      };
-    });
+    const data: QueueContractItemDto[] = await Promise.all(
+      contracts.map(async (cont) => {
+        const endDate = cont.endDate ? new Date(cont.endDate) : null;
+        const remainingDays = calculateRemainingDays(endDate, today);
+        const customer = cont.customerId ? customerMap.get(cont.customerId) : null;
+        const contractUsers = cont.id ? (contractUsersMap.get(cont.id) ?? []) : [];
+        const contacts = this.buildContactList(customer ?? null, contractUsers);
+
+        const contractMilestone = this.calculateMilestone(endDate, today);
+        const isYearly = cont.yearly === true;
+
+        let renewalAmount: number | undefined;
+        let oldAmount: number | undefined;
+        let increaseRateInfo: string | undefined;
+        let terminationDate: string | undefined;
+
+        if (isYearly && cont.id) {
+          try {
+            const pricing = await this.renewalPricingService.calculateRenewalPrice(cont.id);
+            renewalAmount = pricing.newTotalTL;
+            oldAmount = pricing.oldTotalTL;
+            increaseRateInfo = this.formatIncreaseRateInfo(pricing);
+            terminationDate = this.calculateTerminationDate(endDate);
+          } catch (error) {
+            this.logger.warn(`Yenileme fiyatı hesaplanamadı (${cont.contractId}): ${error}`);
+          }
+        }
+
+        return {
+          _id: (cont as { _id: { toString: () => string } })._id.toString(),
+          id: cont.id,
+          contractId: cont.contractId || "",
+          company: cont.company || "",
+          brand: cont.brand || "",
+          endDate: cont.endDate ? formatDate(cont.endDate) : "",
+          remainingDays,
+          sentConditions: sentConditionsMap.get(cont.id) ?? [],
+          customer: this.mapCustomer(customer ?? null, contacts),
+          yearly: isYearly,
+          milestone: contractMilestone,
+          renewalAmount,
+          oldAmount,
+          increaseRateInfo,
+          terminationDate,
+        };
+      })
+    );
 
     return {
       data,
@@ -347,9 +390,224 @@ export class NotificationQueueService {
     };
   }
 
+  private applyYearlyContractFilter(
+    filter: Record<string, unknown>,
+    today: Date,
+    expiryDays: number[],
+    milestone: ContractMilestone | "all",
+    daysFromExpiry?: number
+  ): void {
+    const endOfMonthExpr = getEndOfMonthExpr("$endDate");
+
+    if (daysFromExpiry !== undefined && milestone === "pre-expiry") {
+      const rangeStart = new Date(today);
+      rangeStart.setHours(0, 0, 0, 0);
+      const rangeEnd = new Date(today);
+      rangeEnd.setDate(rangeEnd.getDate() + daysFromExpiry);
+      rangeEnd.setHours(23, 59, 59, 999);
+      filter.$expr = {
+        $and: [
+          { $gte: [endOfMonthExpr, rangeStart] },
+          { $lte: [endOfMonthExpr, rangeEnd] },
+        ],
+      };
+    } else if (milestone === "pre-expiry") {
+      const dateConditions: unknown[] = [];
+      for (const days of expiryDays) {
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() + days);
+        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+        dateConditions.push({
+          $and: [
+            { $gte: [endOfMonthExpr, monthStart] },
+            { $lte: [endOfMonthExpr, monthEnd] },
+          ],
+        });
+      }
+      if (dateConditions.length > 0) {
+        filter.$expr = { $or: dateConditions };
+      }
+    } else if (milestone === "post-1") {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() - 1);
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      filter.$expr = {
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      };
+    } else if (milestone === "post-3") {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() - 3);
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      filter.$expr = {
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      };
+    } else if (milestone === "post-5") {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() - 5);
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      filter.$expr = {
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      };
+    } else {
+      const dateConditions: unknown[] = [];
+      for (const days of expiryDays) {
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() + days);
+        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+        dateConditions.push({
+          $and: [
+            { $gte: [endOfMonthExpr, monthStart] },
+            { $lte: [endOfMonthExpr, monthEnd] },
+          ],
+        });
+      }
+      for (const postDays of [1, 3, 5]) {
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() - postDays);
+        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+        dateConditions.push({
+          $and: [
+            { $gte: [endOfMonthExpr, monthStart] },
+            { $lte: [endOfMonthExpr, monthEnd] },
+          ],
+        });
+      }
+      if (dateConditions.length > 0) {
+        filter.$expr = { $or: dateConditions };
+      }
+    }
+  }
+
+  private applyMonthlyContractFilter(
+    filter: Record<string, unknown>,
+    today: Date,
+    expiryDays: number[]
+  ): void {
+    const endOfMonthExpr = getEndOfMonthExpr("$endDate");
+    const dateConditions = expiryDays.map((days) => {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() + days);
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      return {
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      };
+    });
+
+    if (dateConditions.length > 0) {
+      filter.$expr = { $or: dateConditions };
+    }
+  }
+
+  private applyAllContractsFilter(
+    filter: Record<string, unknown>,
+    today: Date,
+    expiryDays: number[],
+    milestone: ContractMilestone | "all",
+    daysFromExpiry?: number
+  ): void {
+    const endOfMonthExpr = getEndOfMonthExpr("$endDate");
+    const dateConditions: unknown[] = [];
+
+    for (const days of expiryDays) {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() + days);
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      dateConditions.push({
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      });
+    }
+
+    if (milestone === "all" || milestone === "post-1" || milestone === "post-3" || milestone === "post-5") {
+      for (const postDays of [1, 3, 5]) {
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() - postDays);
+        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+        dateConditions.push({
+          $and: [
+            { $eq: ["$yearly", true] },
+            { $gte: [endOfMonthExpr, monthStart] },
+            { $lte: [endOfMonthExpr, monthEnd] },
+          ],
+        });
+      }
+    }
+
+    if (dateConditions.length > 0) {
+      filter.$expr = { $or: dateConditions };
+    }
+  }
+
+  private calculateMilestone(endDate: Date | null, today: Date): ContractMilestone | null {
+    if (!endDate) return null;
+
+    const endOfMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const diffMs = endOfMonth.getTime() - todayStart.getTime();
+    const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
+
+    if (diffDays > 0) return "pre-expiry";
+    if (diffDays >= -1) return "post-1";
+    if (diffDays >= -3) return "post-3";
+    if (diffDays >= -5) return "post-5";
+
+    return "post-5";
+  }
+
+  private formatIncreaseRateInfo(pricing: {
+    tlIncreaseRate: number;
+    usdIncreaseRate: number;
+    inflationSource: string;
+    currencyBreakdown: {
+      tl: { old: number };
+      usd: { old: number };
+      eur: { old: number };
+    };
+  }): string {
+    const parts: string[] = [];
+
+    if (pricing.currencyBreakdown.tl.old > 0) {
+      parts.push(`TL: %${(pricing.tlIncreaseRate * 100).toFixed(1)}`);
+    }
+    if (pricing.currencyBreakdown.usd.old > 0) {
+      parts.push(`USD: %${(pricing.usdIncreaseRate * 100).toFixed(1)}`);
+    }
+    if (pricing.currencyBreakdown.eur.old > 0) {
+      parts.push(`EUR: %5`);
+    }
+
+    return parts.join(", ") || "Artış uygulanmadı";
+  }
+
+  private calculateTerminationDate(endDate: Date | null): string {
+    if (!endDate) return "";
+    const termDate = new Date(endDate);
+    termDate.setDate(termDate.getDate() + 6);
+    return formatDate(termDate);
+  }
+
   /**
    * Ozet istatistikler
    * Kontrat sayisi ayarlardaki contractExpiryDays esik gunlerine gore hesaplanir.
+   * Yıllık ve aylık kontratlar ayrı ayrı sayılır.
    */
   async getStats(): Promise<QueueStatsResponseDto> {
     const today = new Date();
@@ -357,24 +615,40 @@ export class NotificationQueueService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Ayarlardan esik gunlerini al
     const settings = await this.settingsService.getSettings();
     const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
+    const endOfMonthExpr = getEndOfMonthExpr("$endDate");
 
-    // Her esik gunu icin ay araligi olustur
-    const dateRanges = expiryDays.map((days) => {
+    const preExpiryConditions = expiryDays.map((days) => {
       const targetDate = new Date(today);
       targetDate.setDate(targetDate.getDate() + days);
       const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-      return { endDate: { $gte: monthStart, $lte: monthEnd } };
+      return {
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      };
     });
 
-    // Geriye dönük tarama limiti
+    const postExpiryConditions: unknown[] = [];
+    for (const postDays of [1, 3, 5]) {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() - postDays);
+      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      postExpiryConditions.push({
+        $and: [
+          { $gte: [endOfMonthExpr, monthStart] },
+          { $lte: [endOfMonthExpr, monthEnd] },
+        ],
+      });
+    }
+
     const lookbackDays = settings.invoiceLookbackDays ?? 90;
     const lookbackDate = new Date(today);
     lookbackDate.setDate(lookbackDate.getDate() - lookbackDays);
 
-    const [dueInvoices, overdueInvoices, pendingContracts] = await Promise.all([
+    const [dueInvoices, overdueInvoices, yearlyContracts, monthlyContracts] = await Promise.all([
       this.invoiceModel.countDocuments({
         isPaid: false,
         dueDate: { $gte: today, $lt: tomorrow },
@@ -386,7 +660,16 @@ export class NotificationQueueService {
       this.contractModel.countDocuments({
         noEndDate: false,
         noNotification: false,
-        $or: dateRanges,
+        isActive: true,
+        yearly: true,
+        $expr: { $or: [...preExpiryConditions, ...postExpiryConditions] },
+      }).exec(),
+      this.contractModel.countDocuments({
+        noEndDate: false,
+        noNotification: false,
+        isActive: true,
+        yearly: { $ne: true },
+        $expr: { $or: preExpiryConditions },
       }).exec(),
     ]);
 
@@ -394,7 +677,9 @@ export class NotificationQueueService {
       dueInvoices,
       overdueInvoices,
       pendingInvoices: dueInvoices + overdueInvoices,
-      pendingContracts,
+      pendingContracts: yearlyContracts + monthlyContracts,
+      yearlyContracts,
+      monthlyContracts,
     };
   }
 
@@ -761,9 +1046,50 @@ export class NotificationQueueService {
     today.setHours(0, 0, 0, 0);
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
     const remainingDays = calculateRemainingDays(endDate, today);
+    const isYearly = contract.yearly === true;
 
-    const templateCode = `contract-expiry-${channel}`;
-    const templateData = buildContractTemplateData(contract, customer, remainingDays);
+    let templateCode: string;
+    let templateData: Record<string, string>;
+
+    if (isYearly) {
+      const milestone = this.calculateMilestone(endDate, today);
+      templateCode = this.getYearlyTemplateCode(milestone, channel);
+
+      let renewalAmount = 0;
+      let oldAmount = 0;
+      let increaseRateInfo = "";
+
+      try {
+        const pricing = await this.renewalPricingService.calculateRenewalPrice(contract.id);
+        renewalAmount = pricing.newTotalTL;
+        oldAmount = pricing.oldTotalTL;
+        increaseRateInfo = this.formatIncreaseRateInfo(pricing);
+      } catch (error) {
+        this.logger.warn(`Yenileme fiyatı hesaplanamadı (${contract.contractId}): ${error}`);
+      }
+
+      const daysFromExpiry = endDate
+        ? Math.round((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+        : 0;
+
+      const renewalMilestone: ContractRenewalData["milestone"] =
+        milestone === "all" || milestone === null ? "pre-expiry" : milestone;
+
+      const renewalData: ContractRenewalData = {
+        paymentLink: `${this.paymentBaseUrl}/kontrat/${contract.id}`,
+        renewalAmount,
+        oldAmount,
+        increaseRateInfo,
+        daysFromExpiry,
+        terminationDate: this.calculateTerminationDate(endDate),
+        milestone: renewalMilestone,
+      };
+
+      templateData = buildContractRenewalTemplateData(contract, customer, renewalData);
+    } else {
+      templateCode = `contract-expiry-${channel}`;
+      templateData = buildContractTemplateData(contract, customer, remainingDays);
+    }
 
     const rendered = await this.templatesService.renderTemplate(
       templateCode,
@@ -780,6 +1106,23 @@ export class NotificationQueueService {
         phone: customer.phone ?? "",
       },
     };
+  }
+
+  private getYearlyTemplateCode(
+    milestone: ContractMilestone | null,
+    channel: "email" | "sms"
+  ): string {
+    switch (milestone) {
+      case "post-1":
+        return `contract-renewal-overdue-1-${channel}`;
+      case "post-3":
+        return `contract-renewal-overdue-3-${channel}`;
+      case "post-5":
+        return `contract-renewal-overdue-5-${channel}`;
+      case "pre-expiry":
+      default:
+        return `contract-renewal-pre-expiry-${channel}`;
+    }
   }
 
   /**

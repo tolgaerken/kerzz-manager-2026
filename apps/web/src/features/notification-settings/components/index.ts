@@ -6,6 +6,7 @@ export { NotificationHistory } from "./NotificationHistory";
 export { NotificationQueue } from "./NotificationQueue";
 export { InvoiceQueueGrid } from "./InvoiceQueueGrid";
 export { ContractQueueGrid } from "./ContractQueueGrid";
+export { YearlyContractQueueGrid } from "./YearlyContractQueueGrid";
 export { NotificationHistoryGrid } from "./NotificationHistoryGrid";
 export { OverdueDaysFilter } from "./OverdueDaysFilter";
 export { CronDryRun } from "./CronDryRun";
