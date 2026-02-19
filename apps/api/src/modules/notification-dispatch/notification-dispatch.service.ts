@@ -288,6 +288,54 @@ export class NotificationDispatchService {
       .trim();
   }
 
+  /**
+   * Belirtilen fatura ID'leri için gönderilmiş templateCode'ları döner
+   * @returns Map<invoiceId, templateCode[]>
+   */
+  async getDistinctTemplateCodesForInvoices(
+    invoiceIds: string[]
+  ): Promise<Map<string, string[]>> {
+    if (invoiceIds.length === 0) return new Map();
+
+    const result = await this.logModel.aggregate<{
+      _id: string;
+      templateCodes: string[];
+    }>([
+      { $match: { invoiceId: { $in: invoiceIds }, status: "sent" } },
+      { $group: { _id: "$invoiceId", templateCodes: { $addToSet: "$templateCode" } } },
+    ]);
+
+    const map = new Map<string, string[]>();
+    for (const item of result) {
+      map.set(item._id, item.templateCodes);
+    }
+    return map;
+  }
+
+  /**
+   * Belirtilen kontrat ID'leri için gönderilmiş templateCode'ları döner
+   * @returns Map<contractId, templateCode[]>
+   */
+  async getDistinctTemplateCodesForContracts(
+    contractIds: string[]
+  ): Promise<Map<string, string[]>> {
+    if (contractIds.length === 0) return new Map();
+
+    const result = await this.logModel.aggregate<{
+      _id: string;
+      templateCodes: string[];
+    }>([
+      { $match: { contractId: { $in: contractIds }, status: "sent" } },
+      { $group: { _id: "$contractId", templateCodes: { $addToSet: "$templateCode" } } },
+    ]);
+
+    const map = new Map<string, string[]>();
+    for (const item of result) {
+      map.set(item._id, item.templateCodes);
+    }
+    return map;
+  }
+
   private mapToResponseDto(
     doc: NotificationLogDocument
   ): NotificationLogResponseDto {

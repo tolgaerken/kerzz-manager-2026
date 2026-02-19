@@ -5,12 +5,11 @@ import type { EntityLogPanelContext, EntityTabType, LogQueryParams } from "../ty
 /** Tab konfigürasyonları - enabled olanlar için count alınır */
 const TAB_CONFIGS: { type: EntityTabType; enabled: boolean }[] = [
   { type: "contract", enabled: true },
+  { type: "collection", enabled: true },
+  { type: "e-transform", enabled: true },
   { type: "license", enabled: true },
   { type: "invoice", enabled: true },
-  { type: "payment-plan", enabled: true },
-  { type: "e-transform", enabled: true },
-  { type: "collection", enabled: true },
-  { type: "technical", enabled: false },
+  { type: "technical", enabled: true },
 ];
 
 /** Context'ten ilgili entity ID'sini al */

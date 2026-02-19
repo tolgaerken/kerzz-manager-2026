@@ -69,6 +69,19 @@ export class ContractCashRegistersService {
     const id = this.generateId();
     const now = new Date();
 
+    let firstRegister: Date = now;
+    if (dto.legalId) {
+      const existing = await this.contractCashRegisterModel
+        .findOne({ legalId: dto.legalId, firstRegister: { $exists: true, $ne: null } })
+        .sort({ firstRegister: 1 })
+        .select({ firstRegister: 1 })
+        .lean()
+        .exec();
+      if (existing?.firstRegister) {
+        firstRegister = existing.firstRegister;
+      }
+    }
+
     const cashRegister = new this.contractCashRegisterModel({
       ...dto,
       id,
@@ -77,7 +90,8 @@ export class ContractCashRegistersService {
       startDate: dto.startDate ? new Date(dto.startDate) : now,
       activated: false,
       editDate: now,
-      editUser: "system"
+      editUser: "system",
+      firstRegister
     });
 
     const saved = await cashRegister.save();

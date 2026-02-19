@@ -1,9 +1,14 @@
 import { useMemo, useCallback, useState } from "react";
-import { Grid, type GridColumnDef } from "@kerzz/grid";
-import { Eye, MessageSquare, Contact, Bell } from "lucide-react";
+import { Grid, type GridColumnDef, type ToolbarConfig } from "@kerzz/grid";
+import { Eye, MessageSquare, Contact, Bell, AlertTriangle, Mail, Send } from "lucide-react";
 import { invoiceQueueColumnDefs } from "./columnDefs";
 import { ContactInfoModal } from "../ContactInfoModal";
 import { NotifyHistoryModal } from "../NotifyHistoryModal";
+import {
+  getCurrentInvoiceCondition,
+  hasMatchingCondition,
+  getConditionLabel,
+} from "../../utils";
 import type { QueueInvoiceItem, QueueCustomer, QueueNotifyEntry } from "../../types";
 
 interface InvoiceQueueGridProps {
@@ -12,6 +17,11 @@ interface InvoiceQueueGridProps {
   onSelectionChanged: (items: QueueInvoiceItem[]) => void;
   onPreviewEmail: (id: string) => void;
   onPreviewSms: (id: string) => void;
+  onSendEmail: () => void;
+  onSendSms: () => void;
+  onSendAll: () => void;
+  globalSelectedCount: number;
+  isSending: boolean;
 }
 
 export function InvoiceQueueGrid({
@@ -20,12 +30,53 @@ export function InvoiceQueueGrid({
   onSelectionChanged,
   onPreviewEmail,
   onPreviewSms,
+  onSendEmail,
+  onSendSms,
+  onSendAll,
+  globalSelectedCount,
+  isSending,
 }: InvoiceQueueGridProps) {
   const [contactCustomer, setContactCustomer] = useState<QueueCustomer | null>(null);
   const [notifyModal, setNotifyModal] = useState<{
+    invoiceId: string;
     invoiceNumber: string;
     history: QueueNotifyEntry[];
   } | null>(null);
+
+  const toolbarConfig = useMemo<ToolbarConfig<QueueInvoiceItem>>(() => {
+    const isDisabled = globalSelectedCount === 0 || isSending;
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: true,
+      showColumnVisibility: true,
+      exportFileName: "fatura-bildirimleri",
+      customButtons: [
+        {
+          id: "send-email",
+          label: "E-posta Gönder",
+          icon: <Mail className="w-4 h-4" />,
+          onClick: onSendEmail,
+          disabled: isDisabled,
+        },
+        {
+          id: "send-sms",
+          label: "SMS Gönder",
+          icon: <MessageSquare className="w-4 h-4" />,
+          onClick: onSendSms,
+          disabled: isDisabled,
+        },
+        {
+          id: "send-all",
+          label: "Tümünü Gönder",
+          icon: <Send className="w-4 h-4" />,
+          onClick: onSendAll,
+          disabled: isDisabled,
+          variant: "primary",
+        },
+      ],
+    };
+  }, [globalSelectedCount, isSending, onSendEmail, onSendSms, onSendAll]);
 
   const columns = useMemo<GridColumnDef<QueueInvoiceItem>[]>(
     () => [
@@ -34,26 +85,41 @@ export function InvoiceQueueGrid({
         id: "notifyCount",
         header: "Bildirim",
         accessorKey: "notifyCount",
-        width: 100,
+        width: 120,
         cell: (_value, row) => {
           const count = row.notifyCount ?? 0;
-          if (count === 0) {
-            return <span className="text-[var(--color-muted-foreground)]">0</span>;
-          }
+          const currentCondition = getCurrentInvoiceCondition(row.overdueDays);
+          const hasDuplicate = hasMatchingCondition(row.sentConditions, currentCondition);
+
           return (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setNotifyModal({
-                  invoiceNumber: row.invoiceNumber,
-                  history: row.notifyHistory ?? [],
-                });
-              }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors"
-            >
-              <Bell className="w-3 h-3" />
-              {count}
-            </button>
+            <div className="flex items-center gap-2">
+              {count === 0 ? (
+                <span className="text-[var(--color-muted-foreground)]">0</span>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotifyModal({
+                      invoiceId: row.id,
+                      invoiceNumber: row.invoiceNumber,
+                      history: row.notifyHistory ?? [],
+                    });
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors"
+                >
+                  <Bell className="w-3 h-3" />
+                  {count}
+                </button>
+              )}
+              {hasDuplicate && (
+                <div
+                  title={`Bu koşul için daha önce bildirim gönderilmiş: ${getConditionLabel(currentCondition)}`}
+                  className="flex items-center"
+                >
+                  <AlertTriangle className="w-4 h-4 text-[var(--color-warning)]" />
+                </div>
+              )}
+            </div>
           );
         },
       },
@@ -120,6 +186,7 @@ export function InvoiceQueueGrid({
       />
       <NotifyHistoryModal
         isOpen={notifyModal !== null}
+        invoiceId={notifyModal?.invoiceId ?? ""}
         invoiceNumber={notifyModal?.invoiceNumber ?? ""}
         history={notifyModal?.history ?? []}
         onClose={() => setNotifyModal(null)}
@@ -135,7 +202,7 @@ export function InvoiceQueueGrid({
         selectionCheckbox
         onSelectionChange={handleSelectionChange}
         stateKey="invoice-queue-grid"
-        toolbar={true}
+        toolbar={toolbarConfig}
       />
     </div>
   );

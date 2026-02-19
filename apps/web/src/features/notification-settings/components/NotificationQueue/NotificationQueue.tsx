@@ -1,20 +1,17 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import {
   RefreshCw,
-  Mail,
-  MessageSquare,
   FileText,
   Building,
-  Send,
   CheckCircle,
   XCircle,
   Eye,
   X,
+  Loader2,
 } from "lucide-react";
 import {
   useInvoiceQueue,
   useContractQueue,
-  useQueueStats,
   useSendManualNotification,
   useQueuePreview,
   useNotificationSettings,
@@ -22,6 +19,15 @@ import {
 import { InvoiceQueueGrid } from "../InvoiceQueueGrid";
 import { ContractQueueGrid } from "../ContractQueueGrid";
 import { OverdueDaysFilter } from "../OverdueDaysFilter";
+import {
+  DuplicateSendWarningModal,
+  type DuplicateItem,
+} from "./DuplicateSendWarningModal";
+import {
+  getCurrentInvoiceCondition,
+  getCurrentContractCondition,
+  hasMatchingCondition,
+} from "../../utils";
 import type {
   QueueInvoiceItem,
   QueueContractItem,
@@ -43,6 +49,8 @@ export function NotificationQueue() {
     limit: 10000,
   });
   const [selected, setSelected] = useState<ManualSendItem[]>([]);
+  const [selectedInvoices, setSelectedInvoices] = useState<QueueInvoiceItem[]>([]);
+  const [selectedContracts, setSelectedContracts] = useState<QueueContractItem[]>([]);
   const [resultModal, setResultModal] = useState<{
     sent: number;
     failed: number;
@@ -50,9 +58,17 @@ export function NotificationQueue() {
   } | null>(null);
   const [selectedOverdueDays, setSelectedOverdueDays] = useState<number[]>([]);
   const [previewParams, setPreviewParams] = useState<QueuePreviewParams | null>(null);
+  const [sendingInfo, setSendingInfo] = useState<{
+    count: number;
+    channels: ("email" | "sms")[];
+  } | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    duplicates: DuplicateItem[];
+    channels: ("email" | "sms")[];
+  } | null>(null);
+  const pendingSendRef = useRef<{ channels: ("email" | "sms")[] } | null>(null);
 
   const { data: settings } = useNotificationSettings();
-  const { data: stats, isLoading: statsLoading } = useQueueStats();
   const { data: invoiceData, isLoading: invoicesLoading } = useInvoiceQueue(invoiceParams);
   const { data: contractData, isLoading: contractsLoading } = useContractQueue(contractParams);
   const sendMutation = useSendManualNotification();
@@ -76,6 +92,7 @@ export function NotificationQueue() {
   }, [invoiceData?.data, selectedOverdueDays]);
 
   const handleInvoiceSelectionChanged = useCallback((items: QueueInvoiceItem[]) => {
+    setSelectedInvoices(items);
     setSelected((prev) => {
       const nonInvoice = prev.filter((s) => s.type !== "invoice");
       return [...nonInvoice, ...items.map((i) => ({ type: "invoice" as const, id: i.id }))];
@@ -83,6 +100,7 @@ export function NotificationQueue() {
   }, []);
 
   const handleContractSelectionChanged = useCallback((items: QueueContractItem[]) => {
+    setSelectedContracts(items);
     setSelected((prev) => {
       const nonContract = prev.filter((s) => s.type !== "contract");
       return [...nonContract, ...items.map((i) => ({ type: "contract" as const, id: i.id }))];
@@ -103,19 +121,26 @@ export function NotificationQueue() {
     [queueTab]
   );
 
-  const handleSend = useCallback(
+  const executeSend = useCallback(
     (channels: ("email" | "sms")[]) => {
       if (selected.length === 0) return;
+      setSendingInfo({ count: selected.length, channels });
       sendMutation.mutate(
         { items: selected, channels },
         {
           onSuccess: (res) => {
+            setSendingInfo(null);
             setResultModal({
               sent: res.sent,
               failed: res.failed,
               results: res.results,
             });
             setSelected([]);
+            setSelectedInvoices([]);
+            setSelectedContracts([]);
+          },
+          onError: () => {
+            setSendingInfo(null);
           },
         }
       );
@@ -123,36 +148,63 @@ export function NotificationQueue() {
     [selected, sendMutation]
   );
 
+  const handleSend = useCallback(
+    (channels: ("email" | "sms")[]) => {
+      if (selected.length === 0) return;
+
+      const duplicates: DuplicateItem[] = [];
+
+      for (const inv of selectedInvoices) {
+        const currentCondition = getCurrentInvoiceCondition(inv.overdueDays);
+        if (hasMatchingCondition(inv.sentConditions, currentCondition)) {
+          duplicates.push({
+            type: "invoice",
+            id: inv.id,
+            label: inv.invoiceNumber,
+            currentCondition,
+          });
+        }
+      }
+
+      for (const cont of selectedContracts) {
+        const currentCondition = getCurrentContractCondition();
+        if (hasMatchingCondition(cont.sentConditions, currentCondition)) {
+          duplicates.push({
+            type: "contract",
+            id: cont.id,
+            label: cont.contractId || cont.company || cont.brand,
+            currentCondition,
+          });
+        }
+      }
+
+      if (duplicates.length > 0) {
+        pendingSendRef.current = { channels };
+        setDuplicateWarning({ duplicates, channels });
+        return;
+      }
+
+      executeSend(channels);
+    },
+    [selected, selectedInvoices, selectedContracts, executeSend]
+  );
+
+  const handleDuplicateConfirm = useCallback(() => {
+    const pending = pendingSendRef.current;
+    setDuplicateWarning(null);
+    pendingSendRef.current = null;
+    if (pending) {
+      executeSend(pending.channels);
+    }
+  }, [executeSend]);
+
+  const handleDuplicateCancel = useCallback(() => {
+    setDuplicateWarning(null);
+    pendingSendRef.current = null;
+  }, []);
+
   return (
     <div className="space-y-4 flex flex-col h-full">
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4">
-          <p className="text-sm text-[var(--color-muted)]">Bekleyen Faturalar</p>
-          <p className="text-2xl font-semibold text-[var(--color-foreground)]">
-            {statsLoading ? "—" : stats?.pendingInvoices ?? 0}
-          </p>
-        </div>
-        <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4">
-          <p className="text-sm text-[var(--color-muted)]">Vadesi Gelen</p>
-          <p className="text-2xl font-semibold text-[var(--color-foreground)]">
-            {statsLoading ? "—" : stats?.dueInvoices ?? 0}
-          </p>
-        </div>
-        <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4">
-          <p className="text-sm text-[var(--color-muted)]">Vadesi Geçmiş</p>
-          <p className="text-2xl font-semibold text-red-600">
-            {statsLoading ? "—" : stats?.overdueInvoices ?? 0}
-          </p>
-        </div>
-        <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4">
-          <p className="text-sm text-[var(--color-muted)]">Yaklaşan Kontratlar</p>
-          <p className="text-2xl font-semibold text-[var(--color-foreground)]">
-            {statsLoading ? "—" : stats?.pendingContracts ?? 0}
-          </p>
-        </div>
-      </div>
-
       {/* Sub-tabs */}
       <div className="flex gap-4 border-b border-[var(--color-border)]">
         <button
@@ -227,37 +279,24 @@ export function NotificationQueue() {
         </div>
       )}
 
-      {/* Action bar */}
-      {selected.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-primary)]/10 rounded-lg border border-[var(--color-primary)]/30">
-          <span className="text-sm font-medium text-[var(--color-foreground)]">
-            {selected.length} kayıt seçildi
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSend(["email"])}
-              disabled={sendMutation.isPending}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)]"
-            >
-              <Mail className="w-4 h-4" />
-              E-posta Gönder
-            </button>
-            <button
-              onClick={() => handleSend(["sms"])}
-              disabled={sendMutation.isPending}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface-elevated)] rounded-md hover:bg-[var(--color-border)]"
-            >
-              <MessageSquare className="w-4 h-4" />
-              SMS Gönder
-            </button>
-            <button
-              onClick={() => handleSend(["email", "sms"])}
-              disabled={sendMutation.isPending}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-[var(--color-primary)] rounded-md hover:opacity-90"
-            >
-              <Send className="w-4 h-4" />
-              Tümünü Gönder
-            </button>
+      {/* Sending progress */}
+      {sendingInfo && (
+        <div className="flex items-center gap-4 px-4 py-3 bg-[var(--color-info)]/10 rounded-lg border border-[var(--color-info)]/30">
+          <Loader2 className="w-5 h-5 animate-spin text-[var(--color-info)]" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium text-[var(--color-foreground)]">
+                {sendingInfo.count} bildirim gönderiliyor…
+              </span>
+              <span className="text-xs text-[var(--color-muted)]">
+                {sendingInfo.channels
+                  .map((ch) => (ch === "email" ? "E-posta" : "SMS"))
+                  .join(" + ")}
+              </span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-[var(--color-border)] overflow-hidden">
+              <div className="h-full rounded-full bg-[var(--color-info)] animate-progress-indeterminate" />
+            </div>
           </div>
         </div>
       )}
@@ -271,6 +310,11 @@ export function NotificationQueue() {
             onSelectionChanged={handleInvoiceSelectionChanged}
             onPreviewEmail={handlePreviewEmail}
             onPreviewSms={handlePreviewSms}
+            onSendEmail={() => handleSend(["email"])}
+            onSendSms={() => handleSend(["sms"])}
+            onSendAll={() => handleSend(["email", "sms"])}
+            globalSelectedCount={selected.length}
+            isSending={sendMutation.isPending}
           />
         )}
         {queueTab === "contracts" && (
@@ -280,6 +324,11 @@ export function NotificationQueue() {
             onSelectionChanged={handleContractSelectionChanged}
             onPreviewEmail={handlePreviewEmail}
             onPreviewSms={handlePreviewSms}
+            onSendEmail={() => handleSend(["email"])}
+            onSendSms={() => handleSend(["sms"])}
+            onSendAll={() => handleSend(["email", "sms"])}
+            globalSelectedCount={selected.length}
+            isSending={sendMutation.isPending}
           />
         )}
       </div>
@@ -306,7 +355,7 @@ export function NotificationQueue() {
                   }
                   className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                     previewParams.channel === "email"
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
                       : "bg-[var(--color-surface-elevated)] text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
                   }`}
                 >
@@ -318,7 +367,7 @@ export function NotificationQueue() {
                   }
                   className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                     previewParams.channel === "sms"
-                      ? "bg-green-600 text-white"
+                      ? "bg-[var(--color-success)] text-[var(--color-success-foreground)]"
                       : "bg-[var(--color-surface-elevated)] text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
                   }`}
                 >
@@ -387,13 +436,13 @@ export function NotificationQueue() {
                         dangerouslySetInnerHTML={{ __html: previewData.body }}
                       />
                     ) : (
-                      <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md text-[var(--color-foreground)] whitespace-pre-wrap">
+                      <div className="px-3 py-2 bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 rounded-md text-[var(--color-foreground)] whitespace-pre-wrap">
                         {previewData.body}
                       </div>
                     )}
                   </div>
 
-                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-600 dark:text-blue-400">
+                  <div className="p-2 bg-[var(--color-info)]/10 rounded text-xs text-[var(--color-info)]">
                     Bu önizleme gerçek müşteri ve fatura/kontrat verileriyle oluşturulmuştur.
                   </div>
                 </div>
@@ -425,11 +474,11 @@ export function NotificationQueue() {
               Gönderim Sonucu
             </h3>
             <div className="flex gap-4 mb-4">
-              <div className="flex items-center gap-2 text-green-600">
+              <div className="flex items-center gap-2 text-[var(--color-success)]">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">{resultModal.sent} başarılı</span>
               </div>
-              <div className="flex items-center gap-2 text-red-600">
+              <div className="flex items-center gap-2 text-[var(--color-error)]">
                 <XCircle className="w-5 h-5" />
                 <span className="font-medium">{resultModal.failed} başarısız</span>
               </div>
@@ -440,7 +489,7 @@ export function NotificationQueue() {
                   <div
                     key={i}
                     className={`flex items-center gap-2 ${
-                      r.success ? "text-[var(--color-foreground)]" : "text-red-600"
+                      r.success ? "text-[var(--color-foreground)]" : "text-[var(--color-error)]"
                     }`}
                   >
                     {r.success ? (
@@ -475,6 +524,15 @@ export function NotificationQueue() {
           </div>
         </div>
       )}
+
+      {/* Duplicate warning modal */}
+      <DuplicateSendWarningModal
+        isOpen={duplicateWarning !== null}
+        duplicates={duplicateWarning?.duplicates ?? []}
+        totalSelected={selected.length}
+        onConfirm={handleDuplicateConfirm}
+        onCancel={handleDuplicateCancel}
+      />
     </div>
   );
 }

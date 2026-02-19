@@ -185,9 +185,11 @@ export class NotificationQueueService {
     ]);
 
     const customerIds = [...new Set(invoices.map((i) => i.customerId).filter(Boolean))] as string[];
-    const [customers, contractUsersMap] = await Promise.all([
+    const invoiceIds = invoices.map((i) => i.id).filter(Boolean) as string[];
+    const [customers, contractUsersMap, sentConditionsMap] = await Promise.all([
       this.customerModel.find({ id: { $in: customerIds } }).lean().exec(),
       this.getContractUsersForCustomer(customerIds),
+      this.dispatchService.getDistinctTemplateCodesForInvoices(invoiceIds),
     ]);
     const customerMap = new Map(customers.map((c) => [c.id, c]));
 
@@ -221,6 +223,7 @@ export class NotificationQueueService {
         lastNotify: inv.lastNotify ? formatDate(inv.lastNotify) : null,
         notifyCount: notifyHistory.length,
         notifyHistory,
+        sentConditions: sentConditionsMap.get(inv.id) ?? [],
         customer: this.mapCustomer(customer ?? null, contacts),
       };
     });
@@ -298,11 +301,12 @@ export class NotificationQueueService {
     // ContractUser.contractId = Contract.id (UUID) — NOT Contract.contractId (iş kodu)
     const contractInternalIds = contracts.map((c) => c.id).filter((id): id is string => !!id);
 
-    const [customers, allContractUsers] = await Promise.all([
+    const [customers, allContractUsers, sentConditionsMap] = await Promise.all([
       this.customerModel.find({ id: { $in: customerIds } }).lean().exec(),
       contractInternalIds.length > 0
         ? this.contractUserModel.find({ contractId: { $in: contractInternalIds } }).lean().exec()
         : Promise.resolve([]),
+      this.dispatchService.getDistinctTemplateCodesForContracts(contractInternalIds),
     ]);
     const customerMap = new Map(customers.map((c) => [c.id, c]));
 
@@ -327,6 +331,7 @@ export class NotificationQueueService {
         brand: cont.brand || "",
         endDate: cont.endDate ? formatDate(cont.endDate) : "",
         remainingDays,
+        sentConditions: sentConditionsMap.get(cont.id) ?? [],
         customer: this.mapCustomer(customer ?? null, contacts),
       };
     });

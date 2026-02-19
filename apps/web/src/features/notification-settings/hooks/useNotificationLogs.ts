@@ -4,10 +4,14 @@ import type { NotificationLogQueryParams } from "../types";
 
 const QUERY_KEY = "notification-logs";
 
-export function useNotificationLogs(params?: NotificationLogQueryParams) {
+export function useNotificationLogs(
+  params?: NotificationLogQueryParams,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [QUERY_KEY, params],
     queryFn: () => notificationLogsApi.getAll(params),
+    enabled: options?.enabled,
   });
 }
 

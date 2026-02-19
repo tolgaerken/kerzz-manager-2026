@@ -122,6 +122,7 @@ export interface QueueInvoiceItemDto {
   lastNotify: string | null;
   notifyCount: number;
   notifyHistory: QueueNotifyEntryDto[];
+  sentConditions: string[];
   customer: QueueCustomerDto;
 }
 
@@ -133,6 +134,7 @@ export interface QueueContractItemDto {
   brand: string;
   endDate: string;
   remainingDays: number;
+  sentConditions: string[];
   customer: QueueCustomerDto;
 }
 

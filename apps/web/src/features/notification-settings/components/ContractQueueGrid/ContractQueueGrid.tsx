@@ -1,8 +1,13 @@
 import { useMemo, useCallback, useState } from "react";
-import { Grid, type GridColumnDef } from "@kerzz/grid";
-import { Eye, MessageSquare, Contact } from "lucide-react";
+import { Grid, type GridColumnDef, type ToolbarConfig } from "@kerzz/grid";
+import { Eye, MessageSquare, Contact, AlertTriangle, CheckCircle, Mail, Send } from "lucide-react";
 import { contractQueueColumnDefs } from "./columnDefs";
 import { ContactInfoModal } from "../ContactInfoModal";
+import {
+  getCurrentContractCondition,
+  hasMatchingCondition,
+  getConditionLabel,
+} from "../../utils";
 import type { QueueContractItem, QueueCustomer } from "../../types";
 
 interface ContractQueueGridProps {
@@ -11,6 +16,11 @@ interface ContractQueueGridProps {
   onSelectionChanged: (items: QueueContractItem[]) => void;
   onPreviewEmail: (id: string) => void;
   onPreviewSms: (id: string) => void;
+  onSendEmail: () => void;
+  onSendSms: () => void;
+  onSendAll: () => void;
+  globalSelectedCount: number;
+  isSending: boolean;
 }
 
 export function ContractQueueGrid({
@@ -19,12 +29,80 @@ export function ContractQueueGrid({
   onSelectionChanged,
   onPreviewEmail,
   onPreviewSms,
+  onSendEmail,
+  onSendSms,
+  onSendAll,
+  globalSelectedCount,
+  isSending,
 }: ContractQueueGridProps) {
   const [contactCustomer, setContactCustomer] = useState<QueueCustomer | null>(null);
+
+  const toolbarConfig = useMemo<ToolbarConfig<QueueContractItem>>(() => {
+    const isDisabled = globalSelectedCount === 0 || isSending;
+    return {
+      showSearch: true,
+      showExcelExport: true,
+      showPdfExport: true,
+      showColumnVisibility: true,
+      exportFileName: "kontrat-bildirimleri",
+      customButtons: [
+        {
+          id: "send-email",
+          label: "E-posta Gönder",
+          icon: <Mail className="w-4 h-4" />,
+          onClick: onSendEmail,
+          disabled: isDisabled,
+        },
+        {
+          id: "send-sms",
+          label: "SMS Gönder",
+          icon: <MessageSquare className="w-4 h-4" />,
+          onClick: onSendSms,
+          disabled: isDisabled,
+        },
+        {
+          id: "send-all",
+          label: "Tümünü Gönder",
+          icon: <Send className="w-4 h-4" />,
+          onClick: onSendAll,
+          disabled: isDisabled,
+          variant: "primary",
+        },
+      ],
+    };
+  }, [globalSelectedCount, isSending, onSendEmail, onSendSms, onSendAll]);
 
   const columns = useMemo<GridColumnDef<QueueContractItem>[]>(
     () => [
       ...contractQueueColumnDefs,
+      {
+        id: "notifyStatus",
+        header: "Bildirim",
+        width: 100,
+        cell: (_value, row) => {
+          const currentCondition = getCurrentContractCondition();
+          const hasDuplicate = hasMatchingCondition(row.sentConditions, currentCondition);
+
+          if (hasDuplicate) {
+            return (
+              <div
+                title={`Bu koşul için daha önce bildirim gönderilmiş: ${getConditionLabel(currentCondition)}`}
+                className="flex items-center gap-1.5 text-[var(--color-warning)]"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-xs font-medium">Gönderildi</span>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex items-center gap-1.5 text-[var(--color-muted-foreground)]">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-xs">Bekliyor</span>
+            </div>
+          );
+        },
+      },
       {
         id: "actions",
         header: "İşlemler",
@@ -97,7 +175,7 @@ export function ContractQueueGrid({
         selectionCheckbox
         onSelectionChange={handleSelectionChange}
         stateKey="contract-queue-grid"
-        toolbar={true}
+        toolbar={toolbarConfig}
       />
     </div>
   );

@@ -3,7 +3,6 @@ import {
   FileText,
   Key,
   Receipt,
-  Calendar,
   CreditCard,
   FileDigit,
   RefreshCw,
@@ -20,12 +19,11 @@ import type { EntityTabType, EntityTabConfig } from "../../types";
 /** Tab konfigürasyonları */
 const TAB_CONFIGS: EntityTabConfig[] = [
   { type: "contract", label: "Kontrat", icon: "FileText", enabled: true },
+  { type: "collection", label: "Tahsilat", icon: "CreditCard", enabled: true },
+  { type: "e-transform", label: "E-Dönüşüm", icon: "RefreshCw", enabled: true },
   { type: "license", label: "Lisans", icon: "Key", enabled: true },
   { type: "invoice", label: "Fatura", icon: "Receipt", enabled: true },
-  { type: "payment-plan", label: "Ödeme Planı", icon: "Calendar", enabled: true },
-  { type: "e-transform", label: "E-Dönüşüm", icon: "RefreshCw", enabled: true },
-  { type: "collection", label: "Tahsilat", icon: "CreditCard", enabled: true },
-  { type: "technical", label: "Teknik", icon: "Wrench", enabled: false },
+  { type: "technical", label: "Kurulum", icon: "Wrench", enabled: true },
 ];
 
 /** Icon bileşenlerini döndür */
@@ -34,7 +32,6 @@ function getTabIcon(iconName: string, className: string) {
     FileText: <FileText className={className} />,
     Key: <Key className={className} />,
     Receipt: <Receipt className={className} />,
-    Calendar: <Calendar className={className} />,
     CreditCard: <CreditCard className={className} />,
     FileDigit: <FileDigit className={className} />,
     RefreshCw: <RefreshCw className={className} />,
@@ -140,7 +137,6 @@ export function EntityLogPanel() {
   if (!isOpen || !isEntityMode || !entityContext) return null;
 
   const panelTitle = entityContext.title || "Loglar";
-  const activeTabConfig = TAB_CONFIGS.find((t) => t.type === activeTab);
   const contextId = getContextId(activeTab, entityContext);
 
   return (
@@ -178,20 +174,15 @@ export function EntityLogPanel() {
                   ${
                     isActive
                       ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                      : tab.enabled && hasId
+                      : hasId
                         ? "bg-[var(--color-surface)] text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)]"
                         : "bg-[var(--color-surface)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-hover)]"
                   }
-                  ${!tab.enabled ? "opacity-60" : ""}
                 `}
-                title={!tab.enabled ? "Yakında" : undefined}
               >
                 {getTabIcon(tab.icon, "w-3.5 h-3.5")}
                 {tab.label}
-                {!tab.enabled && (
-                  <span className="ml-1 text-[10px] opacity-70">•</span>
-                )}
-                {tab.enabled && logCounts[tab.type] > 0 && (
+                {logCounts[tab.type] > 0 && (
                   <span
                     className={`ml-1 min-w-[1.25rem] px-1 py-0.5 text-[10px] font-medium rounded-full text-center ${
                       isActive
@@ -212,14 +203,6 @@ export function EntityLogPanel() {
           customerId={entityContext.customerId}
           contextType={activeTab}
           contextId={contextId}
-          isPlaceholder={!activeTabConfig?.enabled}
-          placeholderMessage={
-            activeTab === "collection"
-              ? "Tahsilat logları yakında eklenecek"
-              : activeTab === "technical"
-                ? "Teknik destek logları yakında eklenecek"
-                : "Bu özellik yakında eklenecek"
-          }
           highlightLogId={highlightLogId}
           onHighlightSeen={clearHighlight}
         />

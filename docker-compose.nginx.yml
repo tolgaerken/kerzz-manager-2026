@@ -12,6 +12,7 @@ services:
       - /root/nginx/certs:/etc/nginx/certs:ro
       - /root/nginx/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
       - /var/www/ota-bundles:/var/www/ota-bundles:ro
+      - /var/www/beta-ed.cloudlabs.com.tr:/var/www/beta-ed.cloudlabs.com.tr:ro
       - /var/www/io.kerzz.com:/var/www/io.kerzz.com:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"

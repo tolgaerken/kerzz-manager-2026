@@ -59,6 +59,17 @@ export default {
           foreground: "var(--color-info-foreground)",
         },
       },
+      keyframes: {
+        "progress-indeterminate": {
+          "0%": { width: "0%", marginLeft: "0%" },
+          "50%": { width: "60%", marginLeft: "20%" },
+          "100%": { width: "0%", marginLeft: "100%" },
+        },
+      },
+      animation: {
+        "progress-indeterminate":
+          "progress-indeterminate 1.5s ease-in-out infinite",
+      },
       borderColor: {
         DEFAULT: "var(--color-border)",
       },
