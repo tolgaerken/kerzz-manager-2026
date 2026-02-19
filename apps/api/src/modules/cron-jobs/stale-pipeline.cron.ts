@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
+import { Cron } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
+import { CRON_JOB_NAMES } from "./cron-scheduler.service";
 import { Model } from "mongoose";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
 import { Lead, LeadDocument } from "../leads/schemas/lead.schema";
@@ -34,10 +35,13 @@ export class StalePipelineCron {
   ) {}
 
   /**
-   * Her gün 09:15'te çalışır
-   * Hareketsiz lead/offer'lar için bildirim üretir.
+   * Hareketsiz lead/offer'lar için bildirim üretir
+   * Varsayılan: Her gün 09:15 (DB ayarlarından değiştirilebilir)
    */
-  @Cron("0 15 9 * * *")
+  @Cron("15 9 * * *", {
+    name: CRON_JOB_NAMES.STALE_PIPELINE,
+    timeZone: "Europe/Istanbul",
+  })
   async handleStalePipeline(): Promise<void> {
     const settings = await this.settingsService.getSettings();
     if (!settings.stalePipelineCronEnabled) {

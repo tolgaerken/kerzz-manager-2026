@@ -61,11 +61,18 @@ export function GeneralSettings() {
     smsEnabled: false,
     cronTime: "09:00",
     cronEnabled: true,
+    // Job-bazlı enable/disable
     invoiceNotificationCronEnabled: true,
     contractNotificationCronEnabled: true,
     proratedInvoiceCronEnabled: true,
     stalePipelineCronEnabled: true,
     managerLogReminderCronEnabled: true,
+    // Job-bazlı zamanlama
+    invoiceNotificationCronTime: "09:00",
+    contractNotificationCronTime: "09:30",
+    proratedInvoiceCronTime: "09:00",
+    stalePipelineCronTime: "09:15",
+    managerLogReminderCronExpression: "0 */15 * * * *",
   });
 
   // Ham string değerlerini ayrı tutuyoruz ki kullanıcı serbestçe yazabilsin
@@ -87,12 +94,22 @@ export function GeneralSettings() {
         smsEnabled: settings.smsEnabled,
         cronTime: settings.cronTime,
         cronEnabled: settings.cronEnabled,
+        // Job-bazlı enable/disable
         invoiceNotificationCronEnabled: settings.invoiceNotificationCronEnabled,
         contractNotificationCronEnabled:
           settings.contractNotificationCronEnabled,
         proratedInvoiceCronEnabled: settings.proratedInvoiceCronEnabled,
         stalePipelineCronEnabled: settings.stalePipelineCronEnabled,
         managerLogReminderCronEnabled: settings.managerLogReminderCronEnabled,
+        // Job-bazlı zamanlama
+        invoiceNotificationCronTime:
+          settings.invoiceNotificationCronTime ?? "09:00",
+        contractNotificationCronTime:
+          settings.contractNotificationCronTime ?? "09:30",
+        proratedInvoiceCronTime: settings.proratedInvoiceCronTime ?? "09:00",
+        stalePipelineCronTime: settings.stalePipelineCronTime ?? "09:15",
+        managerLogReminderCronExpression:
+          settings.managerLogReminderCronExpression ?? "0 */15 * * * *",
       });
       setDraftInputs({
         invoiceDueReminderDays: settings.invoiceDueReminderDays.join(", "),
@@ -157,20 +174,6 @@ export function GeneralSettings() {
           checked={formData.cronEnabled}
           onChange={(v) => setFormData((prev) => ({ ...prev, cronEnabled: v }))}
         />
-
-        <div>
-          <label className="block text-sm text-[var(--color-muted)] mb-1">
-            Bildirim Çalışma Saati (HH:mm)
-          </label>
-          <input
-            type="time"
-            value={formData.cronTime}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, cronTime: e.target.value }))
-            }
-            className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
-          />
-        </div>
       </div>
 
       {/* Cron Job Detayları */}
@@ -185,79 +188,177 @@ export function GeneralSettings() {
           </div>
         )}
 
-        <div className="space-y-3">
-          <ToggleSwitch
-            label="Fatura Bildirim"
-            description="Her gün 09:00 — Vadesi gelen/geçen fatura bildirimleri"
-            checked={formData.invoiceNotificationCronEnabled}
-            disabled={!formData.cronEnabled}
-            onChange={(v) =>
-              setFormData((prev) => ({
-                ...prev,
-                invoiceNotificationCronEnabled: v,
-              }))
-            }
-          />
+        <div className="space-y-4">
+          {/* Fatura Bildirim */}
+          <div className="space-y-2">
+            <ToggleSwitch
+              label="Fatura Bildirim"
+              description="Vadesi gelen/geçen fatura bildirimleri"
+              checked={formData.invoiceNotificationCronEnabled}
+              disabled={!formData.cronEnabled}
+              onChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  invoiceNotificationCronEnabled: v,
+                }))
+              }
+            />
+            <div className="ml-0 flex items-center gap-2">
+              <label className="text-xs text-[var(--color-muted)]">Saat:</label>
+              <input
+                type="time"
+                value={formData.invoiceNotificationCronTime}
+                disabled={!formData.cronEnabled}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    invoiceNotificationCronTime: e.target.value,
+                  }))
+                }
+                className="px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] disabled:opacity-50"
+              />
+            </div>
+          </div>
 
           <div className="border-t border-[var(--color-border)]" />
 
-          <ToggleSwitch
-            label="Kontrat Bildirim"
-            description="Her gün 09:30 — Bitiş tarihi yaklaşan kontrat bildirimleri"
-            checked={formData.contractNotificationCronEnabled}
-            disabled={!formData.cronEnabled}
-            onChange={(v) =>
-              setFormData((prev) => ({
-                ...prev,
-                contractNotificationCronEnabled: v,
-              }))
-            }
-          />
+          {/* Kontrat Bildirim */}
+          <div className="space-y-2">
+            <ToggleSwitch
+              label="Kontrat Bildirim"
+              description="Bitiş tarihi yaklaşan kontrat bildirimleri"
+              checked={formData.contractNotificationCronEnabled}
+              disabled={!formData.cronEnabled}
+              onChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  contractNotificationCronEnabled: v,
+                }))
+              }
+            />
+            <div className="ml-0 flex items-center gap-2">
+              <label className="text-xs text-[var(--color-muted)]">Saat:</label>
+              <input
+                type="time"
+                value={formData.contractNotificationCronTime}
+                disabled={!formData.cronEnabled}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contractNotificationCronTime: e.target.value,
+                  }))
+                }
+                className="px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] disabled:opacity-50"
+              />
+            </div>
+          </div>
 
           <div className="border-t border-[var(--color-border)]" />
 
-          <ToggleSwitch
-            label="Kıst Fatura"
-            description="Her gün 09:00 — Kıst ödeme planlarından otomatik fatura kesimi"
-            checked={formData.proratedInvoiceCronEnabled}
-            disabled={!formData.cronEnabled}
-            onChange={(v) =>
-              setFormData((prev) => ({
-                ...prev,
-                proratedInvoiceCronEnabled: v,
-              }))
-            }
-          />
+          {/* Kıst Fatura */}
+          <div className="space-y-2">
+            <ToggleSwitch
+              label="Kıst Fatura"
+              description="Kıst ödeme planlarından otomatik fatura kesimi"
+              checked={formData.proratedInvoiceCronEnabled}
+              disabled={!formData.cronEnabled}
+              onChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  proratedInvoiceCronEnabled: v,
+                }))
+              }
+            />
+            <div className="ml-0 flex items-center gap-2">
+              <label className="text-xs text-[var(--color-muted)]">Saat:</label>
+              <input
+                type="time"
+                value={formData.proratedInvoiceCronTime}
+                disabled={!formData.cronEnabled}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    proratedInvoiceCronTime: e.target.value,
+                  }))
+                }
+                className="px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] disabled:opacity-50"
+              />
+            </div>
+          </div>
 
           <div className="border-t border-[var(--color-border)]" />
 
-          <ToggleSwitch
-            label="Hareketsiz Pipeline"
-            description="Her gün 09:15 — 14 gündür güncellenmemiş lead/teklif bildirimleri"
-            checked={formData.stalePipelineCronEnabled}
-            disabled={!formData.cronEnabled}
-            onChange={(v) =>
-              setFormData((prev) => ({
-                ...prev,
-                stalePipelineCronEnabled: v,
-              }))
-            }
-          />
+          {/* Hareketsiz Pipeline */}
+          <div className="space-y-2">
+            <ToggleSwitch
+              label="Hareketsiz Pipeline"
+              description="14 gündür güncellenmemiş lead/teklif bildirimleri"
+              checked={formData.stalePipelineCronEnabled}
+              disabled={!formData.cronEnabled}
+              onChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  stalePipelineCronEnabled: v,
+                }))
+              }
+            />
+            <div className="ml-0 flex items-center gap-2">
+              <label className="text-xs text-[var(--color-muted)]">Saat:</label>
+              <input
+                type="time"
+                value={formData.stalePipelineCronTime}
+                disabled={!formData.cronEnabled}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    stalePipelineCronTime: e.target.value,
+                  }))
+                }
+                className="px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] disabled:opacity-50"
+              />
+            </div>
+          </div>
 
           <div className="border-t border-[var(--color-border)]" />
 
-          <ToggleSwitch
-            label="Log Hatırlatma"
-            description="Her 15 dakika — Zamanı gelen manager log hatırlatmaları"
-            checked={formData.managerLogReminderCronEnabled}
-            disabled={!formData.cronEnabled}
-            onChange={(v) =>
-              setFormData((prev) => ({
-                ...prev,
-                managerLogReminderCronEnabled: v,
-              }))
-            }
-          />
+          {/* Log Hatırlatma */}
+          <div className="space-y-2">
+            <ToggleSwitch
+              label="Log Hatırlatma"
+              description="Zamanı gelen manager log hatırlatmaları"
+              checked={formData.managerLogReminderCronEnabled}
+              disabled={!formData.cronEnabled}
+              onChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  managerLogReminderCronEnabled: v,
+                }))
+              }
+            />
+            <div className="ml-0 flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[var(--color-muted)]">
+                  Cron Expression:
+                </label>
+                <input
+                  type="text"
+                  value={formData.managerLogReminderCronExpression}
+                  disabled={!formData.cronEnabled}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      managerLogReminderCronExpression: e.target.value,
+                    }))
+                  }
+                  placeholder="0 */15 * * * *"
+                  className="flex-1 px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] font-mono disabled:opacity-50"
+                />
+              </div>
+              <p className="text-xs text-[var(--color-muted)]/70">
+                Örnek: 0 */15 * * * * (her 15 dk), 0 */5 * * * * (her 5 dk)
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { CRON_JOB_NAMES } from "./cron-scheduler.service";
 import { ManagerLogService } from "../manager-log/manager-log.service";
 import { ManagerNotificationService } from "../manager-notification/manager-notification.service";
 import { CreateManagerNotificationDto } from "../manager-notification/dto";
@@ -20,10 +21,13 @@ export class ManagerLogReminderCron {
   ) {}
 
   /**
-   * Her 15 dakikada bir çalışır
    * Zamanı gelen hatırlatmaları kontrol eder ve bildirim oluşturur
+   * Varsayılan: Her 15 dakika (DB ayarlarından değiştirilebilir)
    */
-  @Cron("0 */15 * * * *") // Her 15 dakika
+  @Cron("0 */15 * * * *", {
+    name: CRON_JOB_NAMES.MANAGER_LOG_REMINDER,
+    timeZone: "Europe/Istanbul",
+  })
   async handlePendingReminders(): Promise<void> {
     const settings = await this.settingsService.getSettings();
     if (!settings.managerLogReminderCronEnabled) {

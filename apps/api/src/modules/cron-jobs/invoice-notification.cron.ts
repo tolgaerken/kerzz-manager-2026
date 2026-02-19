@@ -1,7 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Cron, CronExpression } from "@nestjs/schedule";
+import { Cron } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
+import { CRON_JOB_NAMES } from "./cron-scheduler.service";
 import { Model } from "mongoose";
 import {
   Invoice,
@@ -88,10 +89,13 @@ export class InvoiceNotificationCron {
   }
 
   /**
-   * Her gün saat 09:00'da çalışır
    * Fatura son ödeme tarihi hatırlatmaları ve vadesi geçmiş bildirimleri gönderir
+   * Varsayılan: Her gün 09:00 (DB ayarlarından değiştirilebilir)
    */
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  @Cron("0 9 * * *", {
+    name: CRON_JOB_NAMES.INVOICE_NOTIFICATION,
+    timeZone: "Europe/Istanbul",
+  })
   async handleInvoiceNotifications(): Promise<void> {
     const startTime = Date.now();
 

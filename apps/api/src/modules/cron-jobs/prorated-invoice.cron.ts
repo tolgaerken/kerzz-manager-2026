@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { CRON_JOB_NAMES } from "./cron-scheduler.service";
 import { ProratedPlanService } from "../contract-payments/services/prorated-plan.service";
 import { ContractInvoiceOrchestratorService } from "../contract-invoices/services/contract-invoice-orchestrator.service";
 import { NotificationSettingsService } from "../notification-settings";
@@ -25,11 +26,13 @@ export class ProratedInvoiceCron {
   ) {}
 
   /**
-   * Her gun saat 09:00'da calisir (Europe/Istanbul).
-   * Faturasi kesilmemis kist planlari bulur ve toplu fatura keser.
-   * Ayni cariye ait planlar tek faturada birlestirilir.
+   * Faturası kesilmemiş kıst planları bulur ve toplu fatura keser
+   * Varsayılan: Her gün 09:00 (DB ayarlarından değiştirilebilir)
    */
-  @Cron("0 9 * * *", { timeZone: "Europe/Istanbul" })
+  @Cron("0 9 * * *", {
+    name: CRON_JOB_NAMES.PRORATED_INVOICE,
+    timeZone: "Europe/Istanbul",
+  })
   async processProratedInvoices(): Promise<void> {
     const settings = await this.settingsService.getSettings();
     if (!settings.proratedInvoiceCronEnabled) {

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
+import { Cron } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
+import { CRON_JOB_NAMES } from "./cron-scheduler.service";
 import { Model } from "mongoose";
 import {
   Contract,
@@ -47,10 +48,13 @@ export class ContractNotificationCron {
   ) {}
 
   /**
-   * Her gün saat 09:30'da çalışır (fatura cron'undan sonra)
    * Kontrat bitiş tarihi yaklaşan bildirimleri gönderir
+   * Varsayılan: Her gün 09:30 (DB ayarlarından değiştirilebilir)
    */
-  @Cron("0 30 9 * * *") // Her gün 09:30
+  @Cron("30 9 * * *", {
+    name: CRON_JOB_NAMES.CONTRACT_NOTIFICATION,
+    timeZone: "Europe/Istanbul",
+  })
   async handleContractNotifications(): Promise<void> {
     const startTime = Date.now();
 

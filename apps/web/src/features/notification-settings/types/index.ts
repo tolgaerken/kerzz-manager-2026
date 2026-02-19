@@ -73,11 +73,18 @@ export interface NotificationSettings {
   smsEnabled: boolean;
   cronTime: string;
   cronEnabled: boolean;
+  // Job-bazlı enable/disable
   invoiceNotificationCronEnabled: boolean;
   contractNotificationCronEnabled: boolean;
   proratedInvoiceCronEnabled: boolean;
   stalePipelineCronEnabled: boolean;
   managerLogReminderCronEnabled: boolean;
+  // Job-bazlı zamanlama
+  invoiceNotificationCronTime: string;
+  contractNotificationCronTime: string;
+  proratedInvoiceCronTime: string;
+  stalePipelineCronTime: string;
+  managerLogReminderCronExpression: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,11 +98,18 @@ export interface UpdateNotificationSettingsDto {
   smsEnabled?: boolean;
   cronTime?: string;
   cronEnabled?: boolean;
+  // Job-bazlı enable/disable
   invoiceNotificationCronEnabled?: boolean;
   contractNotificationCronEnabled?: boolean;
   proratedInvoiceCronEnabled?: boolean;
   stalePipelineCronEnabled?: boolean;
   managerLogReminderCronEnabled?: boolean;
+  // Job-bazlı zamanlama
+  invoiceNotificationCronTime?: string;
+  contractNotificationCronTime?: string;
+  proratedInvoiceCronTime?: string;
+  stalePipelineCronTime?: string;
+  managerLogReminderCronExpression?: string;
 }
 
 // ==================== NOTIFICATION LOG TYPES ====================

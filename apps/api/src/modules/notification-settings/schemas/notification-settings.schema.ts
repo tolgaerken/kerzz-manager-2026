@@ -35,7 +35,7 @@ export class NotificationSettings {
   @Prop({ default: false })
   smsEnabled: boolean;
 
-  // Cron çalışma saati (HH:mm formatında)
+  // Eski genel cron saati (deprecated — geriye uyumluluk için tutuldu)
   @Prop({ default: "09:00" })
   cronTime: string;
 
@@ -43,27 +43,42 @@ export class NotificationSettings {
   @Prop({ default: true })
   cronEnabled: boolean;
 
-  // ── Her cron job için ayrı enable/disable ──
+  // ── Her cron job için ayrı enable/disable ve zamanlama ──
 
-  // Fatura bildirim cron'u (her gün 09:00)
+  // Fatura bildirim cron'u
   @Prop({ default: true })
   invoiceNotificationCronEnabled: boolean;
 
-  // Kontrat bildirim cron'u (her gün 09:30)
+  @Prop({ default: "09:00" })
+  invoiceNotificationCronTime: string; // HH:mm formatı
+
+  // Kontrat bildirim cron'u
   @Prop({ default: true })
   contractNotificationCronEnabled: boolean;
 
-  // Kıst fatura cron'u (her gün 09:00)
+  @Prop({ default: "09:30" })
+  contractNotificationCronTime: string; // HH:mm formatı
+
+  // Kıst fatura cron'u
   @Prop({ default: true })
   proratedInvoiceCronEnabled: boolean;
 
-  // Hareketsiz pipeline cron'u (her gün 09:15)
+  @Prop({ default: "09:00" })
+  proratedInvoiceCronTime: string; // HH:mm formatı
+
+  // Hareketsiz pipeline cron'u
   @Prop({ default: true })
   stalePipelineCronEnabled: boolean;
 
-  // Manager log hatırlatma cron'u (her 15 dakika)
+  @Prop({ default: "09:15" })
+  stalePipelineCronTime: string; // HH:mm formatı
+
+  // Manager log hatırlatma cron'u
   @Prop({ default: true })
   managerLogReminderCronEnabled: boolean;
+
+  @Prop({ default: "0 */15 * * * *" })
+  managerLogReminderCronExpression: string; // Tam cron expression
 
   // Kuru çalışma modu: true iken cron'lar gerçek işlem yapmaz, sadece log atar
   @Prop({ default: false })
