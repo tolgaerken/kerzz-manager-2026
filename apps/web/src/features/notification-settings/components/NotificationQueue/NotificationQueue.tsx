@@ -106,6 +106,20 @@ export function NotificationQueue() {
     });
   }, [invoiceData?.data, selectedOverdueDays]);
 
+  const yearlyMilestoneSelectValue = useMemo(() => {
+    if (
+      yearlyContractParams.milestone === "pre-expiry" &&
+      yearlyContractParams.daysFromExpiry != null
+    ) {
+      const supportedDays = [30, 15, 7];
+      if (supportedDays.includes(yearlyContractParams.daysFromExpiry)) {
+        return `days-${yearlyContractParams.daysFromExpiry}`;
+      }
+    }
+
+    return yearlyContractParams.milestone ?? "all";
+  }, [yearlyContractParams.daysFromExpiry, yearlyContractParams.milestone]);
+
   const handleInvoiceSelectionChanged = useCallback((items: QueueInvoiceItem[]) => {
     setSelectedInvoices(items);
     setSelected((prev) => {
@@ -309,7 +323,7 @@ export function NotificationQueue() {
       {queueTab === "yearly-contracts" && (
         <div className="flex flex-wrap items-center gap-4">
           <select
-            value={yearlyContractParams.milestone ?? "all"}
+            value={yearlyMilestoneSelectValue}
             onChange={(e) => {
               const value = e.target.value;
               if (value.startsWith("days-")) {

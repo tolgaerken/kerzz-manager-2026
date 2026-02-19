@@ -23,10 +23,15 @@ export function useContractQueue(params?: ContractQueueQueryParams) {
   });
 }
 
-export function useQueueStats() {
+type QueueStatsOptions = {
+  enabled?: boolean;
+};
+
+export function useQueueStats(options?: QueueStatsOptions) {
   return useQuery({
     queryKey: [QUERY_KEY, "stats"],
     queryFn: () => notificationQueueApi.getQueueStats(),
+    enabled: options?.enabled ?? true,
   });
 }
 

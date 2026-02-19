@@ -38,6 +38,7 @@ import { ExchangeRateModule } from "../exchange-rate";
 import { NotificationQueueController } from "./notification-queue.controller";
 import { NotificationQueueService } from "./notification-queue.service";
 import { AnnualContractRenewalPricingService } from "../cron-jobs/services/annual-contract-renewal-pricing.service";
+import { ContractPaymentLinkHelper } from "../cron-jobs/services/contract-payment-link.helper";
 
 @Module({
   imports: [
@@ -66,7 +67,11 @@ import { AnnualContractRenewalPricingService } from "../cron-jobs/services/annua
     ExchangeRateModule,
   ],
   controllers: [NotificationQueueController],
-  providers: [NotificationQueueService, AnnualContractRenewalPricingService],
+  providers: [
+    NotificationQueueService,
+    AnnualContractRenewalPricingService,
+    ContractPaymentLinkHelper,
+  ],
   exports: [NotificationQueueService],
 })
 export class NotificationQueueModule {}

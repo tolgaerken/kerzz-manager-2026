@@ -28,12 +28,17 @@ const getContractEndBoundary = (endDate: Date): Date => {
 /**
  * MongoDB aggregation expression: endDate alanının ay sonunu hesaplar.
  * $dateFromParts ile endDate'in yıl/ay bilgisinden bir sonraki ayın 0. gününü alır (= bu ayın son günü).
+ * Saat 23:59:59.999 olarak ayarlanır.
  */
 const getEndOfMonthExpr = (field: string): Record<string, unknown> => ({
   $dateFromParts: {
     year: { $year: field },
     month: { $add: [{ $month: field }, 1] },
     day: 0,
+    hour: 23,
+    minute: 59,
+    second: 59,
+    millisecond: 999,
   },
 });
 

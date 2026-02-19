@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Bell, Settings, Mail, MessageSquare, History, ListChecks, PlayCircle } from "lucide-react";
+import {
+  Bell,
+  Settings,
+  Mail,
+  MessageSquare,
+  History,
+  ListChecks,
+  PlayCircle,
+  RefreshCw,
+} from "lucide-react";
 import {
   GeneralSettings,
   TemplateList,
@@ -22,7 +31,22 @@ const TABS: { id: TabId; label: string; icon: typeof Settings }[] = [
 
 export function NotificationSettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("general");
-  const { data: stats, isLoading: statsLoading } = useQueueStats();
+  const [shouldLoadData, setShouldLoadData] = useState(false);
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isFetching: statsFetching,
+    refetch: refetchStats,
+  } = useQueueStats({ enabled: shouldLoadData });
+
+  const handleFetchData = () => {
+    if (!shouldLoadData) {
+      setShouldLoadData(true);
+      return;
+    }
+
+    void refetchStats();
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -39,6 +63,19 @@ export function NotificationSettingsPage() {
 
           {/* Tab Butonları */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleFetchData}
+              className="flex items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
+            >
+              {(statsLoading || statsFetching) && shouldLoadData ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              <span className="hidden lg:inline">Getir</span>
+            </button>
+
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -63,16 +100,16 @@ export function NotificationSettingsPage() {
         {/* Alt satır: İstatistik Chip'leri */}
         <div className="hidden md:flex items-center gap-1.5 px-3 pb-3 md:px-4 md:pb-4">
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            Bekleyen: {statsLoading ? "—" : stats?.pendingInvoices ?? 0}
+            Bekleyen: {!shouldLoadData || statsLoading ? "—" : stats?.pendingInvoices ?? 0}
           </span>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            Vadesi Gelen: {statsLoading ? "—" : stats?.dueInvoices ?? 0}
+            Vadesi Gelen: {!shouldLoadData || statsLoading ? "—" : stats?.dueInvoices ?? 0}
           </span>
           <span className="rounded-full bg-error/10 px-2 py-0.5 text-xs font-medium text-error">
-            Vadesi Geçmiş: {statsLoading ? "—" : stats?.overdueInvoices ?? 0}
+            Vadesi Geçmiş: {!shouldLoadData || statsLoading ? "—" : stats?.overdueInvoices ?? 0}
           </span>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            Kontratlar: {statsLoading ? "—" : stats?.pendingContracts ?? 0}
+            Kontratlar: {!shouldLoadData || statsLoading ? "—" : stats?.pendingContracts ?? 0}
           </span>
         </div>
       </div>
@@ -81,12 +118,27 @@ export function NotificationSettingsPage() {
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-surface overflow-hidden">
           <div className="flex-1 overflow-auto p-4">
-            {activeTab === "general" && <GeneralSettings />}
-            {activeTab === "email" && <TemplateList channel="email" />}
-            {activeTab === "sms" && <TemplateList channel="sms" />}
-            {activeTab === "queue" && <NotificationQueue />}
-            {activeTab === "history" && <NotificationHistory />}
-            {activeTab === "dry-run" && <CronDryRun />}
+            {!shouldLoadData ? (
+              <div className="flex h-full min-h-60 items-center justify-center">
+                <button
+                  type="button"
+                  onClick={handleFetchData}
+                  className="flex items-center justify-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Verileri Getir
+                </button>
+              </div>
+            ) : (
+              <>
+                {activeTab === "general" && <GeneralSettings />}
+                {activeTab === "email" && <TemplateList channel="email" />}
+                {activeTab === "sms" && <TemplateList channel="sms" />}
+                {activeTab === "queue" && <NotificationQueue />}
+                {activeTab === "history" && <NotificationHistory />}
+                {activeTab === "dry-run" && <CronDryRun />}
+              </>
+            )}
           </div>
         </div>
       </div>

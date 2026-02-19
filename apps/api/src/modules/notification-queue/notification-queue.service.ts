@@ -56,6 +56,7 @@ import {
   ContractMilestone,
 } from "./dto";
 import { AnnualContractRenewalPricingService } from "../cron-jobs/services/annual-contract-renewal-pricing.service";
+import { ContractPaymentLinkHelper } from "../cron-jobs/services/contract-payment-link.helper";
 
 @Injectable()
 export class NotificationQueueService {
@@ -76,7 +77,8 @@ export class NotificationQueueService {
     private templatesService: NotificationTemplatesService,
     private paymentsService: PaymentsService,
     private configService: ConfigService,
-    private renewalPricingService: AnnualContractRenewalPricingService
+    private renewalPricingService: AnnualContractRenewalPricingService,
+    private contractPaymentLinkHelper: ContractPaymentLinkHelper
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
@@ -114,6 +116,19 @@ export class NotificationQueueService {
       );
       return `${this.paymentBaseUrl}/odeme/${invoice.id}`;
     }
+  }
+
+  private async createPaymentLinkForContractRenewal(
+    contract: Contract,
+    customer: Customer,
+    renewalAmount: number
+  ): Promise<string> {
+    const result = await this.contractPaymentLinkHelper.createRenewalPaymentLink(
+      contract,
+      customer,
+      renewalAmount
+    );
+    return result.url;
   }
 
   /**
@@ -261,17 +276,13 @@ export class NotificationQueueService {
       page = 1,
       limit = 50,
     } = query;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
 
     const settings = await this.settingsService.getSettings();
     const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
 
-    const filter: Record<string, unknown> = {
-      noEndDate: false,
-      noNotification: false,
-      isActive: true,
-    };
+    const filter: Record<string, unknown> = {};
 
     if (contractType === "yearly") {
       filter.yearly = true;
@@ -398,92 +409,81 @@ export class NotificationQueueService {
     daysFromExpiry?: number
   ): void {
     const endOfMonthExpr = getEndOfMonthExpr("$endDate");
+    const todayStart = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)
+    );
+    const oneDayMs = 24 * 60 * 60 * 1000;
 
     if (daysFromExpiry !== undefined && milestone === "pre-expiry") {
-      const rangeStart = new Date(today);
-      rangeStart.setHours(0, 0, 0, 0);
-      const rangeEnd = new Date(today);
-      rangeEnd.setDate(rangeEnd.getDate() + daysFromExpiry);
-      rangeEnd.setHours(23, 59, 59, 999);
+      const rangeEnd = new Date(todayStart.getTime() + daysFromExpiry * oneDayMs);
+      rangeEnd.setUTCHours(23, 59, 59, 999);
       filter.$expr = {
         $and: [
-          { $gte: [endOfMonthExpr, rangeStart] },
+          { $gte: [endOfMonthExpr, todayStart] },
           { $lte: [endOfMonthExpr, rangeEnd] },
         ],
       };
     } else if (milestone === "pre-expiry") {
-      const dateConditions: unknown[] = [];
-      for (const days of expiryDays) {
-        const targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() + days);
-        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-        dateConditions.push({
-          $and: [
-            { $gte: [endOfMonthExpr, monthStart] },
-            { $lte: [endOfMonthExpr, monthEnd] },
-          ],
-        });
-      }
-      if (dateConditions.length > 0) {
-        filter.$expr = { $or: dateConditions };
-      }
-    } else if (milestone === "post-1") {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() - 1);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      const maxDays = Math.max(...expiryDays);
+      const rangeEnd = new Date(todayStart.getTime() + maxDays * oneDayMs);
+      rangeEnd.setUTCHours(23, 59, 59, 999);
       filter.$expr = {
         $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
+          { $gte: [endOfMonthExpr, todayStart] },
+          { $lte: [endOfMonthExpr, rangeEnd] },
+        ],
+      };
+    } else if (milestone === "post-1") {
+      const dayStart = new Date(todayStart.getTime() - oneDayMs);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+      filter.$expr = {
+        $and: [
+          { $gte: [endOfMonthExpr, dayStart] },
+          { $lte: [endOfMonthExpr, dayEnd] },
         ],
       };
     } else if (milestone === "post-3") {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() - 3);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      const dayStart = new Date(todayStart.getTime() - 3 * oneDayMs);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setUTCHours(23, 59, 59, 999);
       filter.$expr = {
         $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
+          { $gte: [endOfMonthExpr, dayStart] },
+          { $lte: [endOfMonthExpr, dayEnd] },
         ],
       };
     } else if (milestone === "post-5") {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() - 5);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
+      const dayStart = new Date(todayStart.getTime() - 5 * oneDayMs);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setUTCHours(23, 59, 59, 999);
       filter.$expr = {
         $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
+          { $gte: [endOfMonthExpr, dayStart] },
+          { $lte: [endOfMonthExpr, dayEnd] },
         ],
       };
     } else {
-      const dateConditions: unknown[] = [];
-      for (const days of expiryDays) {
-        const targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() + days);
-        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-        dateConditions.push({
-          $and: [
-            { $gte: [endOfMonthExpr, monthStart] },
-            { $lte: [endOfMonthExpr, monthEnd] },
-          ],
-        });
-      }
-      for (const postDays of [1, 3, 5]) {
-        const targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() - postDays);
-        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-        dateConditions.push({
-          $and: [
-            { $gte: [endOfMonthExpr, monthStart] },
-            { $lte: [endOfMonthExpr, monthEnd] },
-          ],
-        });
-      }
-      if (dateConditions.length > 0) {
-        filter.$expr = { $or: dateConditions };
-      }
+      const maxDays = Math.max(...expiryDays);
+      const rangeEnd = new Date(todayStart.getTime() + maxDays * oneDayMs);
+      rangeEnd.setUTCHours(23, 59, 59, 999);
+      const postExpiryLimit = new Date(todayStart.getTime() - 6 * oneDayMs);
+      filter.$expr = {
+        $or: [
+          {
+            $and: [
+              { $gte: [endOfMonthExpr, todayStart] },
+              { $lte: [endOfMonthExpr, rangeEnd] },
+            ],
+          },
+          {
+            $and: [
+              { $lt: [endOfMonthExpr, todayStart] },
+              { $gte: [endOfMonthExpr, postExpiryLimit] },
+            ],
+          },
+        ],
+      };
     }
   }
 
@@ -493,21 +493,19 @@ export class NotificationQueueService {
     expiryDays: number[]
   ): void {
     const endOfMonthExpr = getEndOfMonthExpr("$endDate");
-    const dateConditions = expiryDays.map((days) => {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() + days);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-      return {
-        $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
-        ],
-      };
-    });
+    const todayStart = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)
+    );
+    const maxDays = Math.max(...expiryDays);
+    const rangeEnd = new Date(todayStart.getTime() + maxDays * 24 * 60 * 60 * 1000);
+    rangeEnd.setUTCHours(23, 59, 59, 999);
 
-    if (dateConditions.length > 0) {
-      filter.$expr = { $or: dateConditions };
-    }
+    filter.$expr = {
+      $and: [
+        { $gte: [endOfMonthExpr, todayStart] },
+        { $lte: [endOfMonthExpr, rangeEnd] },
+      ],
+    };
   }
 
   private applyAllContractsFilter(
@@ -518,50 +516,39 @@ export class NotificationQueueService {
     daysFromExpiry?: number
   ): void {
     const endOfMonthExpr = getEndOfMonthExpr("$endDate");
-    const dateConditions: unknown[] = [];
+    const todayStart = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0)
+    );
+    const maxDays = Math.max(...expiryDays);
+    const rangeEnd = new Date(todayStart.getTime() + maxDays * 24 * 60 * 60 * 1000);
+    rangeEnd.setUTCHours(23, 59, 59, 999);
+    const postExpiryLimit = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
 
-    for (const days of expiryDays) {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() + days);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-      dateConditions.push({
-        $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
-        ],
-      });
-    }
-
-    if (milestone === "all" || milestone === "post-1" || milestone === "post-3" || milestone === "post-5") {
-      for (const postDays of [1, 3, 5]) {
-        const targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() - postDays);
-        const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-        dateConditions.push({
+    filter.$expr = {
+      $or: [
+        {
+          $and: [
+            { $gte: [endOfMonthExpr, todayStart] },
+            { $lte: [endOfMonthExpr, rangeEnd] },
+          ],
+        },
+        {
           $and: [
             { $eq: ["$yearly", true] },
-            { $gte: [endOfMonthExpr, monthStart] },
-            { $lte: [endOfMonthExpr, monthEnd] },
+            { $lt: [endOfMonthExpr, todayStart] },
+            { $gte: [endOfMonthExpr, postExpiryLimit] },
           ],
-        });
-      }
-    }
-
-    if (dateConditions.length > 0) {
-      filter.$expr = { $or: dateConditions };
-    }
+        },
+      ],
+    };
   }
 
   private calculateMilestone(endDate: Date | null, today: Date): ContractMilestone | null {
     if (!endDate) return null;
 
-    const endOfMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
-    endOfMonth.setHours(23, 59, 59, 999);
+    const { monthEnd: endOfMonth } = getMonthBoundaries(endDate);
 
-    const todayStart = new Date(today);
-    todayStart.setHours(0, 0, 0, 0);
-
-    const diffMs = endOfMonth.getTime() - todayStart.getTime();
+    const diffMs = endOfMonth.getTime() - today.getTime();
     const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
 
     if (diffDays > 0) return "pre-expiry";
@@ -610,43 +597,21 @@ export class NotificationQueueService {
    * Yıllık ve aylık kontratlar ayrı ayrı sayılır.
    */
   async getStats(): Promise<QueueStatsResponseDto> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
     const settings = await this.settingsService.getSettings();
     const expiryDays = settings.contractExpiryDays ?? [30, 15, 7];
     const endOfMonthExpr = getEndOfMonthExpr("$endDate");
 
-    const preExpiryConditions = expiryDays.map((days) => {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() + days);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-      return {
-        $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
-        ],
-      };
-    });
-
-    const postExpiryConditions: unknown[] = [];
-    for (const postDays of [1, 3, 5]) {
-      const targetDate = new Date(today);
-      targetDate.setDate(targetDate.getDate() - postDays);
-      const { monthStart, monthEnd } = getMonthBoundaries(targetDate);
-      postExpiryConditions.push({
-        $and: [
-          { $gte: [endOfMonthExpr, monthStart] },
-          { $lte: [endOfMonthExpr, monthEnd] },
-        ],
-      });
-    }
+    const maxDays = Math.max(...expiryDays);
+    const rangeEnd = new Date(today.getTime() + maxDays * 24 * 60 * 60 * 1000);
+    rangeEnd.setUTCHours(23, 59, 59, 999);
+    const postExpiryLimit = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
 
     const lookbackDays = settings.invoiceLookbackDays ?? 90;
-    const lookbackDate = new Date(today);
-    lookbackDate.setDate(lookbackDate.getDate() - lookbackDays);
+    const lookbackDate = new Date(today.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
 
     const [dueInvoices, overdueInvoices, yearlyContracts, monthlyContracts] = await Promise.all([
       this.invoiceModel.countDocuments({
@@ -658,18 +623,32 @@ export class NotificationQueueService {
         dueDate: { $gte: lookbackDate, $lt: today },
       }).exec(),
       this.contractModel.countDocuments({
-        noEndDate: false,
-        noNotification: false,
-        isActive: true,
         yearly: true,
-        $expr: { $or: [...preExpiryConditions, ...postExpiryConditions] },
+        $expr: {
+          $or: [
+            {
+              $and: [
+                { $gte: [endOfMonthExpr, today] },
+                { $lte: [endOfMonthExpr, rangeEnd] },
+              ],
+            },
+            {
+              $and: [
+                { $lt: [endOfMonthExpr, today] },
+                { $gte: [endOfMonthExpr, postExpiryLimit] },
+              ],
+            },
+          ],
+        },
       }).exec(),
       this.contractModel.countDocuments({
-        noEndDate: false,
-        noNotification: false,
-        isActive: true,
         yearly: { $ne: true },
-        $expr: { $or: preExpiryConditions },
+        $expr: {
+          $and: [
+            { $gte: [endOfMonthExpr, today] },
+            { $lte: [endOfMonthExpr, rangeEnd] },
+          ],
+        },
       }).exec(),
     ]);
 
@@ -1075,8 +1054,14 @@ export class NotificationQueueService {
       const renewalMilestone: ContractRenewalData["milestone"] =
         milestone === "all" || milestone === null ? "pre-expiry" : milestone;
 
+      const paymentLink = await this.createPaymentLinkForContractRenewal(
+        contract,
+        customer,
+        renewalAmount
+      );
+
       const renewalData: ContractRenewalData = {
-        paymentLink: `${this.paymentBaseUrl}/kontrat/${contract.id}`,
+        paymentLink,
         renewalAmount,
         oldAmount,
         increaseRateInfo,
