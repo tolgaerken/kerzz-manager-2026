@@ -41,6 +41,12 @@ export class PaymentsController {
     return this.paymentsService.getPaymentInfo(linkId);
   }
 
+  @Public()
+  @Get("links/:linkId/contract-detail")
+  async getContractDetailForPayment(@Param("linkId") linkId: string) {
+    return this.paymentsService.getContractDetailForPayment(linkId);
+  }
+
   @AuditLog({ module: "payments", entityType: "PaymentLink" })
   @Post("links/:linkId/notify")
   @HttpCode(HttpStatus.OK)

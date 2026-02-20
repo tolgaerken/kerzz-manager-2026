@@ -37,6 +37,7 @@ import { UninvoicedItemsPage } from "./pages/UninvoicedItemsPage";
 import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
+import { PublicContractPaymentPage } from "./pages/PublicContractPaymentPage";
 import { UsersPage } from "./pages/UsersPage";
 import { CompanyManagementPage } from "./pages/CompanyManagementPage";
 import { WelcomePage } from "./pages/WelcomePage";
@@ -434,6 +435,13 @@ const publicPaymentErrorRoute = createRoute({
   component: PublicPaymentErrorPage,
 });
 
+// Public contract payment page (no auth)
+const publicContractPaymentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/kontrat-odeme/$linkId",
+  component: PublicContractPaymentPage,
+});
+
 // System Logs page
 const systemLogsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -579,6 +587,7 @@ const routeTree = rootRoute.addChildren([
   publicPaymentFormRoute,
   publicPaymentOkRoute,
   publicPaymentErrorRoute,
+  publicContractPaymentRoute,
   dashboardLayoutRoute.addChildren([
     welcomeRoute,
     dashboardRoute,

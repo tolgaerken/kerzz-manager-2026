@@ -2,6 +2,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
@@ -18,6 +20,7 @@ import {
   PaginatedPaymentLinksResponseDto,
   PaymentInfoDto,
 } from "./dto/payment-link-response.dto";
+import type { ContractPaymentDetailDto } from "./dto/contract-payment-detail.dto";
 import { EmailService } from "../email/email.service";
 import { SmsService } from "../sms/sms.service";
 import { PaytrService } from "../paytr/paytr.service";
@@ -35,6 +38,7 @@ import {
   SystemLogCategory,
   SystemLogStatus,
 } from "../system-logs/schemas/system-log.schema";
+import { ContractPaymentDetailService } from "./contract-payment-detail.service";
 
 @Injectable()
 export class PaymentsService {
@@ -52,7 +56,8 @@ export class PaymentsService {
     private emailService: EmailService,
     private smsService: SmsService,
     private paytrService: PaytrService,
-    private systemLogsService: SystemLogsService
+    private systemLogsService: SystemLogsService,
+    private contractPaymentDetailService: ContractPaymentDetailService,
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
@@ -127,7 +132,8 @@ export class PaymentsService {
       description: this.buildPaymentDescription(dto),
     });
 
-    const paymentUrl = `${this.paymentBaseUrl}/odeme/${linkId}`;
+    const paymentPath = dto.contextType === "contract" ? "kontrat-odeme" : "odeme";
+    const paymentUrl = `${this.paymentBaseUrl}/${paymentPath}/${linkId}`;
     return { url: paymentUrl, linkId };
   }
 
@@ -434,6 +440,13 @@ export class PaymentsService {
     }));
 
     return { data, pagination: { page, limit, total, totalPages } };
+  }
+
+  /**
+   * Kontrat ödeme detaylarını getir (public endpoint için).
+   */
+  async getContractDetailForPayment(linkId: string): Promise<ContractPaymentDetailDto> {
+    return this.contractPaymentDetailService.getContractDetailForPayment(linkId);
   }
 
   /**
