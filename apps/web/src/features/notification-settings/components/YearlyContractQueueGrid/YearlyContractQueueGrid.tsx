@@ -1,6 +1,6 @@
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useRef } from "react";
 import { Grid, type GridColumnDef, type ToolbarConfig } from "@kerzz/grid";
-import { Eye, MessageSquare, Contact, AlertTriangle, CheckCircle, Mail, Send } from "lucide-react";
+import { Eye, MessageSquare, Contact, AlertTriangle, CheckCircle, Mail, Send, Receipt } from "lucide-react";
 import { yearlyContractQueueColumnDefs } from "./columnDefs";
 import { ContactInfoModal } from "../ContactInfoModal";
 import {
@@ -20,6 +20,8 @@ interface YearlyContractQueueGridProps {
   onSendAll: () => void;
   globalSelectedCount: number;
   isSending: boolean;
+  onInspectContract?: (item: QueueContractItem) => void;
+  onAccountTransactions?: (item: QueueContractItem) => void;
 }
 
 function getYearlyTemplateCode(milestone: ContractMilestone | null): string {
@@ -47,11 +49,16 @@ export function YearlyContractQueueGrid({
   onSendAll,
   globalSelectedCount,
   isSending,
+  onInspectContract,
+  onAccountTransactions,
 }: YearlyContractQueueGridProps) {
   const [contactCustomer, setContactCustomer] = useState<QueueCustomer | null>(null);
+  const selectedItemsRef = useRef<QueueContractItem[]>([]);
+  const [localSelectedCount, setLocalSelectedCount] = useState(0);
 
   const toolbarConfig = useMemo<ToolbarConfig<QueueContractItem>>(() => {
     const isDisabled = globalSelectedCount === 0 || isSending;
+    const isSingleSelected = localSelectedCount === 1;
     return {
       showSearch: true,
       showExcelExport: true,
@@ -59,6 +66,26 @@ export function YearlyContractQueueGrid({
       showColumnVisibility: true,
       exportFileName: "yillik-kontrat-bildirimleri",
       customButtons: [
+        {
+          id: "inspect-contract",
+          label: "Kontrat İncele",
+          icon: <Eye className="w-4 h-4" />,
+          onClick: () => {
+            const item = selectedItemsRef.current[0];
+            if (item && onInspectContract) onInspectContract(item);
+          },
+          disabled: !isSingleSelected,
+        },
+        {
+          id: "account-transactions",
+          label: "Cari Hareket",
+          icon: <Receipt className="w-4 h-4" />,
+          onClick: () => {
+            const item = selectedItemsRef.current[0];
+            if (item && onAccountTransactions) onAccountTransactions(item);
+          },
+          disabled: !isSingleSelected,
+        },
         {
           id: "send-email",
           label: "E-posta Gönder",
@@ -83,7 +110,7 @@ export function YearlyContractQueueGrid({
         },
       ],
     };
-  }, [globalSelectedCount, isSending, onSendEmail, onSendSms, onSendAll]);
+  }, [globalSelectedCount, isSending, localSelectedCount, onSendEmail, onSendSms, onSendAll, onInspectContract, onAccountTransactions]);
 
   const columns = useMemo<GridColumnDef<QueueContractItem>[]>(
     () => [
@@ -165,6 +192,8 @@ export function YearlyContractQueueGrid({
       const items = selectedIds
         .map((id) => data.find((item) => item.id === id))
         .filter((item): item is QueueContractItem => item !== undefined);
+      selectedItemsRef.current = items;
+      setLocalSelectedCount(items.length);
       onSelectionChanged(items);
     },
     [data, onSelectionChanged],

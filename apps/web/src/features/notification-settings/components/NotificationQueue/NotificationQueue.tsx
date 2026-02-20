@@ -45,6 +45,14 @@ import type {
   ManualSendItem,
   QueuePreviewParams,
 } from "../../types";
+import { ContractDetailModal } from "../../../contracts/components";
+import { useContractById } from "../../../contracts/hooks";
+import {
+  AccountTransactionsModal,
+  useAccountTransactionsStore,
+} from "../../../account-transactions";
+import { useCustomerLookup } from "../../../lookup";
+import { getCustomerErpId } from "../../../customers";
 
 type QueueTab = "invoices" | "yearly-contracts" | "monthly-contracts";
 
@@ -78,6 +86,11 @@ export function NotificationQueue() {
     channels: ("email" | "sms")[];
   } | null>(null);
   const pendingSendRef = useRef<{ channels: ("email" | "sms")[] } | null>(null);
+
+  const [inspectContractId, setInspectContractId] = useState<string | null>(null);
+  const { data: inspectContract } = useContractById(inspectContractId ?? undefined);
+  const { openModal: openAccountTransactionsModal } = useAccountTransactionsStore();
+  const { customerMap } = useCustomerLookup();
 
   const { data: settings } = useNotificationSettings();
   const {
@@ -256,6 +269,20 @@ export function NotificationQueue() {
     setDuplicateWarning(null);
     pendingSendRef.current = null;
   }, []);
+
+  const handleInspectContract = useCallback((item: QueueContractItem) => {
+    setInspectContractId(item._id);
+  }, []);
+
+  const handleAccountTransactions = useCallback(
+    (item: QueueContractItem) => {
+      const customer = customerMap.get(item.customer.id);
+      const erpId = customer ? getCustomerErpId(customer) : "";
+      if (!erpId) return;
+      openAccountTransactionsModal(erpId, "VERI");
+    },
+    [customerMap, openAccountTransactionsModal],
+  );
 
   const handleFetchCurrentTab = useCallback(() => {
     if (!loadedTabs[queueTab]) {
@@ -608,6 +635,8 @@ export function NotificationQueue() {
               onSendAll={() => handleSend(["email", "sms"])}
               globalSelectedCount={selected.length}
               isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
+              onInspectContract={handleInspectContract}
+              onAccountTransactions={handleAccountTransactions}
             />
           ) : (
             <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-[var(--color-border)]">
@@ -635,6 +664,8 @@ export function NotificationQueue() {
               onSendAll={() => handleSend(["email", "sms"])}
               globalSelectedCount={selected.length}
               isSending={batchProgress.status === "running" || batchProgress.status === "paused"}
+              onInspectContract={handleInspectContract}
+              onAccountTransactions={handleAccountTransactions}
             />
           ) : (
             <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-[var(--color-border)]">
@@ -864,6 +895,18 @@ export function NotificationQueue() {
         onConfirm={handleDuplicateConfirm}
         onCancel={handleDuplicateCancel}
       />
+
+      {/* Contract Detail Modal */}
+      {inspectContract && (
+        <ContractDetailModal
+          isOpen={inspectContractId !== null}
+          onClose={() => setInspectContractId(null)}
+          contract={inspectContract}
+        />
+      )}
+
+      {/* Account Transactions Modal */}
+      <AccountTransactionsModal />
     </div>
   );
 }
