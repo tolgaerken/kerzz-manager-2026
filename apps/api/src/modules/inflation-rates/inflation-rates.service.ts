@@ -57,7 +57,7 @@ export class InflationRatesService {
   }
 
   async findOne(id: string): Promise<InflationRateResponseDto> {
-    const doc = await this.model.findOne({ id }).lean().exec();
+    const doc = await this.findByIdFlexible(id);
     if (!doc) {
       throw new NotFoundException(`Enflasyon kaydı bulunamadı: ${id}`);
     }
@@ -89,7 +89,7 @@ export class InflationRatesService {
     id: string,
     dto: UpdateInflationRateDto,
   ): Promise<InflationRateResponseDto> {
-    const existing = await this.model.findOne({ id }).lean().exec();
+    const existing = await this.findByIdFlexible(id);
     if (!existing) {
       throw new NotFoundException(`Enflasyon kaydı bulunamadı: ${id}`);
     }
@@ -117,7 +117,7 @@ export class InflationRatesService {
     }
 
     const updated = await this.model
-      .findOneAndUpdate({ id }, updateData, { new: true })
+      .findOneAndUpdate({ id: existing.id }, updateData, { new: true })
       .lean()
       .exec();
 
@@ -129,10 +129,69 @@ export class InflationRatesService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.model.deleteOne({ id }).exec();
+    const existing = await this.findByIdFlexible(id);
+    if (!existing) {
+      throw new NotFoundException(`Enflasyon kaydı bulunamadı: ${id}`);
+    }
+
+    const result = await this.model.deleteOne({ id: existing.id }).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException(`Enflasyon kaydı bulunamadı: ${id}`);
     }
+  }
+
+  private async findByIdFlexible(id: string) {
+    const byExactId = await this.model.findOne({ id }).lean().exec();
+    if (byExactId) {
+      return byExactId;
+    }
+
+    const escapedId = this.escapeRegex(id);
+    const byCaseInsensitiveExactId = await this.model
+      .findOne({ id: { $regex: `^${escapedId}$`, $options: "i" } })
+      .lean()
+      .exec();
+    if (byCaseInsensitiveExactId) {
+      return byCaseInsensitiveExactId;
+    }
+
+    const byStringifiedMongoId = await this.model
+      .findOne({
+        $expr: { $eq: [{ $toString: "$_id" }, id] },
+      })
+      .lean()
+      .exec();
+    if (byStringifiedMongoId) {
+      return byStringifiedMongoId;
+    }
+
+    const baseUuid = this.extractBaseUuid(id);
+    if (!baseUuid) {
+      return null;
+    }
+
+    const escapedBaseUuid = this.escapeRegex(baseUuid);
+    return this.model
+      .findOne({
+        id: {
+          $regex: `^${escapedBaseUuid}.*$`,
+          $options: "i",
+        },
+      })
+      .lean()
+      .exec();
+  }
+
+  private extractBaseUuid(value: string): string | null {
+    const uuidMatch = value.match(
+      /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/,
+    );
+
+    return uuidMatch?.[0] ?? null;
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   private calculateAverages(
