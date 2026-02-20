@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { PaymentsController } from "./payments.controller";
 import { PaymentsService } from "./payments.service";
+import { PaymentStatusChangeHandler } from "./payment-status-change.handler";
 import { PaymentLink, PaymentLinkSchema } from "./schemas/payment-link.schema";
 import {
   PaymentUserToken,
@@ -18,6 +19,7 @@ import { PaytrModule } from "../paytr";
 import { SystemLogsModule } from "../system-logs/system-logs.module";
 import { NotificationSettingsModule } from "../notification-settings/notification-settings.module";
 import { ManagerLogModule } from "../manager-log/manager-log.module";
+import { MongoWsModule } from "../mongo-ws/mongo-ws.module";
 
 @Module({
   imports: [
@@ -35,9 +37,10 @@ import { ManagerLogModule } from "../manager-log/manager-log.module";
     SystemLogsModule,
     NotificationSettingsModule,
     ManagerLogModule,
+    MongoWsModule,
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService],
+  providers: [PaymentsService, PaymentStatusChangeHandler],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

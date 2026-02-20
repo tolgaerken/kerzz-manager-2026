@@ -13,6 +13,7 @@ import type {
   MongoChangeEvent,
   WatchOptions,
   ChangeOperationType,
+  ChangeHandler,
 } from "./mongo-ws.types";
 
 /**
@@ -35,6 +36,8 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly streams = new Map<string, ChangeStream>();
   /** Collection bazinda yok sayilacak alanlar */
   private readonly ignoredFieldsMap = new Map<string, Set<string>>();
+  /** Collection bazinda is mantigi handler'lari */
+  private readonly changeHandlers = new Map<string, ChangeHandler[]>();
 
   constructor(
     @InjectConnection(CONTRACT_DB_CONNECTION)
@@ -77,6 +80,23 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
       });
     }
     this.streams.clear();
+  }
+
+  /**
+   * Belirtilen collection icin change handler kaydeder.
+   * Handler, change stream event'i geldiginde cagrilir.
+   * Birden fazla handler ayni collection icin kaydedilebilir.
+   */
+  registerChangeHandler(
+    collectionName: string,
+    handler: ChangeHandler
+  ): void {
+    const handlers = this.changeHandlers.get(collectionName) ?? [];
+    handlers.push(handler);
+    this.changeHandlers.set(collectionName, handlers);
+    this.logger.log(
+      `Change handler kaydedildi: ${collectionName} (toplam: ${handlers.length})`
+    );
   }
 
   /**
@@ -208,6 +228,18 @@ export class ChangeStreamService implements OnModuleInit, OnModuleDestroy {
       `[${collectionName}] Event gateway'e iletiliyor => doc=${documentId}, op=${operationType}`
     );
     this.gateway.emitChange(event);
+
+    // Kayitli handler'lari calistir (asenkron, hata ana akisi durdurmasin)
+    const handlers = this.changeHandlers.get(collectionName);
+    if (handlers?.length) {
+      for (const handler of handlers) {
+        Promise.resolve(handler(event)).catch((err) => {
+          this.logger.error(
+            `[${collectionName}] Change handler hatasi: ${err}`
+          );
+        });
+      }
+    }
   }
 
   /**

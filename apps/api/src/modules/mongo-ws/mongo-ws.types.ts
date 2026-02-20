@@ -48,3 +48,9 @@ export interface CollectionSubscription {
   /** Dinlenecek collection adi. */
   collection: string;
 }
+
+/**
+ * Change stream event handler callback tipi.
+ * Collection bazli is mantigi tetiklemek icin kullanilir.
+ */
+export type ChangeHandler = (event: MongoChangeEvent) => void | Promise<void>;

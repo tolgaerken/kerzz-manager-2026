@@ -98,13 +98,17 @@ export class NotificationQueueService {
         return `${this.paymentBaseUrl}/odeme/${invoice.id}`;
       }
 
+      if (!invoice.internalFirm) {
+        throw new Error(`Fatura icin internalFirm bilgisi eksik: ${invoice.invoiceNumber}`);
+      }
+
       const result = await this.paymentsService.createPaymentLink({
         amount: invoice.grandTotal,
         email: customer.email,
         name: customer.name || "",
         customerName: customer.companyName || customer.name || "",
         customerId: invoice.customerId || "",
-        companyId: "VERI",
+        companyId: invoice.internalFirm,
         invoiceNo: invoice.invoiceNumber || "",
         staffName: "Kerzz Bildirim",
         canRecurring: true,
