@@ -8,6 +8,19 @@ interface MessageContentModalProps {
 
 export function MessageContentModal({ log, onClose }: MessageContentModalProps) {
   const isEmail = log.channel === "email";
+  const templateData = log.templateData;
+
+  const hasValue = (value: unknown): boolean =>
+    value !== undefined && value !== null && value !== "";
+
+  const recordType = templateData.recordType;
+  const notificationSource = templateData.notificationSource;
+  const invoiceNo = templateData.invoiceNo;
+  const contractNo = templateData.contractNo;
+  const renewalAmount = templateData.renewalAmount;
+  const oldAmount = templateData.oldAmount;
+  const increaseRateInfo = templateData.increaseRateInfo;
+  const paymentLink = templateData.paymentLink;
 
   return (
     <div
@@ -91,78 +104,78 @@ export function MessageContentModal({ log, onClose }: MessageContentModalProps) 
           </div>
 
           {/* Bağlamsal Bilgiler */}
-          {log.templateData && Object.keys(log.templateData).length > 0 && (
+          {templateData && Object.keys(templateData).length > 0 && (
             <div className="bg-[var(--color-surface-elevated)] rounded-lg p-3 space-y-2">
               <h4 className="text-sm font-medium text-[var(--color-foreground)]">
                 Bağlamsal Bilgiler
               </h4>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                {(log.templateData as Record<string, unknown>).recordType && (
+                {hasValue(recordType) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Kayıt Tipi:</span>{" "}
                     <span className="text-[var(--color-foreground)]">
-                      {(log.templateData as Record<string, unknown>).recordType === "invoice" ? "Fatura" : "Kontrat"}
+                      {recordType === "invoice" ? "Fatura" : "Kontrat"}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).notificationSource && (
+                {hasValue(notificationSource) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Kaynak:</span>{" "}
                     <span className="text-[var(--color-foreground)]">
-                      {(log.templateData as Record<string, unknown>).notificationSource === "cron" ? "Otomatik (Cron)" : "Manuel"}
+                      {notificationSource === "cron" ? "Otomatik (Cron)" : "Manuel"}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).invoiceNo && (
+                {hasValue(invoiceNo) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Fatura No:</span>{" "}
                     <span className="text-[var(--color-foreground)] font-mono">
-                      {String((log.templateData as Record<string, unknown>).invoiceNo)}
+                      {String(invoiceNo)}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).contractNo && (
+                {hasValue(contractNo) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Kontrat No:</span>{" "}
                     <span className="text-[var(--color-foreground)] font-mono">
-                      {String((log.templateData as Record<string, unknown>).contractNo)}
+                      {String(contractNo)}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).renewalAmount && (
+                {hasValue(renewalAmount) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Yeni Tutar:</span>{" "}
                     <span className="text-[var(--color-foreground)]">
-                      {String((log.templateData as Record<string, unknown>).renewalAmount)}
+                      {String(renewalAmount)}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).oldAmount && (
+                {hasValue(oldAmount) && (
                   <div>
                     <span className="text-[var(--color-muted-foreground)]">Eski Tutar:</span>{" "}
                     <span className="text-[var(--color-foreground)]">
-                      {String((log.templateData as Record<string, unknown>).oldAmount)}
+                      {String(oldAmount)}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).increaseRateInfo && (
+                {hasValue(increaseRateInfo) && (
                   <div className="col-span-2">
                     <span className="text-[var(--color-muted-foreground)]">Artış Bilgisi:</span>{" "}
                     <span className="text-[var(--color-foreground)]">
-                      {String((log.templateData as Record<string, unknown>).increaseRateInfo)}
+                      {String(increaseRateInfo)}
                     </span>
                   </div>
                 )}
-                {(log.templateData as Record<string, unknown>).paymentLink && (
+                {hasValue(paymentLink) && (
                   <div className="col-span-2">
                     <span className="text-[var(--color-muted-foreground)]">Ödeme Linki:</span>{" "}
                     <a
-                      href={String((log.templateData as Record<string, unknown>).paymentLink)}
+                      href={String(paymentLink)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--color-primary)] hover:underline break-all"
                     >
-                      {String((log.templateData as Record<string, unknown>).paymentLink)}
+                      {String(paymentLink)}
                     </a>
                   </div>
                 )}
