@@ -121,6 +121,12 @@ export class UpdateNotificationSettingsDto {
   @IsBoolean()
   @IsOptional()
   dryRunMode?: boolean;
+
+  // Ödeme başarılı olduğunda bildirim gönderilecek yönetici email adresleri
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  paymentSuccessNotifyEmails?: string[];
 }
 
 export class NotificationSettingsResponseDto {
@@ -153,6 +159,8 @@ export class NotificationSettingsResponseDto {
   managerLogReminderCronEnabled: boolean;
   managerLogReminderCronExpression: string;
   dryRunMode: boolean;
+  // Ödeme başarılı bildirim email adresleri
+  paymentSuccessNotifyEmails: string[];
   createdAt: Date;
   updatedAt: Date;
 }

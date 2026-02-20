@@ -29,6 +29,13 @@ import {
   ContractPayment,
   ContractPaymentDocument,
 } from "../contract-payments/schemas/contract-payment.schema";
+import { SystemLogsService } from "../system-logs/system-logs.service";
+import {
+  SystemLogAction,
+  SystemLogCategory,
+  SystemLogStatus,
+} from "../system-logs/schemas/system-log.schema";
+import { NotificationSettingsService } from "../notification-settings/notification-settings.service";
 
 @Injectable()
 export class PaymentsService {
@@ -45,7 +52,9 @@ export class PaymentsService {
     private configService: ConfigService,
     private emailService: EmailService,
     private smsService: SmsService,
-    private paytrService: PaytrService
+    private paytrService: PaytrService,
+    private systemLogsService: SystemLogsService,
+    private notificationSettingsService: NotificationSettingsService
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
@@ -146,6 +155,25 @@ export class PaymentsService {
       );
     }
 
+    const docAny = doc as any;
+
+    // Ödeme linki açıldığında sistem logu oluştur
+    this.systemLogsService
+      .log(SystemLogCategory.SYSTEM, SystemLogAction.PAYMENT_LINK_OPENED, "payments", {
+        entityId: docAny.linkId || docAny._id?.toString(),
+        entityType: "PaymentLink",
+        status: SystemLogStatus.SUCCESS,
+        details: {
+          customerId: docAny.customerId,
+          customerName: docAny.customerName,
+          amount: docAny.amount,
+          invoiceNo: docAny.invoiceNo,
+          contextType: docAny.contextType,
+          contextId: docAny.contextId,
+        },
+      })
+      .catch((err) => this.logger.error(`Payment link opened log hatası: ${err}`));
+
     return this.mapToPaymentInfo(doc);
   }
 
@@ -179,6 +207,40 @@ export class PaymentsService {
       failedReasonMsg,
       utoken ? "saved" : "not-saved"
     );
+
+    // Ödeme sonucu sistem logu oluştur
+    const isSuccess = status === "success";
+    const logAction = isSuccess
+      ? SystemLogAction.PAYMENT_SUCCESS
+      : SystemLogAction.PAYMENT_FAILED;
+    const logStatus = isSuccess
+      ? SystemLogStatus.SUCCESS
+      : SystemLogStatus.FAILURE;
+
+    await this.systemLogsService
+      .log(SystemLogCategory.SYSTEM, logAction, "payments", {
+        entityId: infoDoc.linkId || paymentId,
+        entityType: "PaymentLink",
+        status: logStatus,
+        details: {
+          customerId: infoDoc.customerId,
+          customerName: infoDoc.customerName,
+          amount: infoDoc.amount,
+          invoiceNo: infoDoc.invoiceNo,
+          contextType: infoDoc.contextType,
+          contextId: infoDoc.contextId,
+          failedReason: isSuccess ? undefined : failedReasonMsg,
+        },
+        errorMessage: isSuccess ? undefined : failedReasonMsg,
+      })
+      .catch((err) => this.logger.error(`Payment callback log hatası: ${err}`));
+
+    // Başarılı ödemede yöneticilere email gönder (asenkron)
+    if (isSuccess) {
+      this.sendPaymentSuccessNotification(infoDoc).catch((err) =>
+        this.logger.error(`Payment success email hatası: ${err}`)
+      );
+    }
 
     // 10 sn sonra kontrat odeme durumunu guncelle
     setTimeout(async () => {
@@ -541,5 +603,71 @@ export class PaymentsService {
 
   private roundNumber(num: number): number {
     return Math.round(num * 100) / 100;
+  }
+
+  /**
+   * Başarılı ödeme sonrası yöneticilere email bildirimi gönderir.
+   */
+  private async sendPaymentSuccessNotification(paymentInfo: any): Promise<void> {
+    const settings = await this.notificationSettingsService.getSettings();
+    const emails = settings.paymentSuccessNotifyEmails || [];
+
+    if (emails.length === 0) {
+      return;
+    }
+
+    const amountStr = new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+    }).format(paymentInfo.amount || 0);
+
+    const dateStr = new Date().toLocaleString("tr-TR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+
+    const customerName = paymentInfo.customerName || paymentInfo.name || "Bilinmiyor";
+    const invoiceNo = paymentInfo.invoiceNo || "-";
+
+    const subject = `Ödeme Başarılı - ${customerName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #22c55e;">✓ Ödeme Başarılı</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Müşteri:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${customerName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Tutar:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${amountStr}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Fatura No:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${invoiceNo}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0;"><strong>Tarih:</strong></td>
+            <td style="padding: 8px 0;">${dateStr}</td>
+          </tr>
+        </table>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+          Bu email otomatik olarak gönderilmiştir.
+        </p>
+      </div>
+    `;
+
+    for (const email of emails) {
+      try {
+        await this.emailService.send({
+          to: email,
+          subject,
+          html,
+        });
+        this.logger.log(`Ödeme başarı bildirimi gönderildi: ${email}`);
+      } catch (err) {
+        this.logger.error(`Ödeme başarı bildirimi gönderilemedi (${email}): ${err}`);
+      }
+    }
   }
 }

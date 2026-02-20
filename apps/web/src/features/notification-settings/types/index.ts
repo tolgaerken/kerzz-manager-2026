@@ -96,6 +96,8 @@ export interface NotificationSettings {
   proratedInvoiceCronTime: string;
   stalePipelineCronTime: string;
   managerLogReminderCronExpression: string;
+  // Ödeme başarılı bildirim email adresleri
+  paymentSuccessNotifyEmails: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -123,6 +125,8 @@ export interface UpdateNotificationSettingsDto {
   proratedInvoiceCronTime?: string;
   stalePipelineCronTime?: string;
   managerLogReminderCronExpression?: string;
+  // Ödeme başarılı bildirim email adresleri
+  paymentSuccessNotifyEmails?: string[];
 }
 
 // ==================== NOTIFICATION LOG TYPES ====================

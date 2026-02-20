@@ -75,6 +75,8 @@ export function GeneralSettings() {
     proratedInvoiceCronTime: "09:00",
     stalePipelineCronTime: "09:15",
     managerLogReminderCronExpression: "0 */15 * * * *",
+    // Ödeme başarı bildirimi
+    paymentSuccessNotifyEmails: [] as string[],
   });
 
   // Ham string değerlerini ayrı tutuyoruz ki kullanıcı serbestçe yazabilsin
@@ -83,6 +85,7 @@ export function GeneralSettings() {
     invoiceOverdueDays: "3, 5, 10",
     invoiceLookbackDays: "90",
     contractExpiryDays: "30, 15, 7",
+    paymentSuccessNotifyEmails: "",
   });
 
   useEffect(() => {
@@ -116,12 +119,14 @@ export function GeneralSettings() {
         stalePipelineCronTime: settings.stalePipelineCronTime ?? "09:15",
         managerLogReminderCronExpression:
           settings.managerLogReminderCronExpression ?? "0 */15 * * * *",
+        paymentSuccessNotifyEmails: settings.paymentSuccessNotifyEmails ?? [],
       });
       setDraftInputs({
         invoiceDueReminderDays: settings.invoiceDueReminderDays.join(", "),
         invoiceOverdueDays: settings.invoiceOverdueDays.join(", "),
         invoiceLookbackDays: String(settings.invoiceLookbackDays ?? 90),
         contractExpiryDays: settings.contractExpiryDays.join(", "),
+        paymentSuccessNotifyEmails: (settings.paymentSuccessNotifyEmails ?? []).join(", "),
       });
     }
   }, [settings]);
@@ -133,6 +138,7 @@ export function GeneralSettings() {
     commitDaysField("invoiceOverdueDays");
     commitDaysField("contractExpiryDays");
     commitLookbackField();
+    commitEmailsField();
     await updateMutation.mutateAsync(formData);
   };
 
@@ -156,6 +162,17 @@ export function GeneralSettings() {
     if (!isNaN(val) && val >= 1) {
       setFormData((prev) => ({ ...prev, invoiceLookbackDays: val }));
     }
+  };
+
+  const parseEmails = (value: string): string[] =>
+    value
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && s.includes("@"));
+
+  const commitEmailsField = () => {
+    const emails = parseEmails(draftInputs.paymentSuccessNotifyEmails);
+    setFormData((prev) => ({ ...prev, paymentSuccessNotifyEmails: emails }));
   };
 
   if (isLoading) {
@@ -511,6 +528,68 @@ export function GeneralSettings() {
             Örnek: 30, 15, 7 (Bitiş tarihinden 30, 15 ve 7 gün önce bildirim gönderilir)
           </p>
         </div>
+      </div>
+
+      {/* Ödeme Başarı Bildirimi */}
+      <div className="bg-[var(--color-surface-elevated)] rounded-lg p-4 space-y-4">
+        <h3 className="text-sm font-medium text-[var(--color-foreground)]">
+          Ödeme Başarı Bildirimi
+        </h3>
+
+        <div>
+          <label className="block text-sm text-[var(--color-muted)] mb-1">
+            Bildirim Gönderilecek Email Adresleri (virgülle ayırın)
+          </label>
+          <input
+            type="text"
+            value={draftInputs.paymentSuccessNotifyEmails}
+            onChange={(e) =>
+              setDraftInputs((prev) => ({
+                ...prev,
+                paymentSuccessNotifyEmails: e.target.value,
+              }))
+            }
+            onBlur={() => commitEmailsField()}
+            placeholder="admin@firma.com, muhasebe@firma.com"
+            className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md text-[var(--color-foreground)]"
+          />
+          <p className="mt-1 text-xs text-[var(--color-muted)]">
+            Ödeme başarılı olduğunda bu email adreslerine bildirim gönderilir.
+            Boş bırakılırsa bildirim gönderilmez.
+          </p>
+        </div>
+
+        {formData.paymentSuccessNotifyEmails.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {formData.paymentSuccessNotifyEmails.map((email, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-full"
+              >
+                {email}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newEmails = formData.paymentSuccessNotifyEmails.filter(
+                      (_, i) => i !== idx
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      paymentSuccessNotifyEmails: newEmails,
+                    }));
+                    setDraftInputs((prev) => ({
+                      ...prev,
+                      paymentSuccessNotifyEmails: newEmails.join(", "),
+                    }));
+                  }}
+                  className="hover:text-[var(--color-error)] transition-colors"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Submit Button */}

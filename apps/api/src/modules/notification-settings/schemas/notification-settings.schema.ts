@@ -98,6 +98,10 @@ export class NotificationSettings {
   @Prop({ default: false })
   dryRunMode: boolean;
 
+  // Ödeme başarılı olduğunda bildirim gönderilecek yönetici email adresleri
+  @Prop({ type: [String], default: [] })
+  paymentSuccessNotifyEmails: string[];
+
   @Prop()
   createdAt: Date;
 

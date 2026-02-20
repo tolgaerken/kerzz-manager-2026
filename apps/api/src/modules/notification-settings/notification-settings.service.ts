@@ -70,6 +70,7 @@ export class NotificationSettingsService implements OnModuleInit {
         stalePipelineCronTime: "09:15",
         managerLogReminderCronExpression: "0 */15 * * * *",
         dryRunMode: false,
+        paymentSuccessNotifyEmails: [],
       });
       await settings.save();
       console.log("✅ Bildirim ayarları varsayılan değerlerle oluşturuldu");
@@ -230,6 +231,7 @@ export class NotificationSettingsService implements OnModuleInit {
       managerLogReminderCronExpression:
         doc.managerLogReminderCronExpression ?? "0 */15 * * * *",
       dryRunMode: doc.dryRunMode ?? false,
+      paymentSuccessNotifyEmails: doc.paymentSuccessNotifyEmails ?? [],
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };

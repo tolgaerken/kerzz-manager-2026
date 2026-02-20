@@ -15,6 +15,8 @@ import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module"
 import { EmailModule } from "../email/email.module";
 import { SmsModule } from "../sms/sms.module";
 import { PaytrModule } from "../paytr";
+import { SystemLogsModule } from "../system-logs/system-logs.module";
+import { NotificationSettingsModule } from "../notification-settings/notification-settings.module";
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { PaytrModule } from "../paytr";
     EmailModule,
     SmsModule,
     PaytrModule,
+    SystemLogsModule,
+    NotificationSettingsModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],
