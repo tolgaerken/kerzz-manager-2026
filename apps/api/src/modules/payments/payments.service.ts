@@ -36,6 +36,7 @@ import {
   SystemLogStatus,
 } from "../system-logs/schemas/system-log.schema";
 import { NotificationSettingsService } from "../notification-settings/notification-settings.service";
+import { ManagerLogService } from "../manager-log/manager-log.service";
 
 @Injectable()
 export class PaymentsService {
@@ -54,7 +55,8 @@ export class PaymentsService {
     private smsService: SmsService,
     private paytrService: PaytrService,
     private systemLogsService: SystemLogsService,
-    private notificationSettingsService: NotificationSettingsService
+    private notificationSettingsService: NotificationSettingsService,
+    private managerLogService: ManagerLogService
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
@@ -240,30 +242,16 @@ export class PaymentsService {
       this.sendPaymentSuccessNotification(infoDoc).catch((err) =>
         this.logger.error(`Payment success email hatası: ${err}`)
       );
+    } else {
+      // Başarısız ödemede de yöneticilere email gönder
+      this.sendPaymentFailureNotification(infoDoc, failedReasonMsg).catch((err) =>
+        this.logger.error(`Payment failure email hatası: ${err}`)
+      );
     }
 
     // 10 sn sonra kontrat odeme durumunu guncelle
     setTimeout(async () => {
-      try {
-        await this.updateContractPaymentStatus(
-          paymentId,
-          status,
-          failedReasonMsg
-        );
-
-        if (infoDoc.invoiceNo) {
-          await this.updateContractPaymentStatusByInvoiceNo(
-            paymentId,
-            infoDoc.invoiceNo,
-            status,
-            failedReasonMsg
-          );
-        }
-      } catch (err) {
-        this.logger.error(
-          `Kontrat odeme guncelleme hatasi: ${err}`
-        );
-      }
+      await this.processInvoiceMarking(paymentId, infoDoc, status, failedReasonMsg);
     }, 10_000);
 
     // Kullanici tokenini kaydet (utoken varsa)
@@ -606,6 +594,169 @@ export class PaymentsService {
   }
 
   /**
+   * Fatura işaretleme işlemlerini gerçekleştirir ve sonuçları loglar.
+   */
+  private async processInvoiceMarking(
+    paymentId: string,
+    paymentInfo: Record<string, unknown>,
+    status: string,
+    failedReasonMsg: string
+  ): Promise<void> {
+    const isSuccess = status === "success";
+    const customerId = paymentInfo.customerId as string | undefined;
+    const customerName = (paymentInfo.customerName || paymentInfo.name || "Bilinmiyor") as string;
+    const invoiceNo = paymentInfo.invoiceNo as string | undefined;
+    const contextId = paymentInfo.contextId as string | undefined;
+    const contractNo = paymentInfo.contractNo as string | undefined;
+
+    try {
+      const statusUpdated = await this.updateContractPaymentStatus(
+        paymentId,
+        status,
+        failedReasonMsg
+      );
+
+      let invoiceUpdated = false;
+      if (invoiceNo) {
+        invoiceUpdated = await this.updateContractPaymentStatusByInvoiceNo(
+          paymentId,
+          invoiceNo,
+          status,
+          failedReasonMsg
+        );
+      }
+
+      // System log: Fatura işaretleme sonucu
+      const markingSuccess = statusUpdated || invoiceUpdated;
+      const logAction = markingSuccess && isSuccess
+        ? SystemLogAction.INVOICE_MARKED_PAID
+        : SystemLogAction.INVOICE_MARKING_FAILED;
+      const logStatus = markingSuccess && isSuccess
+        ? SystemLogStatus.SUCCESS
+        : SystemLogStatus.FAILURE;
+
+      const logMessage = isSuccess
+        ? markingSuccess
+          ? `${invoiceNo || contextId} nolu fatura ödendi olarak işaretlendi`
+          : `${invoiceNo || contextId} nolu fatura işaretlenemedi - kayıt bulunamadı`
+        : `${invoiceNo || contextId} nolu fatura ödeme başarısız: ${failedReasonMsg}`;
+
+      await this.systemLogsService
+        .log(SystemLogCategory.SYSTEM, logAction, "payments", {
+          entityId: invoiceNo || contextId || paymentId,
+          entityType: "Invoice",
+          status: logStatus,
+          details: {
+            customerId,
+            customerName,
+            invoiceNo,
+            contractNo,
+            contextId,
+            paymentId,
+            statusUpdated,
+            invoiceUpdated,
+            message: logMessage,
+            failedReason: isSuccess ? undefined : failedReasonMsg,
+          },
+          errorMessage: markingSuccess && isSuccess ? undefined : (failedReasonMsg || "Kayıt bulunamadı"),
+        })
+        .catch((err) => this.logger.error(`Invoice marking log hatası: ${err}`));
+
+      // Manager log: Müşteri iş geçmişine kayıt
+      if (customerId) {
+        await this.createPaymentManagerLog(
+          customerId,
+          invoiceNo || contextId || paymentId,
+          customerName,
+          isSuccess,
+          markingSuccess,
+          failedReasonMsg
+        );
+      }
+
+      // Başarısız işaretleme durumunda yönetici maili
+      if (!markingSuccess || !isSuccess) {
+        await this.sendInvoiceMarkingFailureNotification(
+          paymentInfo,
+          logMessage
+        ).catch((err) =>
+          this.logger.error(`Invoice marking failure email hatası: ${err}`)
+        );
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Kontrat odeme guncelleme hatasi: ${errorMessage}`);
+
+      // Hata durumunda system log
+      await this.systemLogsService
+        .log(SystemLogCategory.SYSTEM, SystemLogAction.INVOICE_MARKING_FAILED, "payments", {
+          entityId: invoiceNo || contextId || paymentId,
+          entityType: "Invoice",
+          status: SystemLogStatus.ERROR,
+          details: {
+            customerId,
+            customerName,
+            invoiceNo,
+            contractNo,
+            contextId,
+            paymentId,
+          },
+          errorMessage,
+        })
+        .catch((logErr) => this.logger.error(`Invoice marking error log hatası: ${logErr}`));
+
+      // Hata durumunda yönetici maili
+      await this.sendInvoiceMarkingFailureNotification(
+        paymentInfo,
+        `Fatura işaretleme hatası: ${errorMessage}`
+      ).catch((mailErr) =>
+        this.logger.error(`Invoice marking failure email hatası: ${mailErr}`)
+      );
+    }
+  }
+
+  /**
+   * Ödeme/fatura işlemi için manager-log kaydı oluşturur.
+   */
+  private async createPaymentManagerLog(
+    customerId: string,
+    invoiceNo: string,
+    customerName: string,
+    paymentSuccess: boolean,
+    markingSuccess: boolean,
+    failedReason?: string
+  ): Promise<void> {
+    try {
+      let message: string;
+      if (paymentSuccess && markingSuccess) {
+        message = `${invoiceNo} nolu fatura ödendi olarak işaretlendi.`;
+      } else if (paymentSuccess && !markingSuccess) {
+        message = `${invoiceNo} nolu fatura için ödeme alındı ancak işaretleme başarısız oldu.`;
+      } else {
+        message = `${invoiceNo} nolu fatura ödemesi başarısız: ${failedReason || "Bilinmeyen hata"}`;
+      }
+
+      await this.managerLogService.create({
+        customerId,
+        contextType: "invoice",
+        contextId: invoiceNo,
+        message,
+        authorId: "system",
+        authorName: "Sistem",
+        references: [
+          {
+            type: "invoice",
+            id: invoiceNo,
+            label: `Fatura #${invoiceNo}`,
+          },
+        ],
+      });
+    } catch (err) {
+      this.logger.error(`Manager log oluşturma hatası: ${err}`);
+    }
+  }
+
+  /**
    * Başarılı ödeme sonrası yöneticilere email bildirimi gönderir.
    */
   private async sendPaymentSuccessNotification(paymentInfo: any): Promise<void> {
@@ -667,6 +818,152 @@ export class PaymentsService {
         this.logger.log(`Ödeme başarı bildirimi gönderildi: ${email}`);
       } catch (err) {
         this.logger.error(`Ödeme başarı bildirimi gönderilemedi (${email}): ${err}`);
+      }
+    }
+  }
+
+  /**
+   * Başarısız ödeme sonrası yöneticilere email bildirimi gönderir.
+   */
+  private async sendPaymentFailureNotification(
+    paymentInfo: Record<string, unknown>,
+    failedReason: string
+  ): Promise<void> {
+    const settings = await this.notificationSettingsService.getSettings();
+    const emails = settings.paymentSuccessNotifyEmails || [];
+
+    if (emails.length === 0) {
+      return;
+    }
+
+    const amountStr = new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+    }).format((paymentInfo.amount as number) || 0);
+
+    const dateStr = new Date().toLocaleString("tr-TR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+
+    const customerName = (paymentInfo.customerName || paymentInfo.name || "Bilinmiyor") as string;
+    const invoiceNo = (paymentInfo.invoiceNo || "-") as string;
+
+    const subject = `⚠️ Ödeme Başarısız - ${customerName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">✗ Ödeme Başarısız</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Müşteri:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${customerName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Tutar:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${amountStr}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Fatura No:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${invoiceNo}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Hata:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #ef4444;">${failedReason || "Bilinmeyen hata"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0;"><strong>Tarih:</strong></td>
+            <td style="padding: 8px 0;">${dateStr}</td>
+          </tr>
+        </table>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+          Bu email otomatik olarak gönderilmiştir.
+        </p>
+      </div>
+    `;
+
+    for (const email of emails) {
+      try {
+        await this.emailService.send({
+          to: email,
+          subject,
+          html,
+        });
+        this.logger.log(`Ödeme başarısız bildirimi gönderildi: ${email}`);
+      } catch (err) {
+        this.logger.error(`Ödeme başarısız bildirimi gönderilemedi (${email}): ${err}`);
+      }
+    }
+  }
+
+  /**
+   * Fatura işaretleme hatası sonrası yöneticilere email bildirimi gönderir.
+   */
+  private async sendInvoiceMarkingFailureNotification(
+    paymentInfo: Record<string, unknown>,
+    errorMessage: string
+  ): Promise<void> {
+    const settings = await this.notificationSettingsService.getSettings();
+    const emails = settings.paymentSuccessNotifyEmails || [];
+
+    if (emails.length === 0) {
+      return;
+    }
+
+    const amountStr = new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+    }).format((paymentInfo.amount as number) || 0);
+
+    const dateStr = new Date().toLocaleString("tr-TR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+
+    const customerName = (paymentInfo.customerName || paymentInfo.name || "Bilinmiyor") as string;
+    const invoiceNo = (paymentInfo.invoiceNo || "-") as string;
+
+    const subject = `⚠️ Fatura İşaretleme Hatası - ${customerName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">⚠ Fatura İşaretleme Hatası</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Müşteri:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${customerName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Tutar:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${amountStr}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Fatura No:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${invoiceNo}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Hata:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #f59e0b;">${errorMessage}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0;"><strong>Tarih:</strong></td>
+            <td style="padding: 8px 0;">${dateStr}</td>
+          </tr>
+        </table>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+          Bu email otomatik olarak gönderilmiştir. Lütfen faturayı manuel olarak kontrol edin.
+        </p>
+      </div>
+    `;
+
+    for (const email of emails) {
+      try {
+        await this.emailService.send({
+          to: email,
+          subject,
+          html,
+        });
+        this.logger.log(`Fatura işaretleme hatası bildirimi gönderildi: ${email}`);
+      } catch (err) {
+        this.logger.error(`Fatura işaretleme hatası bildirimi gönderilemedi (${email}): ${err}`);
       }
     }
   }

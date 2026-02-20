@@ -17,6 +17,7 @@ import { SmsModule } from "../sms/sms.module";
 import { PaytrModule } from "../paytr";
 import { SystemLogsModule } from "../system-logs/system-logs.module";
 import { NotificationSettingsModule } from "../notification-settings/notification-settings.module";
+import { ManagerLogModule } from "../manager-log/manager-log.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NotificationSettingsModule } from "../notification-settings/notificatio
     PaytrModule,
     SystemLogsModule,
     NotificationSettingsModule,
+    ManagerLogModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

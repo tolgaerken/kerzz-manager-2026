@@ -23,7 +23,9 @@ import {
   ContractRenewalData,
   formatDate,
 } from "../notification-queue/notification-data.helper";
-import { SystemLogsService, SystemLogAction } from "../system-logs";
+import { SystemLogsService, SystemLogAction, SystemLogCategory, SystemLogStatus } from "../system-logs";
+import { ManagerLogService } from "../manager-log/manager-log.service";
+import { EmailService } from "../email/email.service";
 import {
   calculateRemainingDays,
   getMonthBoundaries,
@@ -73,7 +75,9 @@ export class ContractNotificationCron {
     private dispatchService: NotificationDispatchService,
     private systemLogsService: SystemLogsService,
     private renewalPricingService: AnnualContractRenewalPricingService,
-    private paymentLinkHelper: ContractPaymentLinkHelper
+    private paymentLinkHelper: ContractPaymentLinkHelper,
+    private managerLogService: ManagerLogService,
+    private emailService: EmailService
   ) {}
 
   /**
@@ -479,16 +483,73 @@ export class ContractNotificationCron {
           const successCount = dispatchResults.filter((r) => r.success).length;
           const failCount = dispatchResults.filter((r) => !r.success).length;
 
+          // System log: Bildirim gönderim sonucu
+          const logAction = successCount > 0
+            ? SystemLogAction.CONTRACT_NOTIFICATION_SENT
+            : SystemLogAction.CONTRACT_NOTIFICATION_FAILED;
+          const logStatus = successCount > 0
+            ? SystemLogStatus.SUCCESS
+            : SystemLogStatus.FAILURE;
+
+          await this.systemLogsService
+            .log(SystemLogCategory.CRON, logAction, "contract-notification", {
+              entityId: contract.contractId || contract.id,
+              entityType: "Contract",
+              status: logStatus,
+              details: {
+                customerId: contract.customerId,
+                customerName: customer.name,
+                contractId: contract.contractId,
+                milestone,
+                templateCode,
+                successCount,
+                failCount,
+                message: successCount > 0
+                  ? `${contract.contractId} nolu kontrat için ${milestone} bildirimi gönderildi`
+                  : `${contract.contractId} nolu kontrat için bildirim gönderilemedi`,
+              },
+            })
+            .catch((err) => this.logger.error(`Contract notification log hatası: ${err}`));
+
+          // Manager log: Müşteri iş geçmişine kayıt
+          if (contract.customerId && successCount > 0) {
+            await this.createContractNotificationManagerLog(
+              contract.customerId,
+              contract.contractId || contract.id,
+              customer.name || "",
+              milestone,
+              true
+            );
+          }
+
           return {
             status: "processed" as const,
             sent: successCount,
             failed: failCount,
           };
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           this.logger.error(
             `Yıllık kontrat bildirimi gönderilemedi: ${contract.contractId}`,
             error
           );
+
+          // System log: Hata durumu
+          await this.systemLogsService
+            .log(SystemLogCategory.CRON, SystemLogAction.CONTRACT_NOTIFICATION_FAILED, "contract-notification", {
+              entityId: contract.contractId || contract.id,
+              entityType: "Contract",
+              status: SystemLogStatus.ERROR,
+              details: {
+                customerId: contract.customerId,
+                contractId: contract.contractId,
+                milestone,
+                templateCode,
+              },
+              errorMessage,
+            })
+            .catch((err) => this.logger.error(`Contract notification error log hatası: ${err}`));
+
           return { status: "error" as const };
         }
       })
@@ -549,6 +610,13 @@ export class ContractNotificationCron {
     );
 
     for (const contract of contracts) {
+      // Müşteri bilgisini al
+      const customer = await this.customerModel
+        .findOne({ id: contract.customerId })
+        .lean()
+        .exec();
+      const customerName = customer?.name || "Bilinmiyor";
+
       // TODO: Gerçek ödeme kontrolü yapılacak
       // Şimdilik mock: Ödeme yapılmadığını varsayıyoruz
       const paymentReceived = false;
@@ -564,17 +632,37 @@ export class ContractNotificationCron {
             `[MOCK TERMINATION] Kontrat ${contract.contractId} için hizmet sonlandırma tetiklendi (mock - gerçek aksiyon yok)`
           );
 
-          await this.systemLogsService.logCron(
-            SystemLogAction.CRON_END,
-            "contract-termination-mock",
-            {
+          // System log: Termination tetiklendi
+          await this.systemLogsService
+            .log(SystemLogCategory.CRON, SystemLogAction.CONTRACT_TERMINATION_TRIGGERED, "contract-notification", {
+              entityId: contract.contractId || contract.id,
+              entityType: "Contract",
+              status: SystemLogStatus.SUCCESS,
               details: {
-                contractId: contract.contractId,
                 customerId: contract.customerId,
+                customerName,
+                contractId: contract.contractId,
                 endDate: contract.endDate,
-                message: "Mock hizmet sonlandırma tetiklendi - gerçek aksiyon bekliyor",
+                message: `${contract.contractId} nolu kontrat için hizmet sonlandırma tetiklendi (ödeme alınmadı)`,
               },
-            }
+            })
+            .catch((err) => this.logger.error(`Contract termination log hatası: ${err}`));
+
+          // Manager log: Müşteri iş geçmişine kayıt
+          if (contract.customerId) {
+            await this.createContractTerminationManagerLog(
+              contract.customerId,
+              contract.contractId || contract.id,
+              customerName,
+              false
+            );
+          }
+
+          // Yönetici maili gönder
+          await this.sendContractTerminationAdminEmail(
+            contract,
+            customerName,
+            "Ödeme alınmadığı için hizmet sonlandırma tetiklendi"
           );
         }
       } else {
@@ -583,17 +671,30 @@ export class ContractNotificationCron {
           `[MOCK RENEWAL] Kontrat ${contract.contractId} için ödeme alındı, yenileme tetiklendi (mock)`
         );
 
-        await this.systemLogsService.logCron(
-          SystemLogAction.CRON_END,
-          "contract-renewal-mock",
-          {
+        // System log: Renewal tetiklendi
+        await this.systemLogsService
+          .log(SystemLogCategory.CRON, SystemLogAction.CONTRACT_RENEWAL_TRIGGERED, "contract-notification", {
+            entityId: contract.contractId || contract.id,
+            entityType: "Contract",
+            status: SystemLogStatus.SUCCESS,
             details: {
-              contractId: contract.contractId,
               customerId: contract.customerId,
-              message: "Mock kontrat yenileme tetiklendi - gerçek aksiyon bekliyor",
+              customerName,
+              contractId: contract.contractId,
+              message: `${contract.contractId} nolu kontrat yenilendi (ödeme alındı)`,
             },
-          }
-        );
+          })
+          .catch((err) => this.logger.error(`Contract renewal log hatası: ${err}`));
+
+        // Manager log: Müşteri iş geçmişine kayıt
+        if (contract.customerId) {
+          await this.createContractRenewalManagerLog(
+            contract.customerId,
+            contract.contractId || contract.id,
+            customerName,
+            true
+          );
+        }
       }
     }
   }
@@ -996,5 +1097,190 @@ export class ContractNotificationCron {
       },
       items,
     };
+  }
+
+  /**
+   * Kontrat bildirimi için manager-log kaydı oluşturur.
+   */
+  private async createContractNotificationManagerLog(
+    customerId: string,
+    contractId: string,
+    customerName: string,
+    milestone: MilestoneType,
+    success: boolean
+  ): Promise<void> {
+    try {
+      const milestoneLabels: Record<MilestoneType, string> = {
+        "pre-expiry": "bitiş öncesi",
+        "post-1": "bitiş sonrası 1. gün",
+        "post-3": "bitiş sonrası 3. gün",
+        "post-5": "bitiş sonrası 5. gün",
+        "termination": "sonlandırma",
+      };
+
+      const message = success
+        ? `${contractId} nolu kontrat için ${milestoneLabels[milestone]} yenileme bildirimi gönderildi.`
+        : `${contractId} nolu kontrat için ${milestoneLabels[milestone]} bildirimi gönderilemedi.`;
+
+      await this.managerLogService.create({
+        customerId,
+        contextType: "contract",
+        contextId: contractId,
+        message,
+        authorId: "system",
+        authorName: "Sistem",
+        references: [
+          {
+            type: "contract",
+            id: contractId,
+            label: `Kontrat #${contractId}`,
+          },
+        ],
+      });
+    } catch (err) {
+      this.logger.error(`Contract notification manager log hatası: ${err}`);
+    }
+  }
+
+  /**
+   * Kontrat yenileme için manager-log kaydı oluşturur.
+   */
+  private async createContractRenewalManagerLog(
+    customerId: string,
+    contractId: string,
+    customerName: string,
+    success: boolean
+  ): Promise<void> {
+    try {
+      const message = success
+        ? `${contractId} nolu kontrat yenilendi.`
+        : `${contractId} nolu kontrat yenileme başarısız oldu.`;
+
+      await this.managerLogService.create({
+        customerId,
+        contextType: "contract",
+        contextId: contractId,
+        message,
+        authorId: "system",
+        authorName: "Sistem",
+        references: [
+          {
+            type: "contract",
+            id: contractId,
+            label: `Kontrat #${contractId}`,
+          },
+        ],
+      });
+    } catch (err) {
+      this.logger.error(`Contract renewal manager log hatası: ${err}`);
+    }
+  }
+
+  /**
+   * Kontrat sonlandırma için manager-log kaydı oluşturur.
+   */
+  private async createContractTerminationManagerLog(
+    customerId: string,
+    contractId: string,
+    customerName: string,
+    paymentReceived: boolean
+  ): Promise<void> {
+    try {
+      const message = paymentReceived
+        ? `${contractId} nolu kontrat için ödeme alındı, hizmet devam ediyor.`
+        : `${contractId} nolu kontrat için ödeme alınmadı, hizmet sonlandırma tetiklendi.`;
+
+      await this.managerLogService.create({
+        customerId,
+        contextType: "contract",
+        contextId: contractId,
+        message,
+        authorId: "system",
+        authorName: "Sistem",
+        references: [
+          {
+            type: "contract",
+            id: contractId,
+            label: `Kontrat #${contractId}`,
+          },
+        ],
+      });
+    } catch (err) {
+      this.logger.error(`Contract termination manager log hatası: ${err}`);
+    }
+  }
+
+  /**
+   * Kontrat sonlandırma için yönetici email bildirimi gönderir.
+   */
+  private async sendContractTerminationAdminEmail(
+    contract: Contract,
+    customerName: string,
+    reason: string
+  ): Promise<void> {
+    try {
+      const settings = await this.settingsService.getSettings();
+      const emails = settings.paymentSuccessNotifyEmails || [];
+
+      if (emails.length === 0) {
+        return;
+      }
+
+      const dateStr = new Date().toLocaleString("tr-TR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+
+      const endDateStr = contract.endDate
+        ? new Date(contract.endDate).toLocaleDateString("tr-TR")
+        : "-";
+
+      const subject = `⚠️ Kontrat Sonlandırma - ${customerName}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ef4444;">⚠ Kontrat Sonlandırma Tetiklendi</h2>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Müşteri:</strong></td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${customerName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Kontrat No:</strong></td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${contract.contractId || contract.id}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Bitiş Tarihi:</strong></td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${endDateStr}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Sebep:</strong></td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #ef4444;">${reason}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Tarih:</strong></td>
+              <td style="padding: 8px 0;">${dateStr}</td>
+            </tr>
+          </table>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+            Bu email otomatik olarak gönderilmiştir. Lütfen müşteri ile iletişime geçin.
+          </p>
+        </div>
+      `;
+
+      for (const email of emails) {
+        try {
+          await this.emailService.send({
+            to: email,
+            subject,
+            html,
+          });
+          this.logger.log(`Kontrat sonlandırma bildirimi gönderildi: ${email}`);
+        } catch (err) {
+          this.logger.error(`Kontrat sonlandırma bildirimi gönderilemedi (${email}): ${err}`);
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Kontrat sonlandırma admin email hatası: ${err}`);
+    }
   }
 }

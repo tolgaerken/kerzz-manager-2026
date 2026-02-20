@@ -54,6 +54,7 @@ import {
 import { ExchangeRateModule } from "../exchange-rate";
 import { AnnualContractRenewalPricingService } from "./services/annual-contract-renewal-pricing.service";
 import { ContractPaymentLinkHelper } from "./services/contract-payment-link.helper";
+import { EmailModule } from "../email/email.module";
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { ContractPaymentLinkHelper } from "./services/contract-payment-link.help
     ContractPaymentsModule,
     ContractInvoicesModule,
     ExchangeRateModule,
+    EmailModule,
   ],
   controllers: [CronJobsController],
   providers: [
