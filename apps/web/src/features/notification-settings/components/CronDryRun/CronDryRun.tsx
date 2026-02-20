@@ -24,9 +24,15 @@ const CRON_JOBS: CronJobConfig[] = [
     icon: <FileText className="w-5 h-5 text-[var(--color-info)]" />,
   },
   {
-    name: "contract-notification",
-    label: "Kontrat Bildirim",
-    description: "Her gun 09:30 — Bitis tarihi yaklasan kontrat bildirimleri",
+    name: "contract-notification-monthly",
+    label: "Aylık Kontrat Bildirim",
+    description: "Her gun 09:30 — Bitis tarihi yaklasan aylik kontrat bildirimleri",
+    icon: <ScrollText className="w-5 h-5 text-[var(--color-success)]" />,
+  },
+  {
+    name: "contract-notification-yearly",
+    label: "Yıllık Kontrat Bildirim",
+    description: "Her gun 09:30 — Bitis tarihi yaklasan yillik kontrat bildirimleri",
     icon: <ScrollText className="w-5 h-5 text-[var(--color-success)]" />,
   },
   {

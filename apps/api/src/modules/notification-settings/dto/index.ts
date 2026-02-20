@@ -61,17 +61,29 @@ export class UpdateNotificationSettingsDto {
   @IsOptional()
   invoiceNotificationCronTime?: string;
 
-  // ── Kontrat bildirim cron ──
+  // ── Aylık kontrat bildirim cron ──
   @IsBoolean()
   @IsOptional()
-  contractNotificationCronEnabled?: boolean;
+  monthlyContractNotificationCronEnabled?: boolean;
 
   @IsString()
   @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: "contractNotificationCronTime HH:mm formatında olmalıdır",
+    message: "monthlyContractNotificationCronTime HH:mm formatında olmalıdır",
   })
   @IsOptional()
-  contractNotificationCronTime?: string;
+  monthlyContractNotificationCronTime?: string;
+
+  // ── Yıllık kontrat bildirim cron ──
+  @IsBoolean()
+  @IsOptional()
+  yearlyContractNotificationCronEnabled?: boolean;
+
+  @IsString()
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: "yearlyContractNotificationCronTime HH:mm formatında olmalıdır",
+  })
+  @IsOptional()
+  yearlyContractNotificationCronTime?: string;
 
   // ── Kıst fatura cron ──
   @IsBoolean()
@@ -125,9 +137,12 @@ export class NotificationSettingsResponseDto {
   // Fatura bildirim cron
   invoiceNotificationCronEnabled: boolean;
   invoiceNotificationCronTime: string;
-  // Kontrat bildirim cron
-  contractNotificationCronEnabled: boolean;
-  contractNotificationCronTime: string;
+  // Aylık kontrat bildirim cron
+  monthlyContractNotificationCronEnabled: boolean;
+  monthlyContractNotificationCronTime: string;
+  // Yıllık kontrat bildirim cron
+  yearlyContractNotificationCronEnabled: boolean;
+  yearlyContractNotificationCronTime: string;
   // Kıst fatura cron
   proratedInvoiceCronEnabled: boolean;
   proratedInvoiceCronTime: string;

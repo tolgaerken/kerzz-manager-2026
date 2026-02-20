@@ -55,13 +55,17 @@ export class NotificationSettingsService implements OnModuleInit {
         cronEnabled: true,
         // Job-bazlı enable/disable
         invoiceNotificationCronEnabled: true,
-        contractNotificationCronEnabled: true,
+        monthlyContractNotificationCronEnabled: true,
+        yearlyContractNotificationCronEnabled: true,
+        contractNotificationCronEnabled: true, // deprecated
         proratedInvoiceCronEnabled: true,
         stalePipelineCronEnabled: true,
         managerLogReminderCronEnabled: true,
         // Job-bazlı zamanlama
         invoiceNotificationCronTime: "09:00",
-        contractNotificationCronTime: "09:30",
+        monthlyContractNotificationCronTime: "09:30",
+        yearlyContractNotificationCronTime: "09:30",
+        contractNotificationCronTime: "09:30", // deprecated
         proratedInvoiceCronTime: "09:00",
         stalePipelineCronTime: "09:15",
         managerLogReminderCronExpression: "0 */15 * * * *",
@@ -81,13 +85,30 @@ export class NotificationSettingsService implements OnModuleInit {
   private async backfillNewFields(
     doc: NotificationSettingsDocument
   ): Promise<void> {
-    const updates: Record<string, string> = {};
+    const updates: Record<string, string | boolean> = {};
 
     if (!doc.invoiceNotificationCronTime) {
       updates.invoiceNotificationCronTime = doc.cronTime || "09:00";
     }
     if (!doc.contractNotificationCronTime) {
       updates.contractNotificationCronTime = "09:30";
+    }
+    // Yeni aylık/yıllık kontrat alanları için backfill (eski değerden inherit)
+    if (doc.monthlyContractNotificationCronEnabled === undefined) {
+      updates.monthlyContractNotificationCronEnabled =
+        doc.contractNotificationCronEnabled ?? true;
+    }
+    if (!doc.monthlyContractNotificationCronTime) {
+      updates.monthlyContractNotificationCronTime =
+        doc.contractNotificationCronTime || "09:30";
+    }
+    if (doc.yearlyContractNotificationCronEnabled === undefined) {
+      updates.yearlyContractNotificationCronEnabled =
+        doc.contractNotificationCronEnabled ?? true;
+    }
+    if (!doc.yearlyContractNotificationCronTime) {
+      updates.yearlyContractNotificationCronTime =
+        doc.contractNotificationCronTime || "09:30";
     }
     if (!doc.proratedInvoiceCronTime) {
       updates.proratedInvoiceCronTime = doc.cronTime || "09:00";
@@ -181,16 +202,28 @@ export class NotificationSettingsService implements OnModuleInit {
       cronEnabled: doc.cronEnabled,
       // Job-bazlı enable/disable
       invoiceNotificationCronEnabled: doc.invoiceNotificationCronEnabled ?? true,
-      contractNotificationCronEnabled:
-        doc.contractNotificationCronEnabled ?? true,
+      monthlyContractNotificationCronEnabled:
+        doc.monthlyContractNotificationCronEnabled ??
+        doc.contractNotificationCronEnabled ??
+        true,
+      yearlyContractNotificationCronEnabled:
+        doc.yearlyContractNotificationCronEnabled ??
+        doc.contractNotificationCronEnabled ??
+        true,
       proratedInvoiceCronEnabled: doc.proratedInvoiceCronEnabled ?? true,
       stalePipelineCronEnabled: doc.stalePipelineCronEnabled ?? true,
       managerLogReminderCronEnabled: doc.managerLogReminderCronEnabled ?? true,
       // Job-bazlı zamanlama (backfill ile fallback)
       invoiceNotificationCronTime:
         doc.invoiceNotificationCronTime ?? doc.cronTime ?? "09:00",
-      contractNotificationCronTime:
-        doc.contractNotificationCronTime ?? "09:30",
+      monthlyContractNotificationCronTime:
+        doc.monthlyContractNotificationCronTime ??
+        doc.contractNotificationCronTime ??
+        "09:30",
+      yearlyContractNotificationCronTime:
+        doc.yearlyContractNotificationCronTime ??
+        doc.contractNotificationCronTime ??
+        "09:30",
       proratedInvoiceCronTime:
         doc.proratedInvoiceCronTime ?? doc.cronTime ?? "09:00",
       stalePipelineCronTime: doc.stalePipelineCronTime ?? "09:15",

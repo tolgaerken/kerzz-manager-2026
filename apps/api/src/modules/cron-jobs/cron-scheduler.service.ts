@@ -5,7 +5,8 @@ import { NotificationSettingsService } from "../notification-settings";
 
 export const CRON_JOB_NAMES = {
   INVOICE_NOTIFICATION: "invoice-notification",
-  CONTRACT_NOTIFICATION: "contract-notification",
+  CONTRACT_NOTIFICATION_MONTHLY: "contract-notification-monthly",
+  CONTRACT_NOTIFICATION_YEARLY: "contract-notification-yearly",
   STALE_PIPELINE: "stale-pipeline",
   PRORATED_INVOICE: "prorated-invoice",
   MANAGER_LOG_REMINDER: "manager-log-reminder",
@@ -48,9 +49,16 @@ export class CronSchedulerService implements OnModuleInit {
     );
 
     this.replanJob(
-      CRON_JOB_NAMES.CONTRACT_NOTIFICATION,
+      CRON_JOB_NAMES.CONTRACT_NOTIFICATION_MONTHLY,
       this.settingsService.timeToCronExpression(
-        settings.contractNotificationCronTime
+        settings.monthlyContractNotificationCronTime
+      )
+    );
+
+    this.replanJob(
+      CRON_JOB_NAMES.CONTRACT_NOTIFICATION_YEARLY,
+      this.settingsService.timeToCronExpression(
+        settings.yearlyContractNotificationCronTime
       )
     );
 

@@ -84,13 +84,15 @@ export interface NotificationSettings {
   cronEnabled: boolean;
   // Job-bazlı enable/disable
   invoiceNotificationCronEnabled: boolean;
-  contractNotificationCronEnabled: boolean;
+  monthlyContractNotificationCronEnabled: boolean;
+  yearlyContractNotificationCronEnabled: boolean;
   proratedInvoiceCronEnabled: boolean;
   stalePipelineCronEnabled: boolean;
   managerLogReminderCronEnabled: boolean;
   // Job-bazlı zamanlama
   invoiceNotificationCronTime: string;
-  contractNotificationCronTime: string;
+  monthlyContractNotificationCronTime: string;
+  yearlyContractNotificationCronTime: string;
   proratedInvoiceCronTime: string;
   stalePipelineCronTime: string;
   managerLogReminderCronExpression: string;
@@ -109,13 +111,15 @@ export interface UpdateNotificationSettingsDto {
   cronEnabled?: boolean;
   // Job-bazlı enable/disable
   invoiceNotificationCronEnabled?: boolean;
-  contractNotificationCronEnabled?: boolean;
+  monthlyContractNotificationCronEnabled?: boolean;
+  yearlyContractNotificationCronEnabled?: boolean;
   proratedInvoiceCronEnabled?: boolean;
   stalePipelineCronEnabled?: boolean;
   managerLogReminderCronEnabled?: boolean;
   // Job-bazlı zamanlama
   invoiceNotificationCronTime?: string;
-  contractNotificationCronTime?: string;
+  monthlyContractNotificationCronTime?: string;
+  yearlyContractNotificationCronTime?: string;
   proratedInvoiceCronTime?: string;
   stalePipelineCronTime?: string;
   managerLogReminderCronExpression?: string;
@@ -343,7 +347,8 @@ export interface QueuePreviewResponse {
 
 export type CronName =
   | "invoice-notification"
-  | "contract-notification"
+  | "contract-notification-monthly"
+  | "contract-notification-yearly"
   | "stale-pipeline"
   | "manager-log-reminder"
   | "prorated-invoice";
@@ -409,12 +414,13 @@ export interface InvoiceNotificationDryRunResponse {
 }
 
 export interface ContractNotificationDryRunResponse {
-  cronName: "contract-notification";
+  cronName: "contract-notification-monthly" | "contract-notification-yearly";
   executedAt: string;
   durationMs: number;
   settings: {
     cronEnabled: boolean;
-    contractNotificationCronEnabled: boolean;
+    monthlyContractNotificationCronEnabled: boolean;
+    yearlyContractNotificationCronEnabled: boolean;
     emailEnabled: boolean;
     smsEnabled: boolean;
     contractExpiryDays: number[];

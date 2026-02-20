@@ -63,13 +63,15 @@ export function GeneralSettings() {
     cronEnabled: true,
     // Job-bazlı enable/disable
     invoiceNotificationCronEnabled: true,
-    contractNotificationCronEnabled: true,
+    monthlyContractNotificationCronEnabled: true,
+    yearlyContractNotificationCronEnabled: true,
     proratedInvoiceCronEnabled: true,
     stalePipelineCronEnabled: true,
     managerLogReminderCronEnabled: true,
     // Job-bazlı zamanlama
     invoiceNotificationCronTime: "09:00",
-    contractNotificationCronTime: "09:30",
+    monthlyContractNotificationCronTime: "09:30",
+    yearlyContractNotificationCronTime: "09:30",
     proratedInvoiceCronTime: "09:00",
     stalePipelineCronTime: "09:15",
     managerLogReminderCronExpression: "0 */15 * * * *",
@@ -96,16 +98,20 @@ export function GeneralSettings() {
         cronEnabled: settings.cronEnabled,
         // Job-bazlı enable/disable
         invoiceNotificationCronEnabled: settings.invoiceNotificationCronEnabled,
-        contractNotificationCronEnabled:
-          settings.contractNotificationCronEnabled,
+        monthlyContractNotificationCronEnabled:
+          settings.monthlyContractNotificationCronEnabled,
+        yearlyContractNotificationCronEnabled:
+          settings.yearlyContractNotificationCronEnabled,
         proratedInvoiceCronEnabled: settings.proratedInvoiceCronEnabled,
         stalePipelineCronEnabled: settings.stalePipelineCronEnabled,
         managerLogReminderCronEnabled: settings.managerLogReminderCronEnabled,
         // Job-bazlı zamanlama
         invoiceNotificationCronTime:
           settings.invoiceNotificationCronTime ?? "09:00",
-        contractNotificationCronTime:
-          settings.contractNotificationCronTime ?? "09:30",
+        monthlyContractNotificationCronTime:
+          settings.monthlyContractNotificationCronTime ?? "09:30",
+        yearlyContractNotificationCronTime:
+          settings.yearlyContractNotificationCronTime ?? "09:30",
         proratedInvoiceCronTime: settings.proratedInvoiceCronTime ?? "09:00",
         stalePipelineCronTime: settings.stalePipelineCronTime ?? "09:15",
         managerLogReminderCronExpression:
@@ -222,17 +228,17 @@ export function GeneralSettings() {
 
           <div className="border-t border-[var(--color-border)]" />
 
-          {/* Kontrat Bildirim */}
+          {/* Aylık Kontrat Bildirim */}
           <div className="space-y-2">
             <ToggleSwitch
-              label="Kontrat Bildirim"
-              description="Bitiş tarihi yaklaşan kontrat bildirimleri"
-              checked={formData.contractNotificationCronEnabled}
+              label="Aylık Kontrat Bildirim"
+              description="Bitiş tarihi yaklaşan aylık kontrat bildirimleri"
+              checked={formData.monthlyContractNotificationCronEnabled}
               disabled={!formData.cronEnabled}
               onChange={(v) =>
                 setFormData((prev) => ({
                   ...prev,
-                  contractNotificationCronEnabled: v,
+                  monthlyContractNotificationCronEnabled: v,
                 }))
               }
             />
@@ -240,12 +246,45 @@ export function GeneralSettings() {
               <label className="text-xs text-[var(--color-muted)]">Saat:</label>
               <input
                 type="time"
-                value={formData.contractNotificationCronTime}
+                value={formData.monthlyContractNotificationCronTime}
                 disabled={!formData.cronEnabled}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    contractNotificationCronTime: e.target.value,
+                    monthlyContractNotificationCronTime: e.target.value,
+                  }))
+                }
+                className="px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--color-border)]" />
+
+          {/* Yıllık Kontrat Bildirim */}
+          <div className="space-y-2">
+            <ToggleSwitch
+              label="Yıllık Kontrat Bildirim"
+              description="Bitiş tarihi yaklaşan yıllık kontrat bildirimleri"
+              checked={formData.yearlyContractNotificationCronEnabled}
+              disabled={!formData.cronEnabled}
+              onChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  yearlyContractNotificationCronEnabled: v,
+                }))
+              }
+            />
+            <div className="ml-0 flex items-center gap-2">
+              <label className="text-xs text-[var(--color-muted)]">Saat:</label>
+              <input
+                type="time"
+                value={formData.yearlyContractNotificationCronTime}
+                disabled={!formData.cronEnabled}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    yearlyContractNotificationCronTime: e.target.value,
                   }))
                 }
                 className="px-2 py-1 text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-foreground)] disabled:opacity-50"

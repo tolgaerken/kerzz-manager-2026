@@ -279,7 +279,7 @@ function ContractResult({
                             if (!runnable || !contextId || !onRunRecord) return;
                             onRunRecord({
                               key: recordKey,
-                              cronName: "contract-notification",
+                              cronName: "contract-notification-monthly",
                               label: item.contractId || contextId,
                               payload: {
                                 kind: "notification-send",
@@ -585,7 +585,8 @@ export function DryRunResultPanel({
           runningRecordKey={runningRecordKey}
         />
       )}
-      {data.cronName === "contract-notification" && (
+      {(data.cronName === "contract-notification-monthly" ||
+        data.cronName === "contract-notification-yearly") && (
         <ContractResult
           data={data}
           onRunRecord={onRunRecord}

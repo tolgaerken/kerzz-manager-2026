@@ -50,12 +50,13 @@ export interface InvoiceDryRunItem {
 // ── Contract Notification ──
 
 export interface ContractNotificationDryRunResponse {
-  cronName: "contract-notification";
+  cronName: "contract-notification" | "contract-notification-monthly" | "contract-notification-yearly";
   executedAt: string;
   durationMs: number;
   settings: {
     cronEnabled: boolean;
-    contractNotificationCronEnabled: boolean;
+    monthlyContractNotificationCronEnabled: boolean;
+    yearlyContractNotificationCronEnabled: boolean;
     emailEnabled: boolean;
     smsEnabled: boolean;
     contractExpiryDays: number[];
@@ -173,7 +174,8 @@ export type CronDryRunResponse =
 
 export type CronName =
   | "invoice-notification"
-  | "contract-notification"
+  | "contract-notification-monthly"
+  | "contract-notification-yearly"
   | "stale-pipeline"
   | "manager-log-reminder"
   | "prorated-invoice";

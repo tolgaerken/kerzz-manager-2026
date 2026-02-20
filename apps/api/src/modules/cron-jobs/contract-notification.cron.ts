@@ -76,18 +76,24 @@ export class ContractNotificationCron {
     private paymentLinkHelper: ContractPaymentLinkHelper
   ) {}
 
+  /**
+   * Aylık kontrat bildirimleri için cron handler.
+   */
   @Cron("30 9 * * *", {
-    name: CRON_JOB_NAMES.CONTRACT_NOTIFICATION,
+    name: CRON_JOB_NAMES.CONTRACT_NOTIFICATION_MONTHLY,
     timeZone: "Europe/Istanbul",
   })
-  async handleContractNotifications(): Promise<void> {
+  async handleMonthlyContractNotifications(): Promise<void> {
     const startTime = Date.now();
 
     try {
       const settings = await this.settingsService.getSettings();
 
-      if (!settings.cronEnabled || !settings.contractNotificationCronEnabled) {
-        this.logger.log("Kontrat bildirim cron'u devre dışı");
+      if (
+        !settings.cronEnabled ||
+        !settings.monthlyContractNotificationCronEnabled
+      ) {
+        this.logger.log("Aylık kontrat bildirim cron'u devre dışı");
         return;
       }
 
@@ -97,13 +103,15 @@ export class ContractNotificationCron {
       }
 
       if (settings.dryRunMode) {
-        this.logger.log("[DRY RUN] Kontrat bildirim cron'u kuru çalışma modunda");
+        this.logger.log(
+          "[DRY RUN] Aylık kontrat bildirim cron'u kuru çalışma modunda"
+        );
       }
 
       await this.systemLogsService.logCron(
         SystemLogAction.CRON_START,
-        "contract-notification",
-        { details: { message: "Kontrat bildirim cron'u başladı" } }
+        "contract-notification-monthly",
+        { details: { message: "Aylık kontrat bildirim cron'u başladı" } }
       );
 
       const today = new Date();
@@ -112,12 +120,6 @@ export class ContractNotificationCron {
       let totalSent = 0;
       let totalFailed = 0;
 
-      // 1. Yıllık kontratlar için yenileme akışı
-      const yearlyResult = await this.processYearlyContractRenewals(today, settings);
-      totalSent += yearlyResult.sent;
-      totalFailed += yearlyResult.failed;
-
-      // 2. Aylık/diğer kontratlar için mevcut akış
       for (const days of settings.contractExpiryDays) {
         const result = await this.processContractsExpiring(today, days, settings);
         totalSent += result.sent;
@@ -128,10 +130,10 @@ export class ContractNotificationCron {
 
       await this.systemLogsService.logCron(
         SystemLogAction.CRON_END,
-        "contract-notification",
+        "contract-notification-monthly",
         {
           details: {
-            message: "Kontrat bildirim cron'u tamamlandı",
+            message: "Aylık kontrat bildirim cron'u tamamlandı",
             totalSent,
             totalFailed,
             duration,
@@ -140,7 +142,7 @@ export class ContractNotificationCron {
       );
 
       this.logger.log(
-        `Kontrat bildirim cron'u tamamlandı: ${totalSent} gönderildi, ${totalFailed} başarısız`
+        `Aylık kontrat bildirim cron'u tamamlandı: ${totalSent} gönderildi, ${totalFailed} başarısız`
       );
     } catch (error) {
       const errorMessage =
@@ -148,14 +150,99 @@ export class ContractNotificationCron {
 
       await this.systemLogsService.logCron(
         SystemLogAction.CRON_FAILED,
-        "contract-notification",
+        "contract-notification-monthly",
         {
           details: { error: errorMessage },
           errorMessage,
         }
       );
 
-      this.logger.error(`Kontrat bildirim cron'u başarısız: ${errorMessage}`);
+      this.logger.error(
+        `Aylık kontrat bildirim cron'u başarısız: ${errorMessage}`
+      );
+    }
+  }
+
+  /**
+   * Yıllık kontrat bildirimleri için cron handler.
+   */
+  @Cron("30 9 * * *", {
+    name: CRON_JOB_NAMES.CONTRACT_NOTIFICATION_YEARLY,
+    timeZone: "Europe/Istanbul",
+  })
+  async handleYearlyContractNotifications(): Promise<void> {
+    const startTime = Date.now();
+
+    try {
+      const settings = await this.settingsService.getSettings();
+
+      if (
+        !settings.cronEnabled ||
+        !settings.yearlyContractNotificationCronEnabled
+      ) {
+        this.logger.log("Yıllık kontrat bildirim cron'u devre dışı");
+        return;
+      }
+
+      if (!settings.emailEnabled && !settings.smsEnabled) {
+        this.logger.warn("Hiçbir bildirim kanalı aktif değil");
+        return;
+      }
+
+      if (settings.dryRunMode) {
+        this.logger.log(
+          "[DRY RUN] Yıllık kontrat bildirim cron'u kuru çalışma modunda"
+        );
+      }
+
+      await this.systemLogsService.logCron(
+        SystemLogAction.CRON_START,
+        "contract-notification-yearly",
+        { details: { message: "Yıllık kontrat bildirim cron'u başladı" } }
+      );
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const yearlyResult = await this.processYearlyContractRenewals(
+        today,
+        settings
+      );
+
+      const duration = Date.now() - startTime;
+
+      await this.systemLogsService.logCron(
+        SystemLogAction.CRON_END,
+        "contract-notification-yearly",
+        {
+          details: {
+            message: "Yıllık kontrat bildirim cron'u tamamlandı",
+            totalSent: yearlyResult.sent,
+            totalFailed: yearlyResult.failed,
+            duration,
+          },
+        }
+      );
+
+      this.logger.log(
+        `Yıllık kontrat bildirim cron'u tamamlandı: ${yearlyResult.sent} gönderildi, ${yearlyResult.failed} başarısız`
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      await this.systemLogsService.logCron(
+        SystemLogAction.CRON_FAILED,
+        "contract-notification-yearly",
+        {
+          details: { error: errorMessage },
+          errorMessage,
+        }
+      );
+
+      this.logger.error(
+        `Yıllık kontrat bildirim cron'u başarısız: ${errorMessage}`
+      );
     }
   }
 
@@ -887,12 +974,15 @@ export class ContractNotificationCron {
     }
 
     return {
-      cronName: "contract-notification",
+      cronName: "contract-notification-monthly",
       executedAt: new Date().toISOString(),
       durationMs: Date.now() - startTime,
       settings: {
         cronEnabled: settings.cronEnabled,
-        contractNotificationCronEnabled: settings.contractNotificationCronEnabled,
+        monthlyContractNotificationCronEnabled:
+          settings.monthlyContractNotificationCronEnabled,
+        yearlyContractNotificationCronEnabled:
+          settings.yearlyContractNotificationCronEnabled,
         emailEnabled: settings.emailEnabled,
         smsEnabled: settings.smsEnabled,
         contractExpiryDays: settings.contractExpiryDays,

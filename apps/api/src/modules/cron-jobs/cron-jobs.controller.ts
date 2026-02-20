@@ -19,7 +19,8 @@ import type {
 
 const VALID_CRON_NAMES = [
   "invoice-notification",
-  "contract-notification",
+  "contract-notification-monthly",
+  "contract-notification-yearly",
   "stale-pipeline",
   "manager-log-reminder",
   "prorated-invoice",
@@ -42,7 +43,8 @@ export class CronJobsController {
     switch (cronName) {
       case "invoice-notification":
         return this.invoiceNotificationCron.dryRun();
-      case "contract-notification":
+      case "contract-notification-monthly":
+      case "contract-notification-yearly":
         return this.contractNotificationCron.dryRun();
       case "stale-pipeline":
         return this.stalePipelineCron.dryRun();
@@ -88,7 +90,8 @@ export class CronJobsController {
         }
         return this.proratedInvoiceCron.manualRun({ planId: dto.planId });
       case "invoice-notification":
-      case "contract-notification":
+      case "contract-notification-monthly":
+      case "contract-notification-yearly":
         throw new BadRequestException(
           `${cronName} manuel tetikleme için /notification-queue/send endpointini kullanın`
         );

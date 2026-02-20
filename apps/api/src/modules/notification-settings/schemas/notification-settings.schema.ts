@@ -52,7 +52,21 @@ export class NotificationSettings {
   @Prop({ default: "09:00" })
   invoiceNotificationCronTime: string; // HH:mm formatı
 
-  // Kontrat bildirim cron'u
+  // Aylık kontrat bildirim cron'u
+  @Prop({ default: true })
+  monthlyContractNotificationCronEnabled: boolean;
+
+  @Prop({ default: "09:30" })
+  monthlyContractNotificationCronTime: string; // HH:mm formatı
+
+  // Yıllık kontrat bildirim cron'u
+  @Prop({ default: true })
+  yearlyContractNotificationCronEnabled: boolean;
+
+  @Prop({ default: "09:30" })
+  yearlyContractNotificationCronTime: string; // HH:mm formatı
+
+  // Eski kontrat bildirim alanları (deprecated — geriye uyumluluk için tutuldu)
   @Prop({ default: true })
   contractNotificationCronEnabled: boolean;
 
