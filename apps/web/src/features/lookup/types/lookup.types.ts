@@ -14,6 +14,8 @@ export interface CustomerLookupItem {
   erpId?: string;
   erpMappings?: ErpMappingMinimal[];
   taxNo?: string;
+  brand?: string;
+  phone?: string;
 }
 
 /** Lisans lookup için gereken minimal alanlar */

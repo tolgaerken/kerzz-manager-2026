@@ -6,6 +6,9 @@ import { Search, X, ChevronDown } from "lucide-react";
 export interface CustomerSelection {
   customerId: string;
   customerName: string;
+  erpId?: string;
+  brand?: string;
+  phone?: string;
 }
 
 interface CustomerAutocompleteProps {
@@ -51,7 +54,13 @@ export function CustomerAutocomplete({
   const handleSelect = useCallback(
     (customer: CustomerLookupItem) => {
       const name = customer.name || customer.companyName || "";
-      onChange({ customerId: customer.id, customerName: name });
+      onChange({
+        customerId: customer.id,
+        customerName: name,
+        erpId: customer.erpId,
+        brand: customer.brand,
+        phone: customer.phone,
+      });
       setSearchTerm("");
       setIsOpen(false);
     },

@@ -25,7 +25,9 @@ const initialForm: CreatePaymentLinkInput = {
   installment: 1,
   cardType: "",
   canRecurring: false,
-  non3d: false
+  non3d: false,
+  brand: "",
+  erpId: "",
 };
 
 export function CreatePaymentLinkModal({
@@ -65,7 +67,12 @@ export function CreatePaymentLinkModal({
         ...prev,
         customerId: selection.customerId,
         customerName: selection.customerName,
+        erpId: selection.erpId ?? prev.erpId,
+        brand: selection.brand ?? prev.brand,
       }));
+      if (selection.phone) {
+        setPhoneValue(parsePhoneNumber(selection.phone));
+      }
       if (errors.customerName) {
         setErrors((prev) => ({ ...prev, customerName: "" }));
       }
@@ -259,6 +266,34 @@ export function CreatePaymentLinkModal({
                 value={formData.installment ?? 1}
                 onChange={handleChange}
                 className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+                Marka
+              </label>
+              <input
+                type="text"
+                name="brand"
+                value={formData.brand ?? ""}
+                onChange={handleChange}
+                placeholder="Marka adı"
+                className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+                ERP ID
+              </label>
+              <input
+                type="text"
+                name="erpId"
+                value={formData.erpId ?? ""}
+                onChange={handleChange}
+                placeholder="ERP kodu"
+                className="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] placeholder:text-[var(--color-foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               />
             </div>
 
