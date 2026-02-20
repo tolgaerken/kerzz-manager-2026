@@ -251,62 +251,6 @@ export const defaultTemplates: TemplateSeed[] = [
 
   // ==================== KONTRAT - BİTİŞ ZAMANI YAKLASAN ====================
   {
-    name: "Kontrat Bitiş Hatırlatması (E-posta)",
-    code: "contract-expiry-email",
-    channel: "email",
-    subject: "{{company}} - Kontrat Bitiş Hatırlatması",
-    body: `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-    .content { background: #fffbeb; padding: 20px; border: 1px solid #fde68a; }
-    .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b; }
-    .date { font-size: 20px; color: #f59e0b; font-weight: bold; }
-    .btn { display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }
-    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>📋 Kontrat Bitiş Hatırlatması</h1>
-    </div>
-    <div class="content">
-      <p>Sayın {{customerName}},</p>
-      <p><strong>{{company}}</strong> için geçerli olan kontratınızın bitiş tarihi yaklaşmaktadır.</p>
-      
-      <div class="info-box">
-        <p><strong>Şirket:</strong> {{company}}</p>
-        <p><strong>Kontrat Bitiş Tarihi:</strong> <span class="date">{{contractEndDate}}</span></p>
-        <p><strong>Kalan Gün:</strong> {{remainingDays}} gün</p>
-      </div>
-      
-      <p>Kontratınızın kesintisiz devam etmesi için yenileme işlemlerinizi başlatmanızı öneririz.</p>
-      
-      <p style="margin-top: 20px; font-size: 14px; color: #64748b;">
-        Sorularınız için bizimle iletişime geçebilirsiniz.
-      </p>
-    </div>
-    <div class="footer">
-      <p>Bu e-posta Kerzz Manager tarafından otomatik olarak gönderilmiştir.</p>
-    </div>
-  </div>
-</body>
-</html>`,
-    isActive: true,
-    variables: [
-      "company",
-      "customerName",
-      "contractEndDate",
-      "remainingDays",
-    ],
-    description: "Kontrat bitiş tarihi yaklaştığında gönderilen e-posta bildirimi",
-  },
-  {
     name: "Kontrat Bitiş Hatırlatması (SMS)",
     code: "contract-expiry-sms",
     channel: "sms",

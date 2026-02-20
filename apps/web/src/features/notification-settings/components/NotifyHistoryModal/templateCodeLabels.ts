@@ -5,7 +5,7 @@ const TEMPLATE_CODE_MAP: Record<string, string> = {
   "invoice-overdue-3-sms": "Vadesi Geçmiş ≤3 gün (SMS)",
   "invoice-overdue-5-email": "Vadesi Geçmiş >3 gün (E-posta)",
   "invoice-overdue-5-sms": "Vadesi Geçmiş >3 gün (SMS)",
-  "contract-expiry-email": "Kontrat Süresi Dolumu (E-posta)",
+  "contract-renewal-pre-expiry-email": "Kontrat Yenileme (E-posta)",
   "contract-expiry-sms": "Kontrat Süresi Dolumu (SMS)",
 };
 

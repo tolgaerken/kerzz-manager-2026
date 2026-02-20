@@ -649,7 +649,7 @@ export class ContractNotificationCron {
     const sentConditionsMap =
       await this.dispatchService.getDistinctTemplateCodesForContracts(contractIds);
 
-    const emailTemplateCode = "contract-expiry-email";
+    const emailTemplateCode = "contract-renewal-pre-expiry-email";
     const smsTemplateCode = "contract-expiry-sms";
 
     for (const contract of contracts) {
@@ -938,7 +938,7 @@ export class ContractNotificationCron {
 
         if (settings.emailEnabled && customer.email) {
           notifications.push({
-            templateCode: "contract-expiry-email",
+            templateCode: "contract-renewal-pre-expiry-email",
             channel: "email",
             recipient: { email: customer.email, name: customer.name },
             contextType: "contract",

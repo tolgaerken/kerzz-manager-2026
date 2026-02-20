@@ -873,8 +873,18 @@ export class NotificationQueueService {
     today.setHours(0, 0, 0, 0);
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
     const remainingDays = calculateRemainingDays(endDate, today);
+    const isYearly = contract.yearly === true;
 
-    const templateData = buildContractTemplateData(contract, customer, remainingDays, "manual");
+    const { templateData, emailTemplateCode, smsTemplateCode } =
+      await this.buildContractNotificationPayload(
+        contract,
+        customer,
+        endDate,
+        today,
+        remainingDays,
+        isYearly
+      );
+
     const notifications: DispatchNotificationDto[] = [];
 
     if (channels.includes("email")) {
@@ -886,7 +896,7 @@ export class NotificationQueueService {
         uniqueEmails.add(contact.email);
         
         notifications.push({
-          templateCode: "contract-expiry-email",
+          templateCode: emailTemplateCode,
           channel: "email",
           recipient: { email: contact.email, name: contact.name },
           contextType: "contract",
@@ -906,7 +916,7 @@ export class NotificationQueueService {
         uniquePhones.add(contact.phone);
         
         notifications.push({
-          templateCode: "contract-expiry-sms",
+          templateCode: smsTemplateCode,
           channel: "sms",
           recipient: { phone: contact.phone, name: contact.name },
           contextType: "contract",
@@ -1035,55 +1045,17 @@ export class NotificationQueueService {
     const remainingDays = calculateRemainingDays(endDate, today);
     const isYearly = contract.yearly === true;
 
-    let templateCode: string;
-    let templateData: Record<string, string>;
-
-    if (isYearly) {
-      const milestone = this.calculateMilestone(endDate, today);
-      templateCode = this.getYearlyTemplateCode(milestone, channel);
-
-      let renewalAmount = 0;
-      let oldAmount = 0;
-      let increaseRateInfo = "";
-
-      try {
-        const pricing = await this.renewalPricingService.calculateRenewalPrice(contract.id);
-        renewalAmount = pricing.newTotalTL;
-        oldAmount = pricing.oldTotalTL;
-        increaseRateInfo = this.formatIncreaseRateInfo(pricing);
-      } catch (error) {
-        this.logger.warn(`Yenileme fiyatı hesaplanamadı (${contract.contractId}): ${error}`);
-      }
-
-      const daysFromExpiry = endDate
-        ? Math.round((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
-        : 0;
-
-      const renewalMilestone: ContractRenewalData["milestone"] =
-        milestone === "all" || milestone === null ? "pre-expiry" : milestone;
-
-      const paymentLink = await this.createPaymentLinkForContractRenewal(
+    const { templateData, emailTemplateCode, smsTemplateCode } =
+      await this.buildContractNotificationPayload(
         contract,
         customer,
-        renewalAmount,
-        "manual"
+        endDate,
+        today,
+        remainingDays,
+        isYearly
       );
 
-      const renewalData: ContractRenewalData = {
-        paymentLink,
-        renewalAmount,
-        oldAmount,
-        increaseRateInfo,
-        daysFromExpiry,
-        terminationDate: this.calculateTerminationDate(endDate),
-        milestone: renewalMilestone,
-      };
-
-      templateData = buildContractRenewalTemplateData(contract, customer, renewalData, "manual");
-    } else {
-      templateCode = `contract-expiry-${channel}`;
-      templateData = buildContractTemplateData(contract, customer, remainingDays, "manual");
-    }
+    const templateCode = channel === "email" ? emailTemplateCode : smsTemplateCode;
 
     const rendered = await this.templatesService.renderTemplate(
       templateCode,
@@ -1118,6 +1090,95 @@ export class NotificationQueueService {
       default:
         return `contract-renewal-pre-expiry-${channel}`;
     }
+  }
+
+  /**
+   * Yıllık ve aylık kontratlar için template data ve template code üretir.
+   * Preview ve send akışlarında tutarlılık sağlamak için tek noktada yönetilir.
+   */
+  private async buildContractNotificationPayload(
+    contract: Contract,
+    customer: Customer,
+    endDate: Date | null,
+    today: Date,
+    remainingDays: number,
+    isYearly: boolean
+  ): Promise<{
+    templateData: Record<string, string>;
+    emailTemplateCode: string;
+    smsTemplateCode: string;
+  }> {
+    if (!isYearly) {
+      const templateData = buildContractTemplateData(
+        contract,
+        customer,
+        remainingDays,
+        "manual"
+      );
+      return {
+        templateData,
+        emailTemplateCode: "contract-renewal-pre-expiry-email",
+        smsTemplateCode: "contract-expiry-sms",
+      };
+    }
+
+    const milestone = this.calculateMilestone(endDate, today);
+    const emailTemplateCode = this.getYearlyTemplateCode(milestone, "email");
+    const smsTemplateCode = this.getYearlyTemplateCode(milestone, "sms");
+
+    let renewalAmount = 0;
+    let oldAmount = 0;
+    let increaseRateInfo = "";
+
+    try {
+      const pricing = await this.renewalPricingService.calculateRenewalPrice(
+        contract.id
+      );
+      renewalAmount = pricing.newTotalTL;
+      oldAmount = pricing.oldTotalTL;
+      increaseRateInfo = this.formatIncreaseRateInfo(pricing);
+    } catch (error) {
+      this.logger.warn(
+        `Yenileme fiyatı hesaplanamadı (${contract.contractId}): ${error}`
+      );
+    }
+
+    const daysFromExpiry = endDate
+      ? Math.round((endDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+      : 0;
+
+    const renewalMilestone: ContractRenewalData["milestone"] =
+      milestone === "all" || milestone === null ? "pre-expiry" : milestone;
+
+    const paymentLink = await this.createPaymentLinkForContractRenewal(
+      contract,
+      customer,
+      renewalAmount,
+      "manual"
+    );
+
+    const renewalData: ContractRenewalData = {
+      paymentLink,
+      renewalAmount,
+      oldAmount,
+      increaseRateInfo,
+      daysFromExpiry,
+      terminationDate: this.calculateTerminationDate(endDate),
+      milestone: renewalMilestone,
+    };
+
+    const templateData = buildContractRenewalTemplateData(
+      contract,
+      customer,
+      renewalData,
+      "manual"
+    );
+
+    return {
+      templateData,
+      emailTemplateCode,
+      smsTemplateCode,
+    };
   }
 
   /**
