@@ -60,6 +60,9 @@ export class ContractPaymentLinkHelper {
         contextId: contract.id,
         contractNo: contract.contractId || "",
         notificationSource: source,
+        gsm: customer.phone || "",
+        brand: customer.brand || "",
+        erpId: customer.erpId || "",
       });
 
       return {

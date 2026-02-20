@@ -90,7 +90,7 @@ export class NotificationQueueService {
    */
   private async createPaymentLinkForInvoice(
     invoice: Invoice,
-    customer: { name?: string; companyName?: string; email?: string; phone?: string },
+    customer: { name?: string; companyName?: string; email?: string; phone?: string; brand?: string; erpId?: string },
     source: "cron" | "manual" = "manual"
   ): Promise<string> {
     try {
@@ -115,6 +115,9 @@ export class NotificationQueueService {
         contextType: "invoice",
         contextId: invoice.id,
         notificationSource: source,
+        gsm: customer.phone || "",
+        brand: customer.brand || "",
+        erpId: customer.erpId || "",
       });
 
       return result.url;

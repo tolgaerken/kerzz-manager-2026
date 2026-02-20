@@ -60,7 +60,7 @@ export class InvoiceNotificationCron {
    */
   private async createPaymentLinkForInvoice(
     invoice: Invoice,
-    customer: { name?: string; companyName?: string; email?: string; phone?: string }
+    customer: { name?: string; companyName?: string; email?: string; phone?: string; brand?: string; erpId?: string }
   ): Promise<string> {
     try {
       if (!customer.email || !invoice.grandTotal || invoice.grandTotal <= 0) {
@@ -84,6 +84,9 @@ export class InvoiceNotificationCron {
         contextType: "invoice",
         contextId: invoice.id,
         notificationSource: "cron",
+        gsm: customer.phone || "",
+        brand: customer.brand || "",
+        erpId: customer.erpId || "",
       });
 
       return result.url;

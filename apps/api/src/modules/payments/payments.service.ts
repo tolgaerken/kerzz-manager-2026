@@ -124,6 +124,7 @@ export class PaymentsService {
       contextId: dto.contextId ?? "",
       contractNo: dto.contractNo ?? "",
       notificationSource: dto.notificationSource ?? "",
+      description: this.buildPaymentDescription(dto),
     });
 
     const paymentUrl = `${this.paymentBaseUrl}/odeme/${linkId}`;
@@ -546,5 +547,15 @@ export class PaymentsService {
 
   private roundNumber(num: number): number {
     return Math.round(num * 100) / 100;
+  }
+
+  private buildPaymentDescription(dto: CreatePaymentLinkDto): string {
+    const firm = (dto.companyId || "?").toUpperCase();
+    if (!dto.notificationSource) {
+      return `PayTR - ${firm} - Link`;
+    }
+    const rule = dto.contextType === "contract" ? "Kontrat Yenileme" : "Fatura Bildirim";
+    const prefix = dto.notificationSource === "cron" ? "Oto" : "Portal";
+    return `PayTR - ${firm} - ${prefix} ${rule}`;
   }
 }
