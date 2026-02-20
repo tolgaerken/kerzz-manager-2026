@@ -304,8 +304,6 @@ export class ContractNotificationCron {
     const contracts = await this.contractModel
       .find({
         yearly: true,
-        isActive: true,
-        noEndDate: false,
         noNotification: false,
         endDate: { $gte: targetDateStart, $lte: targetDateEnd },
       })
@@ -345,8 +343,6 @@ export class ContractNotificationCron {
     const contracts = await this.contractModel
       .find({
         yearly: true,
-        isActive: true,
-        noEndDate: false,
         noNotification: false,
         endDate: { $gte: targetDateStart, $lte: targetDateEnd },
       })
@@ -598,8 +594,6 @@ export class ContractNotificationCron {
     const contracts = await this.contractModel
       .find({
         yearly: true,
-        isActive: true,
-        noEndDate: false,
         endDate: { $gte: targetDateStart, $lte: targetDateEnd },
       })
       .lean()
@@ -716,7 +710,6 @@ export class ContractNotificationCron {
       .find({
         yearly: { $ne: true },
         endDate: { $gte: monthStart, $lte: monthEnd },
-        noEndDate: false,
         noNotification: false,
         $or: [
           { lastNotify: { $exists: false } },
@@ -936,8 +929,6 @@ export class ContractNotificationCron {
       const yearlyContracts = await this.contractModel
         .find({
           yearly: true,
-          isActive: true,
-          noEndDate: false,
           noNotification: false,
           endDate: { $gte: targetDateStart, $lte: targetDateEnd },
         })
@@ -1005,7 +996,6 @@ export class ContractNotificationCron {
         .find({
           yearly: { $ne: true },
           endDate: { $gte: monthStart, $lte: monthEnd },
-          noEndDate: false,
           noNotification: false,
         })
         .lean()

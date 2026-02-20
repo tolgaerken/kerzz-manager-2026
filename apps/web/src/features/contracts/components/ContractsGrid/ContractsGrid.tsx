@@ -50,7 +50,6 @@ const mobileFilterColumns: MobileFilterColumnConfig[] = [
   { id: "description", header: "Açıklama", type: "text", accessorKey: "description" },
   { id: "yearly", header: "Periyot", type: "boolean", accessorKey: "yearly" },
   { id: "internalFirm", header: "İç Firma", type: "select", accessorKey: "internalFirm" },
-  { id: "isActive", header: "Kontrat Aktif", type: "boolean", accessorKey: "isActive" },
   { id: "total", header: "Aylık Tutar", type: "number", accessorKey: "total" },
   { id: "yearlyTotal", header: "Yıllık Tutar", type: "number", accessorKey: "yearlyTotal" },
 ];

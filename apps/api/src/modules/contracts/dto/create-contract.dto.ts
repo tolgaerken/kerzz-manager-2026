@@ -23,10 +23,6 @@ export class CreateContractDto {
   endDate?: string;
 
   @IsOptional()
-  @IsBoolean()
-  noEndDate?: boolean = true;
-
-  @IsOptional()
   @IsString()
   internalFirm?: string;
 
@@ -61,10 +57,6 @@ export class CreateContractDto {
   @IsOptional()
   @IsIn(["future", "past"])
   contractFlow?: string = "future";
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean = true;
 
   @IsOptional()
   @IsBoolean()

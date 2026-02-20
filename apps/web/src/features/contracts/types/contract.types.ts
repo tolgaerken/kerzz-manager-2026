@@ -21,7 +21,6 @@ export interface Contract {
   enabled: boolean;
   blockedLicance: boolean;
   isFree: boolean;
-  isActive: boolean;
   no: number;
   customerId: string;
   internalFirm: string;
@@ -69,7 +68,6 @@ export interface CreateContractInput {
   description?: string;
   startDate: string;
   endDate?: string;
-  noEndDate?: boolean;
   internalFirm?: string;
   yearly?: boolean;
   maturity?: number;
@@ -79,7 +77,6 @@ export interface CreateContractInput {
   noVat?: boolean;
   noNotification?: boolean;
   contractFlow?: BillingType;
-  isActive?: boolean;
   isFree?: boolean;
 }
 

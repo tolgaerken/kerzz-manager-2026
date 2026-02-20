@@ -25,7 +25,6 @@ export function contractToFormData(contract: Contract): CreateContractInput {
     description: contract.description || "",
     startDate: startDate || new Date().toISOString().split("T")[0],
     endDate,
-    noEndDate: !endDate,
     internalFirm: contract.internalFirm || "",
     yearly: !!contract.yearly,
     maturity: 0,
@@ -35,7 +34,6 @@ export function contractToFormData(contract: Contract): CreateContractInput {
     noVat: false,
     noNotification: false,
     contractFlow: normalizeBillingType(contract.contractFlow),
-    isActive: contract.isActive ?? true,
     isFree: !!contract.isFree
   };
 }

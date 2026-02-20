@@ -80,9 +80,6 @@ export class Contract {
   @Prop({ default: false })
   isExtendable: boolean;
 
-  @Prop({ default: true })
-  isActive: boolean; // Kontrat aktif mi? (eskiye uyumluluk için default true)
-
   @Prop({ default: false })
   isFree: boolean;
 
@@ -109,9 +106,6 @@ export class Contract {
 
   @Prop()
   no: number;
-
-  @Prop({ default: true })
-  noEndDate: boolean;
 
   @Prop({ default: false })
   noNotification: boolean;
@@ -207,11 +201,8 @@ ContractSchema.index({ yearly: 1 });
 ContractSchema.index({ isFree: 1 });
 ContractSchema.index({ brand: "text", company: "text" });
 
-// Active filter compound index: startDate + endDate + noEndDate + no (sort)
-ContractSchema.index({ startDate: 1, endDate: 1, noEndDate: 1, no: -1 });
-
-// Archive filter: noEndDate + endDate + no (sort)
-ContractSchema.index({ noEndDate: 1, endDate: 1, no: -1 });
+// Active filter compound index: startDate + endDate + no (sort)
+ContractSchema.index({ startDate: 1, endDate: 1, no: -1 });
 
 // contractId + tarih aralığı sorguları için compound index
 // (getActiveLicenseIds, hasActiveContract gibi sorgularda kullanılır)

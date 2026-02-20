@@ -114,8 +114,7 @@ export function ContractEditFormModal({
     e.preventDefault();
     if (!validate()) return;
     const payload: CreateContractInput = {
-      ...formData,
-      endDate: formData.noEndDate ? "" : formData.endDate
+      ...formData
     };
     onSubmit({ id: contract.id, ...payload });
   };
@@ -246,24 +245,8 @@ export function ContractEditFormModal({
                       name="endDate"
                       value={formData.endDate || ""}
                       onChange={handleChange}
-                      disabled={formData.noEndDate}
-                      className={`${inputClasses} ${formData.noEndDate ? "opacity-50" : ""}`}
+                      className={inputClasses}
                     />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="noEndDate"
-                        checked={formData.noEndDate}
-                        onChange={handleChange}
-                        className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                      />
-                      <span className="text-sm text-[var(--color-foreground)]">
-                        Bitiş tarihi yok (Süresiz kontrat)
-                      </span>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -426,19 +409,6 @@ export function ContractEditFormModal({
                     />
                     <span className="text-sm text-[var(--color-foreground)]">
                       Bildirim Gönderme
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleChange}
-                      className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                    />
-                    <span className="text-sm text-[var(--color-foreground)]">
-                      Kontrat Aktif
                     </span>
                   </label>
 

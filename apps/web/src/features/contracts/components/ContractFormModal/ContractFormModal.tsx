@@ -70,7 +70,6 @@ export function ContractFormModal({
     description: "",
     startDate: defaultDates.startDate,
     endDate: defaultDates.endDate,
-    noEndDate: false,
     internalFirm: "",
     yearly: false,
     maturity: 15,
@@ -80,7 +79,6 @@ export function ContractFormModal({
     noVat: false,
     noNotification: false,
     contractFlow: "future",
-    isActive: true,
     isFree: false
   });
 
@@ -96,7 +94,6 @@ export function ContractFormModal({
         description: "",
         startDate: modalDefaultDates.startDate,
         endDate: modalDefaultDates.endDate,
-        noEndDate: false,
         internalFirm: "",
         yearly: false,
         maturity: 15,
@@ -106,7 +103,6 @@ export function ContractFormModal({
         noVat: false,
         noNotification: false,
         contractFlow: "future",
-        isActive: true,
         isFree: false
       });
       setSelectedCustomerName("");
@@ -154,7 +150,6 @@ export function ContractFormModal({
     }
 
     if (
-      !formData.noEndDate &&
       formData.startDate &&
       formData.endDate &&
       formData.startDate >= formData.endDate
@@ -293,27 +288,11 @@ export function ContractFormModal({
                       name="endDate"
                       value={formData.endDate || ""}
                       onChange={handleChange}
-                      disabled={formData.noEndDate}
-                      className={`${inputClasses} ${formData.noEndDate ? "opacity-50" : ""} ${errors.endDate ? "border-[var(--color-error)]" : ""}`}
+                      className={`${inputClasses} ${errors.endDate ? "border-[var(--color-error)]" : ""}`}
                     />
                     {errors.endDate && (
                       <p className="mt-1 text-sm text-[var(--color-error)]">{errors.endDate}</p>
                     )}
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="noEndDate"
-                        checked={formData.noEndDate}
-                        onChange={handleChange}
-                        className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                      />
-                      <span className="text-sm text-[var(--color-foreground)]">
-                        Bitiş tarihi yok (Süresiz kontrat)
-                      </span>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -479,19 +458,6 @@ export function ContractFormModal({
                     />
                     <span className="text-sm text-[var(--color-foreground)]">
                       Bildirim Gönderme
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleChange}
-                      className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                    />
-                    <span className="text-sm text-[var(--color-foreground)]">
-                      Kontrat Aktif
                     </span>
                   </label>
 

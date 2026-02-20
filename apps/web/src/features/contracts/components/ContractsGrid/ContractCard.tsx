@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Calendar, Building2, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { Calendar, Building2, CheckCircle2, ChevronRight } from "lucide-react";
 import { LogBadge } from "../../../../components/ui";
 import type { Contract } from "../../types";
 
@@ -198,19 +198,7 @@ export const ContractCard = memo(function ContractCard({
           <span className="text-[10px] text-[var(--color-muted-foreground)] uppercase tracking-wide">{periodLabel}</span>
           <p className="text-sm font-semibold font-mono text-[var(--color-foreground)]">{formatCurrency(displayTotal)}</p>
         </div>
-        <div className="flex items-center gap-2">
-          {(contract.isActive ?? true) ? (
-            <span className="flex items-center gap-1 text-[10px] text-[var(--color-success)]">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Aktif
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] text-[var(--color-error)]">
-              <XCircle className="h-3.5 w-3.5" />
-              Pasif
-            </span>
-          )}
-        </div>
+        <div className="flex items-center gap-2" />
       </div>
     </div>
   );

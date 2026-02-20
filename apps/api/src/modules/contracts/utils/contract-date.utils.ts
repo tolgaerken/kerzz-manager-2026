@@ -65,14 +65,13 @@ const getActiveContractFilter = (
 /**
  * Arşiv kontrat filtresi:
  * - endDate'in ay sonu < bugün (kontrat sona ermiş)
- * - noEndDate değilse ve endDate null değilse
+ * - endDate null değilse
  */
 const getArchiveContractFilter = (
   date: Date = new Date(),
 ): Record<string, unknown> => {
   const today = utcStartOfDay(date);
   return {
-    noEndDate: { $ne: true },
     endDate: { $ne: null },
     $expr: {
       $lt: [getEndOfMonthExpr("$endDate"), today],

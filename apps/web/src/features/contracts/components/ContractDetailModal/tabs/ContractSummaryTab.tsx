@@ -162,15 +162,6 @@ export function ContractSummaryTab({ contract, onContractUpdated }: ContractSumm
         <div className="flex flex-wrap gap-2 sm:gap-3">
           <span
             className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
-              (contract.isActive ?? true)
-                ? "bg-success/10 text-success"
-                : "bg-error/10 text-error"
-            }`}
-          >
-            {(contract.isActive ?? true) ? "Kontrat Aktif" : "Kontrat Pasif"}
-          </span>
-          <span
-            className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
               contract.enabled
                 ? "bg-success/10 text-success"
                 : "bg-muted/20 text-muted-foreground"

@@ -39,7 +39,6 @@ const RESPONSE_PROJECTION = {
   enabled: 1,
   blockedLicance: 1,
   isFree: 1,
-  isActive: 1,
   no: 1,
   customerId: 1,
   internalFirm: 1,
@@ -322,7 +321,6 @@ export class ContractsService {
       description: dto.description || "",
       startDate: new Date(dto.startDate),
       endDate: dto.endDate ? new Date(dto.endDate) : undefined,
-      noEndDate: dto.noEndDate ?? true,
       internalFirm: dto.internalFirm || "",
       yearly: dto.yearly ?? false,
       maturity: dto.maturity ?? 0,
@@ -333,7 +331,6 @@ export class ContractsService {
       noVat: dto.noVat ?? false,
       noNotification: dto.noNotification ?? false,
       contractFlow: dto.contractFlow || "future",
-      isActive: dto.isActive ?? true,
       // Populate from customer data
       brand: customer?.brand || "",
       company: customer?.name || "",
@@ -386,7 +383,6 @@ export class ContractsService {
       updateData.startDate = new Date(dto.startDate);
     if (dto.endDate !== undefined)
       updateData.endDate = dto.endDate ? new Date(dto.endDate) : null;
-    if (dto.noEndDate !== undefined) updateData.noEndDate = dto.noEndDate;
     if (dto.internalFirm !== undefined)
       updateData.internalFirm = dto.internalFirm;
     if (dto.yearly !== undefined) updateData.yearly = dto.yearly;
@@ -403,7 +399,6 @@ export class ContractsService {
       updateData.noNotification = dto.noNotification;
     if (dto.contractFlow !== undefined)
       updateData.contractFlow = dto.contractFlow;
-    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.isFree !== undefined) updateData.isFree = dto.isFree;
 
     const filter = this.buildIdFilter(id);
@@ -484,7 +479,6 @@ export class ContractsService {
       enabled: contract.enabled,
       blockedLicance: contract.blockedLicance,
       isFree: contract.isFree,
-      isActive: contract.isActive ?? true,
       no: contract.no,
       customerId: contract.customerId,
       internalFirm: contract.internalFirm,
