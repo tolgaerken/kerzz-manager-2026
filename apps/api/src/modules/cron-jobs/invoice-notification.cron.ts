@@ -77,6 +77,9 @@ export class InvoiceNotificationCron {
         invoiceNo: invoice.invoiceNumber || "",
         staffName: "Kerzz Bildirim Cron",
         canRecurring: true,
+        contextType: "invoice",
+        contextId: invoice.id,
+        notificationSource: "cron",
       });
 
       return result.url;
@@ -346,7 +349,8 @@ export class InvoiceNotificationCron {
           invoice,
           customer,
           paymentLinkUrl,
-          overdueDays
+          overdueDays,
+          "cron"
         );
 
         const notifications: DispatchNotificationDto[] = [];
@@ -611,7 +615,7 @@ export class InvoiceNotificationCron {
     const paymentLinkUrl = `${this.paymentBaseUrl}/odeme/${invoice.id}`;
 
     const templateData = buildInvoiceTemplateData(
-      invoice, customer, paymentLinkUrl, overdueDays
+      invoice, customer, paymentLinkUrl, overdueDays, "cron"
     );
 
     const notifications: DryRunNotificationItem[] = [];

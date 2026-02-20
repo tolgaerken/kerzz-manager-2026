@@ -113,6 +113,10 @@ export class PaymentsService {
       paymentType: "card",
       currency: "TL",
       createDate: new Date(),
+      contextType: dto.contextType ?? "",
+      contextId: dto.contextId ?? "",
+      contractNo: dto.contractNo ?? "",
+      notificationSource: dto.notificationSource ?? "",
     });
 
     const paymentUrl = `${this.paymentBaseUrl}/odeme/${linkId}`;

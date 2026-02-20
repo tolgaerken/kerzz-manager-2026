@@ -129,6 +129,20 @@ export class PaymentLink {
 
   @Prop({ default: "" })
   onlinePaymentId: string;
+
+  // --- Bildirim bağlam metadata ---
+
+  @Prop({ default: "" })
+  contextType: string;
+
+  @Prop({ default: "" })
+  contextId: string;
+
+  @Prop({ default: "" })
+  contractNo: string;
+
+  @Prop({ default: "" })
+  notificationSource: string;
 }
 
 export const PaymentLinkSchema = SchemaFactory.createForClass(PaymentLink);

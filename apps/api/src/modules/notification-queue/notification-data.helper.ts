@@ -77,14 +77,28 @@ export interface ContractRenewalData {
 }
 
 /**
+ * Bildirim kaynağını belirten tip.
+ * cron: Otomatik cron job tarafından tetiklendi
+ * manual: Kullanıcı tarafından manuel gönderildi
+ */
+export type NotificationSource = "cron" | "manual";
+
+/**
+ * Bildirim bağlam tipi.
+ */
+export type NotificationContextType = "invoice" | "contract";
+
+/**
  * Fatura icin template data olusturur.
  * paymentLink: olusturulmus odeme linki URL'si (PaymentsService araciligiyla uretilmeli)
+ * source: bildirim kaynağı (cron veya manual)
  */
 export function buildInvoiceTemplateData(
   invoice: InvoiceLike,
   customer: CustomerLike,
   paymentLink: string,
-  overdueDays?: number
+  overdueDays?: number,
+  source: NotificationSource = "cron"
 ): Record<string, string> {
   return {
     company: customer.companyName || customer.name || "",
@@ -95,16 +109,22 @@ export function buildInvoiceTemplateData(
     overdueDays: overdueDays?.toString() ?? "0",
     paymentLink,
     confirmLink: paymentLink,
+    notificationSource: source,
+    recordType: "invoice",
+    recordId: invoice.id,
+    invoiceNo: invoice.invoiceNumber || "",
   };
 }
 
 /**
  * Kontrat icin template data olusturur (eski format - geriye uyumluluk)
+ * source: bildirim kaynağı (cron veya manual)
  */
 export function buildContractTemplateData(
   contract: ContractLike,
   customer: CustomerLike,
-  remainingDays: number
+  remainingDays: number,
+  source: NotificationSource = "cron"
 ): Record<string, string> {
   return {
     company:
@@ -112,17 +132,23 @@ export function buildContractTemplateData(
     customerName: customer.name || "",
     contractEndDate: formatDate(contract.endDate),
     remainingDays: remainingDays.toString(),
+    notificationSource: source,
+    recordType: "contract",
+    recordId: contract.id,
+    contractNo: contract.contractId || "",
   };
 }
 
 /**
  * Yıllık kontrat yenileme bildirimi için genişletilmiş template data oluşturur.
  * Ödeme linki, artış bilgileri ve sonlandırma tarihi içerir.
+ * source: bildirim kaynağı (cron veya manual)
  */
 export function buildContractRenewalTemplateData(
   contract: ContractLike,
   customer: CustomerLike,
-  renewalData: ContractRenewalData
+  renewalData: ContractRenewalData,
+  source: NotificationSource = "cron"
 ): Record<string, string> {
   const endDate = contract.endDate ? new Date(contract.endDate) : new Date();
   const terminationDate = new Date(endDate);
@@ -142,5 +168,11 @@ export function buildContractRenewalTemplateData(
     isPreExpiry: renewalData.daysFromExpiry > 0 ? "true" : "false",
     isPostExpiry: renewalData.daysFromExpiry <= 0 ? "true" : "false",
     isLastWarning: renewalData.milestone === "post-5" ? "true" : "false",
+    notificationSource: source,
+    recordType: "contract",
+    recordId: contract.id,
+    contractNo: contract.contractId || "",
+    renewalAmountRaw: renewalData.renewalAmount.toString(),
+    oldAmountRaw: renewalData.oldAmount.toString(),
   };
 }

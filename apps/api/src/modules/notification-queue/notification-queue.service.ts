@@ -90,7 +90,8 @@ export class NotificationQueueService {
    */
   private async createPaymentLinkForInvoice(
     invoice: Invoice,
-    customer: { name?: string; companyName?: string; email?: string; phone?: string }
+    customer: { name?: string; companyName?: string; email?: string; phone?: string },
+    source: "cron" | "manual" = "manual"
   ): Promise<string> {
     try {
       if (!customer.email || !invoice.grandTotal || invoice.grandTotal <= 0) {
@@ -107,6 +108,9 @@ export class NotificationQueueService {
         invoiceNo: invoice.invoiceNumber || "",
         staffName: "Kerzz Bildirim",
         canRecurring: true,
+        contextType: "invoice",
+        contextId: invoice.id,
+        notificationSource: source,
       });
 
       return result.url;
@@ -121,12 +125,14 @@ export class NotificationQueueService {
   private async createPaymentLinkForContractRenewal(
     contract: Contract,
     customer: Customer,
-    renewalAmount: number
+    renewalAmount: number,
+    source: "cron" | "manual" = "manual"
   ): Promise<string> {
     const result = await this.contractPaymentLinkHelper.createRenewalPaymentLink(
       contract,
       customer,
-      renewalAmount
+      renewalAmount,
+      source
     );
     return result.url;
   }
@@ -727,8 +733,8 @@ export class NotificationQueueService {
         : "invoice-overdue-5"
       : "invoice-due";
 
-    const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer);
-    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined);
+    const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer, "manual");
+    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined, "manual");
     const notifications: DispatchNotificationDto[] = [];
 
     if (channels.includes("email")) {
@@ -868,7 +874,7 @@ export class NotificationQueueService {
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
     const remainingDays = calculateRemainingDays(endDate, today);
 
-    const templateData = buildContractTemplateData(contract, customer, remainingDays);
+    const templateData = buildContractTemplateData(contract, customer, remainingDays, "manual");
     const notifications: DispatchNotificationDto[] = [];
 
     if (channels.includes("email")) {
@@ -950,6 +956,7 @@ export class NotificationQueueService {
     subject?: string;
     body: string;
     templateCode: string;
+    templateData?: Record<string, string>;
     recipient: { name: string; email: string; phone: string };
   }> {
     if (type === "invoice") {
@@ -988,8 +995,8 @@ export class NotificationQueueService {
         : "invoice-due";
 
     const templateCode = `${templateCodeBase}-${channel}`;
-    const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer);
-    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined);
+    const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer, "manual");
+    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined, "manual");
 
     const rendered = await this.templatesService.renderTemplate(
       templateCode,
@@ -1000,6 +1007,7 @@ export class NotificationQueueService {
       subject: rendered.subject,
       body: rendered.body,
       templateCode,
+      templateData,
       recipient: {
         name: customer.name ?? "",
         email: customer.email ?? "",
@@ -1057,7 +1065,8 @@ export class NotificationQueueService {
       const paymentLink = await this.createPaymentLinkForContractRenewal(
         contract,
         customer,
-        renewalAmount
+        renewalAmount,
+        "manual"
       );
 
       const renewalData: ContractRenewalData = {
@@ -1070,10 +1079,10 @@ export class NotificationQueueService {
         milestone: renewalMilestone,
       };
 
-      templateData = buildContractRenewalTemplateData(contract, customer, renewalData);
+      templateData = buildContractRenewalTemplateData(contract, customer, renewalData, "manual");
     } else {
       templateCode = `contract-expiry-${channel}`;
-      templateData = buildContractTemplateData(contract, customer, remainingDays);
+      templateData = buildContractTemplateData(contract, customer, remainingDays, "manual");
     }
 
     const rendered = await this.templatesService.renderTemplate(
@@ -1085,6 +1094,7 @@ export class NotificationQueueService {
       subject: rendered.subject,
       body: rendered.body,
       templateCode,
+      templateData,
       recipient: {
         name: customer.name ?? "",
         email: customer.email ?? "",

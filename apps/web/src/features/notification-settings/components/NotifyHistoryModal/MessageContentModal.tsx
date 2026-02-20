@@ -89,6 +89,86 @@ export function MessageContentModal({ log, onClose }: MessageContentModalProps) 
               </div>
             )}
           </div>
+
+          {/* Bağlamsal Bilgiler */}
+          {log.templateData && Object.keys(log.templateData).length > 0 && (
+            <div className="bg-[var(--color-surface-elevated)] rounded-lg p-3 space-y-2">
+              <h4 className="text-sm font-medium text-[var(--color-foreground)]">
+                Bağlamsal Bilgiler
+              </h4>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                {(log.templateData as Record<string, unknown>).recordType && (
+                  <div>
+                    <span className="text-[var(--color-muted-foreground)]">Kayıt Tipi:</span>{" "}
+                    <span className="text-[var(--color-foreground)]">
+                      {(log.templateData as Record<string, unknown>).recordType === "invoice" ? "Fatura" : "Kontrat"}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).notificationSource && (
+                  <div>
+                    <span className="text-[var(--color-muted-foreground)]">Kaynak:</span>{" "}
+                    <span className="text-[var(--color-foreground)]">
+                      {(log.templateData as Record<string, unknown>).notificationSource === "cron" ? "Otomatik (Cron)" : "Manuel"}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).invoiceNo && (
+                  <div>
+                    <span className="text-[var(--color-muted-foreground)]">Fatura No:</span>{" "}
+                    <span className="text-[var(--color-foreground)] font-mono">
+                      {String((log.templateData as Record<string, unknown>).invoiceNo)}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).contractNo && (
+                  <div>
+                    <span className="text-[var(--color-muted-foreground)]">Kontrat No:</span>{" "}
+                    <span className="text-[var(--color-foreground)] font-mono">
+                      {String((log.templateData as Record<string, unknown>).contractNo)}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).renewalAmount && (
+                  <div>
+                    <span className="text-[var(--color-muted-foreground)]">Yeni Tutar:</span>{" "}
+                    <span className="text-[var(--color-foreground)]">
+                      {String((log.templateData as Record<string, unknown>).renewalAmount)}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).oldAmount && (
+                  <div>
+                    <span className="text-[var(--color-muted-foreground)]">Eski Tutar:</span>{" "}
+                    <span className="text-[var(--color-foreground)]">
+                      {String((log.templateData as Record<string, unknown>).oldAmount)}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).increaseRateInfo && (
+                  <div className="col-span-2">
+                    <span className="text-[var(--color-muted-foreground)]">Artış Bilgisi:</span>{" "}
+                    <span className="text-[var(--color-foreground)]">
+                      {String((log.templateData as Record<string, unknown>).increaseRateInfo)}
+                    </span>
+                  </div>
+                )}
+                {(log.templateData as Record<string, unknown>).paymentLink && (
+                  <div className="col-span-2">
+                    <span className="text-[var(--color-muted-foreground)]">Ödeme Linki:</span>{" "}
+                    <a
+                      href={String((log.templateData as Record<string, unknown>).paymentLink)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--color-primary)] hover:underline break-all"
+                    >
+                      {String((log.templateData as Record<string, unknown>).paymentLink)}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

@@ -760,6 +760,78 @@ export function NotificationQueue() {
                     )}
                   </div>
 
+                  {/* Bağlamsal Bilgiler */}
+                  {previewData.templateData && (
+                    <div className="bg-[var(--color-surface-elevated)] rounded-lg p-3 space-y-2">
+                      <h4 className="text-sm font-medium text-[var(--color-foreground)]">
+                        Bağlamsal Bilgiler
+                      </h4>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        {previewData.templateData.recordType && (
+                          <div>
+                            <span className="text-[var(--color-muted)]">Kayıt Tipi:</span>{" "}
+                            <span className="text-[var(--color-foreground)]">
+                              {previewData.templateData.recordType === "invoice" ? "Fatura" : "Kontrat"}
+                            </span>
+                          </div>
+                        )}
+                        {previewData.templateData.invoiceNo && (
+                          <div>
+                            <span className="text-[var(--color-muted)]">Fatura No:</span>{" "}
+                            <span className="text-[var(--color-foreground)] font-mono">
+                              {previewData.templateData.invoiceNo}
+                            </span>
+                          </div>
+                        )}
+                        {previewData.templateData.contractNo && (
+                          <div>
+                            <span className="text-[var(--color-muted)]">Kontrat No:</span>{" "}
+                            <span className="text-[var(--color-foreground)] font-mono">
+                              {previewData.templateData.contractNo}
+                            </span>
+                          </div>
+                        )}
+                        {previewData.templateData.renewalAmount && (
+                          <div>
+                            <span className="text-[var(--color-muted)]">Yeni Tutar:</span>{" "}
+                            <span className="text-[var(--color-foreground)]">
+                              {previewData.templateData.renewalAmount}
+                            </span>
+                          </div>
+                        )}
+                        {previewData.templateData.oldAmount && (
+                          <div>
+                            <span className="text-[var(--color-muted)]">Eski Tutar:</span>{" "}
+                            <span className="text-[var(--color-foreground)]">
+                              {previewData.templateData.oldAmount}
+                            </span>
+                          </div>
+                        )}
+                        {previewData.templateData.increaseRateInfo && (
+                          <div className="col-span-2">
+                            <span className="text-[var(--color-muted)]">Artış Bilgisi:</span>{" "}
+                            <span className="text-[var(--color-foreground)]">
+                              {previewData.templateData.increaseRateInfo}
+                            </span>
+                          </div>
+                        )}
+                        {previewData.templateData.paymentLink && (
+                          <div className="col-span-2">
+                            <span className="text-[var(--color-muted)]">Ödeme Linki:</span>{" "}
+                            <a
+                              href={previewData.templateData.paymentLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[var(--color-primary)] hover:underline break-all"
+                            >
+                              {previewData.templateData.paymentLink}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="p-2 bg-[var(--color-info)]/10 rounded text-xs text-[var(--color-info)]">
                     Bu önizleme gerçek müşteri ve fatura/kontrat verileriyle oluşturulmuştur.
                   </div>

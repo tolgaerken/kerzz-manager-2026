@@ -33,6 +33,7 @@ export class ContractPaymentLinkHelper {
     contract: Contract,
     customer: Customer,
     renewalAmount: number,
+    source: "cron" | "manual" = "cron",
   ): Promise<ContractPaymentLinkResult> {
     const fallbackUrl = `${this.paymentBaseUrl}/kontrat-yenileme/${contract.id}`;
 
@@ -53,8 +54,12 @@ export class ContractPaymentLinkHelper {
         customerName: customer.brand || customer.name || "",
         customerId: customer.id || "",
         companyId: contract.internalFirm || "VERI",
-        staffName: "Kontrat Yenileme Cron",
+        staffName: source === "cron" ? "Kontrat Yenileme Cron" : "Manuel Bildirim",
         canRecurring: true,
+        contextType: "contract",
+        contextId: contract.id,
+        contractNo: contract.contractId || "",
+        notificationSource: source,
       });
 
       return {

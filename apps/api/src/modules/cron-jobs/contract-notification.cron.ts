@@ -448,7 +448,8 @@ export class ContractNotificationCron {
           const templateData = buildContractRenewalTemplateData(
             contract,
             customer,
-            renewalData
+            renewalData,
+            "cron"
           );
 
           const notifications: DispatchNotificationDto[] = [];
@@ -694,7 +695,8 @@ export class ContractNotificationCron {
         const templateData = buildContractTemplateData(
           contract,
           customer,
-          remainingDays
+          remainingDays,
+          "cron"
         );
 
         const notifications: DispatchNotificationDto[] = [];
@@ -931,7 +933,7 @@ export class ContractNotificationCron {
           continue;
         }
 
-        const templateData = buildContractTemplateData(contract, customer, remainingDays);
+        const templateData = buildContractTemplateData(contract, customer, remainingDays, "cron");
         const notifications: DryRunNotificationItem[] = [];
 
         if (settings.emailEnabled && customer.email) {

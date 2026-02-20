@@ -71,4 +71,32 @@ export class CreatePaymentLinkDto {
   @IsOptional()
   @IsString()
   invoiceNo?: string;
+
+  /**
+   * Ödeme linki bağlam tipi (invoice veya contract)
+   */
+  @IsOptional()
+  @IsString()
+  contextType?: "invoice" | "contract";
+
+  /**
+   * İlgili kaydın ID'si (invoice.id veya contract.id)
+   */
+  @IsOptional()
+  @IsString()
+  contextId?: string;
+
+  /**
+   * Kontrat numarası (contract.contractId)
+   */
+  @IsOptional()
+  @IsString()
+  contractNo?: string;
+
+  /**
+   * Bildirim kaynağı (cron veya manual)
+   */
+  @IsOptional()
+  @IsString()
+  notificationSource?: "cron" | "manual";
 }

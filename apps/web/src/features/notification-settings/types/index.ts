@@ -341,6 +341,18 @@ export interface QueuePreviewResponse {
     email: string;
     phone: string;
   };
+  templateData?: {
+    notificationSource?: string;
+    recordType?: string;
+    recordId?: string;
+    invoiceNo?: string;
+    contractNo?: string;
+    renewalAmount?: string;
+    oldAmount?: string;
+    increaseRateInfo?: string;
+    paymentLink?: string;
+    [key: string]: unknown;
+  };
 }
 
 // ==================== CRON DRY RUN TYPES ====================
