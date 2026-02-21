@@ -53,7 +53,6 @@ export interface InvoiceLike {
 
 export interface CustomerLike {
   name?: string;
-  companyName?: string;
   email?: string;
   phone?: string;
 }
@@ -92,17 +91,19 @@ export type NotificationContextType = "invoice" | "contract";
  * Fatura icin template data olusturur.
  * paymentLink: olusturulmus odeme linki URL'si (PaymentsService araciligiyla uretilmeli)
  * source: bildirim kaynağı (cron veya manual)
+ * contactName: mesajin gonderildigi kisinin adi (opsiyonel, yoksa firma adi kullanilir)
  */
 export function buildInvoiceTemplateData(
   invoice: InvoiceLike,
   customer: CustomerLike,
   paymentLink: string,
   overdueDays?: number,
-  source: NotificationSource = "cron"
+  source: NotificationSource = "cron",
+  contactName?: string
 ): Record<string, string> {
   return {
-    company: customer.companyName || customer.name || "",
-    customerName: customer.name || "",
+    company: customer.name || "",
+    customerName: contactName || "Yetkili",
     invoiceNumber: invoice.invoiceNumber || "",
     amount: formatCurrency(invoice.grandTotal || 0),
     dueDate: formatDate(invoice.dueDate),
@@ -119,17 +120,18 @@ export function buildInvoiceTemplateData(
 /**
  * Kontrat icin template data olusturur (eski format - geriye uyumluluk)
  * source: bildirim kaynağı (cron veya manual)
+ * contactName: mesajin gonderildigi kisinin adi (opsiyonel, yoksa firma adi kullanilir)
  */
 export function buildContractTemplateData(
   contract: ContractLike,
   customer: CustomerLike,
   remainingDays: number,
-  source: NotificationSource = "cron"
+  source: NotificationSource = "cron",
+  contactName?: string
 ): Record<string, string> {
   return {
-    company:
-      contract.company || customer.companyName || customer.name || "",
-    customerName: customer.name || "",
+    company: contract.company || customer.name || "",
+    customerName: contactName || "Yetkili",
     contractEndDate: formatDate(contract.endDate),
     remainingDays: remainingDays.toString(),
     notificationSource: source,
@@ -143,20 +145,22 @@ export function buildContractTemplateData(
  * Yıllık kontrat yenileme bildirimi için genişletilmiş template data oluşturur.
  * Ödeme linki, artış bilgileri ve sonlandırma tarihi içerir.
  * source: bildirim kaynağı (cron veya manual)
+ * contactName: mesajin gonderildigi kisinin adi (opsiyonel, yoksa firma adi kullanilir)
  */
 export function buildContractRenewalTemplateData(
   contract: ContractLike,
   customer: CustomerLike,
   renewalData: ContractRenewalData,
-  source: NotificationSource = "cron"
+  source: NotificationSource = "cron",
+  contactName?: string
 ): Record<string, string> {
   const endDate = contract.endDate ? new Date(contract.endDate) : new Date();
   const terminationDate = new Date(endDate);
   terminationDate.setDate(terminationDate.getDate() + 6);
 
   return {
-    company: contract.company || customer.companyName || customer.name || "",
-    customerName: customer.name || "",
+    company: contract.company || customer.name || "",
+    customerName: contactName || "Yetkili",
     contractEndDate: formatDate(contract.endDate),
     daysFromExpiry: renewalData.daysFromExpiry.toString(),
     paymentLink: renewalData.paymentLink,

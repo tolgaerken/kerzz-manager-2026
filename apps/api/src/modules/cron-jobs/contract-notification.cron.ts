@@ -23,6 +23,10 @@ import {
   ContractRenewalData,
   formatDate,
 } from "../notification-queue/notification-data.helper";
+import {
+  NotificationContactService,
+  ContactDto,
+} from "../notification-queue/notification-contact.service";
 import { SystemLogsService, SystemLogAction, SystemLogCategory, SystemLogStatus } from "../system-logs";
 import { ManagerLogService } from "../manager-log/manager-log.service";
 import { EmailService } from "../email/email.service";
@@ -77,7 +81,8 @@ export class ContractNotificationCron {
     private renewalPricingService: AnnualContractRenewalPricingService,
     private paymentLinkHelper: ContractPaymentLinkHelper,
     private managerLogService: ManagerLogService,
-    private emailService: EmailService
+    private emailService: EmailService,
+    private contactService: NotificationContactService
   ) {}
 
   /**
@@ -418,9 +423,15 @@ export class ContractNotificationCron {
             return { status: "failed" as const, reason: "customer-not-found" };
           }
 
+          // Contact listesi olustur
+          const contacts = await this.contactService.buildContactListForContract(
+            customer,
+            contract.id
+          );
+
           if (settings.dryRunMode) {
             this.logger.log(
-              `[DRY RUN] Yıllık kontrat bildirimi: ${contract.contractId}, Milestone: ${milestone}`
+              `[DRY RUN] Yıllık kontrat bildirimi: ${contract.contractId}, Milestone: ${milestone}, Contacts: ${contacts.length}`
             );
             return { status: "dry-run" as const };
           }
@@ -445,30 +456,40 @@ export class ContractNotificationCron {
             milestone,
           };
 
-          const templateData = buildContractRenewalTemplateData(
-            contract,
-            customer,
-            renewalData,
-            "cron"
-          );
-
           const notifications: DispatchNotificationDto[] = [];
 
-          if (settings.emailEnabled && customer.email) {
-            notifications.push({
-              templateCode,
-              channel: "email",
-              recipient: {
-                email: customer.email,
-                name: customer.name,
-              },
-              contextType: "contract",
-              contextId: contract.id,
-              customerId: contract.customerId,
-              contractId: contract.id,
-              renewalCycleKey: cycleKey,
-              templateData,
-            });
+          // Email bildirimi - kisi bazli
+          if (settings.emailEnabled) {
+            const emailContacts = contacts.filter((c) => c.email);
+            const uniqueEmails = new Set<string>();
+
+            for (const contact of emailContacts) {
+              if (uniqueEmails.has(contact.email)) continue;
+              uniqueEmails.add(contact.email);
+
+              const templateData = buildContractRenewalTemplateData(
+                contract,
+                customer,
+                renewalData,
+                "cron",
+                contact.name
+              );
+
+              notifications.push({
+                templateCode,
+                channel: "email",
+                recipient: {
+                  email: contact.email,
+                  name: contact.name,
+                },
+                contextType: "contract",
+                contextId: contract.id,
+                customerId: contract.customerId,
+                contractId: contract.id,
+                renewalCycleKey: cycleKey,
+                templateData,
+              });
+            }
           }
 
           if (notifications.length === 0) {
@@ -773,12 +794,20 @@ export class ContractNotificationCron {
           continue;
         }
 
+        // Contact listesi olustur
+        const contacts = await this.contactService.buildContactListForContract(
+          customer,
+          contract.id
+        );
+
         if (settings.dryRunMode) {
+          const emailContacts = contacts.filter((c) => c.email);
+          const smsContacts = contacts.filter((c) => c.phone);
           const channels: string[] = [];
-          if (settings.emailEnabled && customer.email && !emailAlreadySent)
-            channels.push(`email(${customer.email})`);
-          if (settings.smsEnabled && customer.phone && !smsAlreadySent)
-            channels.push(`sms(${customer.phone})`);
+          if (settings.emailEnabled && emailContacts.length > 0 && !emailAlreadySent)
+            channels.push(`email(${emailContacts.map((c) => c.email).join(", ")})`);
+          if (settings.smsEnabled && smsContacts.length > 0 && !smsAlreadySent)
+            channels.push(`sms(${smsContacts.map((c) => c.phone).join(", ")})`);
           this.logger.log(
             `[DRY RUN] Kontrat bildirimi: ${contract.contractId}, Kanallar: ${channels.join(", ") || "yok"}`
           );
@@ -786,45 +815,72 @@ export class ContractNotificationCron {
           continue;
         }
 
-        const templateData = buildContractTemplateData(
-          contract,
-          customer,
-          remainingDays,
-          "cron"
-        );
-
         const notifications: DispatchNotificationDto[] = [];
 
-        if (settings.emailEnabled && customer.email && !emailAlreadySent) {
-          notifications.push({
-            templateCode: emailTemplateCode,
-            channel: "email",
-            recipient: {
-              email: customer.email,
-              name: customer.name,
-            },
-            contextType: "contract",
-            contextId: contract.id,
-            customerId: contract.customerId,
-            contractId: contract.id,
-            templateData,
-          });
+        // Email bildirimi - kisi bazli
+        if (settings.emailEnabled && !emailAlreadySent) {
+          const emailContacts = contacts.filter((c) => c.email);
+          const uniqueEmails = new Set<string>();
+
+          for (const contact of emailContacts) {
+            if (uniqueEmails.has(contact.email)) continue;
+            uniqueEmails.add(contact.email);
+
+            const templateData = buildContractTemplateData(
+              contract,
+              customer,
+              remainingDays,
+              "cron",
+              contact.name
+            );
+
+            notifications.push({
+              templateCode: emailTemplateCode,
+              channel: "email",
+              recipient: {
+                email: contact.email,
+                name: contact.name,
+              },
+              contextType: "contract",
+              contextId: contract.id,
+              customerId: contract.customerId,
+              contractId: contract.id,
+              templateData,
+            });
+          }
         }
 
-        if (settings.smsEnabled && customer.phone && !smsAlreadySent) {
-          notifications.push({
-            templateCode: smsTemplateCode,
-            channel: "sms",
-            recipient: {
-              phone: customer.phone,
-              name: customer.name,
-            },
-            contextType: "contract",
-            contextId: contract.id,
-            customerId: contract.customerId,
-            contractId: contract.id,
-            templateData,
-          });
+        // SMS bildirimi - kisi bazli
+        if (settings.smsEnabled && !smsAlreadySent) {
+          const smsContacts = contacts.filter((c) => c.phone);
+          const uniquePhones = new Set<string>();
+
+          for (const contact of smsContacts) {
+            if (uniquePhones.has(contact.phone)) continue;
+            uniquePhones.add(contact.phone);
+
+            const templateData = buildContractTemplateData(
+              contract,
+              customer,
+              remainingDays,
+              "cron",
+              contact.name
+            );
+
+            notifications.push({
+              templateCode: smsTemplateCode,
+              channel: "sms",
+              recipient: {
+                phone: contact.phone,
+                name: contact.name,
+              },
+              contextType: "contract",
+              contextId: contract.id,
+              customerId: contract.customerId,
+              contractId: contract.id,
+              templateData,
+            });
+          }
         }
 
         if (notifications.length === 0) {
@@ -958,19 +1014,28 @@ export class ContractNotificationCron {
           continue;
         }
 
+        // Contact listesi olustur
+        const contacts = await this.contactService.buildContactListForContract(
+          customer,
+          contract.id
+        );
+
         const notifications: DryRunNotificationItem[] = [];
 
-        if (settings.emailEnabled && customer.email) {
-          notifications.push({
-            templateCode: "contract-renewal-pre-expiry-email",
-            channel: "email",
-            recipient: { email: customer.email, name: customer.name },
-            contextType: "contract",
-            contextId: contract.id,
-            customerId: contract.customerId,
-            templateData: { milestone: "pre-expiry", daysFromExpiry: days },
-          });
-          emailCount++;
+        if (settings.emailEnabled) {
+          const emailContacts = contacts.filter((c) => c.email);
+          for (const contact of emailContacts) {
+            notifications.push({
+              templateCode: "contract-renewal-pre-expiry-email",
+              channel: "email",
+              recipient: { email: contact.email, name: contact.name },
+              contextType: "contract",
+              contextId: contract.id,
+              customerId: contract.customerId,
+              templateData: { milestone: "pre-expiry", daysFromExpiry: days },
+            });
+            emailCount++;
+          }
         }
 
         items.push({
@@ -1024,33 +1089,46 @@ export class ContractNotificationCron {
           continue;
         }
 
-        const templateData = buildContractTemplateData(contract, customer, remainingDays, "cron");
+        // Contact listesi olustur
+        const contacts = await this.contactService.buildContactListForContract(
+          customer,
+          contract.id
+        );
+
         const notifications: DryRunNotificationItem[] = [];
 
-        if (settings.emailEnabled && customer.email) {
-          notifications.push({
-            templateCode: "contract-renewal-pre-expiry-email",
-            channel: "email",
-            recipient: { email: customer.email, name: customer.name },
-            contextType: "contract",
-            contextId: contract.id,
-            customerId: contract.customerId,
-            templateData,
-          });
-          emailCount++;
+        if (settings.emailEnabled) {
+          const emailContacts = contacts.filter((c) => c.email);
+          for (const contact of emailContacts) {
+            const templateData = buildContractTemplateData(contract, customer, remainingDays, "cron", contact.name);
+            notifications.push({
+              templateCode: "contract-renewal-pre-expiry-email",
+              channel: "email",
+              recipient: { email: contact.email, name: contact.name },
+              contextType: "contract",
+              contextId: contract.id,
+              customerId: contract.customerId,
+              templateData,
+            });
+            emailCount++;
+          }
         }
 
-        if (settings.smsEnabled && customer.phone) {
-          notifications.push({
-            templateCode: "contract-expiry-sms",
-            channel: "sms",
-            recipient: { phone: customer.phone, name: customer.name },
-            contextType: "contract",
-            contextId: contract.id,
-            customerId: contract.customerId,
-            templateData,
-          });
-          smsCount++;
+        if (settings.smsEnabled) {
+          const smsContacts = contacts.filter((c) => c.phone);
+          for (const contact of smsContacts) {
+            const templateData = buildContractTemplateData(contract, customer, remainingDays, "cron", contact.name);
+            notifications.push({
+              templateCode: "contract-expiry-sms",
+              channel: "sms",
+              recipient: { phone: contact.phone, name: contact.name },
+              contextType: "contract",
+              contextId: contract.id,
+              customerId: contract.customerId,
+              templateData,
+            });
+            smsCount++;
+          }
         }
 
         items.push({

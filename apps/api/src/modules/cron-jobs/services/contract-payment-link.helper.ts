@@ -51,7 +51,7 @@ export class ContractPaymentLinkHelper {
         amount: renewalAmount,
         email: customer.email,
         name: customer.name || "",
-        customerName: customer.brand || customer.name || "",
+        customerName: customer.name || "",
         customerId: customer.id || "",
         companyId: contract.internalFirm || "VERI",
         staffName: source === "cron" ? "Kontrat Yenileme Cron" : "Manuel Bildirim",

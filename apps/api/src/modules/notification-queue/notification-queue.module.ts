@@ -39,6 +39,7 @@ import { NotificationQueueController } from "./notification-queue.controller";
 import { NotificationQueueService } from "./notification-queue.service";
 import { AnnualContractRenewalPricingService } from "../cron-jobs/services/annual-contract-renewal-pricing.service";
 import { ContractPaymentLinkHelper } from "../cron-jobs/services/contract-payment-link.helper";
+import { NotificationContactService } from "./notification-contact.service";
 
 @Module({
   imports: [
@@ -71,7 +72,8 @@ import { ContractPaymentLinkHelper } from "../cron-jobs/services/contract-paymen
     NotificationQueueService,
     AnnualContractRenewalPricingService,
     ContractPaymentLinkHelper,
+    NotificationContactService,
   ],
-  exports: [NotificationQueueService],
+  exports: [NotificationQueueService, NotificationContactService],
 })
 export class NotificationQueueModule {}

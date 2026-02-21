@@ -90,7 +90,7 @@ export class NotificationQueueService {
    */
   private async createPaymentLinkForInvoice(
     invoice: Invoice,
-    customer: { name?: string; companyName?: string; email?: string; phone?: string; brand?: string; erpId?: string },
+    customer: { name?: string; email?: string; phone?: string; brand?: string; erpId?: string },
     source: "cron" | "manual" = "manual"
   ): Promise<string> {
     try {
@@ -106,7 +106,7 @@ export class NotificationQueueService {
         amount: invoice.grandTotal,
         email: customer.email,
         name: customer.name || "",
-        customerName: customer.companyName || customer.name || "",
+        customerName: customer.name || "",
         customerId: invoice.customerId || "",
         companyId: invoice.internalFirm,
         invoiceNo: invoice.invoiceNumber || "",
@@ -741,7 +741,6 @@ export class NotificationQueueService {
       : "invoice-due";
 
     const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer, "manual");
-    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined, "manual");
     const notifications: DispatchNotificationDto[] = [];
 
     if (channels.includes("email")) {
@@ -751,6 +750,15 @@ export class NotificationQueueService {
       for (const contact of emailContacts) {
         if (uniqueEmails.has(contact.email)) continue;
         uniqueEmails.add(contact.email);
+        
+        const templateData = buildInvoiceTemplateData(
+          invoice,
+          customer,
+          paymentLinkUrl,
+          overdueDays > 0 ? overdueDays : undefined,
+          "manual",
+          contact.name
+        );
         
         notifications.push({
           templateCode: `${templateCodeBase}-email`,
@@ -771,6 +779,15 @@ export class NotificationQueueService {
       for (const contact of smsContacts) {
         if (uniquePhones.has(contact.phone)) continue;
         uniquePhones.add(contact.phone);
+        
+        const templateData = buildInvoiceTemplateData(
+          invoice,
+          customer,
+          paymentLinkUrl,
+          overdueDays > 0 ? overdueDays : undefined,
+          "manual",
+          contact.name
+        );
         
         notifications.push({
           templateCode: `${templateCodeBase}-sms`,
@@ -882,7 +899,7 @@ export class NotificationQueueService {
     const remainingDays = calculateRemainingDays(endDate, today);
     const isYearly = contract.yearly === true;
 
-    const { templateData, emailTemplateCode, smsTemplateCode } =
+    const { emailTemplateCode, smsTemplateCode } =
       await this.buildContractNotificationPayload(
         contract,
         customer,
@@ -901,6 +918,16 @@ export class NotificationQueueService {
       for (const contact of emailContacts) {
         if (uniqueEmails.has(contact.email)) continue;
         uniqueEmails.add(contact.email);
+        
+        const { templateData } = await this.buildContractNotificationPayload(
+          contract,
+          customer,
+          endDate,
+          today,
+          remainingDays,
+          isYearly,
+          contact.name
+        );
         
         notifications.push({
           templateCode: emailTemplateCode,
@@ -921,6 +948,16 @@ export class NotificationQueueService {
       for (const contact of smsContacts) {
         if (uniquePhones.has(contact.phone)) continue;
         uniquePhones.add(contact.phone);
+        
+        const { templateData } = await this.buildContractNotificationPayload(
+          contract,
+          customer,
+          endDate,
+          today,
+          remainingDays,
+          isYearly,
+          contact.name
+        );
         
         notifications.push({
           templateCode: smsTemplateCode,
@@ -995,6 +1032,12 @@ export class NotificationQueueService {
       throw new Error("Müşteri bulunamadı");
     }
 
+    // Contact listesi olustur - ilk contact'i on izleme icin kullan
+    const contractUsersMap = await this.getContractUsersForCustomer([invoice.customerId]);
+    const contractUsers = contractUsersMap.get(invoice.customerId) ?? [];
+    const contacts = this.buildContactList(customer, contractUsers);
+    const firstContact = contacts[0];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = invoice.dueDate ? new Date(invoice.dueDate) : null;
@@ -1013,7 +1056,14 @@ export class NotificationQueueService {
 
     const templateCode = `${templateCodeBase}-${channel}`;
     const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer, "manual");
-    const templateData = buildInvoiceTemplateData(invoice, customer, paymentLinkUrl, overdueDays > 0 ? overdueDays : undefined, "manual");
+    const templateData = buildInvoiceTemplateData(
+      invoice,
+      customer,
+      paymentLinkUrl,
+      overdueDays > 0 ? overdueDays : undefined,
+      "manual",
+      firstContact?.name
+    );
 
     const rendered = await this.templatesService.renderTemplate(
       templateCode,
@@ -1026,9 +1076,9 @@ export class NotificationQueueService {
       templateCode,
       templateData,
       recipient: {
-        name: customer.name ?? "",
-        email: customer.email ?? "",
-        phone: customer.phone ?? "",
+        name: firstContact?.name ?? customer.name ?? "",
+        email: firstContact?.email ?? customer.email ?? "",
+        phone: firstContact?.phone ?? customer.phone ?? "",
       },
     };
   }
@@ -1046,6 +1096,11 @@ export class NotificationQueueService {
       throw new Error("Müşteri bulunamadı");
     }
 
+    // Contact listesi olustur - ilk contact'i on izleme icin kullan
+    const contractUsers = await this.getContractUsersForContract(contract.id);
+    const contacts = this.buildContactList(customer, contractUsers);
+    const firstContact = contacts[0];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endDate = contract.endDate ? new Date(contract.endDate) : null;
@@ -1059,7 +1114,8 @@ export class NotificationQueueService {
         endDate,
         today,
         remainingDays,
-        isYearly
+        isYearly,
+        firstContact?.name
       );
 
     const templateCode = channel === "email" ? emailTemplateCode : smsTemplateCode;
@@ -1075,9 +1131,9 @@ export class NotificationQueueService {
       templateCode,
       templateData,
       recipient: {
-        name: customer.name ?? "",
-        email: customer.email ?? "",
-        phone: customer.phone ?? "",
+        name: firstContact?.name ?? customer.name ?? "",
+        email: firstContact?.email ?? customer.email ?? "",
+        phone: firstContact?.phone ?? customer.phone ?? "",
       },
     };
   }
@@ -1102,6 +1158,7 @@ export class NotificationQueueService {
   /**
    * Yıllık ve aylık kontratlar için template data ve template code üretir.
    * Preview ve send akışlarında tutarlılık sağlamak için tek noktada yönetilir.
+   * contactName: mesajin gonderildigi kisinin adi (opsiyonel)
    */
   private async buildContractNotificationPayload(
     contract: Contract,
@@ -1109,7 +1166,8 @@ export class NotificationQueueService {
     endDate: Date | null,
     today: Date,
     remainingDays: number,
-    isYearly: boolean
+    isYearly: boolean,
+    contactName?: string
   ): Promise<{
     templateData: Record<string, string>;
     emailTemplateCode: string;
@@ -1120,7 +1178,8 @@ export class NotificationQueueService {
         contract,
         customer,
         remainingDays,
-        "manual"
+        "manual",
+        contactName
       );
       return {
         templateData,
@@ -1178,7 +1237,8 @@ export class NotificationQueueService {
       contract,
       customer,
       renewalData,
-      "manual"
+      "manual",
+      contactName
     );
 
     return {
@@ -1221,8 +1281,10 @@ export class NotificationQueueService {
     };
 
     if (customer) {
+      // customer.name firma adıdır, kişi adı değil - bu yüzden name boş bırakılır
+      // Kişi adı sadece contractUser'dan gelir
       addContact(
-        customer.name ?? "",
+        "",
         customer.email ?? "",
         customer.phone ?? "",
         "primary"

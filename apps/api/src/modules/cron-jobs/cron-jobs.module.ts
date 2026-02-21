@@ -11,6 +11,7 @@ import { CronJobsController } from "./cron-jobs.controller";
 import { Invoice, InvoiceSchema } from "../invoices/schemas/invoice.schema";
 import { Contract, ContractSchema } from "../contracts/schemas/contract.schema";
 import { Customer, CustomerSchema } from "../customers/schemas/customer.schema";
+import { ContractUser, ContractUserSchema } from "../contract-users/schemas/contract-user.schema";
 import { Lead, LeadSchema } from "../leads/schemas/lead.schema";
 import { Offer, OfferSchema } from "../offers/schemas/offer.schema";
 import { CONTRACT_DB_CONNECTION } from "../../database/contract-database.module";
@@ -55,6 +56,7 @@ import { ExchangeRateModule } from "../exchange-rate";
 import { AnnualContractRenewalPricingService } from "./services/annual-contract-renewal-pricing.service";
 import { ContractPaymentLinkHelper } from "./services/contract-payment-link.helper";
 import { EmailModule } from "../email/email.module";
+import { NotificationContactService } from "../notification-queue/notification-contact.service";
 
 @Module({
   imports: [
@@ -64,6 +66,7 @@ import { EmailModule } from "../email/email.module";
         { name: Invoice.name, schema: InvoiceSchema },
         { name: Contract.name, schema: ContractSchema },
         { name: Customer.name, schema: CustomerSchema },
+        { name: ContractUser.name, schema: ContractUserSchema },
         { name: Lead.name, schema: LeadSchema },
         { name: Offer.name, schema: OfferSchema },
         { name: ContractCashRegister.name, schema: ContractCashRegisterSchema },
@@ -102,6 +105,7 @@ import { EmailModule } from "../email/email.module";
     CronSchedulerService,
     AnnualContractRenewalPricingService,
     ContractPaymentLinkHelper,
+    NotificationContactService,
   ],
   exports: [
     InvoiceNotificationCron,

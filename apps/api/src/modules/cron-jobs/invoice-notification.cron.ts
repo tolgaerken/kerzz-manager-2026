@@ -25,6 +25,10 @@ import {
   formatCurrency,
 } from "../notification-queue/notification-data.helper";
 import {
+  NotificationContactService,
+  ContactDto,
+} from "../notification-queue/notification-contact.service";
+import {
   SystemLogsService,
   SystemLogAction,
 } from "../system-logs";
@@ -48,7 +52,8 @@ export class InvoiceNotificationCron {
     private dispatchService: NotificationDispatchService,
     private systemLogsService: SystemLogsService,
     private paymentsService: PaymentsService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private contactService: NotificationContactService
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
@@ -60,7 +65,7 @@ export class InvoiceNotificationCron {
    */
   private async createPaymentLinkForInvoice(
     invoice: Invoice,
-    customer: { name?: string; companyName?: string; email?: string; phone?: string; brand?: string; erpId?: string }
+    customer: { name?: string; email?: string; phone?: string; brand?: string; erpId?: string }
   ): Promise<string> {
     try {
       if (!customer.email || !invoice.grandTotal || invoice.grandTotal <= 0) {
@@ -75,7 +80,7 @@ export class InvoiceNotificationCron {
         amount: invoice.grandTotal,
         email: customer.email,
         name: customer.name || "",
-        customerName: customer.companyName || customer.name || "",
+        customerName: customer.name || "",
         customerId: invoice.customerId || "",
         companyId: invoice.internalFirm,
         invoiceNo: invoice.invoiceNumber || "",
@@ -334,13 +339,21 @@ export class InvoiceNotificationCron {
           continue;
         }
 
+        // Contact listesi olustur (customer + contract users)
+        const contacts = await this.contactService.buildContactListForCustomer(
+          customer,
+          invoice.customerId
+        );
+
         // DRY RUN MODU: Gerçek gönderim yapma, sadece logla
         if (settings.dryRunMode) {
+          const emailContacts = contacts.filter((c) => c.email);
+          const smsContacts = contacts.filter((c) => c.phone);
           const channels: string[] = [];
-          if (settings.emailEnabled && customer.email && !emailAlreadySent)
-            channels.push(`email(${customer.email})`);
-          if (settings.smsEnabled && customer.phone && !smsAlreadySent)
-            channels.push(`sms(${customer.phone})`);
+          if (settings.emailEnabled && emailContacts.length > 0 && !emailAlreadySent)
+            channels.push(`email(${emailContacts.map((c) => c.email).join(", ")})`);
+          if (settings.smsEnabled && smsContacts.length > 0 && !smsAlreadySent)
+            channels.push(`sms(${smsContacts.map((c) => c.phone).join(", ")})`);
           console.log(
             `🧪 [DRY RUN] Fatura bildirimi atlanıyor — Fatura: ${invoice.invoiceNumber}, Müşteri: ${customer.name}, Kanallar: ${channels.join(", ") || "yok"}`
           );
@@ -351,49 +364,74 @@ export class InvoiceNotificationCron {
         // Fatura icin odeme linki olustur
         const paymentLinkUrl = await this.createPaymentLinkForInvoice(invoice, customer);
 
-        // Template verileri hazırla
-        const templateData = buildInvoiceTemplateData(
-          invoice,
-          customer,
-          paymentLinkUrl,
-          overdueDays,
-          "cron"
-        );
-
         const notifications: DispatchNotificationDto[] = [];
 
-        // Email bildirimi (daha önce gönderilmemişse)
-        if (settings.emailEnabled && customer.email && !emailAlreadySent) {
-          notifications.push({
-            templateCode: emailTemplateCode,
-            channel: "email",
-            recipient: {
-              email: customer.email,
-              name: customer.name,
-            },
-            contextType: "invoice",
-            contextId: invoice.id,
-            customerId: invoice.customerId,
-            invoiceId: invoice.id,
-            templateData,
-          });
+        // Email bildirimi (daha önce gönderilmemişse) - kisi bazli
+        if (settings.emailEnabled && !emailAlreadySent) {
+          const emailContacts = contacts.filter((c) => c.email);
+          const uniqueEmails = new Set<string>();
+
+          for (const contact of emailContacts) {
+            if (uniqueEmails.has(contact.email)) continue;
+            uniqueEmails.add(contact.email);
+
+            const templateData = buildInvoiceTemplateData(
+              invoice,
+              customer,
+              paymentLinkUrl,
+              overdueDays,
+              "cron",
+              contact.name
+            );
+
+            notifications.push({
+              templateCode: emailTemplateCode,
+              channel: "email",
+              recipient: {
+                email: contact.email,
+                name: contact.name,
+              },
+              contextType: "invoice",
+              contextId: invoice.id,
+              customerId: invoice.customerId,
+              invoiceId: invoice.id,
+              templateData,
+            });
+          }
         }
 
-        // SMS bildirimi (daha önce gönderilmemişse)
-        if (settings.smsEnabled && customer.phone && !smsAlreadySent) {
-          notifications.push({
-            templateCode: smsTemplateCode,
-            channel: "sms",
-            recipient: {
-              phone: customer.phone,
-              name: customer.name,
-            },
-            contextType: "invoice",
-            contextId: invoice.id,
-            customerId: invoice.customerId,
-            invoiceId: invoice.id,
-            templateData,
-          });
+        // SMS bildirimi (daha önce gönderilmemişse) - kisi bazli
+        if (settings.smsEnabled && !smsAlreadySent) {
+          const smsContacts = contacts.filter((c) => c.phone);
+          const uniquePhones = new Set<string>();
+
+          for (const contact of smsContacts) {
+            if (uniquePhones.has(contact.phone)) continue;
+            uniquePhones.add(contact.phone);
+
+            const templateData = buildInvoiceTemplateData(
+              invoice,
+              customer,
+              paymentLinkUrl,
+              overdueDays,
+              "cron",
+              contact.name
+            );
+
+            notifications.push({
+              templateCode: smsTemplateCode,
+              channel: "sms",
+              recipient: {
+                phone: contact.phone,
+                name: contact.name,
+              },
+              contextType: "invoice",
+              contextId: invoice.id,
+              customerId: invoice.customerId,
+              invoiceId: invoice.id,
+              templateData,
+            });
+          }
         }
 
         // Gönderilecek bildirim yoksa atla
@@ -415,6 +453,15 @@ export class InvoiceNotificationCron {
 
         // Fatura kaydını güncelle
         if (successCount > 0) {
+          const notifiedUsers = contacts
+            .filter((c) => c.email || c.phone)
+            .map((c) => ({
+              name: c.name || "",
+              email: c.email || "",
+              gsm: c.phone || "",
+              smsText: "",
+            }));
+
           await this.invoiceModel.updateOne(
             { _id: invoice._id },
             {
@@ -425,14 +472,7 @@ export class InvoiceNotificationCron {
                   email: settings.emailEnabled && !emailAlreadySent,
                   push: false,
                   sendTime: new Date(),
-                  users: [
-                    {
-                      name: customer.name || "",
-                      email: customer.email || "",
-                      gsm: customer.phone || "",
-                      smsText: "",
-                    },
-                  ],
+                  users: notifiedUsers,
                 },
               },
             }
@@ -621,36 +661,50 @@ export class InvoiceNotificationCron {
     // Dry run'da gercek odeme linki olusturmuyoruz
     const paymentLinkUrl = `${this.paymentBaseUrl}/odeme/${invoice.id}`;
 
-    const templateData = buildInvoiceTemplateData(
-      invoice, customer, paymentLinkUrl, overdueDays, "cron"
+    // Contact listesi olustur
+    const contacts = await this.contactService.buildContactListForCustomer(
+      customer,
+      invoice.customerId
     );
 
     const notifications: DryRunNotificationItem[] = [];
 
-    if (settings.emailEnabled && customer.email) {
-      notifications.push({
-        templateCode: `${templateCodeBase}-email`,
-        channel: "email",
-        recipient: { email: customer.email, name: customer.name },
-        contextType: "invoice",
-        contextId: invoice.id,
-        customerId: invoice.customerId,
-        templateData,
-      });
-      ec++;
+    if (settings.emailEnabled) {
+      const emailContacts = contacts.filter((c) => c.email);
+      for (const contact of emailContacts) {
+        const templateData = buildInvoiceTemplateData(
+          invoice, customer, paymentLinkUrl, overdueDays, "cron", contact.name
+        );
+        notifications.push({
+          templateCode: `${templateCodeBase}-email`,
+          channel: "email",
+          recipient: { email: contact.email, name: contact.name },
+          contextType: "invoice",
+          contextId: invoice.id,
+          customerId: invoice.customerId,
+          templateData,
+        });
+        ec++;
+      }
     }
 
-    if (settings.smsEnabled && customer.phone) {
-      notifications.push({
-        templateCode: `${templateCodeBase}-sms`,
-        channel: "sms",
-        recipient: { phone: customer.phone, name: customer.name },
-        contextType: "invoice",
-        contextId: invoice.id,
-        customerId: invoice.customerId,
-        templateData,
-      });
-      sc++;
+    if (settings.smsEnabled) {
+      const smsContacts = contacts.filter((c) => c.phone);
+      for (const contact of smsContacts) {
+        const templateData = buildInvoiceTemplateData(
+          invoice, customer, paymentLinkUrl, overdueDays, "cron", contact.name
+        );
+        notifications.push({
+          templateCode: `${templateCodeBase}-sms`,
+          channel: "sms",
+          recipient: { phone: contact.phone, name: contact.name },
+          contextType: "invoice",
+          contextId: invoice.id,
+          customerId: invoice.customerId,
+          templateData,
+        });
+        sc++;
+      }
     }
 
     return {
