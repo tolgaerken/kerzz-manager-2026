@@ -38,6 +38,7 @@ import { PublicPaymentFormPage } from "./pages/PublicPaymentFormPage";
 import { PublicPaymentOkPage } from "./pages/PublicPaymentOkPage";
 import { PublicPaymentErrorPage } from "./pages/PublicPaymentErrorPage";
 import { PublicContractPaymentPage } from "./pages/PublicContractPaymentPage";
+import { PublicInvoiceViewPage } from "./pages/PublicInvoiceViewPage";
 import { UsersPage } from "./pages/UsersPage";
 import { CompanyManagementPage } from "./pages/CompanyManagementPage";
 import { WelcomePage } from "./pages/WelcomePage";
@@ -442,6 +443,13 @@ const publicContractPaymentRoute = createRoute({
   component: PublicContractPaymentPage,
 });
 
+// Public invoice view page (no auth)
+const publicInvoiceViewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/fatura-goruntule/$invoiceUuid",
+  component: PublicInvoiceViewPage,
+});
+
 // System Logs page
 const systemLogsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
@@ -588,6 +596,7 @@ const routeTree = rootRoute.addChildren([
   publicPaymentOkRoute,
   publicPaymentErrorRoute,
   publicContractPaymentRoute,
+  publicInvoiceViewRoute,
   dashboardLayoutRoute.addChildren([
     welcomeRoute,
     dashboardRoute,

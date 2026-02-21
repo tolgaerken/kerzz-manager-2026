@@ -15,6 +15,12 @@ import {
 import { EmailService, EmailResult } from "../email";
 import { SmsService, SmsResult } from "../sms";
 import { NotificationTemplatesService } from "../notification-templates";
+import {
+  SystemLogsService,
+  SystemLogAction,
+  SystemLogCategory,
+  SystemLogStatus,
+} from "../system-logs";
 
 export interface DispatchResult {
   success: boolean;
@@ -31,7 +37,8 @@ export class NotificationDispatchService {
     private logModel: Model<NotificationLogDocument>,
     private emailService: EmailService,
     private smsService: SmsService,
-    private templatesService: NotificationTemplatesService
+    private templatesService: NotificationTemplatesService,
+    private systemLogsService: SystemLogsService
   ) {}
 
   /**
@@ -95,6 +102,14 @@ export class NotificationDispatchService {
 
       await log.save();
 
+      await this.logDispatchToSystemLogs({
+        logId,
+        dto,
+        status: sendResult.success ? SystemLogStatus.SUCCESS : SystemLogStatus.FAILURE,
+        messageId: sendResult.messageId,
+        errorMessage: sendResult.error || null,
+      });
+
       return {
         success: sendResult.success,
         logId,
@@ -128,6 +143,13 @@ export class NotificationDispatchService {
 
       await log.save();
 
+      await this.logDispatchToSystemLogs({
+        logId,
+        dto,
+        status: SystemLogStatus.ERROR,
+        errorMessage,
+      });
+
       return {
         success: false,
         logId,
@@ -135,6 +157,49 @@ export class NotificationDispatchService {
         error: errorMessage,
       };
     }
+  }
+
+  private async logDispatchToSystemLogs(params: {
+    logId: string;
+    dto: DispatchNotificationDto;
+    status: SystemLogStatus;
+    messageId?: string;
+    errorMessage?: string | null;
+  }): Promise<void> {
+    const { logId, dto, status, messageId, errorMessage } = params;
+
+    const action =
+      status === SystemLogStatus.SUCCESS
+        ? SystemLogAction.INFO
+        : SystemLogAction.WARNING;
+
+    await this.systemLogsService.log(
+      SystemLogCategory.SYSTEM,
+      action,
+      "notification-dispatch",
+      {
+        entityId: logId,
+        entityType: "NotificationDispatch",
+        status,
+        errorMessage: errorMessage || null,
+        details: {
+          channel: dto.channel,
+          templateCode: dto.templateCode,
+          recipientEmail: dto.recipient.email || null,
+          recipientPhone: dto.recipient.phone || null,
+          recipientName: dto.recipient.name || null,
+          contextType: dto.contextType,
+          contextId: dto.contextId,
+          customerId: dto.customerId || null,
+          invoiceId: dto.invoiceId || null,
+          contractId: dto.contractId || null,
+          renewalCycleKey: dto.renewalCycleKey || null,
+          dispatchStatus: status,
+          messageId: messageId || null,
+          dispatchedAt: new Date().toISOString(),
+        },
+      }
+    );
   }
 
   /**

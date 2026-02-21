@@ -18,6 +18,14 @@ interface SystemLogsGridProps {
   onRowClick: (log: SystemLog) => void;
 }
 
+function getDetailValue(log: SystemLog, key: string): string {
+  const details = log.details as Record<string, unknown> | null | undefined;
+  if (!details) return "-";
+  const value = details[key];
+  if (value == null || value === "") return "-";
+  return String(value);
+}
+
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
@@ -183,6 +191,50 @@ export function SystemLogsGrid({ data, loading, onRowClick }: SystemLogsGridProp
         filter: {
           type: "input",
           conditions: ["equals", "contains"],
+        },
+      },
+      {
+        id: "templateCode",
+        header: "Bildirim",
+        width: 170,
+        sortable: false,
+        cell: (_value, row): string => getDetailValue(row, "templateCode"),
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains", "startsWith"],
+        },
+      },
+      {
+        id: "recipientEmail",
+        header: "E-Posta",
+        width: 220,
+        sortable: false,
+        cell: (_value, row): string => getDetailValue(row, "recipientEmail"),
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains", "startsWith"],
+        },
+      },
+      {
+        id: "recipientPhone",
+        header: "Telefon",
+        width: 150,
+        sortable: false,
+        cell: (_value, row): string => getDetailValue(row, "recipientPhone"),
+        filter: {
+          type: "input",
+          conditions: ["equals", "contains", "startsWith"],
+        },
+      },
+      {
+        id: "channel",
+        header: "Kanal",
+        width: 100,
+        sortable: false,
+        cell: (_value, row): string => getDetailValue(row, "channel"),
+        filter: {
+          type: "dropdown",
+          showCounts: true,
         },
       },
       {

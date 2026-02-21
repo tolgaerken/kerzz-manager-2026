@@ -61,6 +61,15 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   WEB_URL?: string;
+
+  // Invoice View Captcha ayarlari
+  @IsOptional()
+  @IsNumber()
+  INVOICE_VIEW_CAPTCHA_TTL_SECONDS?: number = 300;
+
+  @IsOptional()
+  @IsNumber()
+  INVOICE_VIEW_CAPTCHA_MAX_ATTEMPTS?: number = 5;
 }
 
 export function validate(config: Record<string, unknown>) {

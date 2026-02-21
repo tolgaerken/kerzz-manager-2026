@@ -42,6 +42,7 @@ import type {
 export class InvoiceNotificationCron {
   private readonly logger = new Logger(InvoiceNotificationCron.name);
   private readonly paymentBaseUrl: string;
+  private readonly webBaseUrl: string;
 
   constructor(
     @InjectModel(Invoice.name, CONTRACT_DB_CONNECTION)
@@ -58,6 +59,9 @@ export class InvoiceNotificationCron {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
       "http://localhost:3889";
+    this.webBaseUrl =
+      this.configService.get<string>("WEB_URL") ||
+      "https://pay-kerzz.cloudlabs.com.tr";
   }
 
   /**
@@ -381,7 +385,8 @@ export class InvoiceNotificationCron {
               paymentLinkUrl,
               overdueDays,
               "cron",
-              contact.name
+              contact.name,
+              this.webBaseUrl
             );
 
             notifications.push({
@@ -415,7 +420,8 @@ export class InvoiceNotificationCron {
               paymentLinkUrl,
               overdueDays,
               "cron",
-              contact.name
+              contact.name,
+              this.webBaseUrl
             );
 
             notifications.push({
@@ -673,7 +679,7 @@ export class InvoiceNotificationCron {
       const emailContacts = contacts.filter((c) => c.email);
       for (const contact of emailContacts) {
         const templateData = buildInvoiceTemplateData(
-          invoice, customer, paymentLinkUrl, overdueDays, "cron", contact.name
+          invoice, customer, paymentLinkUrl, overdueDays, "cron", contact.name, this.webBaseUrl
         );
         notifications.push({
           templateCode: `${templateCodeBase}-email`,
@@ -692,7 +698,7 @@ export class InvoiceNotificationCron {
       const smsContacts = contacts.filter((c) => c.phone);
       for (const contact of smsContacts) {
         const templateData = buildInvoiceTemplateData(
-          invoice, customer, paymentLinkUrl, overdueDays, "cron", contact.name
+          invoice, customer, paymentLinkUrl, overdueDays, "cron", contact.name, this.webBaseUrl
         );
         notifications.push({
           templateCode: `${templateCodeBase}-sms`,

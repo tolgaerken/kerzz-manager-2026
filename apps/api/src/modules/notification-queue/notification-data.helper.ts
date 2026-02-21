@@ -49,6 +49,7 @@ export interface InvoiceLike {
   grandTotal?: number;
   dueDate?: Date;
   customerId?: string;
+  invoiceUUID?: string;
 }
 
 export interface CustomerLike {
@@ -88,10 +89,25 @@ export type NotificationSource = "cron" | "manual";
 export type NotificationContextType = "invoice" | "contract";
 
 /**
+ * Fatura goruntuleme linki olusturur.
+ * invoiceUUID varsa captcha korumalı görüntüleme sayfasına yönlendirir.
+ */
+export function buildInvoiceViewLink(
+  invoiceUUID: string | undefined,
+  webBaseUrl: string
+): string {
+  if (!invoiceUUID) {
+    return "";
+  }
+  return `${webBaseUrl}/fatura-goruntule/${invoiceUUID}`;
+}
+
+/**
  * Fatura icin template data olusturur.
  * paymentLink: olusturulmus odeme linki URL'si (PaymentsService araciligiyla uretilmeli)
  * source: bildirim kaynağı (cron veya manual)
  * contactName: mesajin gonderildigi kisinin adi (opsiyonel, yoksa firma adi kullanilir)
+ * webBaseUrl: fatura goruntuleme linki icin web uygulaması base URL'i
  */
 export function buildInvoiceTemplateData(
   invoice: InvoiceLike,
@@ -99,8 +115,13 @@ export function buildInvoiceTemplateData(
   paymentLink: string,
   overdueDays?: number,
   source: NotificationSource = "cron",
-  contactName?: string
+  contactName?: string,
+  webBaseUrl?: string
 ): Record<string, string> {
+  const confirmLink = webBaseUrl && invoice.invoiceUUID
+    ? buildInvoiceViewLink(invoice.invoiceUUID, webBaseUrl)
+    : paymentLink;
+
   return {
     company: customer.name || "",
     customerName: contactName || "Yetkili",
@@ -109,7 +130,7 @@ export function buildInvoiceTemplateData(
     dueDate: formatDate(invoice.dueDate),
     overdueDays: overdueDays?.toString() ?? "0",
     paymentLink,
-    confirmLink: paymentLink,
+    confirmLink,
     notificationSource: source,
     recordType: "invoice",
     recordId: invoice.id,

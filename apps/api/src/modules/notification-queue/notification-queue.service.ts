@@ -62,6 +62,7 @@ import { ContractPaymentLinkHelper } from "../cron-jobs/services/contract-paymen
 export class NotificationQueueService {
   private readonly logger = new Logger(NotificationQueueService.name);
   private readonly paymentBaseUrl: string;
+  private readonly webBaseUrl: string;
 
   constructor(
     @InjectModel(Invoice.name, CONTRACT_DB_CONNECTION)
@@ -82,6 +83,9 @@ export class NotificationQueueService {
   ) {
     this.paymentBaseUrl =
       this.configService.get<string>("PAYMENT_BASE_URL") ||
+      "https://pay-kerzz.cloudlabs.com.tr";
+    this.webBaseUrl =
+      this.configService.get<string>("WEB_URL") ||
       "https://pay-kerzz.cloudlabs.com.tr";
   }
 
@@ -757,7 +761,8 @@ export class NotificationQueueService {
           paymentLinkUrl,
           overdueDays > 0 ? overdueDays : undefined,
           "manual",
-          contact.name
+          contact.name,
+          this.webBaseUrl
         );
         
         notifications.push({
@@ -786,7 +791,8 @@ export class NotificationQueueService {
           paymentLinkUrl,
           overdueDays > 0 ? overdueDays : undefined,
           "manual",
-          contact.name
+          contact.name,
+          this.webBaseUrl
         );
         
         notifications.push({
@@ -1062,7 +1068,8 @@ export class NotificationQueueService {
       paymentLinkUrl,
       overdueDays > 0 ? overdueDays : undefined,
       "manual",
-      firstContact?.name
+      firstContact?.name,
+      this.webBaseUrl
     );
 
     const rendered = await this.templatesService.renderTemplate(

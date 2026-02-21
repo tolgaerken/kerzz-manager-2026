@@ -1,6 +1,6 @@
 {
   "name": "@kerzz/api",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "private": true,
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",

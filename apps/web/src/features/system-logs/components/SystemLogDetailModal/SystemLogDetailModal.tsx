@@ -177,6 +177,16 @@ export function SystemLogDetailModal({
               </pre>
             </div>
           )}
+
+          {/* Ham data[] kaydı */}
+          <div className="mb-2">
+            <h3 className="text-sm font-medium text-[var(--color-foreground)] mb-2">
+              Ham data[] Kaydı
+            </h3>
+            <pre className="p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-[var(--color-border)] text-xs text-[var(--color-foreground)] overflow-x-auto max-h-[300px] overflow-y-auto">
+              {JSON.stringify(log, null, 2)}
+            </pre>
+          </div>
         </div>
       </div>
     </div>

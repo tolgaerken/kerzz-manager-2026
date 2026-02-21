@@ -187,7 +187,7 @@ export class NotificationTemplatesService implements OnModuleInit {
       dueDate: "15.02.2026",
       invoiceNumber: "FT-2026-00123",
       paymentLink: "https://kerzz-pay.cloudlabs.com.tr/odeme/example-token",
-      confirmLink: "https://kerzz-pay.cloudlabs.com.tr/odeme/example-token",
+      confirmLink: "https://kerzz-pay.cloudlabs.com.tr/fatura-goruntule/example-uuid",
       contractEndDate: "31.03.2026",
       customerName: "Ahmet Yılmaz",
       overdueDays: "5",
